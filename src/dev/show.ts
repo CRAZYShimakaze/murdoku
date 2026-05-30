@@ -38,9 +38,9 @@ console.log('\nVerdächtige:')
 for (const suspect of puzzle.suspects) {
   const gender = suspect.attributes.gender === 'm' ? '♂' : '♀'
   const clues = suspect.clues
-    .map((clue) => renderer.render(clue.describe(), { name: suspect.id }))
+    .map((clue) => renderer.clue(clue.describe(), suspect.id))
     .join('  |  ')
   console.log(`  ${suspect.name} ${gender}: ${clues}`)
 }
-console.log(`  Opfer: ${puzzle.victim.name} (im letzten freien Feld)`)
+console.log(`  Opfer: ${puzzle.victim.name} (allein mit dem Mörder in einem Raum — das letzte freie Feld)`)
 console.log('\nFinde heraus, wer allein mit dem Opfer im Raum war.\n')

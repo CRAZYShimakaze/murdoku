@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "id": "gen-game-night-23",
+  "id": "gen-game-night-2",
   "difficulty": "hard",
   "size": {
     "width": 9,
@@ -59,37 +59,37 @@
     }
   },
   "roomMap": [
-    "111133222",
-    "111333322",
-    "551133222",
-    "555552222",
-    "555552222",
-    "555555544",
-    "555555544",
-    "555555544",
-    "555555555"
+    "555554444",
+    "555554444",
+    "555224444",
+    "552224434",
+    "152224333",
+    "122233333",
+    "111233333",
+    "111333333",
+    "113333333"
   ],
   "groundMap": [
-    "....r....",
-    "..r......",
-    "..r......",
-    "......r..",
-    "......r..",
-    "r.....r..",
-    ".r.......",
+    ".rr.r.r..",
+    ".......r.",
+    "r........",
     ".........",
-    "........."
+    "...r.....",
+    ".........",
+    ".....r.r.",
+    ".........",
+    "......r.."
   ],
   "topMap": [
-    "p....p...",
-    ".....t...",
-    "....tgttt",
-    "....ts...",
-    ".tt.p..g.",
-    ".pg.....s",
-    "..tsfsg..",
-    "f....s.sx",
-    ".....p.t."
+    "...t.....",
+    "..fs.....",
+    ".sx.ts...",
+    "gs..f....",
+    "stx......",
+    "s.s.x.gs.",
+    "....p...f",
+    "gpxx...sp",
+    "s..x.x..."
   ],
   "suspects": [
     {
@@ -98,33 +98,32 @@
       "attributes": {
         "gender": "f",
         "glasses": false,
-        "hair": "blond",
+        "hair": "black",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "plant"
+          "type": "inRow",
+          "row": 0
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bella",
+      "name": "Bernd",
       "attributes": {
-        "gender": "f",
+        "gender": "m",
         "glasses": false,
         "hair": "white",
         "beard": false,
-        "bald": false
+        "bald": true
       },
       "clues": [
         {
-          "type": "roomExists",
-          "attribute": "gender",
-          "value": "m",
-          "object": "chair"
+          "type": "direction",
+          "of": "G",
+          "dir": "north"
         }
       ]
     },
@@ -134,34 +133,43 @@
       "attributes": {
         "gender": "m",
         "glasses": false,
-        "hair": "brown",
+        "hair": "white",
         "beard": false,
-        "bald": true
+        "bald": false
       },
       "clues": [
         {
-          "type": "roomExists",
-          "attribute": "gender",
-          "value": "f",
-          "object": "chair"
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "plant"
+            },
+            {
+              "type": "roomCompanion",
+              "count": 1,
+              "attribute": "gender",
+              "value": "m"
+            }
+          ]
         }
       ]
     },
     {
       "id": "D",
-      "name": "Dalia",
+      "name": "Dylan",
       "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "hair": "black",
-        "beard": false,
+        "gender": "m",
+        "glasses": false,
+        "hair": "white",
+        "beard": true,
         "bald": false
       },
       "clues": [
         {
           "type": "direction",
           "of": "E",
-          "dir": "south"
+          "dir": "north"
         }
       ]
     },
@@ -177,8 +185,16 @@
       },
       "clues": [
         {
-          "type": "inRoom",
-          "room": "4"
+          "type": "and",
+          "clues": [
+            {
+              "type": "alone"
+            },
+            {
+              "type": "onObject",
+              "object": "chair"
+            }
+          ]
         }
       ]
     },
@@ -187,62 +203,87 @@
       "name": "Floyd",
       "attributes": {
         "gender": "m",
-        "glasses": false,
-        "hair": "white",
-        "beard": false,
-        "bald": true
-      },
-      "clues": [
-        {
-          "type": "nearObject",
-          "object": "tv"
-        }
-      ]
-    },
-    {
-      "id": "G",
-      "name": "Grant",
-      "attributes": {
-        "gender": "m",
         "glasses": true,
-        "hair": "brown",
-        "beard": true,
-        "bald": false
-      },
-      "clues": [
-        {
-          "type": "direction",
-          "of": "C",
-          "dir": "north"
-        }
-      ]
-    },
-    {
-      "id": "H",
-      "name": "Hana",
-      "attributes": {
-        "gender": "f",
-        "glasses": false,
-        "hair": "brown",
+        "hair": "white",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
           "type": "sameRoom",
-          "as": "E"
+          "as": "H"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Greta",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "roomCompanion",
+              "count": 1,
+              "attribute": "gender",
+              "value": "m"
+            },
+            {
+              "type": "onObject",
+              "object": "carpet"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Hugh",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "black",
+        "beard": true,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "roomCompanion",
+              "count": 1,
+              "attribute": "gender",
+              "value": "m"
+            },
+            {
+              "type": "onObject",
+              "object": "chair"
+            },
+            {
+              "type": "inRoom",
+              "room": "4"
+            }
+          ]
         }
       ]
     }
   ],
   "victim": {
-    "name": "Robin",
+    "name": "Viola",
     "attributes": {
-      "gender": "m",
+      "gender": "f",
       "glasses": true,
-      "hair": "brown",
-      "beard": true,
-      "bald": true
+      "hair": "black",
+      "beard": false,
+      "bald": false
     }
   }
 }

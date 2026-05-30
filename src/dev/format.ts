@@ -30,11 +30,19 @@ export class Renderer {
     return `Z${row + 1}/S${col + 1}`
   }
 
+  private genderOf(id: string): string {
+    return String(this.puzzle.attributesOf(id).gender) === 'm' ? 'm' : 'f'
+  }
+
   private resolveParam(name: string, value: string | number): string {
     switch (name) {
       case 'name':
       case 'target':
         return this.puzzle.nameOf(String(value))
+      case 'subject':
+        return this.lookup(`pron.${this.genderOf(String(value))}`) ?? this.puzzle.nameOf(String(value))
+      case 'poss':
+        return this.lookup(`poss.${this.genderOf(String(value))}`) ?? this.puzzle.nameOf(String(value))
       case 'people':
         return String(value)
           .split(',')
@@ -58,6 +66,12 @@ export class Renderer {
       default:
         return String(value)
     }
+  }
+
+  /** Render a suspect's own clue: gender pronouns for the subject, sentence-capitalised. */
+  clue(exp: Explanation, subjectId: string): string {
+    const text = this.render(exp, { name: subjectId, subject: subjectId, poss: subjectId })
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
   }
 
   render(exp: Explanation, extra: Record<string, string | number> = {}): string {

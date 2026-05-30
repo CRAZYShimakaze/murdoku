@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { generateLevel } from '../engine/generator/index.ts'
+import { generateLevel, type GenDifficulty } from '../engine/generator/index.ts'
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`)
@@ -10,13 +10,14 @@ function arg(name: string, fallback?: string): string | undefined {
 const size = Number(arg('size', '9'))
 const width = Number(arg('width', String(size)))
 const height = Number(arg('height', String(size)))
-const suspects = Number(arg('suspects', String(width - 1)))
+const suspects = Number(arg('suspects', String(Math.min(width, height) - 1)))
 const seedArg = arg('seed')
 const seed = seedArg !== undefined ? Number(seedArg) : undefined
 const themeId = arg('theme')
+const difficulty = arg('difficulty') as GenDifficulty | undefined
 
 const t0 = performance.now()
-const level = generateLevel({ width, height, suspects, seed, themeId })
+const level = generateLevel({ width, height, suspects, seed, themeId, difficulty })
 const ms = performance.now() - t0
 
 const path = resolve(process.cwd(), `levels/${level.id}.json`)

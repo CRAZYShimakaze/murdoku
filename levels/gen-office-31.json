@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "id": "gen-game-night-16",
+  "id": "gen-office-31",
   "difficulty": "hard",
   "size": {
     "width": 9,
@@ -8,11 +8,11 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Wohnzimmer",
+      "nameKey": "Großraumbüro",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Esszimmer",
+      "nameKey": "Besprechung",
       "color": "#b9d0e6"
     },
     "3": {
@@ -20,12 +20,16 @@
       "color": "#cfe0cf"
     },
     "4": {
-      "nameKey": "Flur",
+      "nameKey": "Empfang",
       "color": "#d8c0c0"
     },
     "5": {
-      "nameKey": "Balkon",
+      "nameKey": "Serverraum",
       "color": "#e6cda0"
+    },
+    "6": {
+      "nameKey": "Archiv",
+      "color": "#e6c0d2"
     }
   },
   "objects": {
@@ -59,37 +63,37 @@
     }
   },
   "roomMap": [
-    "111522222",
-    "115552222",
-    "115522222",
-    "111522222",
-    "111222222",
-    "333332222",
-    "333332222",
-    "333333333",
-    "333344333"
+    "112223333",
+    "112233333",
+    "122233333",
+    "122555336",
+    "124555566",
+    "444555566",
+    "444455566",
+    "444445666",
+    "444444666"
   ],
   "groundMap": [
+    "...r..r..",
+    ".........",
+    "......rr.",
     ".........",
     ".........",
-    "r........",
-    "..r......",
     ".........",
-    ".......r.",
-    "........r",
     ".........",
-    "..r......"
+    "r......r.",
+    "........r"
   ],
   "topMap": [
-    "t..s....s",
-    "...xfp..f",
-    "...s.x.s.",
-    ".s....xg.",
-    "sggs..tfp",
-    "...gs....",
-    ".stx.s...",
-    "....gs...",
-    "...xsf..s"
+    ".......s.",
+    "t...st.p.",
+    ".g.......",
+    "..xgxg..f",
+    "s.tt.ps.s",
+    ".s..t...g",
+    ".g..s....",
+    "..p..s...",
+    ".sgsp.ss."
   ],
   "suspects": [
     {
@@ -98,23 +102,16 @@
       "attributes": {
         "gender": "f",
         "glasses": true,
-        "hair": "brown",
+        "hair": "blond",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "inRow",
-              "row": 3
-            },
-            {
-              "type": "inCol",
-              "col": 2
-            }
-          ]
+          "type": "roomCompanion",
+          "count": 1,
+          "attribute": "gender",
+          "value": "f"
         }
       ]
     },
@@ -124,16 +121,13 @@
       "attributes": {
         "gender": "f",
         "glasses": false,
-        "hair": "blond",
+        "hair": "black",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "roomAttribute",
-          "quantifier": "none",
-          "attribute": "glasses",
-          "value": true
+          "type": "alone"
         }
       ]
     },
@@ -143,13 +137,14 @@
       "attributes": {
         "gender": "m",
         "glasses": false,
-        "hair": "brown",
+        "hair": "blond",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "corner"
+          "type": "sameRoom",
+          "as": "H"
         }
       ]
     },
@@ -159,7 +154,7 @@
       "attributes": {
         "gender": "f",
         "glasses": true,
-        "hair": "brown",
+        "hair": "blond",
         "beard": false,
         "bald": false
       },
@@ -168,12 +163,13 @@
           "type": "and",
           "clues": [
             {
-              "type": "inRow",
-              "row": 7
+              "type": "inRoom",
+              "room": "2"
             },
             {
-              "type": "inCol",
-              "col": 0
+              "type": "direction",
+              "of": "B",
+              "dir": "north"
             }
           ]
         }
@@ -184,76 +180,113 @@
       "name": "Edison",
       "attributes": {
         "gender": "m",
-        "glasses": true,
-        "hair": "blond",
+        "glasses": false,
+        "hair": "black",
         "beard": true,
         "bald": false
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "plant"
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "plant"
+            },
+            {
+              "type": "nearObject",
+              "object": "chair"
+            }
+          ]
         }
       ]
     },
     {
       "id": "F",
-      "name": "Floyd",
-      "attributes": {
-        "gender": "m",
-        "glasses": true,
-        "hair": "blond",
-        "beard": true,
-        "bald": false
-      },
-      "clues": [
-        {
-          "type": "nearObject",
-          "object": "tv"
-        }
-      ]
-    },
-    {
-      "id": "G",
-      "name": "Grant",
-      "attributes": {
-        "gender": "m",
-        "glasses": false,
-        "hair": "brown",
-        "beard": true,
-        "bald": false
-      },
-      "clues": [
-        {
-          "type": "inCol",
-          "col": 3
-        }
-      ]
-    },
-    {
-      "id": "H",
-      "name": "Hana",
+      "name": "Freya",
       "attributes": {
         "gender": "f",
-        "glasses": true,
+        "glasses": false,
         "hair": "blond",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "shelf"
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "plant"
+            },
+            {
+              "type": "roomExists",
+              "attribute": "gender",
+              "value": "f",
+              "object": "chair"
+            },
+            {
+              "type": "direction",
+              "of": "A",
+              "dir": "south"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Greta",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "roomExists",
+          "attribute": "gender",
+          "value": "f",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Hugh",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "white",
+        "beard": true,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "1"
+            },
+            {
+              "type": "direction",
+              "of": "D",
+              "dir": "north"
+            }
+          ]
         }
       ]
     }
   ],
   "victim": {
-    "name": "Nora",
+    "name": "Vasiliy",
     "attributes": {
-      "gender": "f",
+      "gender": "m",
       "glasses": false,
-      "hair": "blond",
+      "hair": "brown",
       "beard": false,
       "bald": false
     }

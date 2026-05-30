@@ -8,6 +8,7 @@ import {
 } from '../clues/socialClues.ts'
 import { AndClue } from '../clues/compositeClues.ts'
 import type { Clue } from '../clues/Clue.ts'
+import { VICTIM_ID } from '../model/types.ts'
 import type { AttributeValue, Cell, PersonId } from '../model/types.ts'
 import type { Person, Puzzle } from '../model/Puzzle.ts'
 
@@ -206,6 +207,16 @@ export class SearchSolver {
     return found
   }
 
+  /** All solutions (up to `limit`) — for inspecting whether a level is truly unique. */
+  allSolutions(limit = 100): Solution[] {
+    const out: Solution[] = []
+    this.search((solution) => {
+      out.push(solution)
+      return out.length >= limit
+    })
+    return out
+  }
+
   private search(onSolution: (solution: Solution) => boolean): void {
     const people = this.puzzle.people()
     const domains = new Map<PersonId, BitSet>()
@@ -369,6 +380,7 @@ export class SearchSolver {
           for (const [id, c] of placement) {
             if (
               id !== subjectId &&
+              id !== VICTIM_ID &&
               board.roomIdOf(c) === room &&
               this.puzzle.attributesOf(id)[restrictor.attribute] === restrictor.value
             ) {
@@ -385,6 +397,9 @@ export class SearchSolver {
           } else if (restrictor.kind === 'attrNone') {
             strike = this.puzzle.attributesOf(person.id)[restrictor.attribute] === restrictor.value
           } else {
+            // companion ("alone with N matching") counts SUSPECTS only — the victim is
+            // never a companion, so it is never struck from a companion room.
+            if (person.id === VICTIM_ID) continue
             const isMatch =
               this.puzzle.attributesOf(person.id)[restrictor.attribute] === restrictor.value
             strike = !isMatch || matchingFull
@@ -411,6 +426,7 @@ export class SearchSolver {
       const room = board.roomIdOf(cell)
       let possible = false
       for (const id of this.puzzle.allIds()) {
+        if (id === VICTIM_ID || id === subjectId) continue
         if (this.puzzle.attributesOf(id)[clue.attribute] !== clue.value) continue
         const placed = placement.get(id)
         if (placed !== undefined) {

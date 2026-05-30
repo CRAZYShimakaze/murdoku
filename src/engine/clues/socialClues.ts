@@ -2,9 +2,12 @@ import { Clue } from './Clue.ts'
 import type { Board } from '../model/Board.ts'
 import type { Solution } from '../model/Solution.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
+import { VICTIM_ID } from '../model/types.ts'
 import type { AttributeValue, Cell, Explanation, PersonId } from '../model/types.ts'
 
-/** "{name} was alone." — no other person at all shares the room (not even the victim). */
+/** "{name} was alone." — no other person at all shares the room, NOT even the victim,
+ *  so an "alone" suspect is never the murderer (the murderer is alone *with* the victim).
+ *  This keeps the victim out of an "alone" room, which constrains where the body is. */
 export class AloneClue extends Clue {
   test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
     const board = puzzle.board
@@ -120,7 +123,8 @@ export class RoomCompanionClue extends Clue {
     const room = board.roomIdOf(solution.cellOf(subjectId))
     const others: PersonId[] = []
     for (const id of puzzle.allIds()) {
-      if (id !== subjectId && board.roomIdOf(solution.cellOf(id)) === room) others.push(id)
+      if (id === subjectId || id === VICTIM_ID) continue
+      if (board.roomIdOf(solution.cellOf(id)) === room) others.push(id)
     }
     if (others.length !== this.count) return false
     return others.every((id) => puzzle.attributesOf(id)[this.attribute] === this.value)
@@ -136,7 +140,7 @@ export class RoomCompanionClue extends Clue {
     const room = puzzle.board.roomIdOf(cell)
     let others = 0
     for (const [id, c] of placement) {
-      if (id === subjectId || puzzle.board.roomIdOf(c) !== room) continue
+      if (id === subjectId || id === VICTIM_ID || puzzle.board.roomIdOf(c) !== room) continue
       others++
       if (puzzle.attributesOf(id)[this.attribute] !== this.value) return true
       if (others > this.count) return true
@@ -150,8 +154,9 @@ export class RoomCompanionClue extends Clue {
 }
 
 /**
- * "There was a {value} on a {object} in {name}'s area." — some person in the
- * subject's room matches attribute == value and stands on the given object.
+ * "There was a {value} on a {object} in {name}'s area." — some OTHER person in the
+ * subject's room (not the subject, never the victim) matches attribute == value
+ * and stands on the given object.
  */
 export class RoomExistsClue extends Clue {
   constructor(
@@ -180,6 +185,7 @@ export class RoomExistsClue extends Clue {
     const board = puzzle.board
     const room = board.roomIdOf(solution.cellOf(subjectId))
     for (const id of puzzle.allIds()) {
+      if (id === VICTIM_ID || id === subjectId) continue
       const cell = solution.cellOf(id)
       if (board.roomIdOf(cell) !== room) continue
       if (

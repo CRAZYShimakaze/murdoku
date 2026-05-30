@@ -13,6 +13,8 @@
     "generate": "tsx src/dev/generate.ts",
     "show": "tsx src/dev/show.ts",
     "check": "tsx src/dev/check-all.ts",
+    "hardest": "tsx src/dev/hardest.ts",
+    "solutions": "tsx src/dev/solutions.ts",
     "lint": "eslint .",
     "typecheck": "tsc -b"
   },

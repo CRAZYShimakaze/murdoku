@@ -3,6 +3,7 @@ import { suspectPerson, victimPerson } from './names.ts'
 import { loadLevel } from '../io/LevelLoader.ts'
 import { Solution } from '../model/Solution.ts'
 import { SearchSolver } from '../solver/SearchSolver.ts'
+import { findMurderer } from '../solver/murderer.ts'
 import { DeductionEngine } from '../solver/DeductionEngine.ts'
 import { difficultyOf } from '../solver/DeductionStep.ts'
 import { createClue } from '../clues/ClueFactory.ts'
@@ -76,12 +77,46 @@ function rateTier(level: LevelJson): GenDifficulty {
   return tier === 'expert' ? 'hard' : tier
 }
 
+/** Search-tree nodes needed to prove uniqueness — our proxy for solving difficulty. */
+function searchDifficulty(level: LevelJson): number {
+  const searcher = new SearchSolver(loadLevel(level))
+  searcher.countSolutions(2)
+  return searcher.nodes
+}
+
+const HARD_MAX_ATTEMPTS = 500
+const HARD_ENOUGH_NODES = 400 // early-exit once a level this hard turns up
+const HARD_TIME_BUDGET_MS = 20000
+
 /** Generate a uniquely-solvable level. Throws if no seed yields one. */
 export function generateLevel(options: GenerateOptions): LevelJson {
   const { width, height, suspects } = options
   const baseSeed = options.seed ?? Math.floor(Math.random() * 1e9)
-
   const target = options.difficulty
+
+  if (target === 'hard') {
+    // Don't stop at the first hard level — keep the HARDEST one (most search
+    // nodes), generating until it's hard enough or we run out of tries/time.
+    const deadline = performance.now() + HARD_TIME_BUDGET_MS
+    let hardest: LevelJson | null = null
+    let bestNodes = -1
+    for (let attempt = 0; attempt < HARD_MAX_ATTEMPTS; attempt++) {
+      const result = tryGenerate(options, new Rng(baseSeed + attempt * 7919), baseSeed + attempt)
+      if (result && result.pins === 0) {
+        const nodes = searchDifficulty(result.level)
+        if (nodes > bestNodes) {
+          result.level.difficulty = rateTier(result.level)
+          hardest = result.level
+          bestNodes = nodes
+        }
+        if (bestNodes >= HARD_ENOUGH_NODES) break
+      }
+      if (hardest && performance.now() > deadline) break
+    }
+    if (!hardest) throw new Error(`Could not generate a hard ${width}x${height} level for ${suspects} suspects`)
+    return hardest
+  }
+
   const deadline = performance.now() + 2800
   let best: LevelJson | null = null
   let bestScore = Infinity
@@ -102,6 +137,15 @@ export function generateLevel(options: GenerateOptions): LevelJson {
   }
   if (!best) throw new Error(`Could not generate a ${width}x${height} level for ${suspects} suspects`)
   return best
+}
+
+/** A single generation attempt for one seed — for tooling that runs many and
+ *  keeps the hardest (see `dev/hardest.ts`). Returns null on a failed attempt. */
+export function generateOnce(
+  options: GenerateOptions,
+  seed: number,
+): { level: LevelJson; pins: number } | null {
+  return tryGenerate(options, new Rng(seed), seed)
 }
 
 function tryGenerate(
@@ -149,6 +193,12 @@ function tryGenerate(
   if (!chosen) return null
 
   for (const meta of base.suspects) meta.clues = [chosen.get(meta.id)!]
+  // Guard: the unique solution must leave the victim alone with exactly ONE
+  // suspect (a well-defined murderer). Consistent semantics already guarantee
+  // this; verifying ensures a murderer-less level can never slip through.
+  const finalPuzzle = loadLevel(base)
+  const finalSolution = new SearchSolver(finalPuzzle).firstSolution()
+  if (!finalSolution || findMurderer(finalPuzzle, finalSolution).suspectId === null) return null
   return { level: base, pins: countPins(chosen) }
 }
 
@@ -329,19 +379,21 @@ function candidatesFor(
     else if (col > o.col) out.push({ type: 'direction', of: id, dir: 'east' })
   }
 
-  // attribute-based clues (gender / beard / glasses) — true for this solution
-  const inRoom = puzzle.allIds().filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
-  const othersInRoom = inRoom.filter((id) => id !== suspectId)
+  // "Niemand im Raum hatte X" counts EVERYONE in the room (incl. subject + victim).
+  const inRoomAll = puzzle.allIds().filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
   for (const attr of ['beard', 'glasses']) {
-    if (!inRoom.some((id) => puzzle.attributesOf(id)[attr] === true)) {
+    if (!inRoomAll.some((id) => puzzle.attributesOf(id)[attr] === true)) {
       out.push({ type: 'roomAttribute', quantifier: 'none', attribute: attr, value: true })
     }
   }
+  // "allein mit …" / "in seinem Raum saß …" are about OTHER SUSPECTS only — never the
+  // subject, never the victim (else they would reveal the murderer beside the body).
+  const othersInRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
   if (othersInRoom.length === 1) {
     const gender = puzzle.attributesOf(othersInRoom[0]).gender
     out.push({ type: 'roomCompanion', count: 1, attribute: 'gender', value: gender })
   }
-  for (const id of inRoom) {
+  for (const id of othersInRoom) {
     const gender = puzzle.attributesOf(id).gender
     for (const obj of board.tileAt(solution.cellOf(id)).objects()) {
       if (obj.occupiable) out.push({ type: 'roomExists', attribute: 'gender', value: gender, object: obj.type })
@@ -353,6 +405,8 @@ function candidatesFor(
 }
 
 function tightness(json: ClueJson, puzzle: Puzzle): number {
+  // Row/column clues are a last resort — prefer object/room/relational clues.
+  if (json.type === 'inRow' || json.type === 'inCol') return 150
   const cells = createClue(json).candidateCells(puzzle.board)
   if (cells) return cells.size
   switch (json.type) {
@@ -396,7 +450,17 @@ function selectClues(
   const unique = (): boolean =>
     isUnique(base, new Map(suspectIds.map((id) => [id, clueOf(id)])))
 
-  // Tighten: add a natural clue (never inRow+inCol together) until unique.
+  const MAX_LINE = 1
+  const isLine = (clue: ClueJson): boolean => clue.type === 'inRow' || clue.type === 'inCol'
+  const lineSuspects = (): number => {
+    let n = 0
+    for (const id of suspectIds) {
+      if (used.get(id)!.some((i) => isLine(candidates.get(id)![i]))) n++
+    }
+    return n
+  }
+
+  // Tighten: add a natural clue (never inRow+inCol together, ≤1 line clue) until unique.
   for (let guard = 0; guard < 300 && !unique(); guard++) {
     const order = rng
       .shuffle([...suspectIds])
@@ -408,7 +472,7 @@ function selectClues(
       for (let i = 0; i < list.length; i++) {
         if (u.includes(i)) continue
         u.push(i)
-        if (hasCoordPair(id)) {
+        if (hasCoordPair(id) || lineSuspects() > MAX_LINE) {
           u.pop()
           continue
         }
@@ -436,7 +500,7 @@ function selectClues(
     const current = u[0]
     for (let j = list.length - 1; j > current; j--) {
       u[0] = j
-      if (unique()) break
+      if (lineSuspects() <= MAX_LINE && unique()) break
       u[0] = current
     }
   }

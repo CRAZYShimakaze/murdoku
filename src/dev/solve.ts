@@ -40,7 +40,7 @@ console.log(`\nLevel: ${puzzle.id}  (${puzzle.board.width}x${puzzle.board.height
 console.log('Verdächtige:')
 for (const suspect of puzzle.suspects) {
   const clues =
-    suspect.clues.map((c) => renderer.render(c.describe(), { name: suspect.id })).join('  |  ') ||
+    suspect.clues.map((c) => renderer.clue(c.describe(), suspect.id)).join('  |  ') ||
     '(kein Hinweis)'
   console.log(`  ${suspect.id} = ${suspect.name}: ${clues}`)
 }
