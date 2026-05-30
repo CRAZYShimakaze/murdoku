@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "id": "demo-4x4",
+  "difficulty": "tutorial",
+  "size": { "width": 4, "height": 4 },
+  "rooms": {
+    "L": { "nameKey": "room.living", "color": "#cdb4db" },
+    "B": { "nameKey": "room.bedroom", "color": "#a2d2ff" }
+  },
+  "objects": {
+    "t": { "type": "table", "occupiable": false },
+    "f": { "type": "tv", "occupiable": false },
+    "b": { "type": "bed", "occupiable": true },
+    "p": { "type": "plant", "occupiable": false }
+  },
+  "roomMap": ["LLLL", "LLLL", "BBBB", "BBBB"],
+  "groundMap": ["....", "....", "....", "...."],
+  "topMap": ["..t.", "f...", ".b..", ".b.p"],
+  "windows": [{ "r": 2, "c": 3, "side": "W" }],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alex",
+      "attributes": { "gender": "m" },
+      "clues": [{ "type": "nearObject", "object": "table" }]
+    },
+    {
+      "id": "B",
+      "name": "Bernd",
+      "attributes": { "gender": "m" },
+      "clues": [{ "type": "onObject", "object": "bed" }]
+    },
+    {
+      "id": "C",
+      "name": "Carmen",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "nearWindow" }]
+    }
+  ],
+  "victim": { "name": "Olli" }
+}

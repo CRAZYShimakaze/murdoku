@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "id": "barbershop",
+  "difficulty": "medium",
+  "size": { "width": 8, "height": 8 },
+  "rooms": {
+    "S": { "nameKey": "room.storage", "color": "#cfe8d8" },
+    "T": { "nameKey": "room.staffroom", "color": "#d8e8b0" },
+    "M": { "nameKey": "room.main", "color": "#e6b9cd" },
+    "N": { "nameKey": "room.entrance", "color": "#cab0d8" },
+    "W": { "nameKey": "room.waiting", "color": "#c2b8e4" }
+  },
+  "objects": {
+    "s": { "type": "chair", "occupiable": true },
+    "r": { "type": "carpet", "occupiable": true },
+    "g": { "type": "shelf", "occupiable": false },
+    "x": { "type": "box", "occupiable": false },
+    "t": { "type": "table", "occupiable": false },
+    "f": { "type": "tv", "occupiable": false }
+  },
+  "roomMap": [
+    "SSSSTTTT",
+    "SSSSTTTT",
+    "SSMMMMMM",
+    "MMMMMMMM",
+    "MMMMMNNN",
+    "MMMMMNNN",
+    "WWWWWWWW",
+    "WWWWWWWW"
+  ],
+  "groundMap": [
+    "........",
+    "........",
+    "........",
+    ".rrrrrr.",
+    ".r......",
+    ".r......",
+    ".rr.....",
+    ".r......"
+  ],
+  "topMap": [
+    "gxx..st.",
+    "...xf..s",
+    ".gttt...",
+    "..s.s.st",
+    "ts......",
+    "t..f.t..",
+    "........",
+    "g.sssfs."
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Adonis",
+      "attributes": { "beard": true },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            { "type": "nearObject", "object": "table" },
+            { "type": "inRoom", "room": "N" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bryson",
+      "attributes": { "beard": false },
+      "clues": [
+        { "type": "roomAttribute", "quantifier": "none", "attribute": "beard", "value": true }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Craig",
+      "attributes": { "beard": true },
+      "clues": [{ "type": "onObject", "object": "chair" }]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": { "beard": false },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [{ "type": "nearObject", "object": "tv" }, { "type": "alone" }]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": { "beard": false },
+      "clues": [{ "type": "nearObject", "object": "box" }]
+    },
+    {
+      "id": "F",
+      "name": "Floyd",
+      "attributes": { "beard": true },
+      "clues": [{ "type": "onObject", "object": "carpet" }]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": { "beard": true },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            { "type": "nearObject", "object": "shelf" },
+            { "type": "inRoom", "room": "W" }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": { "name": "Vasiliy", "attributes": { "beard": true } }
+}

@@ -1,0 +1,109 @@
+import { Board, edgeKey } from '../model/Board.ts'
+import { GameObject } from '../model/GameObject.ts'
+import { Tile } from '../model/Tile.ts'
+import { Room } from '../model/Room.ts'
+import { Suspect } from '../model/Suspect.ts'
+import { Victim } from '../model/Victim.ts'
+import { Puzzle } from '../model/Puzzle.ts'
+import { VICTIM_ID } from '../model/types.ts'
+import { createClue } from '../clues/ClueFactory.ts'
+import type { LevelJson } from './LevelSchema.ts'
+
+const EMPTY_CHAR = '.'
+
+function assert(condition: unknown, message: string): asserts condition {
+  if (!condition) throw new Error(`Invalid level: ${message}`)
+}
+
+function buildObjectDefs(level: LevelJson): Map<string, GameObject> {
+  const defs = new Map<string, GameObject>()
+  for (const [char, def] of Object.entries(level.objects ?? {})) {
+    assert(char.length === 1, `object key "${char}" must be a single char`)
+    assert(char !== EMPTY_CHAR, `object key "${EMPTY_CHAR}" is reserved for empty`)
+    defs.set(char, new GameObject(def.type, def.occupiable))
+  }
+  return defs
+}
+
+function charAt(map: string[] | undefined, row: number, col: number): string {
+  if (!map) return EMPTY_CHAR
+  return map[row][col]
+}
+
+function lookupObject(
+  defs: Map<string, GameObject>,
+  char: string,
+  where: string,
+): GameObject | null {
+  if (char === EMPTY_CHAR) return null
+  const obj = defs.get(char)
+  assert(obj, `unknown object char "${char}" in ${where}`)
+  return obj
+}
+
+function validateMap(
+  map: string[] | undefined,
+  name: string,
+  width: number,
+  height: number,
+): void {
+  if (!map) return
+  assert(map.length === height, `${name} must have ${height} rows`)
+  for (const row of map) {
+    assert(row.length === width, `${name} rows must be ${width} chars wide`)
+  }
+}
+
+/** Parse and validate a level JSON object into a Puzzle. */
+export function loadLevel(level: LevelJson): Puzzle {
+  assert(level.schema === 1, `unsupported schema ${level.schema}`)
+  const { width, height } = level.size
+  assert(width > 0 && height > 0, 'size must be positive')
+
+  validateMap(level.roomMap, 'roomMap', width, height)
+  validateMap(level.groundMap, 'groundMap', width, height)
+  validateMap(level.topMap, 'topMap', width, height)
+
+  const rooms = new Map<string, Room>()
+  for (const [id, def] of Object.entries(level.rooms)) {
+    rooms.set(id, new Room(id, def.nameKey, def.color))
+  }
+
+  const objectDefs = buildObjectDefs(level)
+
+  const tiles: Tile[] = []
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const roomChar = level.roomMap[row][col]
+      assert(rooms.has(roomChar), `unknown room "${roomChar}" at ${row},${col}`)
+      const ground = lookupObject(objectDefs, charAt(level.groundMap, row, col), 'groundMap')
+      const top = lookupObject(objectDefs, charAt(level.topMap, row, col), 'topMap')
+      tiles.push(new Tile(row, col, roomChar, ground, top))
+    }
+  }
+
+  const windowEdges = new Set<string>()
+  for (const w of level.windows ?? []) {
+    assert(
+      w.r >= 0 && w.r < height && w.c >= 0 && w.c < width,
+      `window out of bounds at ${w.r},${w.c}`,
+    )
+    windowEdges.add(edgeKey(w.r, w.c, w.side))
+  }
+
+  const board = new Board(width, height, tiles, rooms, windowEdges)
+
+  const seen = new Set<string>()
+  const suspects = level.suspects.map((s) => {
+    assert(s.id !== VICTIM_ID, `suspect id "${s.id}" is reserved`)
+    assert(!seen.has(s.id), `duplicate suspect id "${s.id}"`)
+    seen.add(s.id)
+    const clues = (s.clues ?? []).map(createClue)
+    return new Suspect(s.id, s.name, s.attributes ?? {}, clues)
+  })
+
+  const victim = new Victim(level.victim.name, level.victim.attributes ?? {})
+  const globalClues = (level.globalClues ?? []).map(createClue)
+
+  return new Puzzle(level.id, board, suspects, victim, globalClues)
+}

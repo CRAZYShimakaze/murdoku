@@ -1,0 +1,128 @@
+{
+  "schema": 1,
+  "id": "museum",
+  "difficulty": "hard",
+  "size": { "width": 9, "height": 9 },
+  "rooms": {
+    "E": { "nameKey": "room.exposition", "color": "#e8d8b0" },
+    "M": { "nameKey": "room.maingallery", "color": "#b9d0e6" },
+    "R": { "nameKey": "room.restroom", "color": "#cfe0cf" },
+    "V": { "nameKey": "room.vault", "color": "#d8c0c0" },
+    "L": { "nameKey": "room.lobby", "color": "#e6cda0" },
+    "C": { "nameKey": "room.cafe", "color": "#e6c0d2" },
+    "S": { "nameKey": "room.security", "color": "#c6c0e0" }
+  },
+  "objects": {
+    "s": { "type": "chair", "occupiable": true },
+    "t": { "type": "table", "occupiable": false },
+    "r": { "type": "rubble", "occupiable": false },
+    "S": { "type": "statue", "occupiable": false },
+    "R": { "type": "shelf", "occupiable": false },
+    "T": { "type": "tv", "occupiable": false }
+  },
+  "roomMap": [
+    "EEEEEMMMM",
+    "EEEEEMMMM",
+    "RREEEMMMM",
+    "RREEEMMMM",
+    "RRLLLCCCC",
+    "VVLLLCCCC",
+    "VVLLLCCCC",
+    "VVLLLSSSS",
+    "VVLLLSSSS"
+  ],
+  "topMap": [
+    ".rrrtSr.S",
+    ".........",
+    ".t.r....t",
+    "rs.rrSS..",
+    ".......st",
+    ".RS.....R",
+    "..s.Ssts.",
+    "RSs.r..TT",
+    "....rt.st"
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alysson",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "offset", "of": "G", "dir": "west", "distance": 1 }]
+    },
+    {
+      "id": "B",
+      "name": "Brenda",
+      "attributes": { "gender": "f" },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            { "type": "onObject", "object": "chair" },
+            { "type": "roomCompanion", "count": 1, "attribute": "gender", "value": "m" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Cynthia",
+      "attributes": { "gender": "f" },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            { "type": "inCol", "col": 0 },
+            { "type": "direction", "of": "A", "dir": "south" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": { "gender": "m" },
+      "clues": [{ "type": "nearObject", "object": "table" }]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "roomExists", "attribute": "gender", "value": "m", "object": "chair" }]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "nearObject", "object": "statue" }]
+    },
+    {
+      "id": "G",
+      "name": "George",
+      "attributes": { "gender": "m" },
+      "clues": [
+        {
+          "type": "or",
+          "clues": [
+            { "type": "nearObject", "object": "statue" },
+            { "type": "nearObject", "object": "rubble" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Hugh",
+      "attributes": { "gender": "m" },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            { "type": "nearObject", "object": "rubble" },
+            { "type": "not", "clue": { "type": "inRoom", "room": "L" } }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": { "name": "Vicky", "attributes": { "gender": "f" } }
+}

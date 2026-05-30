@@ -1,0 +1,48 @@
+import { NakedSingleTechnique } from './techniques/NakedSingleTechnique.ts'
+import { UniqueConstraintTechnique } from './techniques/UniqueConstraintTechnique.ts'
+import { HiddenSingleTechnique } from './techniques/HiddenSingleTechnique.ts'
+import { RelationalTechnique } from './techniques/RelationalTechnique.ts'
+import { NakedGroupTechnique } from './techniques/NakedGroupTechnique.ts'
+import { RoomReasoningTechnique } from './techniques/RoomReasoningTechnique.ts'
+import type { Technique } from './techniques/Technique.ts'
+import type { SolveContext } from './SolveContext.ts'
+import type { DeductionStep } from './DeductionStep.ts'
+import type { Puzzle } from '../model/Puzzle.ts'
+
+/**
+ * The pure forward-deduction techniques relevant to this puzzle, easiest first.
+ * Each only ever forces a placement or eliminates a provably-impossible cell —
+ * no guessing. Irrelevant techniques are dropped so they add no per-node cost
+ * inside the search. Shared by the hint engine and the search solver.
+ */
+export function createForwardTechniques(puzzle: Puzzle): Technique[] {
+  const all: Technique[] = [
+    new NakedSingleTechnique(),
+    new UniqueConstraintTechnique(),
+    new HiddenSingleTechnique('row'),
+    new HiddenSingleTechnique('col'),
+    new RelationalTechnique(),
+    new NakedGroupTechnique('row'),
+    new NakedGroupTechnique('col'),
+    new RoomReasoningTechnique(),
+  ]
+  return all.filter((technique) => technique.relevant(puzzle))
+}
+
+/** Apply the techniques to a fixpoint, returning the steps taken (in order). */
+export function propagate(ctx: SolveContext, techniques: Technique[]): DeductionStep[] {
+  const steps: DeductionStep[] = []
+  let progress = true
+  while (progress && ctx.state.unplaced().length > 0) {
+    progress = false
+    for (const technique of techniques) {
+      const step = technique.apply(ctx)
+      if (step) {
+        steps.push(step)
+        progress = true
+        break
+      }
+    }
+  }
+  return steps
+}

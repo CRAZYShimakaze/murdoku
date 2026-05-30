@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+*.log
+node_modules/.tmp
+.vite
+coverage
+
+.claude/

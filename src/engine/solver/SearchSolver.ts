@@ -1,0 +1,438 @@
+import { Solution } from '../model/Solution.ts'
+import { DirectionClue, OffsetClue, SameRoomClue } from '../clues/relationalClues.ts'
+import {
+  AloneClue,
+  RoomAttributeClue,
+  RoomCompanionClue,
+  RoomExistsClue,
+} from '../clues/socialClues.ts'
+import { AndClue } from '../clues/compositeClues.ts'
+import type { Clue } from '../clues/Clue.ts'
+import type { AttributeValue, Cell, PersonId } from '../model/types.ts'
+import type { Person, Puzzle } from '../model/Puzzle.ts'
+
+function popcount(n: number): number {
+  n = n - ((n >>> 1) & 0x55555555)
+  n = (n & 0x33333333) + ((n >>> 2) & 0x33333333)
+  return (((n + (n >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24
+}
+
+/** A fixed-size bitset over cell indices — the fast candidate representation. */
+class BitSet {
+  readonly words: Uint32Array
+
+  constructor(words: Uint32Array) {
+    this.words = words
+  }
+
+  static empty(size: number): BitSet {
+    return new BitSet(new Uint32Array((size + 31) >>> 5))
+  }
+
+  clone(): BitSet {
+    return new BitSet(this.words.slice())
+  }
+
+  add(i: number): void {
+    this.words[i >>> 5] |= 1 << (i & 31)
+  }
+
+  remove(i: number): void {
+    this.words[i >>> 5] &= ~(1 << (i & 31))
+  }
+
+  and(other: BitSet): void {
+    const a = this.words
+    const b = other.words
+    for (let k = 0; k < a.length; k++) a[k] &= b[k]
+  }
+
+  andNot(other: BitSet): void {
+    const a = this.words
+    const b = other.words
+    for (let k = 0; k < a.length; k++) a[k] &= ~b[k]
+  }
+
+  isEmpty(): boolean {
+    for (const w of this.words) if (w !== 0) return false
+    return true
+  }
+
+  count(): number {
+    let c = 0
+    for (const w of this.words) c += popcount(w)
+    return c
+  }
+
+  forEach(fn: (cell: number) => void): void {
+    const words = this.words
+    for (let k = 0; k < words.length; k++) {
+      let bits = words[k] | 0
+      while (bits !== 0) {
+        const lowest = bits & -bits
+        fn((k << 5) + (31 - Math.clz32(lowest)))
+        bits ^= lowest
+      }
+    }
+  }
+}
+
+interface RelationalLink {
+  clue: Clue
+  target: PersonId
+}
+
+function relationalLinks(clue: Clue): RelationalLink[] {
+  if (clue instanceof DirectionClue || clue instanceof OffsetClue) {
+    return [{ clue, target: clue.target }]
+  }
+  if (clue instanceof SameRoomClue) return [{ clue, target: clue.target }]
+  if (clue instanceof AndClue) return clue.clues.flatMap(relationalLinks)
+  return []
+}
+
+function roomExistsClues(clue: Clue): RoomExistsClue[] {
+  if (clue instanceof RoomExistsClue) return [clue]
+  if (clue instanceof AndClue) return clue.clues.flatMap(roomExistsClues)
+  return []
+}
+
+/** A clue that restricts who else may be in the subject's room. */
+type Restrictor =
+  | { kind: 'alone' }
+  | { kind: 'attrNone'; attribute: string; value: AttributeValue }
+  | { kind: 'companion'; count: number; attribute: string; value: AttributeValue }
+
+function restrictors(clue: Clue): Restrictor[] {
+  if (clue instanceof AloneClue) return [{ kind: 'alone' }]
+  if (clue instanceof RoomAttributeClue && clue.quantifier === 'none') {
+    return [{ kind: 'attrNone', attribute: clue.attribute, value: clue.value }]
+  }
+  if (clue instanceof RoomCompanionClue) {
+    return [{ kind: 'companion', count: clue.count, attribute: clue.attribute, value: clue.value }]
+  }
+  if (clue instanceof AndClue) return clue.clues.flatMap(restrictors)
+  return []
+}
+
+/**
+ * Uniqueness oracle + answer key — a lean bitset backtracker. Branches on the
+ * most-constrained person first; placing someone clears their row/column/cell
+ * from everyone else with one bitwise AND of a precomputed mask (forward
+ * checking), narrows relational clues whose target was just placed, prunes
+ * dead "man on a chair in my room" rooms, and asks every clue whether it is
+ * already broken. A full clue check at each leaf guarantees correctness.
+ */
+export class SearchSolver {
+  /** forbid[cell] = every cell in the same row or column (incl. itself). */
+  private readonly forbid: BitSet[]
+  private readonly initialDomains = new Map<PersonId, BitSet>()
+  private readonly links = new Map<PersonId, RelationalLink[]>()
+  private readonly roomExists: { subjectId: PersonId; clue: RoomExistsClue }[] = []
+  private readonly roomMask = new Map<string, BitSet>()
+  private readonly roomRestrictors = new Map<PersonId, Restrictor[]>()
+  /** Number of search nodes visited by the last search (diagnostics). */
+  nodes = 0
+
+  constructor(private readonly puzzle: Puzzle) {
+    const board = puzzle.board
+    const n = board.width * board.height
+
+    this.forbid = new Array<BitSet>(n)
+    for (let cell = 0; cell < n; cell++) {
+      const mask = BitSet.empty(n)
+      const { row, col } = board.rc(cell)
+      for (let c = 0; c < board.width; c++) mask.add(board.idx(row, c))
+      for (let r = 0; r < board.height; r++) mask.add(board.idx(r, col))
+      this.forbid[cell] = mask
+    }
+
+    for (let cell = 0; cell < n; cell++) {
+      const room = board.roomIdOf(cell)
+      let mask = this.roomMask.get(room)
+      if (!mask) {
+        mask = BitSet.empty(n)
+        this.roomMask.set(room, mask)
+      }
+      mask.add(cell)
+    }
+
+    const occupiable = BitSet.empty(n)
+    for (const cell of board.occupiableCells()) occupiable.add(cell)
+
+    for (const person of puzzle.people()) {
+      const domain = occupiable.clone()
+      for (const clue of person.clues) {
+        const candidates = clue.candidateCells(board)
+        if (candidates) {
+          const mask = BitSet.empty(n)
+          for (const cell of candidates) mask.add(cell)
+          domain.and(mask)
+        }
+      }
+      this.initialDomains.set(person.id, domain)
+    }
+
+    for (const suspect of puzzle.suspects) {
+      const links = suspect.clues.flatMap(relationalLinks)
+      if (links.length > 0) this.links.set(suspect.id, links)
+      for (const clue of suspect.clues.flatMap(roomExistsClues)) {
+        this.roomExists.push({ subjectId: suspect.id, clue })
+      }
+      const rs = suspect.clues.flatMap(restrictors)
+      if (rs.length > 0) this.roomRestrictors.set(suspect.id, rs)
+    }
+  }
+
+  isUnique(): boolean {
+    return this.countSolutions(2) === 1
+  }
+
+  countSolutions(limit = 2): number {
+    let count = 0
+    this.search(() => {
+      count++
+      return count >= limit
+    })
+    return count
+  }
+
+  firstSolution(): Solution | null {
+    let found: Solution | null = null
+    this.search((solution) => {
+      found = solution
+      return true
+    })
+    return found
+  }
+
+  private search(onSolution: (solution: Solution) => boolean): void {
+    const people = this.puzzle.people()
+    const domains = new Map<PersonId, BitSet>()
+    for (const person of people) domains.set(person.id, this.initialDomains.get(person.id)!.clone())
+    const placement = new Map<PersonId, Cell>()
+    this.nodes = 0
+
+    const anyViolated = (): boolean => {
+      for (const suspect of this.puzzle.suspects) {
+        for (const clue of suspect.clues) {
+          if (clue.violatedBy(suspect.id, placement, this.puzzle)) return true
+        }
+      }
+      return false
+    }
+
+    const allCluesHold = (solution: Solution): boolean => {
+      for (const person of people) {
+        for (const clue of person.clues) {
+          if (!clue.test(person.id, solution, this.puzzle)) return false
+        }
+      }
+      return true
+    }
+
+    const recurse = (): boolean => {
+      this.nodes++
+      let pick: PersonId | null = null
+      let best = Infinity
+      for (const person of people) {
+        if (placement.has(person.id)) continue
+        const size = domains.get(person.id)!.count()
+        if (size < best) {
+          best = size
+          pick = person.id
+        }
+      }
+
+      if (pick === null) {
+        const solution = new Solution(new Map(placement))
+        return allCluesHold(solution) && onSolution(solution)
+      }
+      if (best === 0) return false
+
+      const cells: number[] = []
+      domains.get(pick)!.forEach((c) => cells.push(c))
+
+      for (const cell of cells) {
+        placement.set(pick, cell)
+
+        // Clone-on-write every unplaced domain, then forward-check by masking.
+        const saved: Array<[PersonId, BitSet]> = []
+        for (const person of people) {
+          if (person.id === pick || placement.has(person.id)) continue
+          const original = domains.get(person.id)!
+          saved.push([person.id, original])
+          domains.set(person.id, original.clone())
+        }
+
+        let dead = false
+        const forbidMask = this.forbid[cell]
+        for (const [id] of saved) {
+          const domain = domains.get(id)!
+          domain.andNot(forbidMask)
+          if (domain.isEmpty()) dead = true
+        }
+        if (!dead) dead = this.propagateRelational(pick, domains, placement)
+        if (!dead) dead = this.propagateRoomConstraints(pick, people, domains, placement)
+        if (!dead && !this.roomExistsFeasible(placement, domains)) dead = true
+
+        const stop = !dead && !anyViolated() && recurse()
+
+        for (const [id, original] of saved) domains.set(id, original)
+        placement.delete(pick)
+        if (stop) return true
+      }
+      return false
+    }
+
+    recurse()
+  }
+
+  /**
+   * Both directions of every relational clue touching the just-placed person:
+   * narrow each subject whose target is now placed, AND narrow the targets of
+   * the just-placed person's own clues. Returns true if any domain emptied.
+   */
+  private propagateRelational(
+    placedId: PersonId,
+    domains: Map<PersonId, BitSet>,
+    placement: Map<PersonId, Cell>,
+  ): boolean {
+    let dead = false
+    // Subjects whose target was just placed → narrow the subject.
+    for (const [subjectId, links] of this.links) {
+      if (placement.has(subjectId)) continue
+      const clues = links.filter((link) => link.target === placedId).map((link) => link.clue)
+      if (clues.length > 0 && this.narrow(subjectId, subjectId, clues, domains, placement)) {
+        dead = true
+      }
+    }
+    // The just-placed person is a subject → narrow its still-open targets.
+    for (const link of this.links.get(placedId) ?? []) {
+      if (placement.has(link.target)) continue
+      if (this.narrow(link.target, placedId, [link.clue], domains, placement)) dead = true
+    }
+    return dead
+  }
+
+  /** Remove from `personId`'s domain every cell that breaks `clues` (whose
+   *  subject is `subjectId`, with everyone else already placed). Returns empty. */
+  private narrow(
+    personId: PersonId,
+    subjectId: PersonId,
+    clues: Clue[],
+    domains: Map<PersonId, BitSet>,
+    placement: Map<PersonId, Cell>,
+  ): boolean {
+    const domain = domains.get(personId)!
+    const toRemove: number[] = []
+    domain.forEach((candidate) => {
+      placement.set(personId, candidate)
+      const broken = clues.some((clue) => clue.violatedBy(subjectId, placement, this.puzzle))
+      placement.delete(personId)
+      if (broken) toRemove.push(candidate)
+    })
+    for (const candidate of toRemove) domain.remove(candidate)
+    return domain.isEmpty()
+  }
+
+  /**
+   * Strike rooms for "alone" / "no X in my room" / "alone with N matching".
+   * Re-runs for the just-placed person AND any restricting subject already in
+   * the room the placement just touched (so the Nth match closes the room).
+   */
+  private propagateRoomConstraints(
+    pick: PersonId,
+    people: Person[],
+    domains: Map<PersonId, BitSet>,
+    placement: Map<PersonId, Cell>,
+  ): boolean {
+    if (this.roomRestrictors.size === 0) return false
+    const board = this.puzzle.board
+    const pickRoom = board.roomIdOf(placement.get(pick)!)
+
+    const subjects = new Set<PersonId>()
+    if (this.roomRestrictors.has(pick)) subjects.add(pick)
+    for (const subjectId of this.roomRestrictors.keys()) {
+      const c = placement.get(subjectId)
+      if (c !== undefined && board.roomIdOf(c) === pickRoom) subjects.add(subjectId)
+    }
+
+    let dead = false
+    for (const subjectId of subjects) {
+      const room = board.roomIdOf(placement.get(subjectId)!)
+      const mask = this.roomMask.get(room)!
+      for (const restrictor of this.roomRestrictors.get(subjectId)!) {
+        let matchingFull = false
+        if (restrictor.kind === 'companion') {
+          let matching = 0
+          for (const [id, c] of placement) {
+            if (
+              id !== subjectId &&
+              board.roomIdOf(c) === room &&
+              this.puzzle.attributesOf(id)[restrictor.attribute] === restrictor.value
+            ) {
+              matching++
+            }
+          }
+          matchingFull = matching >= restrictor.count
+        }
+        for (const person of people) {
+          if (person.id === subjectId || placement.has(person.id)) continue
+          let strike: boolean
+          if (restrictor.kind === 'alone') {
+            strike = true
+          } else if (restrictor.kind === 'attrNone') {
+            strike = this.puzzle.attributesOf(person.id)[restrictor.attribute] === restrictor.value
+          } else {
+            const isMatch =
+              this.puzzle.attributesOf(person.id)[restrictor.attribute] === restrictor.value
+            strike = !isMatch || matchingFull
+          }
+          if (strike) {
+            const domain = domains.get(person.id)!
+            domain.andNot(mask)
+            if (domain.isEmpty()) dead = true
+          }
+        }
+      }
+    }
+    return dead
+  }
+
+  private roomExistsFeasible(
+    placement: Map<PersonId, Cell>,
+    domains: Map<PersonId, BitSet>,
+  ): boolean {
+    const board = this.puzzle.board
+    for (const { subjectId, clue } of this.roomExists) {
+      const cell = placement.get(subjectId)
+      if (cell === undefined) continue
+      const room = board.roomIdOf(cell)
+      let possible = false
+      for (const id of this.puzzle.allIds()) {
+        if (this.puzzle.attributesOf(id)[clue.attribute] !== clue.value) continue
+        const placed = placement.get(id)
+        if (placed !== undefined) {
+          if (board.roomIdOf(placed) === room && board.tileAt(placed).hasObjectType(clue.object)) {
+            possible = true
+            break
+          }
+        } else {
+          domains.get(id)!.forEach((candidate) => {
+            if (
+              !possible &&
+              board.roomIdOf(candidate) === room &&
+              board.tileAt(candidate).hasObjectType(clue.object)
+            ) {
+              possible = true
+            }
+          })
+          if (possible) break
+        }
+      }
+      if (!possible) return false
+    }
+    return true
+  }
+}

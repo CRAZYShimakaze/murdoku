@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "Murdoku",
+    "subtitle": "Mörderjagd trifft Sudoku"
+  },
+  "language": {
+    "de": "Deutsch",
+    "en": "Englisch"
+  },
+  "object": {
+    "table": "einem Tisch",
+    "bed": "einem Bett",
+    "carpet": "einem Teppich",
+    "chair": "einem Stuhl",
+    "tv": "einem Fernseher",
+    "statue": "einer Statue",
+    "rubble": "Schutt",
+    "plant": "einer Pflanze",
+    "shrub": "einem Strauch",
+    "shelf": "einem Regal",
+    "box": "einer Kiste",
+    "window": "einem Fenster"
+  },
+  "dir": {
+    "north": "nördlich",
+    "south": "südlich",
+    "east": "östlich",
+    "west": "westlich"
+  },
+  "attr": {
+    "beard": "einen Bart"
+  },
+  "who": {
+    "m_dat": "einem Mann",
+    "f_dat": "einer Frau",
+    "m_nom": "ein Mann",
+    "f_nom": "eine Frau"
+  },
+  "room": {
+    "living": "Wohnzimmer",
+    "bedroom": "Schlafzimmer",
+    "dining": "Esszimmer",
+    "kitchen": "Küche",
+    "porch": "Veranda",
+    "frontyard": "Vorgarten",
+    "storage": "Lager",
+    "staffroom": "Personalraum",
+    "main": "Hauptbereich",
+    "entrance": "Eingang",
+    "waiting": "Wartebereich",
+    "exposition": "Ausstellung",
+    "maingallery": "Hauptgalerie",
+    "restroom": "Toilette",
+    "vault": "Tresor",
+    "lobby": "Lobby",
+    "cafe": "Café",
+    "security": "Sicherheitsraum"
+  },
+  "clue": {
+    "onObject": "{{name}} war auf {{object}}",
+    "nearObject": "{{name}} war neben {{object}}",
+    "nearWindow": "{{name}} war neben einem Fenster",
+    "inRoom": "{{name}} war im Raum {{room}}",
+    "inRow": "{{name}} war in Zeile {{row}}",
+    "inCol": "{{name}} war in Spalte {{col}}",
+    "corner": "{{name}} war in einer Ecke",
+    "uniqueOnObject": "{{name}} war die einzige Person auf {{object}}",
+    "alone": "{{name}} war allein im Raum",
+    "roomAttribute": {
+      "none": "Niemand in {{name}}s Raum hatte {{attribute}}",
+      "some": "Jemand mit {{attribute}} war in {{name}}s Raum",
+      "all": "Alle in {{name}}s Raum hatten {{attribute}}"
+    },
+    "direction": "{{name}} war {{direction}} von {{target}}",
+    "offsetWest": "{{name}} war genau {{n}} Spalte westlich von {{target}}",
+    "offsetEast": "{{name}} war genau {{n}} Spalte östlich von {{target}}",
+    "offsetNorth": "{{name}} war genau {{n}} Zeile nördlich von {{target}}",
+    "offsetSouth": "{{name}} war genau {{n}} Zeile südlich von {{target}}",
+    "aloneWith": "{{name}} war allein mit {{who}}",
+    "roomExistsOnObject": "In {{name}}s Raum saß {{who}} auf {{object}}",
+    "sameRoom": "{{name}} war im selben Raum wie {{target}}",
+    "connAnd": "und",
+    "connOr": "oder",
+    "not": "nicht ({{child}})"
+  },
+  "step": {
+    "clueCandidates": "{{name}}: durch die Hinweise bleiben {{count}} mögliche Felder.",
+    "nakedSingle": "{{name}} muss auf {{cell}} stehen – einziges mögliches Feld.",
+    "uniqueConstraint": "Nur {{name}} darf dort stehen – andere von diesen Feldern ausgeschlossen.",
+    "hiddenSingleRow": "Nur {{name}} kann in Zeile {{line}} sein – also dort.",
+    "hiddenSingleCol": "Nur {{name}} kann in Spalte {{line}} sein – also dort.",
+    "nakedGroupRows": "{{people}}: nur Zeilen {{lines}} möglich – für andere gesperrt.",
+    "nakedGroupCols": "{{people}}: nur Spalten {{lines}} möglich – für andere gesperrt.",
+    "relationalDirection": "{{name}} ist {{direction}} von {{target}} – unmögliche Felder gestrichen.",
+    "relationalSameRoom": "{{name}} ist im selben Raum wie {{target}} – andere Räume gestrichen.",
+    "aloneExcludeRoom": "{{name}} muss allein sein, aber im {{room}} ist schon jemand – also nicht dort.",
+    "aloneReserve": "{{name}} ist allein im {{room}} – alle anderen dort ausgeschlossen.",
+    "attrExcludeRoom": "In {{name}}s Raum darf niemand {{attribute}} haben; im {{room}} ist so jemand – also nicht dort.",
+    "attrReserve": "{{name}} ist im {{room}}, dort darf niemand {{attribute}} haben – solche Personen ausgeschlossen.",
+    "forcing": "Annahme {{name}} auf {{cell}} führt zum Widerspruch – Feld ausgeschlossen.",
+    "victim": "Das Opfer {{name}} bleibt auf dem letzten freien Feld {{cell}}.",
+    "murderer": "Mörder: {{name}} war allein mit dem Opfer im Raum {{room}}.",
+    "murdererAmbiguous": "Kein eindeutiger Mörder: {{count}} Verdächtige im Raum {{room}}.",
+    "stuck": "Stecken geblieben: {{count}} Person(en) offen (Technik noch nicht implementiert)."
+  }
+}

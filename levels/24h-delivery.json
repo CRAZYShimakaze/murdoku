@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "id": "24h-delivery",
+  "difficulty": "easy",
+  "size": { "width": 6, "height": 6 },
+  "rooms": {
+    "D": { "nameKey": "room.dining", "color": "#e8d8b0" },
+    "B": { "nameKey": "room.bedroom", "color": "#f3e6a8" },
+    "K": { "nameKey": "room.kitchen", "color": "#f0c878" },
+    "P": { "nameKey": "room.porch", "color": "#d8c090" },
+    "Y": { "nameKey": "room.frontyard", "color": "#a8e0b0" }
+  },
+  "objects": {
+    "s": { "type": "chair", "occupiable": true },
+    "b": { "type": "bed", "occupiable": true },
+    "r": { "type": "carpet", "occupiable": true },
+    "t": { "type": "table", "occupiable": false },
+    "p": { "type": "plant", "occupiable": false },
+    "u": { "type": "shrub", "occupiable": false },
+    "k": { "type": "box", "occupiable": false }
+  },
+  "roomMap": ["DDDBBB", "DDDBBB", "DDDKKK", "DDDKKK", "PPYYYY", "PPYYYY"],
+  "groundMap": [".....r", ".....r", "...rr.", "......", "rr....", "......"],
+  "topMap": [".s.bb.", "st..p.", "st....", "p..tt.", "...u..", ".k..u."],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alexander",
+      "attributes": { "gender": "m" },
+      "clues": [{ "type": "nearObject", "object": "box" }]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "onObject", "object": "chair" }]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "uniqueOnObject", "object": "carpet" }]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "inRoom", "room": "B" }]
+    },
+    {
+      "id": "E",
+      "name": "Evangeline",
+      "attributes": { "gender": "f" },
+      "clues": [
+        {
+          "type": "or",
+          "clues": [
+            { "type": "nearObject", "object": "shrub" },
+            { "type": "nearObject", "object": "plant" }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": { "name": "Viraj", "attributes": { "gender": "m" } }
+}

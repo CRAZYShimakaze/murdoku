@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "Murdoku",
+    "subtitle": "Murder mystery meets Sudoku"
+  },
+  "language": {
+    "de": "German",
+    "en": "English"
+  },
+  "object": {
+    "table": "a table",
+    "bed": "a bed",
+    "carpet": "a carpet",
+    "chair": "a chair",
+    "tv": "a TV",
+    "statue": "a statue",
+    "rubble": "rubble",
+    "plant": "a plant",
+    "shrub": "a shrub",
+    "shelf": "a shelf",
+    "box": "a box",
+    "window": "a window"
+  },
+  "dir": {
+    "north": "north",
+    "south": "south",
+    "east": "east",
+    "west": "west"
+  },
+  "attr": {
+    "beard": "a beard"
+  },
+  "who": {
+    "m_dat": "a man",
+    "f_dat": "a woman",
+    "m_nom": "a man",
+    "f_nom": "a woman"
+  },
+  "room": {
+    "living": "Living Room",
+    "bedroom": "Bedroom",
+    "dining": "Dining Room",
+    "kitchen": "Kitchen",
+    "porch": "Porch",
+    "frontyard": "Front Yard",
+    "storage": "Storage",
+    "staffroom": "Staff Room",
+    "main": "Main Area",
+    "entrance": "Entrance",
+    "waiting": "Waiting Area",
+    "exposition": "Exposition",
+    "maingallery": "Main Gallery",
+    "restroom": "Restroom",
+    "vault": "Vault",
+    "lobby": "Lobby",
+    "cafe": "Cafe",
+    "security": "Security"
+  },
+  "clue": {
+    "onObject": "{{name}} was on {{object}}",
+    "nearObject": "{{name}} was beside {{object}}",
+    "nearWindow": "{{name}} was beside a window",
+    "inRoom": "{{name}} was in the {{room}}",
+    "inRow": "{{name}} was in row {{row}}",
+    "inCol": "{{name}} was in column {{col}}",
+    "corner": "{{name}} was in a corner",
+    "uniqueOnObject": "{{name}} was the only person on {{object}}",
+    "alone": "{{name}} was alone in the room",
+    "roomAttribute": {
+      "none": "No one in {{name}}'s room had {{attribute}}",
+      "some": "Someone with {{attribute}} was in {{name}}'s room",
+      "all": "Everyone in {{name}}'s room had {{attribute}}"
+    },
+    "direction": "{{name}} was {{direction}} of {{target}}",
+    "offsetWest": "{{name}} was exactly {{n}} column(s) west of {{target}}",
+    "offsetEast": "{{name}} was exactly {{n}} column(s) east of {{target}}",
+    "offsetNorth": "{{name}} was exactly {{n}} row(s) north of {{target}}",
+    "offsetSouth": "{{name}} was exactly {{n}} row(s) south of {{target}}",
+    "aloneWith": "{{name}} was alone with {{who}}",
+    "roomExistsOnObject": "{{who}} was on {{object}} in {{name}}'s area",
+    "sameRoom": "{{name}} was in the same room as {{target}}",
+    "connAnd": "and",
+    "connOr": "or",
+    "not": "not ({{child}})"
+  },
+  "step": {
+    "clueCandidates": "{{name}}: the clues leave {{count}} possible cells.",
+    "nakedSingle": "{{name}} must be on {{cell}} – the only possible cell.",
+    "uniqueConstraint": "Only {{name}} may stand there – others excluded from those cells.",
+    "hiddenSingleRow": "Only {{name}} can be in row {{line}} – so placed there.",
+    "hiddenSingleCol": "Only {{name}} can be in column {{line}} – so placed there.",
+    "nakedGroupRows": "{{people}}: only rows {{lines}} possible – blocked for others.",
+    "nakedGroupCols": "{{people}}: only columns {{lines}} possible – blocked for others.",
+    "relationalDirection": "{{name}} is {{direction}} of {{target}} – impossible cells removed.",
+    "relationalSameRoom": "{{name}} is in the same room as {{target}} – other rooms removed.",
+    "aloneExcludeRoom": "{{name}} must be alone, but someone is already in the {{room}} – so not there.",
+    "aloneReserve": "{{name}} is alone in the {{room}} – everyone else is excluded from it.",
+    "attrExcludeRoom": "No one in {{name}}'s room may have {{attribute}}; the {{room}} has such a person – so not there.",
+    "attrReserve": "{{name}} is in the {{room}}, which must have no {{attribute}} – such people are excluded.",
+    "forcing": "Assuming {{name}} on {{cell}} leads to a contradiction – cell excluded.",
+    "victim": "The victim {{name}} remains on the last free cell {{cell}}.",
+    "murderer": "Murderer: {{name}} was alone with the victim in the {{room}}.",
+    "murdererAmbiguous": "No unique murderer: {{count}} suspects in the {{room}}.",
+    "stuck": "Stuck: {{count}} person(s) unresolved (technique not yet implemented)."
+  }
+}
