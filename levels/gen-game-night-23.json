@@ -1,0 +1,248 @@
+{
+  "schema": 1,
+  "id": "gen-game-night-23",
+  "difficulty": "hard",
+  "size": {
+    "width": 9,
+    "height": 9
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Wohnzimmer",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "Esszimmer",
+      "color": "#b9d0e6"
+    },
+    "3": {
+      "nameKey": "Küche",
+      "color": "#cfe0cf"
+    },
+    "4": {
+      "nameKey": "Flur",
+      "color": "#d8c0c0"
+    },
+    "5": {
+      "nameKey": "Balkon",
+      "color": "#e6cda0"
+    }
+  },
+  "objects": {
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "111133222",
+    "111333322",
+    "551133222",
+    "555552222",
+    "555552222",
+    "555555544",
+    "555555544",
+    "555555544",
+    "555555555"
+  ],
+  "groundMap": [
+    "....r....",
+    "..r......",
+    "..r......",
+    "......r..",
+    "......r..",
+    "r.....r..",
+    ".r.......",
+    ".........",
+    "........."
+  ],
+  "topMap": [
+    "p....p...",
+    ".....t...",
+    "....tgttt",
+    "....ts...",
+    ".tt.p..g.",
+    ".pg.....s",
+    "..tsfsg..",
+    "f....s.sx",
+    ".....p.t."
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "plant"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "roomExists",
+          "attribute": "gender",
+          "value": "m",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Cyrus",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "brown",
+        "beard": false,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "roomExists",
+          "attribute": "gender",
+          "value": "f",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "black",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "direction",
+          "of": "E",
+          "dir": "south"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "4"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Floyd",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "tv"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "brown",
+        "beard": true,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "direction",
+          "of": "C",
+          "dir": "north"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Hana",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "brown",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "sameRoom",
+          "as": "E"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Robin",
+    "attributes": {
+      "gender": "m",
+      "glasses": true,
+      "hair": "brown",
+      "beard": true,
+      "bald": true
+    }
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "schema": 1,
+  "id": "gen-crime-scene-7",
+  "difficulty": "hard",
+  "size": {
+    "width": 9,
+    "height": 9
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Flur",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "Wohnzimmer",
+      "color": "#b9d0e6"
+    },
+    "3": {
+      "nameKey": "Küche",
+      "color": "#cfe0cf"
+    },
+    "4": {
+      "nameKey": "Bad",
+      "color": "#d8c0c0"
+    },
+    "5": {
+      "nameKey": "Schlafzimmer",
+      "color": "#e6cda0"
+    },
+    "6": {
+      "nameKey": "Büro",
+      "color": "#e6c0d2"
+    }
+  },
+  "objects": {
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "334444111",
+    "334411111",
+    "633331111",
+    "663333111",
+    "655333111",
+    "555333212",
+    "555332222",
+    "555552222",
+    "555552222"
+  ],
+  "groundMap": [
+    ".........",
+    "r........",
+    "..r......",
+    ".........",
+    ".........",
+    "r.......r",
+    ".....r...",
+    "..r......",
+    "........."
+  ],
+  "topMap": [
+    "..gt..t..",
+    "..g.s.g..",
+    ".........",
+    ".......p.",
+    "fx..ts..s",
+    ".txxf....",
+    "p.....tsx",
+    "ps.....tg",
+    ".gss.sg.."
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "alone"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 4
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "roomExists",
+          "attribute": "gender",
+          "value": "f",
+          "object": "carpet"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "brown",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "sameRoom",
+          "as": "H"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "brown",
+        "beard": false,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRow",
+              "row": 1
+            },
+            {
+              "type": "alone"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "direction",
+          "of": "H",
+          "dir": "south"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "white",
+        "beard": true,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "roomCompanion",
+              "count": 1,
+              "attribute": "gender",
+              "value": "f"
+            },
+            {
+              "type": "inRow",
+              "row": 8
+            },
+            {
+              "type": "onObject",
+              "object": "chair"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Hana",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "box"
+            },
+            {
+              "type": "inRow",
+              "row": 6
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Viraj",
+    "attributes": {
+      "gender": "m",
+      "glasses": false,
+      "hair": "blond",
+      "beard": false,
+      "bald": false
+    }
+  }
+}

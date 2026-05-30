@@ -10,6 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "solve": "tsx src/dev/solve.ts",
+    "generate": "tsx src/dev/generate.ts",
+    "show": "tsx src/dev/show.ts",
+    "check": "tsx src/dev/check-all.ts",
     "lint": "eslint .",
     "typecheck": "tsc -b"
   },

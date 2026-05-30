@@ -28,7 +28,8 @@
     "west": "west"
   },
   "attr": {
-    "beard": "a beard"
+    "beard": "a beard",
+    "glasses": "glasses"
   },
   "who": {
     "m_dat": "a man",
