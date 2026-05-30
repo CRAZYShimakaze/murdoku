@@ -1,0 +1,249 @@
+{
+  "schema": 1,
+  "id": "gen-easy-8x8",
+  "difficulty": "easy",
+  "size": {
+    "width": 8,
+    "height": 8
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Wohnzimmer",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "Esszimmer",
+      "color": "#b9d0e6"
+    },
+    "3": {
+      "nameKey": "Küche",
+      "color": "#cfe0cf"
+    },
+    "4": {
+      "nameKey": "Flur",
+      "color": "#d8c0c0"
+    },
+    "5": {
+      "nameKey": "Balkon",
+      "color": "#e6cda0"
+    }
+  },
+  "objects": {
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "22222535",
+    "22222555",
+    "42225115",
+    "44225555",
+    "44445555",
+    "44444455",
+    "44444455",
+    "44444455"
+  ],
+  "groundMap": [
+    ".....rr.",
+    "........",
+    "........",
+    ".r..r...",
+    "........",
+    "...r....",
+    "...r.r..",
+    "r..r...r"
+  ],
+  "topMap": [
+    "t...t...",
+    "..f..ss.",
+    ".....g..",
+    "..pf...s",
+    "s..t....",
+    "....s...",
+    "xf..x..s",
+    "..g..f.."
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alex",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "blond",
+        "beard": true,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "box"
+            },
+            {
+              "type": "nearObject",
+              "object": "tv"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "black",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "chair"
+            },
+            {
+              "type": "nearObject",
+              "object": "chair"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "plant"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "black",
+        "beard": true,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "carpet"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "box"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 3
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "blond",
+        "beard": true,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "chair"
+            },
+            {
+              "type": "nearObject",
+              "object": "box"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vincent",
+    "attributes": {
+      "gender": "m",
+      "glasses": true,
+      "hair": "black",
+      "beard": false,
+      "bald": false
+    }
+  }
+}
