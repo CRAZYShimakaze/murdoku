@@ -5,6 +5,7 @@ type Dict = { [key: string]: string | Dict }
 /**
  * Renders engine `Explanation` descriptors into readable text using a locale
  * dictionary. Keeps all wording in the locale JSON — the engine stays text-free.
+ * Shared by the dev CLI and the React app (which passes the active i18n bundle).
  */
 export class Renderer {
   private readonly dict: Dict
@@ -16,7 +17,7 @@ export class Renderer {
     this.dict = dict as Dict
   }
 
-  private lookup(key: string): string | undefined {
+  lookup(key: string): string | undefined {
     let node: string | Dict | undefined = this.dict
     for (const part of key.split('.')) {
       if (node === undefined || typeof node === 'string') return undefined
@@ -34,7 +35,7 @@ export class Renderer {
     return String(this.puzzle.attributesOf(id).gender) === 'm' ? 'm' : 'f'
   }
 
-  private resolveParam(name: string, value: string | number): string {
+  resolveParam(name: string, value: string | number): string {
     switch (name) {
       case 'name':
       case 'target':
@@ -84,7 +85,12 @@ export class Renderer {
       }
       return parts.join(' ')
     }
-    const template = this.lookup(exp.key) ?? exp.key
+    // Strip the rich-text concept markers `[[word:tipKey]]` → `word` (the UI
+    // renderer interprets them; plain text just shows the word).
+    const template = (this.lookup(exp.key) ?? exp.key).replace(
+      /\[\[([^\]]+?):[^\]]+?\]\]/g,
+      '$1',
+    )
     const params = { ...extra, ...(exp.params ?? {}) }
     return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) =>
       this.resolveParam(key, params[key] ?? ''),

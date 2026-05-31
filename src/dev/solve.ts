@@ -9,7 +9,7 @@ import {
   type Puzzle,
   type Solution,
 } from '../engine/index.ts'
-import { Renderer } from './format.ts'
+import { Renderer } from '../i18n/Renderer.ts'
 import de from '../i18n/locales/de.json'
 
 function printGrid(puzzle: Puzzle, solution: Solution | null): void {

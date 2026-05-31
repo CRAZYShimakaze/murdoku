@@ -52,7 +52,7 @@
     {
       "id": "A",
       "name": "Adonis",
-      "attributes": { "beard": true },
+      "attributes": { "gender": "m", "beard": true },
       "clues": [
         {
           "type": "and",
@@ -66,7 +66,7 @@
     {
       "id": "B",
       "name": "Bryson",
-      "attributes": { "beard": false },
+      "attributes": { "gender": "m", "beard": false },
       "clues": [
         { "type": "roomAttribute", "quantifier": "none", "attribute": "beard", "value": true }
       ]
@@ -74,13 +74,13 @@
     {
       "id": "C",
       "name": "Craig",
-      "attributes": { "beard": true },
+      "attributes": { "gender": "m", "beard": true },
       "clues": [{ "type": "onObject", "object": "chair" }]
     },
     {
       "id": "D",
       "name": "Dylan",
-      "attributes": { "beard": false },
+      "attributes": { "gender": "m", "beard": false },
       "clues": [
         {
           "type": "and",
@@ -91,19 +91,19 @@
     {
       "id": "E",
       "name": "Edison",
-      "attributes": { "beard": false },
+      "attributes": { "gender": "m", "beard": false },
       "clues": [{ "type": "nearObject", "object": "box" }]
     },
     {
       "id": "F",
       "name": "Floyd",
-      "attributes": { "beard": true },
+      "attributes": { "gender": "m", "beard": true },
       "clues": [{ "type": "onObject", "object": "carpet" }]
     },
     {
       "id": "G",
       "name": "Grant",
-      "attributes": { "beard": true },
+      "attributes": { "gender": "m", "beard": true },
       "clues": [
         {
           "type": "and",
@@ -115,5 +115,5 @@
       ]
     }
   ],
-  "victim": { "name": "Vasiliy", "attributes": { "beard": true } }
+  "victim": { "name": "Vasiliy", "attributes": { "gender": "m", "beard": true } }
 }

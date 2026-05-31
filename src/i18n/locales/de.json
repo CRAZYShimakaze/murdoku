@@ -7,6 +7,55 @@
     "de": "Deutsch",
     "en": "Englisch"
   },
+  "start": {
+    "kicker": "Ein Logik-Krimi",
+    "play": "Fall öffnen",
+    "credit": "Murdoku · ein Logik-Krimi"
+  },
+  "select": {
+    "title": "Die Akten",
+    "subtitle": "Wähle einen Fall",
+    "filterDifficulty": "Schwierigkeit",
+    "filterSize": "Größe",
+    "all": "Alle",
+    "empty": "Keine Fälle mit diesen Filtern.",
+    "solved": "Gelöst"
+  },
+  "difficulty": {
+    "tutorial": "Tutorial",
+    "easy": "Leicht",
+    "medium": "Mittel",
+    "hard": "Schwer"
+  },
+  "game": {
+    "suspects": "Verdächtige",
+    "selectPrompt": "Antippen zum Auswählen · lang drücken zum Setzen",
+    "victim": "Das Opfer",
+    "victimStatement": "war allein mit dem Mörder.",
+    "tools": "Werkzeuge"
+  },
+  "tool": {
+    "x": "X",
+    "xSub": "Feld sperren",
+    "erase": "Leeren",
+    "eraseSub": "halten",
+    "undo": "Zurück",
+    "hint": "Tipp",
+    "submit": "Lösen",
+    "submitLocked": "alle setzen",
+    "hintNone": "Gerade kein Tipp verfügbar."
+  },
+  "result": {
+    "winStamp": "Fall gelöst",
+    "loseStamp": "Noch nicht",
+    "winTitle": "Glückwunsch, Kommissar!",
+    "winBody": "Alle Verdächtigen korrekt platziert.",
+    "winMurderer": "Der Mörder war {{name}} im {{room}}.",
+    "loseTitle": "Das stimmt noch nicht.",
+    "loseBody": "Mindestens eine Person steht falsch. Bleib dran!",
+    "retry": "Weiter rätseln",
+    "back": "Zur Levelauswahl"
+  },
   "object": {
     "table": "einem Tisch",
     "bed": "einem Bett",
@@ -20,6 +69,27 @@
     "shelf": "einem Regal",
     "box": "einer Kiste",
     "window": "einem Fenster"
+  },
+  "objName": {
+    "floor": "Boden",
+    "table": "Tisch",
+    "bed": "Bett",
+    "carpet": "Teppich",
+    "chair": "Stuhl",
+    "tv": "Fernseher",
+    "statue": "Statue",
+    "rubble": "Schutt",
+    "plant": "Pflanze",
+    "shrub": "Strauch",
+    "shelf": "Regal",
+    "box": "Kiste",
+    "window": "Fenster"
+  },
+  "legend": {
+    "title": "Legende",
+    "occupiable": "betretbar",
+    "blocked": "blockiert",
+    "wall": "an der Wand"
   },
   "dir": {
     "north": "nördlich",
@@ -60,31 +130,54 @@
   "pron": { "m": "er", "f": "sie" },
   "poss": { "m": "seinem", "f": "ihrem" },
   "clue": {
-    "onObject": "{{subject}} war auf {{object}}",
-    "nearObject": "{{subject}} war neben {{object}}",
-    "nearWindow": "{{subject}} war neben einem Fenster",
+    "onObject": "{{subject}} war [[auf:onObject]] {{object}}",
+    "nearObject": "{{subject}} war [[neben:nearObject]] {{object}}",
+    "nearWindow": "{{subject}} war [[neben einem Fenster:nearWindow]]",
     "inRoom": "{{subject}} war im Raum {{room}}",
-    "inRow": "{{subject}} war in Zeile {{row}}",
-    "inCol": "{{subject}} war in Spalte {{col}}",
-    "corner": "{{subject}} war in einer Ecke",
-    "uniqueOnObject": "{{subject}} war die einzige Person auf {{object}}",
-    "alone": "{{subject}} war allein im Raum",
+    "inRow": "{{subject}} war in [[Zeile:inRow]] {{row}}",
+    "inCol": "{{subject}} war in [[Spalte:inCol]] {{col}}",
+    "corner": "{{subject}} war [[in einer Ecke:corner]]",
+    "uniqueOnObject": "{{subject}} war [[die einzige Person auf:uniqueOnObject]] {{object}}",
+    "alone": "{{subject}} war [[allein im Raum:alone]]",
     "roomAttribute": {
-      "none": "Niemand in {{poss}} Raum hatte {{attribute}}",
-      "some": "Jemand mit {{attribute}} war in {{poss}} Raum",
-      "all": "Alle in {{poss}} Raum hatten {{attribute}}"
+      "none": "[[Niemand:roomAttrNone]] in {{poss}} Raum hatte {{attribute}}",
+      "some": "[[Jemand:roomAttrSome]] mit {{attribute}} war in {{poss}} Raum",
+      "all": "[[Alle:roomAttrAll]] in {{poss}} Raum hatten {{attribute}}"
     },
     "direction": "{{subject}} war {{direction}} von {{target}}",
-    "offsetWest": "{{subject}} war genau {{n}} Spalte westlich von {{target}}",
-    "offsetEast": "{{subject}} war genau {{n}} Spalte östlich von {{target}}",
-    "offsetNorth": "{{subject}} war genau {{n}} Zeile nördlich von {{target}}",
-    "offsetSouth": "{{subject}} war genau {{n}} Zeile südlich von {{target}}",
-    "aloneWith": "{{subject}} war allein mit {{who}}",
-    "roomExistsOnObject": "In {{poss}} Raum saß {{who}} auf {{object}}",
-    "sameRoom": "{{subject}} war im selben Raum wie {{target}}",
+    "offsetWest": "{{subject}} war genau {{n}} Spalte [[westlich:offset]] von {{target}}",
+    "offsetEast": "{{subject}} war genau {{n}} Spalte [[östlich:offset]] von {{target}}",
+    "offsetNorth": "{{subject}} war genau {{n}} Zeile [[nördlich:offset]] von {{target}}",
+    "offsetSouth": "{{subject}} war genau {{n}} Zeile [[südlich:offset]] von {{target}}",
+    "aloneWith": "{{subject}} war [[allein mit:aloneWith]] {{who}}",
+    "roomExistsOnObject": "In {{poss}} Raum saß {{who}} [[auf:onObject]] {{object}}",
+    "sameRoom": "{{subject}} war [[im selben Raum wie:sameRoom]] {{target}}",
     "connAnd": "und",
     "connOr": "oder",
     "not": "nicht ({{child}})"
+  },
+  "tip": {
+    "onObject": "Steht direkt auf diesem Objekt (es ist betretbar).",
+    "nearObject": "Direkt daneben — im selben Raum, ein Feld links, rechts, über oder unter dem Objekt.",
+    "nearWindow": "Auf dem Feld direkt an einem Fenster (das Fenster sitzt an der Wand dieses Feldes).",
+    "corner": "Eckfeld: mindestens zwei Wände berühren bzw. umfassen das Feld.",
+    "alone": "Wirklich allein im Raum — kein anderer Verdächtiger und auch nicht das Opfer.",
+    "aloneWith": "Sonst ist nur genau diese Person mit im Raum (das Opfer zählt nicht).",
+    "uniqueOnObject": "Die einzige Person, die auf einem solchen Objekt steht.",
+    "sameRoom": "Im selben Raum wie diese Person.",
+    "direction": "Liegt in dieser Himmelsrichtung von der genannten Person (nördlich = weiter oben usw.).",
+    "offset": "Genau so viele Felder in diese Richtung von der Zielperson entfernt.",
+    "roomAttrNone": "Niemand sonst im selben Raum hat dieses Merkmal.",
+    "roomAttrSome": "Mindestens eine Person im selben Raum hat dieses Merkmal.",
+    "roomAttrAll": "Alle im selben Raum haben dieses Merkmal.",
+    "inRow": "Die genannte Zeile (von oben gezählt).",
+    "inCol": "Die genannte Spalte (von links gezählt)."
+  },
+  "info": {
+    "male": "männlich",
+    "female": "weiblich",
+    "beard": "Bart",
+    "glasses": "Brille"
   },
   "step": {
     "clueCandidates": "{{name}}: durch die Hinweise bleiben {{count}} mögliche Felder.",

@@ -1,14 +1,1062 @@
+/* ============================================================================
+   MURDOKU — "Case File" noir design system
+   A dark detective-dossier chrome (ink / brass / crimson, typewriter testimony)
+   framing a bright pastel crime-scene floor plan (the Canvas board).
+   ========================================================================== */
+
 :root {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Surfaces — warm near-black ink, like an interrogation room */
+  --ink-900: #131119;
+  --ink-850: #191722;
+  --ink-800: #201d2a;
+  --ink-700: #2a2634;
+  --ink-600: #39333f;
+  --line: rgba(236, 230, 218, 0.09);
+  --line-strong: rgba(236, 230, 218, 0.16);
+
+  /* Ink-on-light + light-on-ink */
+  --bone: #ece6da;
+  --bone-dim: #a8a1b0;
+  --bone-faint: #6f6a78;
+
+  /* Case-file paper accent */
+  --paper: #e9dfc8;
+  --paper-edge: #c9bb9a;
+  --paper-ink: #2a2317;
+
+  /* Accents */
+  --crimson: #cf463c;
+  --crimson-deep: #93271f;
+  --brass: #e2b75e;
+  --brass-dim: #b58e3c;
+  --evergreen: #79b89a;
+
+  /* Difficulty palette */
+  --diff-tutorial: #7fa8c4;
+  --diff-easy: #79b89a;
+  --diff-medium: #e2b75e;
+  --diff-hard: #cf463c;
+
+  /* Type */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-type: 'Special Elite', 'Courier New', monospace;
+  --font-ui: 'Spline Sans', system-ui, -apple-system, sans-serif;
+
+  /* Geometry */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --shadow-card: 0 2px 4px rgba(0, 0, 0, 0.3), 0 12px 30px rgba(0, 0, 0, 0.35);
+  --shadow-pop: 0 18px 60px rgba(0, 0, 0, 0.55);
+
+  color-scheme: dark;
+  font-family: var(--font-ui);
   line-height: 1.5;
-  color-scheme: light dark;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
   min-height: 100dvh;
+  color: var(--bone);
+  background-color: var(--ink-900);
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(226, 183, 94, 0.08), transparent 60%),
+    radial-gradient(90% 70% at 85% 110%, rgba(207, 70, 60, 0.07), transparent 55%),
+    radial-gradient(140% 140% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  overflow: hidden;
+}
+
+/* Film-grain overlay over the whole app */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--ink-600);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brass-dim);
+  background-clip: padding-box;
+}
+
+/* ----------------------------------------------------------------- buttons */
+.mk-btn {
+  appearance: none;
+  border: 1px solid var(--line-strong);
+  background: var(--ink-700);
+  color: var(--bone);
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  padding: 0.7rem 1.2rem;
+  border-radius: var(--r-md);
+  transition:
+    transform 0.12s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease;
+}
+.mk-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--brass-dim);
+}
+.mk-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+.mk-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mk-btn--primary {
+  background: linear-gradient(180deg, var(--brass), var(--brass-dim));
+  color: #2a2010;
+  border-color: var(--brass);
+  box-shadow: 0 6px 22px rgba(226, 183, 94, 0.3);
+}
+.mk-btn--primary:hover:not(:disabled) {
+  box-shadow: 0 10px 30px rgba(226, 183, 94, 0.42);
+}
+.mk-btn--danger {
+  background: linear-gradient(180deg, var(--crimson), var(--crimson-deep));
+  color: #fff;
+  border-color: var(--crimson);
+  box-shadow: 0 6px 22px rgba(207, 70, 60, 0.3);
+}
+.mk-btn--ghost {
+  background: transparent;
+}
+.mk-btn--block {
+  width: 100%;
+  justify-content: center;
+}
+
+/* segmented control (language) */
+.mk-seg {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: 99px;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.25);
+  gap: 2px;
+}
+.mk-seg button {
+  border: 0;
+  background: transparent;
+  color: var(--bone-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.85rem;
+  border-radius: 99px;
+  transition: all 0.16s ease;
+}
+.mk-seg button[data-active='true'] {
+  background: var(--brass);
+  color: #2a2010;
+}
+
+/* difficulty pill */
+.mk-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-type);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.22em 0.7em;
+  border-radius: 99px;
+  border: 1px solid currentColor;
+  color: var(--brass);
+}
+.mk-pill::before {
+  content: '';
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 99px;
+  background: currentColor;
+}
+.mk-pill[data-d='tutorial'] {
+  color: var(--diff-tutorial);
+}
+.mk-pill[data-d='easy'] {
+  color: var(--diff-easy);
+}
+.mk-pill[data-d='medium'] {
+  color: var(--diff-medium);
+}
+.mk-pill[data-d='hard'] {
+  color: var(--diff-hard);
+}
+
+/* ================================================================= START */
+.mk-screen {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+}
+
+.mk-start {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 2rem;
+}
+.mk-start__inner {
+  max-width: 36rem;
+  display: grid;
+  gap: 1.6rem;
+  justify-items: center;
+}
+.mk-start__kicker {
+  font-family: var(--font-type);
+  font-size: 0.8rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--brass);
+  opacity: 0;
+  animation: fade-up 0.7s ease 0.05s forwards;
+}
+.mk-wordmark {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(4rem, 17vw, 9.5rem);
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--bone);
+  text-shadow: 0 4px 40px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  animation: fade-up 0.8s ease 0.15s forwards;
+}
+.mk-wordmark em {
+  font-style: italic;
+  color: var(--crimson);
+  position: relative;
+}
+.mk-start__tag {
+  font-family: var(--font-type);
+  color: var(--bone-dim);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  margin: 0;
+  opacity: 0;
+  animation: fade-up 0.8s ease 0.32s forwards;
+}
+.mk-start__cta {
+  margin-top: 0.4rem;
+  opacity: 0;
+  animation: fade-up 0.8s ease 0.46s forwards;
+}
+.mk-start__cta .mk-btn--primary {
+  font-family: var(--font-ui);
+  font-size: 1.15rem;
+  padding: 0.95rem 3.2rem;
+  letter-spacing: 0.04em;
+}
+.mk-start__lang {
+  opacity: 0;
+  animation: fade-up 0.8s ease 0.6s forwards;
+}
+.mk-start__credit {
+  position: fixed;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-type);
+  font-size: 0.72rem;
+  color: var(--bone-faint);
+  letter-spacing: 0.1em;
+}
+
+/* a faint connecting "red thread" decoration behind the wordmark */
+.mk-start__thread {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.5;
+}
+
+/* ============================================================ LEVEL SELECT */
+.mk-select {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(1.2rem, 4vw, 2.6rem);
+}
+.mk-topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.6rem;
+}
+.mk-topbar h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  margin: 0;
+  flex: 1;
+}
+.mk-topbar h1 small {
+  display: block;
+  font-family: var(--font-type);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 400;
+}
+.mk-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.4rem 2rem;
+  margin-bottom: 1.8rem;
+  padding-bottom: 1.4rem;
+  border-bottom: 1px dashed var(--line-strong);
+}
+.mk-filtergroup {
+  display: grid;
+  gap: 0.55rem;
+}
+.mk-filtergroup__label {
+  font-family: var(--font-type);
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+.mk-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.mk-chip {
+  border: 1px solid var(--line-strong);
+  background: var(--ink-800);
+  color: var(--bone-dim);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 99px;
+  transition: all 0.15s ease;
+}
+.mk-chip:hover {
+  border-color: var(--brass-dim);
+  color: var(--bone);
+}
+.mk-chip[data-active='true'] {
+  background: var(--bone);
+  color: var(--ink-900);
+  border-color: var(--bone);
+}
+
+.mk-level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.1rem;
+}
+.mk-card {
+  position: relative;
+  text-align: left;
+  border: 1px solid var(--line-strong);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border-radius: var(--r-lg);
+  padding: 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+  animation: fade-up 0.5s ease backwards;
+}
+.mk-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--brass-dim);
+  box-shadow: var(--shadow-pop);
+}
+.mk-card__preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #0d0c11;
+  border-bottom: 1px solid var(--line);
+}
+.mk-card[data-solved='true'] {
+  border-color: var(--evergreen);
+}
+.mk-solved {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 1;
+  font-family: var(--font-type);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #14241c;
+  background: var(--evergreen);
+  border-radius: 99px;
+  padding: 0.2rem 0.6rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.mk-card__body {
+  padding: 0.85rem 1rem 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.mk-card__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.12rem;
+  line-height: 1.15;
+}
+.mk-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.mk-card__size {
+  font-family: var(--font-type);
+  font-size: 0.78rem;
+  color: var(--bone-dim);
+  letter-spacing: 0.05em;
+}
+.mk-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--bone-faint);
+  font-family: var(--font-type);
+  padding: 3rem 1rem;
+}
+
+/* ==================================================================== GAME */
+.mk-game {
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(248px, 23vw) 1fr minmax(116px, 9vw);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'head head head'
+    'clues board tools';
+  overflow: hidden;
+}
+.mk-game__head {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--ink-850);
+}
+.mk-game__head h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mk-game__head h2 .mk-game__sz {
+  color: var(--bone-faint);
+  font-family: var(--font-type);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.mk-timer {
+  font-family: var(--font-type);
+  font-size: 1.05rem;
+  color: var(--brass);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+.mk-back {
+  border: 1px solid var(--line-strong);
+  background: var(--ink-700);
+  color: var(--bone);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  font-size: 1.1rem;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.mk-back:hover {
+  border-color: var(--brass-dim);
+}
+
+/* clue panel ------------------------------------------------------------- */
+.mk-clues {
+  grid-area: clues;
+  overflow-y: auto;
+  padding: 1rem 0.9rem 2rem;
+  border-right: 1px solid var(--line);
+  background: var(--ink-900);
+}
+.mk-clues__title {
+  font-family: var(--font-type);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin: 0 0 0.2rem;
+}
+.mk-clues__hint {
+  font-size: 0.78rem;
+  color: var(--bone-faint);
+  margin: 0 0 1rem;
+}
+.mk-clue {
+  position: relative;
+  width: 100%;
+  text-align: left;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem 0.7rem;
+  align-items: start;
+  background: linear-gradient(180deg, var(--paper), #ddd1b6);
+  color: var(--paper-ink);
+  border: 1px solid var(--paper-edge);
+  border-radius: var(--r-md);
+  padding: 0.7rem 0.8rem;
+  margin-bottom: 0.7rem;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    outline-color 0.14s ease;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.mk-clue:hover {
+  transform: translateY(-1px);
+}
+.mk-clue[data-selected='true'] {
+  outline-color: var(--brass);
+  box-shadow:
+    0 0 0 3px rgba(226, 183, 94, 0.25),
+    0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.mk-clue[data-placed='true'] {
+  opacity: 0.62;
+}
+.mk-token {
+  width: 34px;
+  height: 34px;
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.45),
+    0 2px 5px rgba(0, 0, 0, 0.4);
+  flex: none;
+}
+.mk-clue__main {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.mk-clue__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.mk-clue__check {
+  color: var(--evergreen);
+  font-weight: 700;
+}
+.mk-clue__text {
+  font-family: var(--font-type);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.mk-attrs {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.mk-attr {
+  font-size: 0.78rem;
+  background: rgba(42, 35, 23, 0.1);
+  border: 1px solid rgba(42, 35, 23, 0.22);
+  border-radius: 99px;
+  padding: 0.05rem 0.45rem;
+  line-height: 1.5;
+}
+.mk-clue--victim {
+  background: linear-gradient(180deg, #2a2634, #221f2b);
+  color: var(--bone);
+  border: 1px solid var(--crimson-deep);
+  border-style: dashed;
+}
+.mk-clue--victim .mk-clue__text {
+  color: var(--bone-dim);
+}
+.mk-token--victim {
+  background: var(--crimson);
+  font-family: var(--font-ui);
+  font-size: 1.15rem;
+}
+
+/* board ------------------------------------------------------------------ */
+.mk-board {
+  grid-area: board;
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.6rem, 2vw, 1.4rem);
+  min-height: 0;
+  min-width: 0;
+  background:
+    radial-gradient(80% 80% at 50% 30%, rgba(226, 183, 94, 0.05), transparent 70%),
+    var(--ink-850);
+}
+.mk-board canvas {
+  touch-action: none;
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* tools ------------------------------------------------------------------ */
+.mk-tools {
+  grid-area: tools;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem 0.7rem;
+  border-left: 1px solid var(--line);
+  background: var(--ink-900);
+  overflow-y: auto;
+}
+.mk-tools__label {
+  font-family: var(--font-type);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  text-align: center;
+}
+.mk-tool {
+  position: relative;
+  border: 1px solid var(--line-strong);
+  background: var(--ink-700);
+  color: var(--bone);
+  border-radius: var(--r-md);
+  padding: 0.6rem 0.4rem;
+  display: grid;
+  gap: 0.2rem;
+  justify-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: all 0.15s ease;
+}
+.mk-tool:hover:not(:disabled) {
+  border-color: var(--brass-dim);
+}
+.mk-tool:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mk-tool__icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+.mk-tool[data-active='true'] {
+  background: var(--bone);
+  color: var(--ink-900);
+  border-color: var(--bone);
+}
+.mk-tool--x[data-active='true'] {
+  background: var(--crimson);
+  color: #fff;
+  border-color: var(--crimson);
+}
+.mk-tools__spacer {
+  flex: 1;
+}
+.mk-tool--submit {
+  background: linear-gradient(180deg, var(--brass), var(--brass-dim));
+  color: #2a2010;
+  border-color: var(--brass);
+  font-size: 0.82rem;
+  padding: 0.8rem 0.4rem;
+}
+.mk-tool--submit:disabled {
+  background: var(--ink-700);
+  color: var(--bone-faint);
+}
+.mk-tool__sub {
+  font-family: var(--font-type);
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+/* radial "hold" progress ring on the eraser (clear-all) */
+.mk-tool__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--r-md);
+  background: conic-gradient(var(--crimson) calc(var(--p, 0) * 360deg), transparent 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 2px;
+  pointer-events: none;
+}
+
+/* suspect head avatar (clue cards) */
+.mk-avatarwrap {
+  display: inline-flex;
+  flex: none;
+}
+.mk-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 99px;
+  flex: none;
+  display: block;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  cursor: help;
+}
+
+/* hoverable concept word in a clue */
+.mk-term {
+  cursor: help;
+  border-bottom: 1px dotted currentColor;
+}
+
+/* portal tooltip (terms + avatar attributes) */
+.mk-tip {
+  position: fixed;
+  z-index: 200;
+  width: max-content;
+  max-width: 232px;
+  background: var(--ink-700);
+  color: var(--bone);
+  border: 1px solid var(--brass-dim);
+  border-radius: var(--r-md);
+  padding: 0.5rem 0.66rem;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.4;
+  box-shadow: var(--shadow-pop);
+  pointer-events: none;
+}
+.mk-tip[data-side='left'] {
+  transform: translateX(-100%);
+}
+.mk-tipinfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+.mk-tipinfo span {
+  white-space: nowrap;
+}
+
+/* legend (right column, landscape only) */
+.mk-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.55rem 0.15rem 0.1rem;
+  margin-top: 0.3rem;
+  border-top: 1px dashed var(--line-strong);
+}
+.mk-legend__title {
+  font-family: var(--font-type);
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  text-align: center;
+  margin-bottom: 0.15rem;
+}
+.mk-legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.mk-leg {
+  display: grid;
+  grid-template-columns: 1.5em 1fr;
+  column-gap: 0.4rem;
+  align-items: center;
+}
+.mk-leg__glyph {
+  grid-row: 1 / span 2;
+  font-size: 1.1rem;
+  text-align: center;
+  align-self: center;
+}
+.mk-leg__name {
+  font-size: 0.74rem;
+  color: var(--bone);
+  line-height: 1.1;
+}
+.mk-leg__status {
+  font-family: var(--font-type);
+  font-size: 0.58rem;
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  color: var(--bone-faint);
+}
+.mk-leg__status::before {
+  content: '';
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 99px;
+  background: currentColor;
+}
+.mk-leg[data-status='occupiable'] .mk-leg__status {
+  color: var(--evergreen);
+}
+.mk-leg[data-status='blocked'] .mk-leg__status {
+  color: var(--crimson);
+}
+.mk-leg[data-status='wall'] .mk-leg__status {
+  color: var(--diff-tutorial);
+}
+
+/* =============================================================== DIALOG */
+.mk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(8, 7, 11, 0.72);
+  backdrop-filter: blur(4px);
+  animation: fade 0.25s ease;
+}
+.mk-dialog {
+  width: min(28rem, 100%);
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-xl);
+  padding: 2rem 1.8rem;
+  text-align: center;
+  box-shadow: var(--shadow-pop);
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+.mk-dialog__stamp {
+  font-family: var(--font-display);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 1.6rem;
+  letter-spacing: 0.06em;
+  border: 3px solid currentColor;
+  border-radius: var(--r-sm);
+  padding: 0.3rem 1rem;
+  transform: rotate(-7deg);
+  animation: stamp 0.5s cubic-bezier(0.2, 1.4, 0.5, 1) forwards;
+}
+.mk-dialog__stamp[data-win='true'] {
+  color: var(--evergreen);
+}
+.mk-dialog__stamp[data-win='false'] {
+  color: var(--crimson);
+}
+.mk-dialog h3 {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  margin: 0;
+}
+.mk-dialog p {
+  margin: 0;
+  color: var(--bone-dim);
+  font-family: var(--font-type);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.mk-dialog__murderer {
+  color: var(--crimson) !important;
+  font-size: 1.05rem !important;
+}
+.mk-dialog__actions {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: 0.4rem;
+}
+
+/* hint banner */
+.mk-hintbar {
+  margin: 0 0 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--r-md);
+  background: rgba(226, 183, 94, 0.1);
+  border: 1px solid var(--brass-dim);
+  font-family: var(--font-type);
+  font-size: 0.82rem;
+  color: var(--bone);
+  line-height: 1.45;
+}
+.mk-hintbar strong {
+  color: var(--brass);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+/* ============================================================= ANIMATIONS */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-7deg) scale(2.4);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-7deg) scale(1);
+  }
+}
+
+/* ===================================== RESPONSIVE: portrait / narrow ===== */
+@media (orientation: portrait), (max-width: 860px) {
+  .mk-game {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      'head'
+      'board'
+      'clues'
+      'tools';
+  }
+  .mk-board {
+    height: min(48dvh, 92vw);
+    padding: 0.6rem;
+  }
+  .mk-clues {
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    padding: 0.9rem 0.9rem 1rem;
+  }
+  .mk-tools {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 0.6rem 0.7rem;
+    overflow-x: auto;
+  }
+  .mk-tools__label {
+    display: none;
+  }
+  .mk-tools__spacer {
+    display: none;
+  }
+  .mk-legend {
+    display: none;
+  }
+  .mk-tool {
+    flex: 1 0 auto;
+    min-width: 64px;
+    flex-direction: row;
+    gap: 0.4rem;
+  }
+  .mk-tool--submit {
+    min-width: 120px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001s !important;
+    animation-delay: 0s !important;
+  }
+  /* Entrance animations must never leave content invisible when motion is off. */
+  .mk-start__kicker,
+  .mk-wordmark,
+  .mk-start__tag,
+  .mk-start__cta,
+  .mk-start__lang,
+  .mk-card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

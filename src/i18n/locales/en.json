@@ -7,6 +7,55 @@
     "de": "German",
     "en": "English"
   },
+  "start": {
+    "kicker": "A logic mystery",
+    "play": "Open the case",
+    "credit": "Murdoku · a logic mystery"
+  },
+  "select": {
+    "title": "The Case Files",
+    "subtitle": "Pick a case",
+    "filterDifficulty": "Difficulty",
+    "filterSize": "Size",
+    "all": "All",
+    "empty": "No cases match these filters.",
+    "solved": "Solved"
+  },
+  "difficulty": {
+    "tutorial": "Tutorial",
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard"
+  },
+  "game": {
+    "suspects": "Suspects",
+    "selectPrompt": "Tap to select · long-press to place",
+    "victim": "The Victim",
+    "victimStatement": "was alone with the murderer.",
+    "tools": "Tools"
+  },
+  "tool": {
+    "x": "X",
+    "xSub": "block cell",
+    "erase": "Clear",
+    "eraseSub": "hold",
+    "undo": "Undo",
+    "hint": "Hint",
+    "submit": "Solve",
+    "submitLocked": "place all first",
+    "hintNone": "No hint available right now."
+  },
+  "result": {
+    "winStamp": "Case closed",
+    "loseStamp": "Not yet",
+    "winTitle": "Well done, detective!",
+    "winBody": "Every suspect placed correctly.",
+    "winMurderer": "The murderer was {{name}} in the {{room}}.",
+    "loseTitle": "That's not right yet.",
+    "loseBody": "At least one person is misplaced. Keep at it!",
+    "retry": "Keep solving",
+    "back": "Back to cases"
+  },
   "object": {
     "table": "a table",
     "bed": "a bed",
@@ -20,6 +69,27 @@
     "shelf": "a shelf",
     "box": "a box",
     "window": "a window"
+  },
+  "objName": {
+    "floor": "Floor",
+    "table": "Table",
+    "bed": "Bed",
+    "carpet": "Carpet",
+    "chair": "Chair",
+    "tv": "TV",
+    "statue": "Statue",
+    "rubble": "Rubble",
+    "plant": "Plant",
+    "shrub": "Shrub",
+    "shelf": "Shelf",
+    "box": "Box",
+    "window": "Window"
+  },
+  "legend": {
+    "title": "Legend",
+    "occupiable": "walkable",
+    "blocked": "blocked",
+    "wall": "on the wall"
   },
   "dir": {
     "north": "north",
@@ -60,31 +130,54 @@
   "pron": { "m": "he", "f": "she" },
   "poss": { "m": "his", "f": "her" },
   "clue": {
-    "onObject": "{{subject}} was on {{object}}",
-    "nearObject": "{{subject}} was beside {{object}}",
-    "nearWindow": "{{subject}} was beside a window",
+    "onObject": "{{subject}} was [[on:onObject]] {{object}}",
+    "nearObject": "{{subject}} was [[beside:nearObject]] {{object}}",
+    "nearWindow": "{{subject}} was [[beside a window:nearWindow]]",
     "inRoom": "{{subject}} was in the {{room}}",
-    "inRow": "{{subject}} was in row {{row}}",
-    "inCol": "{{subject}} was in column {{col}}",
-    "corner": "{{subject}} was in a corner",
-    "uniqueOnObject": "{{subject}} was the only person on {{object}}",
-    "alone": "{{subject}} was alone in the room",
+    "inRow": "{{subject}} was in [[row:inRow]] {{row}}",
+    "inCol": "{{subject}} was in [[column:inCol]] {{col}}",
+    "corner": "{{subject}} was [[in a corner:corner]]",
+    "uniqueOnObject": "{{subject}} was [[the only person on:uniqueOnObject]] {{object}}",
+    "alone": "{{subject}} was [[alone in the room:alone]]",
     "roomAttribute": {
-      "none": "No one in {{poss}} room had {{attribute}}",
-      "some": "Someone with {{attribute}} was in {{poss}} room",
-      "all": "Everyone in {{poss}} room had {{attribute}}"
+      "none": "[[No one:roomAttrNone]] in {{poss}} room had {{attribute}}",
+      "some": "[[Someone:roomAttrSome]] with {{attribute}} was in {{poss}} room",
+      "all": "[[Everyone:roomAttrAll]] in {{poss}} room had {{attribute}}"
     },
     "direction": "{{subject}} was {{direction}} of {{target}}",
-    "offsetWest": "{{subject}} was exactly {{n}} column(s) west of {{target}}",
-    "offsetEast": "{{subject}} was exactly {{n}} column(s) east of {{target}}",
-    "offsetNorth": "{{subject}} was exactly {{n}} row(s) north of {{target}}",
-    "offsetSouth": "{{subject}} was exactly {{n}} row(s) south of {{target}}",
-    "aloneWith": "{{subject}} was alone with {{who}}",
-    "roomExistsOnObject": "{{who}} was on {{object}} in {{poss}} area",
-    "sameRoom": "{{subject}} was in the same room as {{target}}",
+    "offsetWest": "{{subject}} was exactly {{n}} column(s) [[west:offset]] of {{target}}",
+    "offsetEast": "{{subject}} was exactly {{n}} column(s) [[east:offset]] of {{target}}",
+    "offsetNorth": "{{subject}} was exactly {{n}} row(s) [[north:offset]] of {{target}}",
+    "offsetSouth": "{{subject}} was exactly {{n}} row(s) [[south:offset]] of {{target}}",
+    "aloneWith": "{{subject}} was [[alone with:aloneWith]] {{who}}",
+    "roomExistsOnObject": "{{who}} was [[on:onObject]] {{object}} in {{poss}} area",
+    "sameRoom": "{{subject}} was [[in the same room as:sameRoom]] {{target}}",
     "connAnd": "and",
     "connOr": "or",
     "not": "not ({{child}})"
+  },
+  "tip": {
+    "onObject": "Standing directly on this object (it is walkable).",
+    "nearObject": "Right next to it — same room, one tile left, right, above or below the object.",
+    "nearWindow": "On the tile right at a window (the window sits on that tile's wall).",
+    "corner": "Corner tile: at least two walls touch / enclose the tile.",
+    "alone": "Truly alone in the room — no other suspect, and not the victim either.",
+    "aloneWith": "Only this one person is otherwise in the room (the victim doesn't count).",
+    "uniqueOnObject": "The only person standing on such an object.",
+    "sameRoom": "In the same room as this person.",
+    "direction": "Lies in this compass direction from the named person (north = further up, etc.).",
+    "offset": "Exactly that many tiles in this direction from the target person.",
+    "roomAttrNone": "Nobody else in the same room has this trait.",
+    "roomAttrSome": "At least one person in the same room has this trait.",
+    "roomAttrAll": "Everyone in the same room has this trait.",
+    "inRow": "The named row (counted from the top).",
+    "inCol": "The named column (counted from the left)."
+  },
+  "info": {
+    "male": "male",
+    "female": "female",
+    "beard": "beard",
+    "glasses": "glasses"
   },
   "step": {
     "clueCandidates": "{{name}}: the clues leave {{count}} possible cells.",

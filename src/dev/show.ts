@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { loadLevel, type LevelJson } from '../engine/index.ts'
-import { Renderer } from './format.ts'
+import { Renderer } from '../i18n/Renderer.ts'
 import de from '../i18n/locales/de.json'
 
 const path = process.argv[2]

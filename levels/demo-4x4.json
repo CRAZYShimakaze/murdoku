@@ -16,7 +16,7 @@
   "roomMap": ["LLLL", "LLLL", "BBBB", "BBBB"],
   "groundMap": ["....", "....", "....", "...."],
   "topMap": ["..t.", "f...", ".b..", ".b.p"],
-  "windows": [{ "r": 2, "c": 3, "side": "W" }],
+  "windows": [{ "r": 2, "c": 3, "side": "E" }],
   "suspects": [
     {
       "id": "A",

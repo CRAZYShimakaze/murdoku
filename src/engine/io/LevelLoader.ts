@@ -1,4 +1,4 @@
-import { Board, edgeKey } from '../model/Board.ts'
+import { Board } from '../model/Board.ts'
 import { GameObject } from '../model/GameObject.ts'
 import { Tile } from '../model/Tile.ts'
 import { Room } from '../model/Room.ts'
@@ -6,6 +6,7 @@ import { Suspect } from '../model/Suspect.ts'
 import { Victim } from '../model/Victim.ts'
 import { Puzzle } from '../model/Puzzle.ts'
 import { VICTIM_ID } from '../model/types.ts'
+import type { Cell, Side } from '../model/types.ts'
 import { createClue } from '../clues/ClueFactory.ts'
 import type { LevelJson } from './LevelSchema.ts'
 
@@ -82,16 +83,19 @@ export function loadLevel(level: LevelJson): Puzzle {
     }
   }
 
-  const windowEdges = new Set<string>()
+  const windows = new Map<Cell, Set<Side>>()
   for (const w of level.windows ?? []) {
     assert(
       w.r >= 0 && w.r < height && w.c >= 0 && w.c < width,
       `window out of bounds at ${w.r},${w.c}`,
     )
-    windowEdges.add(edgeKey(w.r, w.c, w.side))
+    const cell = w.r * width + w.c
+    const sides = windows.get(cell) ?? new Set<Side>()
+    sides.add(w.side)
+    windows.set(cell, sides)
   }
 
-  const board = new Board(width, height, tiles, rooms, windowEdges)
+  const board = new Board(width, height, tiles, rooms, windows)
 
   const seen = new Set<string>()
   const suspects = level.suspects.map((s) => {

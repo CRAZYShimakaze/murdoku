@@ -28,7 +28,12 @@ export class Board {
     readonly height: number,
     readonly tiles: readonly Tile[],
     readonly rooms: ReadonlyMap<string, Room>,
-    private readonly windowEdges: ReadonlySet<string>,
+    /**
+     * Windows by owning cell → the sides they sit on. A window belongs to the
+     * cell that declares it (so only THAT cell is "beside" it — a window on a
+     * shared edge is not automatically beside the neighbour across the wall).
+     */
+    private readonly windows: ReadonlyMap<Cell, ReadonlySet<Side>>,
   ) {
     for (let c = 0; c < tiles.length; c++) {
       if (tiles[c].occupiable) this.occupiable.push(c)
@@ -75,15 +80,15 @@ export class Board {
     return out
   }
 
-  /** Whether any of the cell's four sides carries a window. */
+  /** Whether this cell owns a window (i.e. is "beside a window"). */
   hasWindow(cell: Cell): boolean {
-    const { row, col } = this.rc(cell)
-    return (
-      this.windowEdges.has(`h:${row}:${col}`) ||
-      this.windowEdges.has(`h:${row + 1}:${col}`) ||
-      this.windowEdges.has(`v:${row}:${col}`) ||
-      this.windowEdges.has(`v:${row}:${col + 1}`)
-    )
+    return this.windows.has(cell)
+  }
+
+  /** The sides of this cell that carry a window (for rendering). */
+  windowSides(cell: Cell): Side[] {
+    const sides = this.windows.get(cell)
+    return sides ? [...sides] : []
   }
 
   /** A cell is a corner of its room when two perpendicular sides are walls. */
