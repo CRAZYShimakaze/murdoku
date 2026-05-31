@@ -17,11 +17,13 @@ export const OBJECT_GLYPHS: Record<string, string> = {
   statue: '🗿',
   rubble: '🧱',
   window: '🪟',
+  car: '🚗',
 }
 
 /** Small chips shown on suspect cards so attribute clues are playable. */
 export const ATTR_CHIPS: Record<string, (value: unknown) => string | null> = {
   beard: (v) => (v === true ? '🧔 ' : null),
   glasses: (v) => (v === true ? '👓' : null),
+  bald: (v) => (v === true ? '🧑‍🦲' : null),
   gender: (v) => (v === 'f' ? '♀' : v === 'm' ? '♂' : null),
 }

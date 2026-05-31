@@ -14,6 +14,7 @@ interface Props {
   placements: Map<PersonId, Cell>
   selectedSuspect: PersonId | null
   onSelect: (id: PersonId) => void
+  onHoverSuspect?: (id: PersonId | null) => void
   hint: string | null
 }
 
@@ -32,6 +33,7 @@ export default function CluePanel({
   placements,
   selectedSuspect,
   onSelect,
+  onHoverSuspect,
   hint,
 }: Props) {
   const { t, i18n } = useTranslation()
@@ -73,9 +75,12 @@ export default function CluePanel({
             key={s.id}
             type="button"
             className="mk-clue"
+            data-suspect={s.id}
             data-selected={selectedSuspect === s.id}
             data-placed={placed}
             onClick={() => onSelect(s.id)}
+            onPointerEnter={() => onHoverSuspect?.(s.id)}
+            onPointerLeave={() => onHoverSuspect?.(null)}
           >
             <InfoTip className="mk-avatarwrap" anchor=".mk-clue" content={attrInfo(s.attributes)}>
               <Avatar
@@ -106,6 +111,7 @@ export default function CluePanel({
       <button
         type="button"
         className="mk-clue mk-clue--victim"
+        data-suspect={VICTIM_ID}
         data-selected={selectedSuspect === VICTIM_ID}
         data-placed={placements.has(VICTIM_ID)}
         onClick={() => onSelect(VICTIM_ID)}

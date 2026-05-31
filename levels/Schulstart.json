@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "id": "Schulstart",
+  "difficulty": "easy",
+  "size": {
+    "width": 4,
+    "height": 4
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Aula",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "Lehrerzimmer",
+      "color": "#b9d0e6"
+    }
+  },
+  "objects": {
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "1111",
+    "1111",
+    "2221",
+    "2221"
+  ],
+  "groundMap": [
+    "....",
+    "....",
+    "..r.",
+    "...."
+  ],
+  "topMap": [
+    ".bbs",
+    "....",
+    "bb..",
+    "...u"
+  ],
+  "windows": [
+    {
+      "r": 1,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 3,
+      "side": "N"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alex",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "black",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bernd",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "brown",
+        "beard": true,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "bed"
+            },
+            {
+              "type": "inRow",
+              "row": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "black",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "nearWindow"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vita",
+    "attributes": {
+      "gender": "f",
+      "glasses": true,
+      "hair": "black",
+      "beard": false,
+      "bald": false
+    }
+  },
+  "title": "Schulstart"
+}

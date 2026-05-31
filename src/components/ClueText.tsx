@@ -65,10 +65,19 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
         return out
       }
       if (exp.key === 'clue.not') {
+        const child = exp.children[0]
+        const negWord = renderer.lookup('clue.negWord') ?? 'nicht '
+        const childTmpl =
+          child.children && child.children.length > 0 ? null : renderer.lookup(child.key)
+        // Inject "nicht " into the child sentence ("X war nicht …") when it has a
+        // {{neg}} slot; otherwise fall back to wrapping it as "nicht (…)".
+        if (childTmpl && childTmpl.includes('{{neg}}')) {
+          return renderExp(child, { ...extra, neg: negWord })
+        }
         return parseTemplate(
           renderer.lookup('clue.not') ?? 'not ({{child}})',
           extra,
-          renderExp(exp.children[0], extra),
+          renderExp(child, extra),
         )
       }
       return exp.children.flatMap((c, i) => (i > 0 ? [' ', ...renderExp(c, extra)] : renderExp(c, extra)))

@@ -98,9 +98,13 @@ export class RoomAttributeClue extends Clue {
   }
 
   describe(): Explanation {
+    // Boolean traits read as the attribute itself ("a beard"); valued traits
+    // (hair colour, gender, …) fold the value into the token so the wording can
+    // distinguish "blond hair" from "brown hair" via `attr.<attribute>_<value>`.
+    const token = this.value === true ? this.attribute : `${this.attribute}_${this.value}`
     return {
       key: `clue.roomAttribute.${this.quantifier}`,
-      params: { attribute: this.attribute },
+      params: { attribute: token },
     }
   }
 }

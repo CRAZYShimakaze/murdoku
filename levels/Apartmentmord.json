@@ -1,0 +1,217 @@
+{
+  "schema": 1,
+  "id": "gen-apartment-864520663",
+  "difficulty": "medium",
+  "size": {
+    "width": 6,
+    "height": 6
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Schlafzimmer",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "Arbeitszimmer",
+      "color": "#b9d0e6"
+    },
+    "3": {
+      "nameKey": "Garage",
+      "color": "#cfe0cf"
+    }
+  },
+  "objects": {
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "112222",
+    "112222",
+    "133333",
+    "111333",
+    "113333",
+    "113333"
+  ],
+  "groundMap": [
+    ".r....",
+    "......",
+    "r.....",
+    "......",
+    "..r...",
+    "......"
+  ],
+  "topMap": [
+    "....b.",
+    ".fspb.",
+    "..s.x.",
+    "xx..f.",
+    ".u.t..",
+    ".s...."
+  ],
+  "windows": [
+    {
+      "r": 3,
+      "c": 5,
+      "side": "E"
+    },
+    {
+      "r": 4,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 5,
+      "c": 0,
+      "side": "S"
+    },
+    {
+      "r": 2,
+      "c": 5,
+      "side": "E"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "shrub"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "brown",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "table"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "brown",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "table"
+            },
+            {
+              "type": "atWall"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "black",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "sameRoom",
+          "as": "D"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Viola",
+    "attributes": {
+      "gender": "f",
+      "glasses": true,
+      "hair": "white",
+      "beard": false,
+      "bald": false
+    }
+  },
+  "title": "Apartmentmord"
+}

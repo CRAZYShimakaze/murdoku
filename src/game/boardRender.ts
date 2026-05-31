@@ -1,6 +1,10 @@
 import { VICTIM_ID, type Cell, type PersonId, type Puzzle, type Side } from '../engine/index.ts'
-import { BOARD, suspectColor } from './palette.ts'
+import { BOARD, ROOM_HL, suspectColor } from './palette.ts'
 import { OBJECT_GLYPHS } from './glyphs.ts'
+import { drawBigObject, drawSingleObject } from './bigObjects.ts'
+
+/** Object types drawn as detailed 2-cell vector images (instead of an emoji). */
+const BIG_OBJECTS = new Set(['bed', 'car'])
 
 export interface RevealInfo {
   victimCell: Cell
@@ -27,6 +31,12 @@ export interface BoardView {
   avatars?: Map<PersonId, HTMLImageElement>
   /** Cell under the cursor/finger → outlined yellow (occupiable) or red (blocked). */
   hover?: Cell | null
+  /** Suspect whose pencil notes should be emphasized (animated bigger) on the board. */
+  emphasizeMarks?: PersonId | null
+  /** 0..1 pulse value for the emphasized notes. */
+  emphasizePulse?: number
+  /** Override the candidate-highlight colours (default brass; tutorial uses blue). */
+  highlightColor?: { wash: string; ring: string }
   /** Thumbnail mode: rooms + walls + object dots only. */
   preview?: boolean
 }
@@ -69,7 +79,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.fillStyle = room?.color ?? '#cfcfcf'
     ctx.fillRect(x, y, S, S)
     if (view.highlight?.has(c)) {
-      ctx.fillStyle = BOARD.highlight
+      ctx.fillStyle = view.highlightColor?.wash ?? BOARD.highlight
       ctx.fillRect(x, y, S, S)
     }
   }
@@ -169,30 +179,53 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     for (const side of sides) drawWindow(ctx, x, y, S, side)
   }
 
-  // --- object emoji (preview thumbnails: same icons, no plates) ----------
+  // Big objects (bed/car) span 2 adjacent tiles OF THE SAME ROOM; draw once at the
+  // left/top cell. A pair straddling two rooms renders as two single 1-tile objects.
+  const sameType = (type: string, room: string, r: number, c: number) =>
+    board.inBounds(r, c) &&
+    board.tileAt(board.idx(r, c)).top?.type === type &&
+    board.roomIdOf(board.idx(r, c)) === room
+  const drawBig = (type: string, c: Cell): void => {
+    const { row, col } = board.rc(c)
+    const { x, y } = xy(c)
+    const room = board.roomIdOf(c)
+    if (sameType(type, room, row, col - 1) || sameType(type, room, row - 1, col)) return // secondary
+    if (sameType(type, room, row, col + 1)) drawBigObject(ctx, type, x, y, S, false)
+    else if (sameType(type, room, row + 1, col)) drawBigObject(ctx, type, x, y, S, true)
+    else drawSingleObject(ctx, type, x, y, S) // isolated / cross-room → single 1-tile
+  }
+
+  // --- objects: bed/car as detailed vectors, the rest as emoji -----------
   if (preview) {
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillStyle = '#1c1822'
     for (let c = 0; c < W * H; c++) {
       const top = board.tileAt(c).top
-      const glyph = top ? OBJECT_GLYPHS[top.type] : undefined
-      if (!glyph) continue
+      if (!top) continue
       const { x, y } = xy(c)
+      if (BIG_OBJECTS.has(top.type)) {
+        drawBig(top.type, c)
+        continue
+      }
+      const glyph = OBJECT_GLYPHS[top.type]
+      if (!glyph) continue
+      ctx.fillStyle = '#1c1822'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
       ctx.font = `${S * 0.72}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`
       ctx.fillText(glyph, x + S / 2, y + S * 0.55)
     }
     return
   }
 
-  // --- object emoji (white tile ONLY behind blocking objects) ---
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
   for (let c = 0; c < W * H; c++) {
     const top = board.tileAt(c).top
-    const glyph = top ? OBJECT_GLYPHS[top.type] : undefined
-    if (!top || !glyph) continue
+    if (!top) continue
     const { x, y } = xy(c)
+    if (BIG_OBJECTS.has(top.type)) {
+      drawBig(top.type, c)
+      continue
+    }
+    const glyph = OBJECT_GLYPHS[top.type]
+    if (!glyph) continue
     if (!top.occupiable) {
       const pad = S * 0.08
       ctx.fillStyle = 'rgba(255, 255, 255, 0.78)'
@@ -204,13 +237,15 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       ctx.stroke()
     }
     ctx.fillStyle = '#1c1822' // opaque, so any monochrome glyph stays bold (not faint)
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
     ctx.font = `${S * 0.66}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`
     ctx.fillText(glyph, x + S / 2, y + S * 0.56)
   }
 
   // --- highlight ring on candidate cells --------------------------------
   if (view.highlight) {
-    ctx.strokeStyle = BOARD.highlightRing
+    ctx.strokeStyle = view.highlightColor?.ring ?? BOARD.highlightRing
     ctx.lineWidth = Math.max(2, S * 0.05)
     for (const c of view.highlight) {
       const { x, y } = xy(c)
@@ -236,19 +271,28 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.stroke()
   }
 
-  // --- pencil marks (each id in ITS OWN suspect colour) ------------------
+  // --- pencil marks (each id in ITS OWN suspect colour; hovered suspect bigger) ---
   const occupied = new Set(view.placements.values())
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'top'
-  ctx.font = `700 ${S * 0.27}px 'Spline Sans', sans-serif`
   for (const [c, set] of view.marks) {
     if (occupied.has(c) || set.size === 0) continue
     const { x, y } = xy(c)
-    let i = 0
-    for (const id of set) {
-      ctx.fillStyle = suspectColor(view.suspectIndex.get(id) ?? 0)
-      ctx.fillText(id, x + S * 0.09 + i * S * 0.23, y + S * 0.07)
-      i++
+    if (view.emphasizeMarks && set.has(view.emphasizeMarks)) {
+      const scale = 1 + 0.4 * (view.emphasizePulse ?? 0)
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.font = `800 ${S * 0.44 * scale}px 'Spline Sans', sans-serif`
+      ctx.fillStyle = suspectColor(view.suspectIndex.get(view.emphasizeMarks) ?? 0)
+      ctx.fillText(view.emphasizeMarks, x + S / 2, y + S / 2)
+    } else {
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      ctx.font = `700 ${S * 0.27}px 'Spline Sans', sans-serif`
+      let i = 0
+      for (const id of set) {
+        ctx.fillStyle = suspectColor(view.suspectIndex.get(id) ?? 0)
+        ctx.fillText(id, x + S * 0.09 + i * S * 0.23, y + S * 0.07)
+        i++
+      }
     }
   }
 
@@ -273,6 +317,40 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     } else {
       drawToken(ctx, { x, y }, S, id, suspectColor(view.suspectIndex.get(id) ?? 0))
     }
+  }
+
+  // --- hover: outline the whole room (blue, inside the walls) -----------
+  if (view.hover != null) {
+    const room = board.roomIdOf(view.hover)
+    const wall = (r: number, c: number) =>
+      !board.inBounds(r, c) || board.roomIdOf(board.idx(r, c)) !== room
+    const ri = S * 0.11
+    ctx.strokeStyle = ROOM_HL
+    ctx.lineWidth = Math.max(1.5, S * 0.04)
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    for (let c = 0; c < W * H; c++) {
+      if (board.roomIdOf(c) !== room) continue
+      const { row, col } = board.rc(c)
+      const { x, y } = xy(c)
+      if (wall(row - 1, col)) {
+        ctx.moveTo(x + ri, y + ri)
+        ctx.lineTo(x + S - ri, y + ri)
+      }
+      if (wall(row + 1, col)) {
+        ctx.moveTo(x + ri, y + S - ri)
+        ctx.lineTo(x + S - ri, y + S - ri)
+      }
+      if (wall(row, col - 1)) {
+        ctx.moveTo(x + ri, y + ri)
+        ctx.lineTo(x + ri, y + S - ri)
+      }
+      if (wall(row, col + 1)) {
+        ctx.moveTo(x + S - ri, y + ri)
+        ctx.lineTo(x + S - ri, y + S - ri)
+      }
+    }
+    ctx.stroke()
   }
 
   // --- hover/press outline: yellow on occupiable, red on blocked --------

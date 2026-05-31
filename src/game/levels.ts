@@ -29,6 +29,16 @@ function titleFromId(id: string): string {
   return match ? `${humanize(match[1])} #${match[2].slice(-3)}` : humanize(id)
 }
 
+/** Sort order for the level list: difficulty first (tutorial→hard), then board
+ *  size ascending (4×4, 5×5, …), then title. Custom levels sort in like any other. */
+export function compareLevels(a: LevelMeta, b: LevelMeta): number {
+  return (
+    DIFF_ORDER[a.difficulty] - DIFF_ORDER[b.difficulty] ||
+    a.width * a.height - b.width * b.height ||
+    a.title.localeCompare(b.title)
+  )
+}
+
 /** Build a LevelMeta from a raw level (e.g. a freshly generated / saved one). */
 export function levelMetaFromJson(json: LevelJson, custom = false): LevelMeta {
   return {
@@ -64,18 +74,13 @@ export const LEVELS: LevelMeta[] = Object.values(modules)
   .map((m) => m.default)
   .map((json) => ({
     id: json.id,
-    title: humanize(json.id),
+    title: json.title ?? humanize(json.id),
     difficulty: asDifficulty(json.difficulty),
     width: json.size.width,
     height: json.size.height,
     json,
   }))
-  .sort(
-    (a, b) =>
-      DIFF_ORDER[a.difficulty] - DIFF_ORDER[b.difficulty] ||
-      a.width * a.height - b.width * b.height ||
-      a.title.localeCompare(b.title),
-  )
+  .sort(compareLevels)
 
 /** Distinct "W×H" sizes present, sorted by area — for the size filter. */
 export const LEVEL_SIZES: string[] = [

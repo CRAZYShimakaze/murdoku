@@ -11,7 +11,144 @@
     "kicker": "A logic mystery",
     "play": "Open the case",
     "generate": "Generate a level",
+    "tutorial": "Tutorial",
+    "editor": "Editor",
     "credit": "Murdoku · a logic mystery"
+  },
+  "editor": {
+    "title": "Editor",
+    "subtitle": "Build your own cases",
+    "name": "Case name",
+    "size": "Size",
+    "theme": "Theme",
+    "mode_rooms": "Rooms",
+    "mode_ground": "Floor",
+    "mode_top": "Objects",
+    "mode_window": "Windows",
+    "rooms": "Rooms",
+    "objects": "Objects",
+    "windows": "Windows",
+    "windowHint": "Click near the edge of a tile to place a window there. Click again to remove it.",
+    "room": "Room",
+    "erase": "Erase",
+    "suspectsSoon": "Suspects & clues come in the next stage.",
+    "check": "Check",
+    "play": "Play",
+    "save": "Save",
+    "saveTitle": "Save case",
+    "saveKeep": "Keep",
+    "saveExport": "As JSON",
+    "saveHint": "'Keep' stores it in the browser (shows up under 'Open case'). 'As JSON' downloads a file — drop it into the levels folder.",
+    "result_saved": "Saved ✓ — available under 'Open case'.",
+    "result_exported": "JSON downloaded ✓",
+    "resultOk": "Solvable & unique ✓ — murderer: {{name}}",
+    "resultOkNoMurderer": "Solvable & unique, but no single murderer.",
+    "result_multi": "Ambiguous — more than one solution.",
+    "result_none": "Not solvable — no valid arrangement.",
+    "result_error": "Error — check the board & clues.",
+    "noClue": "No clue",
+    "clueTitle": "Clue",
+    "cluePreview": "Preview:",
+    "done": "Done",
+    "hairDefault": "Hair colour (default)"
+  },
+  "tutorial": {
+    "next": "Next",
+    "skip": "Skip tutorial",
+    "step": "{{n}}/{{total}}",
+    "err": {
+      "wrongSelect": "Select {{name}} first.",
+      "selectFirst": "Select {{name}} first.",
+      "stayWith": "Stay with {{name}} during the tutorial.",
+      "notCandidate": "No, not here — that's not a possible tile for {{name}}.",
+      "holdToPlace": "Press and hold for ~1 second to place (not just a tap).",
+      "tapForNote": "Here just tap briefly to leave a note.",
+      "wrongCell": "No, not here — think again."
+    },
+    "welcome": {
+      "title": "Welcome, detective!",
+      "body": "Last night there was a murder. Let's solve this case together — I'll guide you step by step. Tap »Next«."
+    },
+    "goal": {
+      "title": "Your goal",
+      "body": "Find the murderer: work out who was in the same room as the victim. Whoever is alone with the victim is the murderer."
+    },
+    "rules": {
+      "title": "The rules",
+      "body": "• Each person is in a different row AND column.\n• Only beds, chairs and carpets can be occupied.\n• Tables, TVs, plants, shelves and boxes are blocked.\n• The victim is on the last free tile."
+    },
+    "board": {
+      "title": "The crime scene",
+      "body": "This is the crime scene — a 4×4 grid with two rooms: Living Room (top) and Bedroom (bottom). Hover over an object to see its name."
+    },
+    "suspects": {
+      "title": "The suspects",
+      "body": "Here are the suspects with their statements: Alex was beside a table, Bernd on a bed, Carmen by a window. (On mobile they're below the board.)"
+    },
+    "terms": {
+      "title": "Bold = important",
+      "body": "Objects and key words are bold. Hover over a word like »beside« or »alone« to see exactly what it means."
+    },
+    "selectA": {
+      "title": "Select Alex",
+      "body": "Let's start with Alex. Tap his card to select him."
+    },
+    "noteA": {
+      "title": "Where can Alex be?",
+      "body": "Alex was beside a table — the blue-outlined tiles are possible. Tap them all briefly to note a small A there."
+    },
+    "selectB": {
+      "title": "Select Bernd",
+      "body": "On to Bernd. Tap his card."
+    },
+    "noteB": {
+      "title": "Where can Bernd be?",
+      "body": "Bernd was on a bed — that's walkable. Briefly tap the blue-outlined beds to note a small B."
+    },
+    "selectC": {
+      "title": "Select Carmen",
+      "body": "Now Carmen. Tap her card."
+    },
+    "placeC": {
+      "title": "Place Carmen",
+      "body": "Carmen must be by a window — only ONE tile is left! Press and hold that tile for ~1 second to place her there."
+    },
+    "locked": {
+      "title": "Row & column locked",
+      "body": "Look closely: Carmen's row and column are now crossed out — nobody else can stand there. That rules out one of the two beds for Bernd."
+    },
+    "selectB2": {
+      "title": "Select Bernd again",
+      "body": "Now Bernd's bed is clear. Select Bernd again."
+    },
+    "placeB": {
+      "title": "Place Bernd",
+      "body": "Only one bed is possible now. Press and hold it for ~1 second to place Bernd."
+    },
+    "selectA2": {
+      "title": "Select Alex",
+      "body": "And now Alex — only one tile is left for him too. Select Alex."
+    },
+    "placeA": {
+      "title": "Place Alex",
+      "body": "Place Alex on the only remaining tile beside the table (press and hold for ~1 second)."
+    },
+    "tools": {
+      "title": "Your tools",
+      "body": "Quick tour of the tools: X tool (block tiles), Reset (hold), Undo, Hint and Solve. (On mobile they're a bar at the bottom.)"
+    },
+    "selectV": {
+      "title": "Select the victim",
+      "body": "Only the victim is left. Tap Olli (the victim)."
+    },
+    "placeV": {
+      "title": "Place the victim",
+      "body": "The victim is on the last free tile. Press and hold it for ~1 second to place Olli."
+    },
+    "solve": {
+      "title": "Solve!",
+      "body": "Done — everyone is placed! Now press »Solve«. Whoever is alone with the victim is the murderer."
+    }
   },
   "generate": {
     "title": "Generate a level",
@@ -29,6 +166,7 @@
   },
   "theme": {
     "random": "Random",
+    "apartment": "Apartment",
     "crime-scene": "Crime scene",
     "auto-shop": "Auto shop",
     "game-night": "Game night",
@@ -104,7 +242,8 @@
     "shrub": "a shrub",
     "shelf": "a shelf",
     "box": "a box",
-    "window": "a window"
+    "window": "a window",
+    "car": "a car"
   },
   "objName": {
     "floor": "Floor",
@@ -119,7 +258,8 @@
     "shrub": "Shrub",
     "shelf": "Shelf",
     "box": "Box",
-    "window": "Window"
+    "window": "Window",
+    "car": "Car"
   },
   "legend": {
     "title": "Legend",
@@ -135,7 +275,14 @@
   },
   "attr": {
     "beard": "a beard",
-    "glasses": "glasses"
+    "glasses": "glasses",
+    "bald": "a bald head",
+    "hair_blond": "blond hair",
+    "hair_brown": "brown hair",
+    "hair_black": "black hair",
+    "hair_red": "red hair",
+    "hair_grey": "grey hair",
+    "hair_white": "white hair"
   },
   "who": {
     "m_dat": "a man",
@@ -144,6 +291,14 @@
     "f_nom": "a woman"
   },
   "room": {
+    "editor1": "Room 1",
+    "editor2": "Room 2",
+    "editor3": "Room 3",
+    "editor4": "Room 4",
+    "editor5": "Room 5",
+    "editor6": "Room 6",
+    "editor7": "Room 7",
+    "editor8": "Room 8",
     "living": "Living Room",
     "bedroom": "Bedroom",
     "dining": "Dining Room",
@@ -166,28 +321,31 @@
   "pron": { "m": "he", "f": "she" },
   "poss": { "m": "his", "f": "her" },
   "clue": {
-    "onObject": "{{subject}} was [[on:onObject]] {{object}}",
-    "nearObject": "{{subject}} was [[beside:nearObject]] {{object}}",
-    "nearWindow": "{{subject}} was [[beside a window:nearWindow]]",
-    "inRoom": "{{subject}} was in the {{room}}",
-    "inRow": "{{subject}} was in [[row:inRow]] {{row}}",
-    "inCol": "{{subject}} was in [[column:inCol]] {{col}}",
-    "corner": "{{subject}} was [[in a corner:corner]]",
-    "uniqueOnObject": "{{subject}} was [[the only person on:uniqueOnObject]] {{object}}",
-    "alone": "{{subject}} was [[alone in the room:alone]]",
+    "negWord": "not ",
+    "onObject": "{{subject}} was {{neg}}[[on:onObject]] {{object}}",
+    "nearObject": "{{subject}} was {{neg}}[[beside:nearObject]] {{object}}",
+    "nearWindow": "{{subject}} was {{neg}}[[beside a window:nearWindow]]",
+    "inRoom": "{{subject}} was {{neg}}in the {{room}}",
+    "inRow": "{{subject}} was {{neg}}in [[row:inRow]] {{row}}",
+    "inCol": "{{subject}} was {{neg}}in [[column:inCol]] {{col}}",
+    "corner": "{{subject}} was {{neg}}[[in a corner:corner]]",
+    "atWall": "{{subject}} was {{neg}}[[beside a wall:atWall]]",
+    "uniqueOnObject": "{{subject}} was {{neg}}[[the only person on:uniqueOnObject]] {{object}}",
+    "uniqueNearWindow": "{{subject}} was {{neg}}[[the only person beside a window:uniqueNearWindow]]",
+    "alone": "{{subject}} was {{neg}}[[alone in the room:alone]]",
     "roomAttribute": {
       "none": "[[No one:roomAttrNone]] in {{poss}} room had {{attribute}}",
       "some": "[[Someone:roomAttrSome]] with {{attribute}} was in {{poss}} room",
       "all": "[[Everyone:roomAttrAll]] in {{poss}} room had {{attribute}}"
     },
-    "direction": "{{subject}} was {{direction}} of {{target}}",
-    "offsetWest": "{{subject}} was exactly {{n}} column(s) [[west:offset]] of {{target}}",
-    "offsetEast": "{{subject}} was exactly {{n}} column(s) [[east:offset]] of {{target}}",
-    "offsetNorth": "{{subject}} was exactly {{n}} row(s) [[north:offset]] of {{target}}",
-    "offsetSouth": "{{subject}} was exactly {{n}} row(s) [[south:offset]] of {{target}}",
-    "aloneWith": "{{subject}} was [[alone with:aloneWith]] {{who}}",
+    "direction": "{{subject}} was {{neg}}{{direction}} of {{target}}",
+    "offsetWest": "{{subject}} was {{neg}}exactly {{n}} column(s) [[west:offset]] of {{target}}",
+    "offsetEast": "{{subject}} was {{neg}}exactly {{n}} column(s) [[east:offset]] of {{target}}",
+    "offsetNorth": "{{subject}} was {{neg}}exactly {{n}} row(s) [[north:offset]] of {{target}}",
+    "offsetSouth": "{{subject}} was {{neg}}exactly {{n}} row(s) [[south:offset]] of {{target}}",
+    "aloneWith": "{{subject}} was {{neg}}[[alone with:aloneWith]] {{who}}",
     "roomExistsOnObject": "{{who}} was [[on:onObject]] {{object}} in {{poss}} area",
-    "sameRoom": "{{subject}} was [[in the same room as:sameRoom]] {{target}}",
+    "sameRoom": "{{subject}} was {{neg}}[[in the same room as:sameRoom]] {{target}}",
     "connAnd": "and",
     "connOr": "or",
     "not": "not ({{child}})"
@@ -197,9 +355,11 @@
     "nearObject": "Right next to it — same room, one tile left, right, above or below the object.",
     "nearWindow": "On the tile right at a window (the window sits on that tile's wall).",
     "corner": "Corner tile: at least two walls touch / enclose the tile.",
+    "atWall": "At least one side of the tile borders a wall (board edge or another room).",
     "alone": "Truly alone in the room — no other suspect, and not the victim either.",
     "aloneWith": "Only this one person is otherwise in the room (the victim doesn't count).",
     "uniqueOnObject": "The only person standing on such an object.",
+    "uniqueNearWindow": "The only person standing beside a window.",
     "sameRoom": "In the same room as this person.",
     "direction": "Lies in this compass direction from the named person (north = further up, etc.).",
     "offset": "Exactly that many tiles in this direction from the target person.",
@@ -213,8 +373,44 @@
     "male": "male",
     "female": "female",
     "beard": "beard",
-    "glasses": "glasses"
+    "glasses": "glasses",
+    "bald": "bald"
   },
+  "cond": {
+    "inRoom": "In room",
+    "onObject": "On object",
+    "uniqueOnObject": "Only one on object",
+    "nearObject": "Beside object",
+    "nearWindow": "Beside a window",
+    "uniqueNearWindow": "Only one at window",
+    "inRow": "In row",
+    "inCol": "In column",
+    "corner": "In a corner",
+    "atWall": "Beside a wall",
+    "alone": "Alone in room",
+    "sameRoom": "Same room as",
+    "direction": "Direction from",
+    "roomAttribute": "In the room …",
+    "not": "NOT",
+    "add": "+ Condition",
+    "remove": "Remove",
+    "qty": { "none": "No one with", "some": "Someone with", "all": "Everyone with" }
+  },
+  "attrKind": {
+    "beard": "Beard",
+    "glasses": "Glasses",
+    "bald": "Bald",
+    "hair": "Hair colour"
+  },
+  "hairColor": {
+    "blond": "Blond",
+    "brown": "Brown",
+    "black": "Black",
+    "red": "Red",
+    "grey": "Grey",
+    "white": "White"
+  },
+  "conn": { "and": "AND", "or": "OR" },
   "step": {
     "clueCandidates": "{{name}}: the clues leave {{count}} possible cells.",
     "nakedSingle": "{{name}} must be on {{cell}} – the only possible cell.",

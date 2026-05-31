@@ -6,6 +6,7 @@ import {
   DIFFICULTIES,
   LEVELS,
   LEVEL_SIZES,
+  compareLevels,
   levelMetaFromJson,
   type Difficulty,
   type LevelMeta,
@@ -33,6 +34,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
           (diff === 'all' || l.difficulty === diff) &&
           (size === 'all' || `${l.width}×${l.height}` === size),
       )
+      .sort(compareLevels) // difficulty → size; custom levels sort in like any other
   }, [diff, size, custom])
 
   return (

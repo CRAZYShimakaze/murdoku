@@ -11,6 +11,8 @@ import {
 } from '../engine/index.ts'
 import { Renderer } from '../i18n/Renderer.ts'
 import { useGameSession } from '../game/useGameSession.ts'
+import { useTutorialFlow } from '../game/useTutorialFlow.ts'
+import { CANDIDATE_BLUE } from '../game/palette.ts'
 import { markSolved, saveCustomLevel, exportLevelJson, isCustomSaved } from '../game/storage.ts'
 import type { LevelMeta } from '../game/levels.ts'
 import BoardCanvas from '../components/BoardCanvas.tsx'
@@ -18,6 +20,9 @@ import CluePanel from '../components/CluePanel.tsx'
 import Toolbar from '../components/Toolbar.tsx'
 import Legend from '../components/Legend.tsx'
 import ResultDialog from '../components/ResultDialog.tsx'
+import Coach from '../components/Coach.tsx'
+
+const NOOP = () => {}
 
 interface Props {
   meta: LevelMeta
@@ -25,6 +30,8 @@ interface Props {
   /** True when this level was just generated (offers save/export/new on a win). */
   generated?: boolean
   onNew?: () => void
+  /** Tutorial mode: fresh start, separate storage slot (doesn't touch the demo). */
+  tutorial?: boolean
 }
 
 interface Result {
@@ -42,8 +49,9 @@ function formatTime(total: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 }
 
-export default function GameScreen({ meta, onBack, generated, onNew }: Props) {
+export default function GameScreen({ meta, onBack, generated, onNew, tutorial }: Props) {
   const { t, i18n } = useTranslation()
+  const storageId = tutorial ? '__tutorial__' : meta.id
   const puzzle = useMemo(() => loadLevel(meta.json), [meta])
   const solution = useMemo(() => new SearchSolver(puzzle).firstSolution(), [puzzle])
   const engine = useMemo(() => new DeductionEngine(puzzle), [puzzle])
@@ -57,9 +65,11 @@ export default function GameScreen({ meta, onBack, generated, onNew }: Props) {
     [i18n, lang, puzzle],
   )
 
-  const session = useGameSession(puzzle, meta.id)
+  const session = useGameSession(puzzle, storageId, tutorial, !tutorial)
   const [selected, setSelected] = useState<PersonId | null>(null)
+  const [hoveredSuspect, setHoveredSuspect] = useState<PersonId | null>(null)
   const [xTool, setXTool] = useState(false)
+  const tut = useTutorialFlow({ enabled: !!tutorial, puzzle, solution, session, selected, setSelected })
   const [hint, setHint] = useState<string | null>(null)
   const [result, setResult] = useState<Result | null>(null)
   const [elapsed, setElapsed] = useState(0)
@@ -120,7 +130,7 @@ export default function GameScreen({ meta, onBack, generated, onNew }: Props) {
       setResult({ win: false, murderer: null, victimCell: null })
       return
     }
-    markSolved(meta.id)
+    markSolved(storageId)
     session.clearSaved()
     const m = findMurderer(puzzle, solution)
     const room = puzzle.board.rooms.get(m.roomId)
@@ -152,7 +162,8 @@ export default function GameScreen({ meta, onBack, generated, onNew }: Props) {
         suspectIndex={suspectIndex}
         placements={session.state.placements}
         selectedSuspect={selected}
-        onSelect={selectFromCard}
+        onSelect={tut.active ? tut.onSelect : selectFromCard}
+        onHoverSuspect={setHoveredSuspect}
         hint={hint}
       />
 
@@ -162,26 +173,28 @@ export default function GameScreen({ meta, onBack, generated, onNew }: Props) {
           state={session.state}
           suspectIndex={suspectIndex}
           selectedSuspect={selected}
-          highlight={highlight}
-          xTool={xTool}
+          highlight={tut.active ? tut.highlight : highlight}
+          highlightColor={CANDIDATE_BLUE}
+          emphasize={hoveredSuspect}
+          xTool={tut.active ? false : xTool}
           reveal={reveal}
           roomName={(key) => t(key)}
           occupantAt={session.occupantAt}
-          onPlaceMark={session.placeMark}
-          onCommit={session.commit}
-          onRemove={session.remove}
-          onSetCross={session.setCross}
-          onSelectSuspect={selectFromBoard}
+          onPlaceMark={tut.active ? tut.onPlaceMark : session.placeMark}
+          onCommit={tut.active ? tut.onCommit : session.commit}
+          onRemove={tut.active ? NOOP : session.remove}
+          onSetCross={tut.active ? NOOP : session.setCross}
+          onSelectSuspect={tut.active ? (id) => id && tut.onSelect(id) : selectFromBoard}
         />
       </div>
 
       <Toolbar
-        xTool={xTool}
-        onToggleX={toggleX}
-        onUndo={session.undo}
-        canUndo={session.canUndo}
-        onReset={session.resetAll}
-        onHint={showHint}
+        xTool={tut.active ? false : xTool}
+        onToggleX={tut.active ? NOOP : toggleX}
+        onUndo={tut.active ? NOOP : session.undo}
+        canUndo={tut.active ? false : session.canUndo}
+        onReset={tut.active ? NOOP : session.resetAll}
+        onHint={tut.active ? NOOP : showHint}
         onSubmit={submit}
         allPlaced={session.allPlaced}
         legend={<Legend puzzle={puzzle} />}
@@ -204,6 +217,8 @@ export default function GameScreen({ meta, onBack, generated, onNew }: Props) {
           onNew={onNew}
         />
       )}
+
+      {tut.coach && !result && <Coach view={tut.coach} />}
     </div>
   )
 }

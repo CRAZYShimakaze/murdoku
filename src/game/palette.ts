@@ -34,3 +34,8 @@ export const SUSPECT_COLORS = [
 export function suspectColor(index: number): string {
   return SUSPECT_COLORS[index % SUSPECT_COLORS.length]
 }
+
+/** Candidate-cell highlight (used everywhere now — selecting a suspect, tutorial). */
+export const CANDIDATE_BLUE = { wash: 'rgba(58, 99, 217, 0.26)', ring: '#3a63d9' }
+/** Room outline drawn inside the walls of the hovered cell's room. */
+export const ROOM_HL = '#5a8be0'

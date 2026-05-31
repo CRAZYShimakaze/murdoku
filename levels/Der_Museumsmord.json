@@ -1,0 +1,211 @@
+{
+  "schema": 1,
+  "id": "Der Museumsmord",
+  "difficulty": "medium",
+  "size": {
+    "width": 6,
+    "height": 6
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Café",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "Archiv",
+      "color": "#b9d0e6"
+    },
+    "3": {
+      "nameKey": "Sonderausstellung",
+      "color": "#cfe0cf"
+    },
+    "4": {
+      "nameKey": "Foyer",
+      "color": "#d8c0c0"
+    }
+  },
+  "objects": {
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "122221",
+    "112211",
+    "111111",
+    "333311",
+    "443331",
+    "444333"
+  ],
+  "groundMap": [
+    ".....r",
+    "......",
+    ".r.r..",
+    "......",
+    "......",
+    "...r.."
+  ],
+  "topMap": [
+    "p.f...",
+    "bbg..b",
+    "..s..b",
+    "......",
+    ".sp..p",
+    ".....x"
+  ],
+  "windows": [
+    {
+      "r": 5,
+      "c": 4,
+      "side": "S"
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "side": "W"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "black",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 3
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "black",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "carpet"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "blond",
+        "beard": true,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "nearWindow"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "chair"
+            },
+            {
+              "type": "inRoom",
+              "room": "4"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vidal",
+    "attributes": {
+      "gender": "m",
+      "glasses": true,
+      "hair": "white",
+      "beard": false,
+      "bald": false
+    }
+  },
+  "title": "Der Museumsmord"
+}

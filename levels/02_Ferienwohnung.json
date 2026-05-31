@@ -1,0 +1,208 @@
+{
+  "schema": 1,
+  "id": "editor-02-ferienwohnung",
+  "title": "02. Ferienwohnung",
+  "size": {
+    "width": 6,
+    "height": 6
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Empfang",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "Wartezimmer",
+      "color": "#b9d0e6"
+    },
+    "3": {
+      "nameKey": "OP-Saal",
+      "color": "#cfe0cf"
+    },
+    "4": {
+      "nameKey": "Station",
+      "color": "#d8c0c0"
+    },
+    "5": {
+      "nameKey": "Labor",
+      "color": "#e6cda0"
+    },
+    "6": {
+      "nameKey": "Apotheke",
+      "color": "#e6c0d2"
+    },
+    "7": {
+      "nameKey": "Röntgen",
+      "color": "#c6c0e0"
+    },
+    "8": {
+      "nameKey": "Intensivstation",
+      "color": "#c0e0c8"
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "223344",
+    "223344",
+    "223344",
+    "223344",
+    "111111",
+    "111111"
+  ],
+  "groundMap": [
+    "......",
+    "......",
+    "......",
+    "......",
+    "......",
+    "......"
+  ],
+  "topMap": [
+    "..t.f.",
+    "s....p",
+    "bb..bb",
+    "......",
+    "p.....",
+    "f..t.."
+  ],
+  "windows": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Arianna",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "tv"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bernd",
+      "attributes": {
+        "gender": "m",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Colleen",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "3"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dario",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "plant"
+            },
+            {
+              "type": "onObject",
+              "object": "bed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Erik",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "bed"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Oscar",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "difficulty": "easy"
+}

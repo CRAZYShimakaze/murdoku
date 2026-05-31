@@ -86,3 +86,13 @@ export class CornerClue extends UnaryClue {
     return { key: 'clue.corner' }
   }
 }
+
+/** "{name} was beside a wall." (at least one side is a wall) */
+export class AtWallClue extends UnaryClue {
+  candidateCells(board: Board): Set<Cell> {
+    return board.cellsAtWall()
+  }
+  describe(): Explanation {
+    return { key: 'clue.atWall' }
+  }
+}

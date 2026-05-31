@@ -91,17 +91,32 @@ export class Board {
     return sides ? [...sides] : []
   }
 
+  /** A side is a wall when it leaves the board or crosses into another room. */
+  private isWall(row: number, col: number, room: string): boolean {
+    return !this.inBounds(row, col) || this.tiles[this.idx(row, col)].roomId !== room
+  }
+
   /** A cell is a corner of its room when two perpendicular sides are walls. */
   isCorner(cell: Cell): boolean {
     const { row, col } = this.rc(cell)
     const room = this.tiles[cell].roomId
-    const wall = (r: number, c: number): boolean =>
-      !this.inBounds(r, c) || this.tiles[this.idx(r, c)].roomId !== room
-    const n = wall(row - 1, col)
-    const s = wall(row + 1, col)
-    const w = wall(row, col - 1)
-    const e = wall(row, col + 1)
+    const n = this.isWall(row - 1, col, room)
+    const s = this.isWall(row + 1, col, room)
+    const w = this.isWall(row, col - 1, room)
+    const e = this.isWall(row, col + 1, room)
     return (n && e) || (e && s) || (s && w) || (w && n)
+  }
+
+  /** A cell is beside a wall when at least one of its sides is a wall. */
+  isAtWall(cell: Cell): boolean {
+    const { row, col } = this.rc(cell)
+    const room = this.tiles[cell].roomId
+    return (
+      this.isWall(row - 1, col, room) ||
+      this.isWall(row + 1, col, room) ||
+      this.isWall(row, col - 1, room) ||
+      this.isWall(row, col + 1, room)
+    )
   }
 
   // --- candidate-set helpers used by clues -------------------------------
@@ -167,6 +182,15 @@ export class Board {
     const out = new Set<Cell>()
     for (const cell of this.occupiable) {
       if (this.isCorner(cell)) out.add(cell)
+    }
+    return out
+  }
+
+  /** Occupiable cells that sit beside at least one wall. */
+  cellsAtWall(): Set<Cell> {
+    const out = new Set<Cell>()
+    for (const cell of this.occupiable) {
+      if (this.isAtWall(cell)) out.add(cell)
     }
     return out
   }

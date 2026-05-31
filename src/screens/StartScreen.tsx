@@ -4,9 +4,13 @@ import LanguageToggle from '../components/LanguageToggle.tsx'
 export default function StartScreen({
   onPlay,
   onGenerate,
+  onTutorial,
+  onEditor,
 }: {
   onPlay: () => void
   onGenerate: () => void
+  onTutorial: () => void
+  onEditor: () => void
 }) {
   const { t } = useTranslation()
 
@@ -32,7 +36,18 @@ export default function StartScreen({
             <button type="button" className="mk-btn mk-btn--primary" onClick={onPlay}>
               {t('start.play')}
             </button>
-            <button type="button" className="mk-btn mk-btn--ghost" onClick={onGenerate}>
+          </div>
+          <div className="mk-start__more">
+            <button type="button" className="mk-tile" onClick={onTutorial}>
+              <span className="mk-tile__icon">🎓</span>
+              {t('start.tutorial')}
+            </button>
+            <button type="button" className="mk-tile" onClick={onEditor}>
+              <span className="mk-tile__icon">🛠️</span>
+              {t('start.editor')}
+            </button>
+            <button type="button" className="mk-tile" onClick={onGenerate}>
+              <span className="mk-tile__icon">🎲</span>
               {t('start.generate')}
             </button>
           </div>

@@ -1,5 +1,6 @@
 import { Clue } from './Clue.ts'
 import {
+  AtWallClue,
   CornerClue,
   InColClue,
   InRoomClue,
@@ -9,7 +10,7 @@ import {
   OnObjectClue,
 } from './unaryClues.ts'
 import { DirectionClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
-import { UniqueOnObjectClue } from './uniquenessClues.ts'
+import { UniqueOnObjectClue, UniqueNearWindowClue } from './uniquenessClues.ts'
 import { AloneClue, RoomAttributeClue, RoomCompanionClue, RoomExistsClue } from './socialClues.ts'
 import type { Quantifier } from './socialClues.ts'
 import { AndClue, NotClue, OrClue } from './compositeClues.ts'
@@ -24,7 +25,9 @@ export type ClueJson =
   | { type: 'inRow'; row: number }
   | { type: 'inCol'; col: number }
   | { type: 'corner' }
+  | { type: 'atWall' }
   | { type: 'uniqueOnObject'; object: string }
+  | { type: 'uniqueNearWindow' }
   | { type: 'alone' }
   | {
       type: 'roomAttribute'
@@ -59,8 +62,12 @@ export function createClue(json: ClueJson): Clue {
       return new InColClue(json.col)
     case 'corner':
       return new CornerClue()
+    case 'atWall':
+      return new AtWallClue()
     case 'uniqueOnObject':
       return new UniqueOnObjectClue(json.object)
+    case 'uniqueNearWindow':
+      return new UniqueNearWindowClue()
     case 'alone':
       return new AloneClue()
     case 'roomAttribute':

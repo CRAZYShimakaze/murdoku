@@ -22,12 +22,15 @@ interface ObjectDef {
 interface Theme {
   id: string
   rooms: string[]
+  /** Room names that count as outdoor/garage — the only places a car may stand. */
+  outdoor: string[]
 }
 
 const OCCUPIABLE: ObjectDef[] = [
   { char: 's', type: 'chair', occupiable: true },
   { char: 'r', type: 'carpet', occupiable: true },
   { char: 'b', type: 'bed', occupiable: true },
+  { char: 'c', type: 'car', occupiable: true },
 ]
 const BLOCKING: ObjectDef[] = [
   { char: 't', type: 'table', occupiable: false },
@@ -44,50 +47,70 @@ export const GENERATOR_OBJECT_TYPES: string[] = ALL_OBJECTS.map((o) => o.type)
 
 const THEMES: Theme[] = [
   {
+    id: 'apartment',
+    rooms: ['Badezimmer', 'Küche', 'Wohnzimmer', 'Gästezimmer', 'Flur', 'Kinderzimmer 1', 'Kinderzimmer 2', 'Arbeitszimmer', 'Garage', 'Schlafzimmer', 'Esszimmer', 'Balkon', 'Abstellkammer', 'Waschküche', 'Vorratskammer'],
+    outdoor: ['Garage', 'Balkon'],
+  },
+  {
     id: 'crime-scene',
     rooms: ['Flur', 'Wohnzimmer', 'Küche', 'Bad', 'Schlafzimmer', 'Büro', 'Keller', 'Garage', 'Esszimmer', 'Dachboden', 'Gästezimmer', 'Abstellraum', 'Waschküche', 'Veranda', 'Kinderzimmer'],
+    outdoor: ['Garage', 'Veranda'],
   },
   {
     id: 'auto-shop',
     rooms: ['Werkstatt', 'Lager', 'Büro', 'Wartebereich', 'Hof', 'Waschhalle', 'Ersatzteillager', 'Reifenlager', 'Empfang', 'Lackiererei', 'Montagehalle', 'Prüfstand', 'Sozialraum', 'Kasse', 'Tankstelle'],
+    outdoor: ['Werkstatt', 'Hof', 'Waschhalle', 'Montagehalle', 'Lackiererei', 'Prüfstand', 'Tankstelle'],
   },
   {
     id: 'game-night',
     rooms: ['Wohnzimmer', 'Esszimmer', 'Küche', 'Flur', 'Balkon', 'Spielzimmer', 'Bar', 'Lounge', 'Terrasse', 'Bibliothek', 'Wintergarten', 'Diele', 'Vorratskammer', 'Gästebad', 'Arbeitszimmer'],
+    outdoor: ['Balkon', 'Terrasse'],
   },
   {
     id: 'office',
     rooms: ['Großraumbüro', 'Besprechung', 'Küche', 'Empfang', 'Serverraum', 'Archiv', 'Chefbüro', 'Kopierraum', 'Teeküche', 'Lager', 'Konferenzraum', 'Lobby', 'Aufenthaltsraum', 'Poststelle', 'Druckerraum'],
+    outdoor: [],
   },
   {
     id: 'mansion',
     rooms: ['Eingangshalle', 'Salon', 'Speisesaal', 'Bibliothek', 'Musikzimmer', 'Wintergarten', 'Galerie', 'Boudoir', 'Rauchzimmer', 'Ballsaal', 'Gewächshaus', 'Weinkeller', 'Bedienstetenzimmer', 'Ankleidezimmer', 'Kaminzimmer'],
+    outdoor: ['Gewächshaus'],
   },
   {
     id: 'hotel',
     rooms: ['Lobby', 'Rezeption', 'Restaurant', 'Bar', 'Suite', 'Konferenzraum', 'Spa', 'Fitnessraum', 'Küche', 'Gepäckraum', 'Frühstücksraum', 'Dachterrasse', 'Aufzug', 'Flur', 'Wäscherei'],
+    outdoor: ['Dachterrasse'],
   },
   {
     id: 'school',
     rooms: ['Klassenzimmer', 'Aula', 'Turnhalle', 'Bibliothek', 'Lehrerzimmer', 'Sekretariat', 'Pausenhof', 'Chemieraum', 'Musiksaal', 'Mensa', 'Werkraum', 'Computerraum', 'Umkleide', 'Kunstraum', 'Flur'],
+    outdoor: ['Pausenhof'],
   },
   {
     id: 'hospital',
     rooms: ['Empfang', 'Wartezimmer', 'OP-Saal', 'Station', 'Labor', 'Apotheke', 'Röntgen', 'Intensivstation', 'Aufenthaltsraum', 'Notaufnahme', 'Kreißsaal', 'Sterilisation', 'Büro', 'Cafeteria', 'Flur'],
+    outdoor: ['Notaufnahme'],
   },
   {
     id: 'museum',
     rooms: ['Eingangshalle', 'Hauptgalerie', 'Ausstellung', 'Tresor', 'Café', 'Sicherheitsraum', 'Werkstatt', 'Archiv', 'Garderobe', 'Sonderausstellung', 'Foyer', 'Bibliothek', 'Lager', 'Auditorium', 'Toilette'],
+    outdoor: ['Werkstatt'],
   },
   {
     id: 'restaurant',
     rooms: ['Speisesaal', 'Küche', 'Bar', 'Weinkeller', 'Terrasse', 'Lager', 'Büro', 'Empfang', 'Spülküche', 'Vorbereitung', 'Kühlraum', 'Personalraum', 'Lounge', 'Toilette', 'Garderobe'],
+    outdoor: ['Terrasse'],
   },
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
 
 /** Theme ids the generator knows (for the UI's theme picker). */
 export const THEME_IDS: string[] = THEMES.map((t) => t.id)
+
+/** A theme's room names (used as nameKeys, same as generated levels). */
+export function themeRooms(id: string): string[] {
+  return (THEMES.find((t) => t.id === id) ?? THEMES[0]).rooms
+}
 
 export type GenDifficulty = 'easy' | 'medium' | 'hard'
 
@@ -204,11 +227,21 @@ function tryGenerate(
   const { width, height, suspects } = options
   const baseTheme = THEMES.find((t) => t.id === options.themeId) ?? rng.pick(THEMES)
   // Shuffle the theme's room pool so each level uses a random subset → variety.
-  const theme: Theme = { id: baseTheme.id, rooms: rng.shuffle([...baseTheme.rooms]) }
+  const theme: Theme = {
+    id: baseTheme.id,
+    rooms: rng.shuffle([...baseTheme.rooms]),
+    outdoor: baseTheme.outdoor,
+  }
 
   const roomCount = Math.max(3, Math.min(theme.rooms.length, Math.round(suspects * 0.7)))
   const rooms = generateRooms(width, height, roomCount, rng)
   const roomOf = (cell: Cell): string => rooms.roomMap[Math.floor(cell / width)][cell % width]
+  // Which room ids are outdoor/garage (mirrors buildLevel's name assignment).
+  const outdoorIds = new Set<string>()
+  rooms.ids.forEach((id, i) => {
+    if (theme.outdoor.includes(theme.rooms[i % theme.rooms.length])) outdoorIds.add(id)
+  })
+  const isOutdoor = (cell: Cell): boolean => outdoorIds.has(roomOf(cell))
 
   const suspectIds: PersonId[] = Array.from({ length: suspects }, (_, i) => String.fromCharCode(65 + i))
   const peopleIds = [...suspectIds, VICTIM_ID]
@@ -220,7 +253,7 @@ function tryGenerate(
   const allow = options.objects
   const occ = allow ? OCCUPIABLE.filter((o) => allow.includes(o.type)) : OCCUPIABLE
   const blocking = allow ? BLOCKING.filter((o) => allow.includes(o.type)) : BLOCKING
-  const objects = placeObjects(width, height, peopleCells, rng, occ, blocking)
+  const objects = placeObjects(width, height, peopleCells, rng, occ, blocking, isOutdoor, roomOf)
   // Windows are optional — only some levels have them (and then 2–6).
   const windows = rng.chance(0.5) ? placeWindows(width, height, rng) : []
 
@@ -292,7 +325,41 @@ function generateRooms(
     if (assign[cell] < 0) grow(cell, room)
   }
 
-  const ids = seeds.map((_, room) => String(room + 1))
+  // Merge any room with fewer than 3 cells into a neighbouring room (tiny rooms
+  // that can't hold anyone make no sense).
+  const sizes = (): Map<number, number> => {
+    const m = new Map<number, number>()
+    for (const v of assign) m.set(v, (m.get(v) ?? 0) + 1)
+    return m
+  }
+  for (let guard = 0; guard < n; guard++) {
+    const sz = sizes()
+    if (sz.size <= 1) break
+    let small = -1
+    for (const [room, count] of sz) {
+      if (count < 3 && (small < 0 || count < sz.get(small)!)) small = room
+    }
+    if (small < 0) break
+    let target = -1
+    for (let cell = 0; cell < n && target < 0; cell++) {
+      if (assign[cell] !== small) continue
+      for (const nb of neighbors(cell)) {
+        if (assign[nb] !== small) {
+          target = assign[nb]
+          break
+        }
+      }
+    }
+    if (target < 0) break
+    for (let cell = 0; cell < n; cell++) if (assign[cell] === small) assign[cell] = target
+  }
+
+  // Remap remaining rooms to contiguous ids 1..k (some were merged away).
+  const remap = new Map<number, number>()
+  for (const v of assign) if (!remap.has(v)) remap.set(v, remap.size)
+  for (let cell = 0; cell < n; cell++) assign[cell] = remap.get(assign[cell])!
+
+  const ids = Array.from({ length: remap.size }, (_, room) => String(room + 1))
   const roomMap: string[] = []
   for (let r = 0; r < height; r++) {
     let line = ''
@@ -333,19 +400,48 @@ function placeObjects(
   rng: Rng,
   occ: ObjectDef[],
   blocking: ObjectDef[],
+  isOutdoor: (cell: Cell) => boolean,
+  roomOf: (cell: Cell) => string,
 ): { groundMap: string[]; topMap: string[] } {
   const ground: string[][] = Array.from({ length: height }, () => new Array<string>(width).fill('.'))
   const top: string[][] = Array.from({ length: height }, () => new Array<string>(width).fill('.'))
+  const inB = (r: number, c: number) => r >= 0 && r < height && c >= 0 && c < width
+  const free = (r: number, c: number) => inB(r, c) && top[r][c] === '.' && ground[r][c] === '.'
 
-  // Carpets are a ground layer; chairs/beds sit on top.
+  /** Beds and cars occupy two adjacent tiles; the partner must be empty (and, for
+   *  a car, both tiles outdoor). Returns true if the pair was placed. */
+  const placePair = (r: number, c: number, def: ObjectDef): boolean => {
+    for (const [dr, dc] of rng.shuffle([
+      [0, 1],
+      [1, 0],
+      [0, -1],
+      [-1, 0],
+    ])) {
+      const r2 = r + dr
+      const c2 = c + dc
+      if (!free(r2, c2)) continue
+      // A 2-cell object must lie within a single room.
+      if (roomOf(r * width + c) !== roomOf(r2 * width + c2)) continue
+      if (def.type === 'car' && !(isOutdoor(r * width + c) && isOutdoor(r2 * width + c2))) continue
+      top[r][c] = def.char
+      top[r2][c2] = def.char
+      return true
+    }
+    return false
+  }
+
+  // Carpet is a ground layer; chair on top; bed/car span two tiles.
   const placeOcc = (r: number, c: number, def: ObjectDef): void => {
     if (def.type === 'carpet') ground[r][c] = def.char
-    else top[r][c] = def.char
+    else if (def.type === 'bed' || def.type === 'car') {
+      if (!placePair(r, c, def)) top[r][c] = 's' // fall back to a chair if no room
+    } else top[r][c] = def.char
   }
 
   for (let cell = 0; cell < width * height; cell++) {
     const r = Math.floor(cell / width)
     const c = cell % width
+    if (!free(r, c)) continue // already part of a placed bed/car
     if (peopleCells.has(cell)) {
       if (occ.length > 0 && rng.next() < 0.5) placeOcc(r, c, rng.pick(occ))
       continue
@@ -438,7 +534,11 @@ function candidatesFor(
   const out: ClueJson[] = []
 
   for (const obj of board.tileAt(cell).objects()) {
-    if (obj.occupiable) out.push({ type: 'onObject', object: obj.type })
+    if (obj.occupiable) {
+      out.push({ type: 'onObject', object: obj.type })
+      // "only person on a chair/carpet/…" — kept by the test-filter only if truly unique.
+      out.push({ type: 'uniqueOnObject', object: obj.type })
+    }
   }
   const nearTypes = new Set<string>()
   for (const nb of board.neighbors4(cell)) {
@@ -452,7 +552,11 @@ function candidatesFor(
   out.push({ type: 'inRow', row })
   out.push({ type: 'inCol', col })
   if (board.isCorner(cell)) out.push({ type: 'corner' })
-  if (board.hasWindow(cell)) out.push({ type: 'nearWindow' })
+  if (board.isAtWall(cell)) out.push({ type: 'atWall' })
+  if (board.hasWindow(cell)) {
+    out.push({ type: 'nearWindow' })
+    out.push({ type: 'uniqueNearWindow' }) // "only person beside a window" (test-filtered)
+  }
 
   const sameRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
   if (sameRoom.length === 0) out.push({ type: 'alone' })

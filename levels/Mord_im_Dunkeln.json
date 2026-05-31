@@ -1,0 +1,191 @@
+{
+  "schema": 1,
+  "id": "Mord im Dunkeln",
+  "difficulty": "medium",
+  "size": {
+    "width": 5,
+    "height": 5
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Kinderzimmer",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "Keller",
+      "color": "#b9d0e6"
+    }
+  },
+  "objects": {
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "11122",
+    "11122",
+    "11122",
+    "11222",
+    "11222"
+  ],
+  "groundMap": [
+    "r....",
+    ".....",
+    ".rrr.",
+    ".....",
+    ".r..."
+  ],
+  "topMap": [
+    "...ss",
+    ".s.x.",
+    ".....",
+    ".s...",
+    "....s"
+  ],
+  "windows": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alex",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "white",
+        "beard": true,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "chair"
+            },
+            {
+              "type": "nearObject",
+              "object": "carpet"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "brown",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "box"
+            },
+            {
+              "type": "onObject",
+              "object": "chair"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Cyrus",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "brown",
+        "beard": true,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "carpet"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "brown",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "carpet"
+            },
+            {
+              "type": "nearObject",
+              "object": "chair"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vera",
+    "attributes": {
+      "gender": "f",
+      "glasses": false,
+      "hair": "blond",
+      "beard": false,
+      "bald": false
+    }
+  },
+  "title": "Mord im Dunkeln"
+}

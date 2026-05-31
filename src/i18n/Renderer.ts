@@ -69,6 +69,21 @@ export class Renderer {
     }
   }
 
+  /**
+   * Negation. If the inner clue's template has a `{{neg}}` slot (all the
+   * "{{subject}} war …" clues do), render it with "nicht " injected so it reads
+   * "X war nicht …". Otherwise fall back to wrapping it as "nicht (…)".
+   */
+  private renderNot(child: Explanation, extra: Record<string, string | number>): string {
+    const neg = this.lookup('clue.negWord') ?? 'nicht '
+    const template = child.children && child.children.length > 0 ? null : this.lookup(child.key)
+    if (template && template.includes('{{neg}}')) {
+      return this.render(child, { ...extra, neg })
+    }
+    const inner = this.render(child, extra)
+    return (this.lookup('clue.not') ?? 'nicht ({{child}})').replace('{{child}}', inner)
+  }
+
   /** Render a suspect's own clue: gender pronouns for the subject, sentence-capitalised. */
   clue(exp: Explanation, subjectId: string): string {
     const text = this.render(exp, { name: subjectId, subject: subjectId, poss: subjectId })
@@ -77,12 +92,10 @@ export class Renderer {
 
   render(exp: Explanation, extra: Record<string, string | number> = {}): string {
     if (exp.children && exp.children.length > 0) {
+      if (exp.key === 'clue.not') return this.renderNot(exp.children[0], extra)
       const parts = exp.children.map((child) => this.render(child, extra))
       if (exp.key === 'clue.and') return parts.join(` ${this.lookup('clue.connAnd') ?? 'und'} `)
       if (exp.key === 'clue.or') return parts.join(` ${this.lookup('clue.connOr') ?? 'oder'} `)
-      if (exp.key === 'clue.not') {
-        return (this.lookup('clue.not') ?? 'nicht ({{child}})').replace('{{child}}', parts[0])
-      }
       return parts.join(' ')
     }
     // Strip the rich-text concept markers `[[word:tipKey]]` → `word` (the UI

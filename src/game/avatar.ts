@@ -17,6 +17,7 @@ export interface AvatarAttrs {
   gender?: unknown
   beard?: unknown
   glasses?: unknown
+  bald?: unknown
   hair?: unknown
 }
 
@@ -81,6 +82,7 @@ export function avatarSvg(attrs: AvatarAttrs, color: string, letter: string): st
   const female = attrs.gender !== 'm' // default female, matching the text Renderer
   const beard = attrs.beard === true
   const glasses = attrs.glasses === true
+  const bald = attrs.bald === true
   const hash = letter.charCodeAt(0)
   const style = hash % 5
   const H = hairColor(attrs, hash * 7 + 3)
@@ -102,10 +104,11 @@ export function avatarSvg(attrs: AvatarAttrs, color: string, letter: string): st
     <defs><clipPath id="${clip}"><rect x="18" y="64" width="64" height="40"/></clipPath></defs>
     <circle cx="50" cy="50" r="49" fill="${color}"/>
     <circle cx="50" cy="57" r="49" fill="rgba(0,0,0,0.08)"/>
-    ${hairBack(female, style, H)}
+    ${bald ? '' : hairBack(female, style, H)}
     ${face}
+    ${bald ? '<ellipse cx="44" cy="40" rx="9" ry="5" fill="rgba(255,255,255,0.25)"/>' : ''}
     ${beardShape}
-    ${hairFront(female, style)}
+    ${bald ? '' : hairFront(female, style)}
     ${eyes}
     ${glassesShape}
     ${mouth}

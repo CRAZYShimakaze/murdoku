@@ -10,6 +10,8 @@ import type { PlayState } from '../game/useGameSession.ts'
 
 /** Hold duration to commit a person (ms). Tune here. */
 const LONGPRESS_MS = 1000
+/** The progress ring only appears after this hold, so a quick tap shows no ring. */
+const RING_DELAY_MS = 200
 
 interface Props {
   puzzle: Puzzle
@@ -17,6 +19,9 @@ interface Props {
   suspectIndex: Map<PersonId, number>
   selectedSuspect: PersonId | null
   highlight: Set<Cell> | null
+  highlightColor?: { wash: string; ring: string }
+  /** Suspect whose notes pulse bigger (when hovering their clue card). */
+  emphasize?: PersonId | null
   xTool: boolean
   reveal: RevealInfo | null
   roomName: (nameKey: string) => string
@@ -43,8 +48,9 @@ export default function BoardCanvas(props: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [layout, setLayout] = useState<Layout | null>(null)
-  // Tooltip naming the object(s) under the cursor (a tile can stack e.g. carpet + chair).
+  // Tooltip naming the placed person (if any) + object(s) under the cursor.
   const [objTip, setObjTip] = useState<{
+    person?: string
     types: string[]
     x: number
     y: number
@@ -67,6 +73,7 @@ export default function BoardCanvas(props: Props) {
   const paintRef = useRef<{ value: boolean; visited: Set<Cell> } | null>(null)
   const hoverRef = useRef<Cell | null>(null)
   const avatarsRef = useRef<Map<PersonId, HTMLImageElement>>(new Map())
+  const emphPulseRef = useRef(0)
 
   function redraw(press: { cell: Cell; progress: number } | null) {
     const cv = canvasRef.current
@@ -88,10 +95,13 @@ export default function BoardCanvas(props: Props) {
       marks: p.state.marks,
       crosses: p.state.crosses,
       highlight: p.highlight,
+      highlightColor: p.highlightColor,
       press,
       reveal: p.reveal,
       avatars: avatarsRef.current,
       hover: hoverRef.current,
+      emphasizeMarks: p.emphasize ?? null,
+      emphasizePulse: emphPulseRef.current,
     })
   }
 
@@ -141,6 +151,28 @@ export default function BoardCanvas(props: Props) {
 
   useEffect(() => () => cancelPress(), [])
 
+  // Pulse the hovered suspect's notes while their clue card is hovered.
+  useEffect(() => {
+    if (!props.emphasize) {
+      emphPulseRef.current = 0
+      redraw(null)
+      return
+    }
+    let raf = 0
+    const tick = (now: number) => {
+      emphPulseRef.current = Math.sin(now / 350) * 0.5 + 0.5
+      redraw(null)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => {
+      cancelAnimationFrame(raf)
+      emphPulseRef.current = 0
+      redraw(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.emphasize])
+
   function cancelPress() {
     pressRef.current = null
     if (rafRef.current !== null) {
@@ -152,8 +184,8 @@ export default function BoardCanvas(props: Props) {
   function tick(now: number) {
     const press = pressRef.current
     if (!press) return
-    const progress = Math.min(1, (now - press.start) / LONGPRESS_MS)
-    if (progress >= 1) {
+    const elapsed = now - press.start
+    if (elapsed >= LONGPRESS_MS) {
       const p = propsRef.current
       cancelPress()
       if (press.mode === 'remove' && press.personId) p.onRemove(press.personId)
@@ -161,7 +193,10 @@ export default function BoardCanvas(props: Props) {
       redraw(null)
       return
     }
-    redraw({ cell: press.cell, progress })
+    // Show the progress ring only after a short hold, so a quick tap shows nothing.
+    if (elapsed >= RING_DELAY_MS) {
+      redraw({ cell: press.cell, progress: (elapsed - RING_DELAY_MS) / (LONGPRESS_MS - RING_DELAY_MS) })
+    }
     rafRef.current = requestAnimationFrame(tick)
   }
 
@@ -181,13 +216,16 @@ export default function BoardCanvas(props: Props) {
     const L = layoutRef.current
     if (cell === null || !cv || !L) return setObjTip(null)
     const objs = puzzle.board.tileAt(cell).objects() // [ground, top] — stacked
-    if (objs.length === 0) return setObjTip(null)
+    const occ = props.occupantAt(cell)
+    const person = occ ? puzzle.nameOf(occ) : undefined
+    if (objs.length === 0 && !person) return setObjTip(null)
     const rect = cv.getBoundingClientRect()
     const { row, col } = puzzle.board.rc(cell)
     const left = rect.left + col * L.cell
     const top = rect.top + row * L.cell
     const flip = left + L.cell + 140 > window.innerWidth
     setObjTip({
+      person,
       types: objs.map((o) => o.type),
       x: flip ? left - 8 : left + L.cell + 8,
       y: top + 4,
@@ -214,13 +252,11 @@ export default function BoardCanvas(props: Props) {
       // occupied cell → tap selects the occupant, hold removes them
       pressRef.current = { cell, start: e.timeStamp, mode: 'remove', personId: occ }
       rafRef.current = requestAnimationFrame(tick)
-      redraw({ cell, progress: 0 })
       return
     }
     if (props.selectedSuspect && props.puzzle.board.isOccupiable(cell)) {
       pressRef.current = { cell, start: e.timeStamp, mode: 'commit' }
       rafRef.current = requestAnimationFrame(tick)
-      redraw({ cell, progress: 0 })
       return
     }
     redraw(null) // non-occupiable / empty without selection → just hover feedback
@@ -300,6 +336,11 @@ export default function BoardCanvas(props: Props) {
             data-side={objTip.left ? 'left' : 'right'}
             style={{ left: objTip.x, top: objTip.y }}
           >
+            {objTip.person && (
+              <span style={{ display: 'block', fontWeight: 700, color: 'var(--brass)' }}>
+                {objTip.person}
+              </span>
+            )}
             {objTip.types.map((ty) => (
               <span key={ty} style={{ display: 'block' }}>
                 {t(`objName.${ty}`)}

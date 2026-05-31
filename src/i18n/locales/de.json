@@ -11,7 +11,144 @@
     "kicker": "Ein Logik-Krimi",
     "play": "Fall öffnen",
     "generate": "Level generieren",
+    "tutorial": "Tutorial",
+    "editor": "Editor",
     "credit": "Murdoku · ein Logik-Krimi"
+  },
+  "editor": {
+    "title": "Editor",
+    "subtitle": "Eigene Fälle bauen",
+    "name": "Name des Falls",
+    "size": "Größe",
+    "theme": "Thema",
+    "mode_rooms": "Räume",
+    "mode_ground": "Boden",
+    "mode_top": "Objekte",
+    "mode_window": "Fenster",
+    "rooms": "Räume",
+    "objects": "Objekte",
+    "windows": "Fenster",
+    "windowHint": "Klicke nahe dem Rand eines Feldes, um dort ein Fenster zu setzen. Nochmal klicken entfernt es.",
+    "room": "Raum",
+    "erase": "Löschen",
+    "suspectsSoon": "Verdächtige & Hinweise folgen in der nächsten Stufe.",
+    "check": "Prüfen",
+    "play": "Spielen",
+    "save": "Speichern",
+    "saveTitle": "Fall speichern",
+    "saveKeep": "Behalten",
+    "saveExport": "Als JSON",
+    "saveHint": "»Behalten« speichert im Browser (erscheint unter »Fall öffnen«). »Als JSON« lädt eine Datei herunter — die kannst du in den levels-Ordner legen.",
+    "result_saved": "Gespeichert ✓ — unter »Fall öffnen« verfügbar.",
+    "result_exported": "JSON heruntergeladen ✓",
+    "resultOk": "Lösbar & eindeutig ✓ — Mörder: {{name}}",
+    "resultOkNoMurderer": "Lösbar & eindeutig, aber kein eindeutiger Mörder.",
+    "result_multi": "Mehrdeutig — es gibt mehrere Lösungen.",
+    "result_none": "Nicht lösbar — kein gültiges Arrangement.",
+    "result_error": "Fehler — bitte Feld & Hinweise prüfen.",
+    "noClue": "Kein Hinweis",
+    "clueTitle": "Hinweis",
+    "cluePreview": "Vorschau:",
+    "done": "Fertig",
+    "hairDefault": "Haarfarbe (Standard)"
+  },
+  "tutorial": {
+    "next": "Weiter",
+    "skip": "Tutorial überspringen",
+    "step": "{{n}}/{{total}}",
+    "err": {
+      "wrongSelect": "Wähle zuerst {{name}}.",
+      "selectFirst": "Wähle zuerst {{name}}.",
+      "stayWith": "Bleib im Tutorial bei {{name}}.",
+      "notCandidate": "Nein, hier nicht – das ist kein mögliches Feld für {{name}}.",
+      "holdToPlace": "Zum Setzen ~1 Sekunde gedrückt halten (nicht nur kurz tippen).",
+      "tapForNote": "Hier nur kurz antippen, um eine Notiz zu machen.",
+      "wrongCell": "Nein, hier nicht – überlege noch einmal."
+    },
+    "welcome": {
+      "title": "Willkommen, Detektiv!",
+      "body": "Letzte Nacht gab es einen Mord. Wir lösen diesen Fall jetzt gemeinsam – ich führe dich Schritt für Schritt. Tippe auf »Weiter«."
+    },
+    "goal": {
+      "title": "Dein Ziel",
+      "body": "Finde den Mörder: Ermittle, wer im selben Raum wie das Opfer war. Wer allein mit dem Opfer im Raum ist, ist der Mörder."
+    },
+    "rules": {
+      "title": "Die Regeln",
+      "body": "• Jede Person steht in einer anderen Zeile UND Spalte.\n• Besetzbar sind nur Bett, Stuhl und Teppich.\n• Tisch, Fernseher, Pflanze, Regal und Kiste sind blockiert.\n• Das Opfer steht auf dem letzten freien Feld."
+    },
+    "board": {
+      "title": "Der Tatort",
+      "body": "Das ist der Tatort – ein 4×4-Raster mit zwei Räumen: Wohnzimmer (oben) und Schlafzimmer (unten). Fahre über ein Objekt, um seinen Namen zu sehen."
+    },
+    "suspects": {
+      "title": "Die Verdächtigen",
+      "body": "Hier stehen die Verdächtigen mit ihren Aussagen: Alex war neben einem Tisch, Bernd auf einem Bett, Carmen vor einem Fenster. (Am Handy unter dem Spielfeld.)"
+    },
+    "terms": {
+      "title": "Fett = wichtig",
+      "body": "Objekte und Schlüsselwörter sind fett. Fahre über ein Wort wie »neben« oder »allein«, um seine genaue Bedeutung zu sehen."
+    },
+    "selectA": {
+      "title": "Alex auswählen",
+      "body": "Fangen wir mit Alex an. Tippe auf seine Karte, um ihn auszuwählen."
+    },
+    "noteA": {
+      "title": "Wo kann Alex sein?",
+      "body": "Alex war neben einem Tisch – die blau umrandeten Felder kommen infrage. Tippe sie alle kurz an, um dir dort ein kleines A zu merken."
+    },
+    "selectB": {
+      "title": "Bernd auswählen",
+      "body": "Weiter mit Bernd. Tippe auf seine Karte."
+    },
+    "noteB": {
+      "title": "Wo kann Bernd sein?",
+      "body": "Bernd war auf einem Bett – das ist betretbar. Markiere die blau umrandeten Betten kurz mit einem kleinen B."
+    },
+    "selectC": {
+      "title": "Carmen auswählen",
+      "body": "Jetzt Carmen. Tippe auf ihre Karte."
+    },
+    "placeC": {
+      "title": "Carmen setzen",
+      "body": "Carmen muss neben einem Fenster stehen – es bleibt nur EIN Feld! Halte dieses Feld ~1 Sekunde gedrückt, um Carmen dort zu setzen."
+    },
+    "locked": {
+      "title": "Zeile & Spalte gesperrt",
+      "body": "Sieh genau hin: Carmens Zeile und Spalte sind nun mit X gesperrt – dort kann niemand mehr stehen. Damit fällt eines der beiden Betten für Bernd weg."
+    },
+    "selectB2": {
+      "title": "Bernd erneut wählen",
+      "body": "Jetzt ist Bernds Bett eindeutig. Wähle Bernd noch einmal."
+    },
+    "placeB": {
+      "title": "Bernd setzen",
+      "body": "Nur noch ein Bett ist möglich. Halte es ~1 Sekunde gedrückt, um Bernd dort zu setzen."
+    },
+    "selectA2": {
+      "title": "Alex wählen",
+      "body": "Und nun Alex – für ihn bleibt auch nur noch ein Feld. Wähle Alex."
+    },
+    "placeA": {
+      "title": "Alex setzen",
+      "body": "Setze Alex auf das einzige verbleibende Feld neben dem Tisch (~1 Sekunde gedrückt halten)."
+    },
+    "tools": {
+      "title": "Deine Werkzeuge",
+      "body": "Kurz zu den Werkzeugen: X-Werkzeug (Felder sperren), Reset (gedrückt halten), Rückgängig, Tipp und Lösen. (Am Handy als Leiste unten.)"
+    },
+    "selectV": {
+      "title": "Das Opfer wählen",
+      "body": "Es fehlt nur noch das Opfer. Tippe auf Olli (das Opfer)."
+    },
+    "placeV": {
+      "title": "Opfer setzen",
+      "body": "Das Opfer steht auf dem letzten freien Feld. Halte es ~1 Sekunde gedrückt, um Olli zu setzen."
+    },
+    "solve": {
+      "title": "Lösen!",
+      "body": "Geschafft – alle sind gesetzt! Drücke jetzt auf »Lösen«. Wer allein mit dem Opfer im Raum ist, ist der Mörder."
+    }
   },
   "generate": {
     "title": "Level generieren",
@@ -29,6 +166,7 @@
   },
   "theme": {
     "random": "Zufällig",
+    "apartment": "Wohnung",
     "crime-scene": "Tatort",
     "auto-shop": "Autowerkstatt",
     "game-night": "Spieleabend",
@@ -104,7 +242,8 @@
     "shrub": "einem Strauch",
     "shelf": "einem Regal",
     "box": "einer Kiste",
-    "window": "einem Fenster"
+    "window": "einem Fenster",
+    "car": "einem Auto"
   },
   "objName": {
     "floor": "Boden",
@@ -119,7 +258,8 @@
     "shrub": "Strauch",
     "shelf": "Regal",
     "box": "Kiste",
-    "window": "Fenster"
+    "window": "Fenster",
+    "car": "Auto"
   },
   "legend": {
     "title": "Legende",
@@ -135,7 +275,14 @@
   },
   "attr": {
     "beard": "einen Bart",
-    "glasses": "eine Brille"
+    "glasses": "eine Brille",
+    "bald": "eine Glatze",
+    "hair_blond": "blonde Haare",
+    "hair_brown": "braune Haare",
+    "hair_black": "schwarze Haare",
+    "hair_red": "rote Haare",
+    "hair_grey": "graue Haare",
+    "hair_white": "weiße Haare"
   },
   "who": {
     "m_dat": "einem Mann",
@@ -144,6 +291,14 @@
     "f_nom": "eine Frau"
   },
   "room": {
+    "editor1": "Raum 1",
+    "editor2": "Raum 2",
+    "editor3": "Raum 3",
+    "editor4": "Raum 4",
+    "editor5": "Raum 5",
+    "editor6": "Raum 6",
+    "editor7": "Raum 7",
+    "editor8": "Raum 8",
     "living": "Wohnzimmer",
     "bedroom": "Schlafzimmer",
     "dining": "Esszimmer",
@@ -166,28 +321,31 @@
   "pron": { "m": "er", "f": "sie" },
   "poss": { "m": "seinem", "f": "ihrem" },
   "clue": {
-    "onObject": "{{subject}} war [[auf:onObject]] {{object}}",
-    "nearObject": "{{subject}} war [[neben:nearObject]] {{object}}",
-    "nearWindow": "{{subject}} war [[neben einem Fenster:nearWindow]]",
-    "inRoom": "{{subject}} war im Raum {{room}}",
-    "inRow": "{{subject}} war in [[Zeile:inRow]] {{row}}",
-    "inCol": "{{subject}} war in [[Spalte:inCol]] {{col}}",
-    "corner": "{{subject}} war [[in einer Ecke:corner]]",
-    "uniqueOnObject": "{{subject}} war [[die einzige Person auf:uniqueOnObject]] {{object}}",
-    "alone": "{{subject}} war [[allein im Raum:alone]]",
+    "negWord": "nicht ",
+    "onObject": "{{subject}} war {{neg}}[[auf:onObject]] {{object}}",
+    "nearObject": "{{subject}} war {{neg}}[[neben:nearObject]] {{object}}",
+    "nearWindow": "{{subject}} war {{neg}}[[neben einem Fenster:nearWindow]]",
+    "inRoom": "{{subject}} war {{neg}}im Raum {{room}}",
+    "inRow": "{{subject}} war {{neg}}in [[Zeile:inRow]] {{row}}",
+    "inCol": "{{subject}} war {{neg}}in [[Spalte:inCol]] {{col}}",
+    "corner": "{{subject}} war {{neg}}[[in einer Ecke:corner]]",
+    "atWall": "{{subject}} war {{neg}}[[an einer Wand:atWall]]",
+    "uniqueOnObject": "{{subject}} war {{neg}}[[die einzige Person auf:uniqueOnObject]] {{object}}",
+    "uniqueNearWindow": "{{subject}} war {{neg}}[[die einzige Person an einem Fenster:uniqueNearWindow]]",
+    "alone": "{{subject}} war {{neg}}[[allein im Raum:alone]]",
     "roomAttribute": {
       "none": "[[Niemand:roomAttrNone]] in {{poss}} Raum hatte {{attribute}}",
       "some": "[[Jemand:roomAttrSome]] mit {{attribute}} war in {{poss}} Raum",
       "all": "[[Alle:roomAttrAll]] in {{poss}} Raum hatten {{attribute}}"
     },
-    "direction": "{{subject}} war {{direction}} von {{target}}",
-    "offsetWest": "{{subject}} war genau {{n}} Spalte [[westlich:offset]] von {{target}}",
-    "offsetEast": "{{subject}} war genau {{n}} Spalte [[östlich:offset]] von {{target}}",
-    "offsetNorth": "{{subject}} war genau {{n}} Zeile [[nördlich:offset]] von {{target}}",
-    "offsetSouth": "{{subject}} war genau {{n}} Zeile [[südlich:offset]] von {{target}}",
-    "aloneWith": "{{subject}} war [[allein mit:aloneWith]] {{who}}",
+    "direction": "{{subject}} war {{neg}}{{direction}} von {{target}}",
+    "offsetWest": "{{subject}} war {{neg}}genau {{n}} Spalte [[westlich:offset]] von {{target}}",
+    "offsetEast": "{{subject}} war {{neg}}genau {{n}} Spalte [[östlich:offset]] von {{target}}",
+    "offsetNorth": "{{subject}} war {{neg}}genau {{n}} Zeile [[nördlich:offset]] von {{target}}",
+    "offsetSouth": "{{subject}} war {{neg}}genau {{n}} Zeile [[südlich:offset]] von {{target}}",
+    "aloneWith": "{{subject}} war {{neg}}[[allein mit:aloneWith]] {{who}}",
     "roomExistsOnObject": "In {{poss}} Raum saß {{who}} [[auf:onObject]] {{object}}",
-    "sameRoom": "{{subject}} war [[im selben Raum wie:sameRoom]] {{target}}",
+    "sameRoom": "{{subject}} war {{neg}}[[im selben Raum wie:sameRoom]] {{target}}",
     "connAnd": "und",
     "connOr": "oder",
     "not": "nicht ({{child}})"
@@ -197,9 +355,11 @@
     "nearObject": "Direkt daneben — im selben Raum, ein Feld links, rechts, über oder unter dem Objekt.",
     "nearWindow": "Auf dem Feld direkt an einem Fenster (das Fenster sitzt an der Wand dieses Feldes).",
     "corner": "Eckfeld: mindestens zwei Wände berühren bzw. umfassen das Feld.",
+    "atWall": "Mindestens eine Seite des Feldes grenzt an eine Wand (Spielfeldrand oder anderer Raum).",
     "alone": "Wirklich allein im Raum — kein anderer Verdächtiger und auch nicht das Opfer.",
     "aloneWith": "Sonst ist nur genau diese Person mit im Raum (das Opfer zählt nicht).",
     "uniqueOnObject": "Die einzige Person, die auf einem solchen Objekt steht.",
+    "uniqueNearWindow": "Die einzige Person, die an einem Fenster steht.",
     "sameRoom": "Im selben Raum wie diese Person.",
     "direction": "Liegt in dieser Himmelsrichtung von der genannten Person (nördlich = weiter oben usw.).",
     "offset": "Genau so viele Felder in diese Richtung von der Zielperson entfernt.",
@@ -213,8 +373,44 @@
     "male": "männlich",
     "female": "weiblich",
     "beard": "Bart",
-    "glasses": "Brille"
+    "glasses": "Brille",
+    "bald": "Glatze"
   },
+  "cond": {
+    "inRoom": "Im Raum",
+    "onObject": "Auf Objekt",
+    "uniqueOnObject": "Einzige(r) auf Objekt",
+    "nearObject": "Neben Objekt",
+    "nearWindow": "Am Fenster",
+    "uniqueNearWindow": "Einzige(r) am Fenster",
+    "inRow": "In Zeile",
+    "inCol": "In Spalte",
+    "corner": "In einer Ecke",
+    "atWall": "An einer Wand",
+    "alone": "Allein im Raum",
+    "sameRoom": "Gleicher Raum wie",
+    "direction": "Richtung von",
+    "roomAttribute": "Im Raum …",
+    "not": "NICHT",
+    "add": "+ Bedingung",
+    "remove": "Entfernen",
+    "qty": { "none": "Niemand mit", "some": "Jemand mit", "all": "Alle mit" }
+  },
+  "attrKind": {
+    "beard": "Bart",
+    "glasses": "Brille",
+    "bald": "Glatze",
+    "hair": "Haarfarbe"
+  },
+  "hairColor": {
+    "blond": "Blond",
+    "brown": "Braun",
+    "black": "Schwarz",
+    "red": "Rot",
+    "grey": "Grau",
+    "white": "Weiß"
+  },
+  "conn": { "and": "UND", "or": "ODER" },
   "step": {
     "clueCandidates": "{{name}}: durch die Hinweise bleiben {{count}} mögliche Felder.",
     "nakedSingle": "{{name}} muss auf {{cell}} stehen – einziges mögliches Feld.",

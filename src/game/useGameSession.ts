@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { VICTIM_ID, type Cell, type PersonId, type Puzzle } from '../engine/index.ts'
+import { VICTIM_ID, type Board, type Cell, type PersonId, type Puzzle } from '../engine/index.ts'
 import { clearProgress, loadProgress, saveProgress, type SavedState } from './storage.ts'
 
 /** The player's mutable board state. */
@@ -40,6 +40,19 @@ function fromSaved(s: SavedState): PlayState {
   }
 }
 
+/** If exactly one occupiable cell is still free, auto-place the victim there. */
+function autoPlaceVictim(next: PlayState, board: Board): void {
+  if (next.placements.has(VICTIM_ID)) return
+  let free: Cell | null = null
+  const occupied = new Set(next.placements.values())
+  for (const c of board.occupiableCells()) {
+    if (next.crosses.has(c) || occupied.has(c)) continue
+    if (free !== null) return // more than one free → don't place yet
+    free = c
+  }
+  if (free !== null) next.placements.set(VICTIM_ID, free)
+}
+
 export interface GameSession {
   state: PlayState
   occupantAt: (cell: Cell) => PersonId | undefined
@@ -59,10 +72,15 @@ export interface GameSession {
   allPlaced: boolean
 }
 
-export function useGameSession(puzzle: Puzzle, levelId: string): GameSession {
+export function useGameSession(
+  puzzle: Puzzle,
+  levelId: string,
+  fresh = false,
+  autoVictim = false,
+): GameSession {
   const board = puzzle.board
   const [hist, setHist] = useState<{ present: PlayState; past: PlayState[] }>(() => {
-    const saved = loadProgress(levelId)
+    const saved = fresh ? null : loadProgress(levelId)
     return { present: saved ? fromSaved(saved) : emptyState(), past: [] }
   })
 
@@ -122,8 +140,9 @@ export function useGameSession(puzzle: Puzzle, levelId: string): GameSession {
             next.marks.delete(c) // an X'd cell can't hold anyone — drop its notes
           }
         }
+        if (autoVictim) autoPlaceVictim(next, board)
       }),
-    [apply, board],
+    [apply, board, autoVictim],
   )
 
   const setCross = useCallback(
@@ -139,8 +158,9 @@ export function useGameSession(puzzle: Puzzle, levelId: string): GameSession {
           if (!next.crosses.has(cell)) return false
           next.crosses.delete(cell)
         }
+        if (autoVictim) autoPlaceVictim(next, board)
       }),
-    [apply, board],
+    [apply, board, autoVictim],
   )
 
   const remove = useCallback(

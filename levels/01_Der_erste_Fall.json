@@ -1,0 +1,203 @@
+{
+  "schema": 1,
+  "id": "editor-1780235662152",
+  "title": "01. Der erste Fall",
+  "size": {
+    "width": 6,
+    "height": 6
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.editor1",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "room.editor2",
+      "color": "#b9d0e6"
+    },
+    "3": {
+      "nameKey": "room.editor3",
+      "color": "#cfe0cf"
+    },
+    "4": {
+      "nameKey": "room.editor4",
+      "color": "#d8c0c0"
+    },
+    "5": {
+      "nameKey": "room.editor5",
+      "color": "#e6cda0"
+    },
+    "6": {
+      "nameKey": "room.editor6",
+      "color": "#e6c0d2"
+    },
+    "7": {
+      "nameKey": "room.editor7",
+      "color": "#c6c0e0"
+    },
+    "8": {
+      "nameKey": "room.editor8",
+      "color": "#c0e0c8"
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "111222",
+    "111222",
+    "111222",
+    "333444",
+    "333444",
+    "333444"
+  ],
+  "groundMap": [
+    "......",
+    "..r...",
+    "......",
+    "......",
+    "......",
+    "......"
+  ],
+  "topMap": [
+    "......",
+    "....b.",
+    "....b.",
+    "t....t",
+    "..p..p",
+    "t....."
+  ],
+  "windows": [
+    {
+      "r": 0,
+      "c": 4,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Axel",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "nearWindow"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "3"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carolin",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "carpet"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dominik",
+      "attributes": {
+        "gender": "m",
+        "beard": true
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "bed"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elisa",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "plant"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Oliver",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "difficulty": "easy"
+}

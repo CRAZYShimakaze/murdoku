@@ -50,3 +50,44 @@ export class UniqueOnObjectClue extends Clue {
     return { key: 'clue.uniqueOnObject', params: { object: this.object } }
   }
 }
+
+/**
+ * "{name} was the only person beside a window." The subject is beside a window
+ * and no other person is. Mirrors {@link UniqueOnObjectClue} over the window set.
+ */
+export class UniqueNearWindowClue extends Clue {
+  override candidateCells(board: Board): Set<Cell> {
+    return board.cellsNearWindow()
+  }
+
+  override forbiddenForOthers(board: Board): Set<Cell> {
+    return board.cellsNearWindow()
+  }
+
+  test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
+    const nearWindow = puzzle.board.cellsNearWindow()
+    if (!nearWindow.has(solution.cellOf(subjectId))) return false
+    for (const [id, cell] of solution.entries()) {
+      if (id !== subjectId && nearWindow.has(cell)) return false
+    }
+    return true
+  }
+
+  override violatedBy(
+    subjectId: PersonId,
+    placement: ReadonlyMap<PersonId, Cell>,
+    puzzle: Puzzle,
+  ): boolean {
+    const nearWindow = puzzle.board.cellsNearWindow()
+    const subjectCell = placement.get(subjectId)
+    if (subjectCell !== undefined && !nearWindow.has(subjectCell)) return true
+    for (const [id, c] of placement) {
+      if (id !== subjectId && nearWindow.has(c)) return true
+    }
+    return false
+  }
+
+  describe(): Explanation {
+    return { key: 'clue.uniqueNearWindow' }
+  }
+}

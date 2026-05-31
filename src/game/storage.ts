@@ -4,6 +4,7 @@ import type { LevelJson } from '../engine/index.ts'
 const SOLVED_KEY = 'murdoku.solved.v1'
 const PROGRESS_PREFIX = 'murdoku.progress.v1.'
 const CUSTOM_KEY = 'murdoku.custom.v1'
+const EDITOR_DRAFT_KEY = 'murdoku.editordraft.v1'
 
 /** A board state flattened to JSON-friendly arrays (Maps/Sets don't serialize). */
 export interface SavedState {
@@ -68,6 +69,23 @@ export function saveCustomLevel(level: LevelJson): void {
 
 export function isCustomSaved(id: string): boolean {
   return loadCustomLevels().some((l) => l.id === id)
+}
+
+/** The in-progress editor draft (so leaving the editor to test-play never loses work). */
+export function loadEditorDraft<T>(): T | null {
+  return read<T | null>(EDITOR_DRAFT_KEY, null)
+}
+
+export function saveEditorDraft(draft: unknown): void {
+  write(EDITOR_DRAFT_KEY, draft)
+}
+
+export function clearEditorDraft(): void {
+  try {
+    localStorage.removeItem(EDITOR_DRAFT_KEY)
+  } catch {
+    /* ignore */
+  }
 }
 
 /** Trigger a download of a level as a .json file (named after its title/id). */

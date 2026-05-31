@@ -7,9 +7,10 @@ export {
   InRowClue,
   InColClue,
   CornerClue,
+  AtWallClue,
 } from './unaryClues.ts'
 export { DirectionClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
-export { UniqueOnObjectClue } from './uniquenessClues.ts'
+export { UniqueOnObjectClue, UniqueNearWindowClue } from './uniquenessClues.ts'
 export {
   AloneClue,
   RoomAttributeClue,
