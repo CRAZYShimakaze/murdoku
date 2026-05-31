@@ -2,6 +2,13 @@ import { VICTIM_ID, type Cell, type PersonId, type Puzzle, type Side } from '../
 import { BOARD, ROOM_HL, suspectColor } from './palette.ts'
 import { OBJECT_GLYPHS } from './glyphs.ts'
 import { drawBigObject, drawSingleObject } from './bigObjects.ts'
+import {
+  drawArmchair,
+  drawBookshelf,
+  drawCarpetTile,
+  drawTableTile,
+  type Conn,
+} from './objectArt.ts'
 
 /** Object types drawn as detailed 2-cell vector images (instead of an emoji). */
 const BIG_OBJECTS = new Set(['bed', 'car'])
@@ -41,19 +48,38 @@ export interface BoardView {
   preview?: boolean
 }
 
-function roomCentroids(puzzle: Puzzle): Map<string, { col: number; row: number; count: number }> {
-  const acc = new Map<string, { col: number; row: number; count: number }>()
+/**
+ * For each room, the widest contiguous column run on its BOTTOM-most row — the
+ * name plate sits there and is sized to that run's width.
+ */
+function roomBottomRuns(puzzle: Puzzle): Map<string, { row: number; c0: number; c1: number }> {
   const board = puzzle.board
-  for (let cell = 0; cell < board.width * board.height; cell++) {
+  const W = board.width
+  const bottomRow = new Map<string, number>()
+  for (let cell = 0; cell < W * board.height; cell++) {
     const id = board.roomIdOf(cell)
-    const { row, col } = board.rc(cell)
-    const e = acc.get(id) ?? { col: 0, row: 0, count: 0 }
-    e.col += col
-    e.row += row
-    e.count += 1
-    acc.set(id, e)
+    const { row } = board.rc(cell)
+    bottomRow.set(id, Math.max(bottomRow.get(id) ?? 0, row))
   }
-  return acc
+  const runs = new Map<string, { row: number; c0: number; c1: number }>()
+  for (const [id, br] of bottomRow) {
+    let best = { c0: 0, c1: -1 }
+    let start = -1
+    const close = (end: number): void => {
+      if (start >= 0 && end - start > best.c1 - best.c0) best = { c0: start, c1: end }
+    }
+    for (let col = 0; col < W; col++) {
+      if (board.roomIdOf(board.idx(br, col)) === id) {
+        if (start < 0) start = col
+      } else {
+        close(col - 1)
+        start = -1
+      }
+    }
+    close(W - 1)
+    runs.set(id, { row: br, c0: best.c0, c1: best.c1 })
+  }
+  return runs
 }
 
 export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void {
@@ -67,6 +93,25 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   const xy = (c: Cell) => {
     const { row, col } = board.rc(c)
     return { x: ox + col * S, y: oy + row * S }
+  }
+
+  /** Same-room orthogonal neighbours carrying the same object type, for auto-tiling. */
+  const connOf = (c: Cell, layer: 'top' | 'ground', type: string): Conn => {
+    const { row, col } = board.rc(c)
+    const room = board.roomIdOf(c)
+    const same = (r: number, cc: number): boolean => {
+      if (!board.inBounds(r, cc)) return false
+      const i = board.idx(r, cc)
+      if (board.roomIdOf(i) !== room) return false
+      const obj = layer === 'top' ? board.tileAt(i).top : board.tileAt(i).ground
+      return obj?.type === type
+    }
+    return {
+      n: same(row - 1, col),
+      s: same(row + 1, col),
+      w: same(row, col - 1),
+      e: same(row, col + 1),
+    }
   }
 
   ctx.fillStyle = BOARD.mortar
@@ -84,43 +129,11 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     }
   }
 
-  // --- carpet rug (occupiable ground layer) ------------------------------
+  // --- carpet rug (occupiable ground layer) — auto-tiled into one surface --
   for (let c = 0; c < W * H; c++) {
     if (board.tileAt(c).ground?.type !== 'carpet') continue
     const { x, y } = xy(c)
-    const pad = S * 0.13
-    ctx.fillStyle = 'rgba(176, 116, 84, 0.42)'
-    ctx.strokeStyle = 'rgba(120, 74, 52, 0.5)'
-    ctx.lineWidth = 1
-    ctx.beginPath()
-    ctx.roundRect(x + pad, y + pad, S - 2 * pad, S - 2 * pad, S * 0.08)
-    ctx.fill()
-    ctx.stroke()
-  }
-
-  // --- room labels (behind objects) -------------------------------------
-  if (!preview) {
-    const centroids = roomCentroids(puzzle)
-    ctx.save()
-    ctx.fillStyle = BOARD.label
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    for (const [id, e] of centroids) {
-      const room = board.rooms.get(id)
-      if (!room) continue
-      const label = view.roomName(room.nameKey).toUpperCase()
-      const size = Math.max(9, Math.min(S * 0.34, (S * Math.sqrt(e.count)) / Math.max(3, label.length) + 6))
-      ctx.font = `800 ${size}px 'Fraunces', Georgia, serif`
-      try {
-        ctx.letterSpacing = `${size * 0.08}px`
-      } catch {
-        /* letterSpacing unsupported — ignore */
-      }
-      const cx = ox + (e.col / e.count + 0.5) * S
-      const cy = oy + (e.row / e.count + 0.5) * S
-      ctx.fillText(label, cx, cy)
-    }
-    ctx.restore()
+    drawCarpetTile(ctx, x, y, S, connOf(c, 'ground', 'carpet'))
   }
 
   // --- thin in-room grid lines, then thick walls -------------------------
@@ -195,38 +208,33 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     else drawSingleObject(ctx, type, x, y, S) // isolated / cross-room → single 1-tile
   }
 
-  // --- objects: bed/car as detailed vectors, the rest as emoji -----------
-  if (preview) {
-    for (let c = 0; c < W * H; c++) {
-      const top = board.tileAt(c).top
-      if (!top) continue
-      const { x, y } = xy(c)
-      if (BIG_OBJECTS.has(top.type)) {
-        drawBig(top.type, c)
-        continue
-      }
-      const glyph = OBJECT_GLYPHS[top.type]
-      if (!glyph) continue
-      ctx.fillStyle = '#1c1822'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.font = `${S * 0.72}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`
-      ctx.fillText(glyph, x + S / 2, y + S * 0.55)
-    }
-    return
+  // --- merged table surface (auto-tiles with adjacent same-room tables) ---
+  for (let c = 0; c < W * H; c++) {
+    if (board.tileAt(c).top?.type !== 'table') continue
+    const { x, y } = xy(c)
+    drawTableTile(ctx, x, y, S, connOf(c, 'top', 'table'))
   }
 
+  // --- per-cell objects: bed/car + armchair/shelf as vectors, the rest emoji
   for (let c = 0; c < W * H; c++) {
     const top = board.tileAt(c).top
-    if (!top) continue
+    if (!top || top.type === 'table') continue // table drawn in the merged pass
     const { x, y } = xy(c)
     if (BIG_OBJECTS.has(top.type)) {
       drawBig(top.type, c)
       continue
     }
+    if (top.type === 'chair') {
+      drawArmchair(ctx, x, y, S)
+      continue
+    }
+    if (top.type === 'shelf') {
+      drawBookshelf(ctx, x, y, S)
+      continue
+    }
     const glyph = OBJECT_GLYPHS[top.type]
     if (!glyph) continue
-    if (!top.occupiable) {
+    if (!preview && !top.occupiable) {
       const pad = S * 0.08
       ctx.fillStyle = 'rgba(255, 255, 255, 0.78)'
       ctx.strokeStyle = 'rgba(40, 32, 48, 0.18)'
@@ -239,8 +247,67 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.fillStyle = '#1c1822' // opaque, so any monochrome glyph stays bold (not faint)
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.font = `${S * 0.66}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`
+    ctx.font = `${S * (preview ? 0.72 : 0.66)}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`
     ctx.fillText(glyph, x + S / 2, y + S * 0.56)
+  }
+
+  if (preview) return
+
+  // --- room name plates: a small white rounded pill sitting ON the room's
+  //     bottom wall, placed in the widest window-free gap so it covers nothing.
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  for (const [id, run] of roomBottomRuns(puzzle)) {
+    const room = board.rooms.get(id)
+    if (!room || run.c1 < run.c0) continue
+    // A column is blocked if its bottom wall carries a window (either side).
+    const windowed = (col: number): boolean =>
+      board.windowSides(board.idx(run.row, col)).includes('S') ||
+      (run.row + 1 < H && board.windowSides(board.idx(run.row + 1, col)).includes('N'))
+    // widest window-free sub-run within [c0, c1]
+    let bc0 = run.c0
+    let bc1 = run.c0 - 1
+    let start = -1
+    const close = (end: number): void => {
+      if (start >= 0 && end - start > bc1 - bc0) {
+        bc0 = start
+        bc1 = end
+      }
+    }
+    for (let col = run.c0; col <= run.c1; col++) {
+      if (!windowed(col)) {
+        if (start < 0) start = col
+      } else {
+        close(col - 1)
+        start = -1
+      }
+    }
+    close(run.c1)
+    if (bc1 < bc0) continue // no window-free spot → skip rather than cover a window
+
+    const label = view.roomName(room.nameKey).toUpperCase()
+    const maxW = (bc1 - bc0 + 1) * S - S * 0.12
+    // Fit the font to the gap (text width scales ~linearly, so one rescale lands it).
+    let font = S * 0.155
+    const required = (f: number): number => {
+      ctx.font = `700 ${f}px 'Spline Sans', system-ui, sans-serif`
+      return ctx.measureText(label).width + 2 * f * 0.5
+    }
+    if (required(font) > maxW) font = Math.max(6, (font * maxW) / required(font))
+    ctx.font = `700 ${font}px 'Spline Sans', system-ui, sans-serif`
+    const pillW = Math.min(maxW, ctx.measureText(label).width + 2 * font * 0.5)
+    const pillH = font * 1.55
+    const cx = ox + ((bc0 + bc1 + 1) / 2) * S
+    const pillY = oy + (run.row + 1) * S - pillH // bottom edge sits on the wall
+    ctx.fillStyle = '#fff'
+    ctx.strokeStyle = '#1c1822'
+    ctx.lineWidth = Math.max(1.4, S * 0.022)
+    ctx.beginPath()
+    ctx.roundRect(cx - pillW / 2, pillY, pillW, pillH, pillH / 2)
+    ctx.fill()
+    ctx.stroke()
+    ctx.fillStyle = '#1c1822'
+    ctx.fillText(label, cx, pillY + pillH / 2)
   }
 
   // --- highlight ring on candidate cells --------------------------------

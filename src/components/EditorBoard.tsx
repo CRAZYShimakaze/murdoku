@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { loadLevel, type Cell } from '../engine/index.ts'
 import { drawBoard } from '../game/boardRender.ts'
+import { onArtReady } from '../game/objectArt.ts'
 import { buildEditorLevel, type EditorState } from '../game/editorModel.ts'
 
 interface Props {
@@ -30,6 +31,7 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow 
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [layout, setLayout] = useState<Layout | null>(null)
+  const [artTick, setArtTick] = useState(0)
   const painting = useRef(false)
   const lastCell = useRef<Cell | null>(null)
 
@@ -82,7 +84,10 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow 
       press: null,
       reveal: null,
     })
-  }, [layout, puzzle])
+  }, [layout, puzzle, artTick])
+
+  // Redraw when bundled board art (e.g. the armchair) finishes loading.
+  useEffect(() => onArtReady(() => setArtTick((t) => t + 1)), [])
 
   const cellAt = (e: ReactPointerEvent<HTMLCanvasElement>): Cell | null => {
     if (!layout) return null

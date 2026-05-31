@@ -132,7 +132,9 @@ export function useGameSession(
         next.crosses.delete(cell)
         const { row, col } = board.rc(cell)
         const occupied = new Set(next.placements.values())
-        for (const c of board.occupiableCells()) {
+        // Cross out the WHOLE row & column — including non-occupiable object
+        // cells — so it's visually clear nobody else can be on that line.
+        for (let c = 0; c < board.width * board.height; c++) {
           if (c === cell || occupied.has(c)) continue
           const rc = board.rc(c)
           if (rc.row === row || rc.col === col) {
@@ -148,7 +150,8 @@ export function useGameSession(
   const setCross = useCallback(
     (cell: Cell, value: boolean) =>
       apply((next) => {
-        if (!board.isOccupiable(cell)) return false
+        // Crossing a non-occupiable object cell is allowed — it shows the whole
+        // row/column is excluded. Only an occupied cell can't be crossed.
         for (const c of next.placements.values()) if (c === cell) return false
         if (value) {
           if (next.crosses.has(cell) && !next.marks.has(cell)) return false

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Cell, PersonId, Puzzle } from '../engine/index.ts'
 import { drawBoard, type RevealInfo } from '../game/boardRender.ts'
+import { onArtReady } from '../game/objectArt.ts'
 import { avatarDataUri } from '../game/avatar.ts'
 import { suspectColor } from '../game/palette.ts'
 import type { PlayState } from '../game/useGameSession.ts'
@@ -150,6 +151,10 @@ export default function BoardCanvas(props: Props) {
   }, [layout, props.state, props.selectedSuspect, props.highlight, props.reveal])
 
   useEffect(() => () => cancelPress(), [])
+
+  // Redraw once bundled board art (e.g. the armchair) finishes loading.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => onArtReady(() => redraw(null)), [])
 
   // Pulse the hovered suspect's notes while their clue card is hovered.
   useEffect(() => {
