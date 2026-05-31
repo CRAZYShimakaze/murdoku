@@ -18,6 +18,28 @@ export interface LevelMeta {
   width: number
   height: number
   json: LevelJson
+  /** True for player-generated levels (not part of the bundled set). */
+  custom?: boolean
+}
+
+/** Title for a generated level: theme name + a short seed suffix (so two
+ *  same-theme/size levels stay distinguishable in the list). */
+function titleFromId(id: string): string {
+  const match = /^(.*?)-(\d+)$/.exec(id)
+  return match ? `${humanize(match[1])} #${match[2].slice(-3)}` : humanize(id)
+}
+
+/** Build a LevelMeta from a raw level (e.g. a freshly generated / saved one). */
+export function levelMetaFromJson(json: LevelJson, custom = false): LevelMeta {
+  return {
+    id: json.id,
+    title: json.title ?? titleFromId(json.id),
+    difficulty: asDifficulty(json.difficulty),
+    width: json.size.width,
+    height: json.size.height,
+    json,
+    custom,
+  }
 }
 
 /** All bundled levels, eagerly imported from the project's /levels folder. */

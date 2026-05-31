@@ -10,7 +10,35 @@
   "start": {
     "kicker": "Ein Logik-Krimi",
     "play": "Fall öffnen",
+    "generate": "Level generieren",
     "credit": "Murdoku · ein Logik-Krimi"
+  },
+  "generate": {
+    "title": "Level generieren",
+    "subtitle": "Stelle deinen Fall zusammen",
+    "size": "Größe",
+    "suspects": "{{n}} Verdächtige",
+    "difficulty": "Schwierigkeit",
+    "objects": "Objekte",
+    "theme": "Thema",
+    "create": "Erstellen",
+    "generating": "Generiere Level …",
+    "hint": "Größere Boards und „Schwer\" können einige Sekunden dauern.",
+    "cancel": "Abbrechen",
+    "failed": "Kein Level gefunden — bitte nochmal versuchen oder andere Einstellungen wählen."
+  },
+  "theme": {
+    "random": "Zufällig",
+    "crime-scene": "Tatort",
+    "auto-shop": "Autowerkstatt",
+    "game-night": "Spieleabend",
+    "office": "Büro",
+    "mansion": "Villa",
+    "hotel": "Hotel",
+    "school": "Schule",
+    "hospital": "Krankenhaus",
+    "museum": "Museum",
+    "restaurant": "Restaurant"
   },
   "select": {
     "title": "Die Akten",
@@ -19,7 +47,8 @@
     "filterSize": "Größe",
     "all": "Alle",
     "empty": "Keine Fälle mit diesen Filtern.",
-    "solved": "Gelöst"
+    "solved": "Gelöst",
+    "custom": "Eigen"
   },
   "difficulty": {
     "tutorial": "Tutorial",
@@ -37,7 +66,7 @@
   "tool": {
     "x": "X",
     "xSub": "Feld sperren",
-    "erase": "Leeren",
+    "reset": "Reset",
     "eraseSub": "halten",
     "undo": "Zurück",
     "hint": "Tipp",
@@ -54,7 +83,14 @@
     "loseTitle": "Das stimmt noch nicht.",
     "loseBody": "Mindestens eine Person steht falsch. Bleib dran!",
     "retry": "Weiter rätseln",
-    "back": "Zur Levelauswahl"
+    "back": "Zur Levelauswahl",
+    "save": "Behalten",
+    "saved": "Gespeichert ✓",
+    "export": "Als JSON",
+    "new": "Neues Level",
+    "nameLabel": "Wie soll das Level heißen?",
+    "namePlaceholder": "Levelname",
+    "cancel": "Abbrechen"
   },
   "object": {
     "table": "einem Tisch",

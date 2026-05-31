@@ -1,7 +1,9 @@
-/** localStorage persistence: which levels are solved + the in-progress board. */
+/** localStorage persistence: solved levels, in-progress board, saved levels. */
+import type { LevelJson } from '../engine/index.ts'
 
 const SOLVED_KEY = 'murdoku.solved.v1'
 const PROGRESS_PREFIX = 'murdoku.progress.v1.'
+const CUSTOM_KEY = 'murdoku.custom.v1'
 
 /** A board state flattened to JSON-friendly arrays (Maps/Sets don't serialize). */
 export interface SavedState {
@@ -51,4 +53,31 @@ export function clearProgress(id: string): void {
   } catch {
     /* ignore */
   }
+}
+
+/** Player-kept generated levels, newest first. */
+export function loadCustomLevels(): LevelJson[] {
+  return read<LevelJson[]>(CUSTOM_KEY, [])
+}
+
+export function saveCustomLevel(level: LevelJson): void {
+  const list = loadCustomLevels().filter((l) => l.id !== level.id)
+  list.unshift(level)
+  write(CUSTOM_KEY, list)
+}
+
+export function isCustomSaved(id: string): boolean {
+  return loadCustomLevels().some((l) => l.id === id)
+}
+
+/** Trigger a download of a level as a .json file (named after its title/id). */
+export function exportLevelJson(level: LevelJson): void {
+  const base = (level.title ?? level.id).trim().replace(/[^\w-]+/g, '_') || level.id
+  const blob = new Blob([JSON.stringify(level, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${base}.json`
+  a.click()
+  URL.revokeObjectURL(url)
 }

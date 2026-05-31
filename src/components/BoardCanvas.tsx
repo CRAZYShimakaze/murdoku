@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Cell, PersonId, Puzzle } from '../engine/index.ts'
 import { drawBoard, type RevealInfo } from '../game/boardRender.ts'
@@ -21,6 +23,7 @@ interface Props {
   occupantAt: (cell: Cell) => PersonId | undefined
   onPlaceMark: (cell: Cell, suspectId: PersonId) => void
   onCommit: (cell: Cell, suspectId: PersonId) => void
+  onRemove: (personId: PersonId) => void
   onSetCross: (cell: Cell, value: boolean) => void
   onSelectSuspect: (id: PersonId | null) => void
 }
@@ -33,12 +36,20 @@ interface Layout {
 
 export default function BoardCanvas(props: Props) {
   const { puzzle } = props
+  const { t } = useTranslation()
   const W = puzzle.board.width
   const H = puzzle.board.height
 
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [layout, setLayout] = useState<Layout | null>(null)
+  // Tooltip naming the object(s) under the cursor (a tile can stack e.g. carpet + chair).
+  const [objTip, setObjTip] = useState<{
+    types: string[]
+    x: number
+    y: number
+    left: boolean
+  } | null>(null)
 
   // Latest props/layout, read by the rAF loop and async image loads.
   const propsRef = useRef(props)
@@ -46,7 +57,12 @@ export default function BoardCanvas(props: Props) {
   const layoutRef = useRef<Layout | null>(layout)
   layoutRef.current = layout
 
-  const pressRef = useRef<{ cell: Cell; start: number } | null>(null)
+  const pressRef = useRef<{
+    cell: Cell
+    start: number
+    mode: 'commit' | 'remove'
+    personId?: PersonId
+  } | null>(null)
   const rafRef = useRef<number | null>(null)
   const paintRef = useRef<{ value: boolean; visited: Set<Cell> } | null>(null)
   const hoverRef = useRef<Cell | null>(null)
@@ -138,9 +154,10 @@ export default function BoardCanvas(props: Props) {
     if (!press) return
     const progress = Math.min(1, (now - press.start) / LONGPRESS_MS)
     if (progress >= 1) {
-      const sel = propsRef.current.selectedSuspect
+      const p = propsRef.current
       cancelPress()
-      if (sel) propsRef.current.onCommit(press.cell, sel)
+      if (press.mode === 'remove' && press.personId) p.onRemove(press.personId)
+      else if (press.mode === 'commit' && p.selectedSuspect) p.onCommit(press.cell, p.selectedSuspect)
       redraw(null)
       return
     }
@@ -158,10 +175,31 @@ export default function BoardCanvas(props: Props) {
     return row * W + col
   }
 
+  /** Show/hide the "what's this object" tooltip beside the hovered cell. */
+  function updateObjTip(cell: Cell | null) {
+    const cv = canvasRef.current
+    const L = layoutRef.current
+    if (cell === null || !cv || !L) return setObjTip(null)
+    const objs = puzzle.board.tileAt(cell).objects() // [ground, top] — stacked
+    if (objs.length === 0) return setObjTip(null)
+    const rect = cv.getBoundingClientRect()
+    const { row, col } = puzzle.board.rc(cell)
+    const left = rect.left + col * L.cell
+    const top = rect.top + row * L.cell
+    const flip = left + L.cell + 140 > window.innerWidth
+    setObjTip({
+      types: objs.map((o) => o.type),
+      x: flip ? left - 8 : left + L.cell + 8,
+      y: top + 4,
+      left: flip,
+    })
+  }
+
   function onPointerDown(e: ReactPointerEvent<HTMLCanvasElement>) {
     const cell = cellAt(e)
     if (cell === null) return
     e.currentTarget.setPointerCapture(e.pointerId)
+    setObjTip(null) // hide while interacting
     hoverRef.current = cell // show blocked outline on touch/press too
 
     if (props.xTool) {
@@ -172,21 +210,20 @@ export default function BoardCanvas(props: Props) {
     }
 
     const occ = props.occupantAt(cell)
-    if (props.selectedSuspect) {
-      if (occ) {
-        props.onSelectSuspect(occ)
-        return
-      }
-      pressRef.current = { cell, start: e.timeStamp }
+    if (occ !== undefined) {
+      // occupied cell → tap selects the occupant, hold removes them
+      pressRef.current = { cell, start: e.timeStamp, mode: 'remove', personId: occ }
       rafRef.current = requestAnimationFrame(tick)
       redraw({ cell, progress: 0 })
       return
     }
-    if (occ) {
-      props.onSelectSuspect(occ)
-    } else {
-      redraw(null) // refresh blocked outline
+    if (props.selectedSuspect && props.puzzle.board.isOccupiable(cell)) {
+      pressRef.current = { cell, start: e.timeStamp, mode: 'commit' }
+      rafRef.current = requestAnimationFrame(tick)
+      redraw({ cell, progress: 0 })
+      return
     }
+    redraw(null) // non-occupiable / empty without selection → just hover feedback
   }
 
   function onPointerMove(e: ReactPointerEvent<HTMLCanvasElement>) {
@@ -206,11 +243,12 @@ export default function BoardCanvas(props: Props) {
       }
       return
     }
-    // hover (desktop): outline non-occupiable cells in red
+    // hover (desktop): outline cells + name the object under the cursor
     const cell = cellAt(e)
     if (cell !== hoverRef.current) {
       hoverRef.current = cell
       redraw(null)
+      updateObjTip(cell)
     }
   }
 
@@ -220,19 +258,25 @@ export default function BoardCanvas(props: Props) {
     } else {
       const press = pressRef.current
       if (press) {
-        const sel = propsRef.current.selectedSuspect
+        const p = propsRef.current
         cancelPress()
-        if (sel) props.onPlaceMark(press.cell, sel) // released early → pencil mark
+        if (press.mode === 'remove' && press.personId) {
+          p.onSelectSuspect(press.personId) // short tap on a token selects it
+        } else if (press.mode === 'commit' && p.selectedSuspect) {
+          p.onPlaceMark(press.cell, p.selectedSuspect) // released early → pencil mark
+        }
       }
     }
     if (e.pointerType === 'touch') {
       hoverRef.current = null
+      setObjTip(null)
     }
     redraw(null)
   }
 
   function onPointerLeave() {
     hoverRef.current = null
+    setObjTip(null)
     redraw(null)
   }
 
@@ -249,6 +293,21 @@ export default function BoardCanvas(props: Props) {
         onPointerCancel={endPointer}
         onPointerLeave={onPointerLeave}
       />
+      {objTip &&
+        createPortal(
+          <span
+            className="mk-tip"
+            data-side={objTip.left ? 'left' : 'right'}
+            style={{ left: objTip.x, top: objTip.y }}
+          >
+            {objTip.types.map((ty) => (
+              <span key={ty} style={{ display: 'block' }}>
+                {t(`objName.${ty}`)}
+              </span>
+            ))}
+          </span>,
+          document.body,
+        )}
     </div>
   )
 }

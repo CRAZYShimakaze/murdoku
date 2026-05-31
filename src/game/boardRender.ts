@@ -169,16 +169,18 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     for (const side of sides) drawWindow(ctx, x, y, S, side)
   }
 
-  // --- object dots (preview only) ---------------------------------------
+  // --- object emoji (preview thumbnails: same icons, no plates) ----------
   if (preview) {
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillStyle = '#1c1822'
     for (let c = 0; c < W * H; c++) {
       const top = board.tileAt(c).top
-      if (!top) continue
+      const glyph = top ? OBJECT_GLYPHS[top.type] : undefined
+      if (!glyph) continue
       const { x, y } = xy(c)
-      ctx.fillStyle = 'rgba(30, 26, 38, 0.5)'
-      ctx.beginPath()
-      ctx.arc(x + S / 2, y + S / 2, S * 0.16, 0, Math.PI * 2)
-      ctx.fill()
+      ctx.font = `${S * 0.72}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`
+      ctx.fillText(glyph, x + S / 2, y + S * 0.55)
     }
     return
   }

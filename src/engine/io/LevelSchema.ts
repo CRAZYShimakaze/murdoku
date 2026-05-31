@@ -13,6 +13,8 @@ export interface SuspectJson {
 export interface LevelJson {
   schema: 1
   id: string
+  /** Optional display name (e.g. a player-given name for a saved level). */
+  title?: string
   size: { width: number; height: number }
   /** char -> room metadata; chars are used in `roomMap`. */
   rooms: Record<string, { nameKey: string; color: string }>

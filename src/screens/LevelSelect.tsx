@@ -2,8 +2,15 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import LanguageToggle from '../components/LanguageToggle.tsx'
 import BoardPreview from '../components/BoardPreview.tsx'
-import { DIFFICULTIES, LEVELS, LEVEL_SIZES, type Difficulty, type LevelMeta } from '../game/levels.ts'
-import { loadSolved } from '../game/storage.ts'
+import {
+  DIFFICULTIES,
+  LEVELS,
+  LEVEL_SIZES,
+  levelMetaFromJson,
+  type Difficulty,
+  type LevelMeta,
+} from '../game/levels.ts'
+import { loadCustomLevels, loadSolved } from '../game/storage.ts'
 
 interface Props {
   onPick: (level: LevelMeta) => void
@@ -15,16 +22,18 @@ export default function LevelSelect({ onPick, onBack }: Props) {
   const [diff, setDiff] = useState<Difficulty | 'all'>('all')
   const [size, setSize] = useState<string | 'all'>('all')
   const [solved] = useState(() => loadSolved())
+  const [custom] = useState(() => loadCustomLevels().map((j) => levelMetaFromJson(j, true)))
 
-  const levels = useMemo(
-    () =>
-      LEVELS.filter(
+  const levels = useMemo(() => {
+    const seen = new Set<string>()
+    return [...custom, ...LEVELS]
+      .filter((l) => !seen.has(l.id) && seen.add(l.id) !== undefined) // de-dupe by id
+      .filter(
         (l) =>
           (diff === 'all' || l.difficulty === diff) &&
           (size === 'all' || `${l.width}×${l.height}` === size),
-      ),
-    [diff, size],
-  )
+      )
+  }, [diff, size, custom])
 
   return (
     <div className="mk-screen">
@@ -86,6 +95,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
               style={{ animationDelay: `${Math.min(i, 12) * 0.04}s` }}
               onClick={() => onPick(l)}
             >
+              {l.custom && <span className="mk-custom">{t('select.custom')}</span>}
               {solved.has(l.id) && <span className="mk-solved">✓ {t('select.solved')}</span>}
               <BoardPreview json={l.json} />
               <div className="mk-card__body">

@@ -46,7 +46,10 @@ export interface GameSession {
   placeMark: (cell: Cell, personId: PersonId) => void
   commit: (cell: Cell, personId: PersonId) => void
   setCross: (cell: Cell, value: boolean) => void
-  clearAllCrosses: () => void
+  /** Remove a committed person from the board (long-press on their cell). */
+  remove: (personId: PersonId) => void
+  /** Full restart: clear all placements, marks and crosses (eraser "hold"). */
+  resetAll: () => void
   undo: () => void
   /** Forget the saved progress for this level (call on a win). */
   clearSaved: () => void
@@ -114,7 +117,10 @@ export function useGameSession(puzzle: Puzzle, levelId: string): GameSession {
         for (const c of board.occupiableCells()) {
           if (c === cell || occupied.has(c)) continue
           const rc = board.rc(c)
-          if (rc.row === row || rc.col === col) next.crosses.add(c)
+          if (rc.row === row || rc.col === col) {
+            next.crosses.add(c)
+            next.marks.delete(c) // an X'd cell can't hold anyone — drop its notes
+          }
         }
       }),
     [apply, board],
@@ -126,8 +132,9 @@ export function useGameSession(puzzle: Puzzle, levelId: string): GameSession {
         if (!board.isOccupiable(cell)) return false
         for (const c of next.placements.values()) if (c === cell) return false
         if (value) {
-          if (next.crosses.has(cell)) return false
+          if (next.crosses.has(cell) && !next.marks.has(cell)) return false
           next.crosses.add(cell)
+          next.marks.delete(cell) // crossing a cell clears its pencil marks
         } else {
           if (!next.crosses.has(cell)) return false
           next.crosses.delete(cell)
@@ -136,10 +143,23 @@ export function useGameSession(puzzle: Puzzle, levelId: string): GameSession {
     [apply, board],
   )
 
-  const clearAllCrosses = useCallback(
+  const remove = useCallback(
+    (personId: PersonId) =>
+      apply((next) => {
+        if (!next.placements.has(personId)) return false
+        next.placements.delete(personId)
+      }),
+    [apply],
+  )
+
+  const resetAll = useCallback(
     () =>
       apply((next) => {
-        if (next.crosses.size === 0) return false
+        if (next.placements.size === 0 && next.marks.size === 0 && next.crosses.size === 0) {
+          return false
+        }
+        next.placements.clear()
+        next.marks.clear()
         next.crosses.clear()
       }),
     [apply],
@@ -167,7 +187,8 @@ export function useGameSession(puzzle: Puzzle, levelId: string): GameSession {
     placeMark,
     commit,
     setCross,
-    clearAllCrosses,
+    remove,
+    resetAll,
     undo,
     clearSaved,
     canUndo: hist.past.length > 0,

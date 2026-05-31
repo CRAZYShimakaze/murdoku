@@ -10,7 +10,35 @@
   "start": {
     "kicker": "A logic mystery",
     "play": "Open the case",
+    "generate": "Generate a level",
     "credit": "Murdoku · a logic mystery"
+  },
+  "generate": {
+    "title": "Generate a level",
+    "subtitle": "Compose your case",
+    "size": "Size",
+    "suspects": "{{n}} suspects",
+    "difficulty": "Difficulty",
+    "objects": "Objects",
+    "theme": "Theme",
+    "create": "Create",
+    "generating": "Generating level …",
+    "hint": "Larger boards and \"Hard\" can take a few seconds.",
+    "cancel": "Cancel",
+    "failed": "No level found — please try again or pick different settings."
+  },
+  "theme": {
+    "random": "Random",
+    "crime-scene": "Crime scene",
+    "auto-shop": "Auto shop",
+    "game-night": "Game night",
+    "office": "Office",
+    "mansion": "Mansion",
+    "hotel": "Hotel",
+    "school": "School",
+    "hospital": "Hospital",
+    "museum": "Museum",
+    "restaurant": "Restaurant"
   },
   "select": {
     "title": "The Case Files",
@@ -19,7 +47,8 @@
     "filterSize": "Size",
     "all": "All",
     "empty": "No cases match these filters.",
-    "solved": "Solved"
+    "solved": "Solved",
+    "custom": "Custom"
   },
   "difficulty": {
     "tutorial": "Tutorial",
@@ -37,7 +66,7 @@
   "tool": {
     "x": "X",
     "xSub": "block cell",
-    "erase": "Clear",
+    "reset": "Reset",
     "eraseSub": "hold",
     "undo": "Undo",
     "hint": "Hint",
@@ -54,7 +83,14 @@
     "loseTitle": "That's not right yet.",
     "loseBody": "At least one person is misplaced. Keep at it!",
     "retry": "Keep solving",
-    "back": "Back to cases"
+    "back": "Back to cases",
+    "save": "Keep it",
+    "saved": "Saved ✓",
+    "export": "As JSON",
+    "new": "New level",
+    "nameLabel": "What should the level be called?",
+    "namePlaceholder": "Level name",
+    "cancel": "Cancel"
   },
   "object": {
     "table": "a table",

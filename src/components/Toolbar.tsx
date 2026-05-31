@@ -6,7 +6,7 @@ interface Props {
   onToggleX: () => void
   onUndo: () => void
   canUndo: boolean
-  onClearAll: () => void
+  onReset: () => void
   onHint: () => void
   onSubmit: () => void
   allPlaced: boolean
@@ -74,7 +74,7 @@ export default function Toolbar({
   onToggleX,
   onUndo,
   canUndo,
-  onClearAll,
+  onReset,
   onHint,
   onSubmit,
   allPlaced,
@@ -92,9 +92,9 @@ export default function Toolbar({
         <span className="mk-tool__sub">{t('tool.xSub')}</span>
       </button>
 
-      <HoldButton className="mk-tool" onComplete={onClearAll}>
-        <span className="mk-tool__icon">🧽</span>
-        <span>{t('tool.erase')}</span>
+      <HoldButton className="mk-tool" onComplete={onReset}>
+        <span className="mk-tool__icon">↺</span>
+        <span>{t('tool.reset')}</span>
         <span className="mk-tool__sub">{t('tool.eraseSub')}</span>
       </HoldButton>
 

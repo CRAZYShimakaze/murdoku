@@ -1,7 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import LanguageToggle from '../components/LanguageToggle.tsx'
 
-export default function StartScreen({ onPlay }: { onPlay: () => void }) {
+export default function StartScreen({
+  onPlay,
+  onGenerate,
+}: {
+  onPlay: () => void
+  onGenerate: () => void
+}) {
   const { t } = useTranslation()
 
   return (
@@ -25,6 +31,9 @@ export default function StartScreen({ onPlay }: { onPlay: () => void }) {
           <div className="mk-start__cta">
             <button type="button" className="mk-btn mk-btn--primary" onClick={onPlay}>
               {t('start.play')}
+            </button>
+            <button type="button" className="mk-btn mk-btn--ghost" onClick={onGenerate}>
+              {t('start.generate')}
             </button>
           </div>
           <div className="mk-start__lang">

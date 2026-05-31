@@ -8,7 +8,7 @@ import { DeductionEngine } from '../solver/DeductionEngine.ts'
 import { difficultyOf } from '../solver/DeductionStep.ts'
 import { createClue } from '../clues/ClueFactory.ts'
 import { VICTIM_ID } from '../model/types.ts'
-import type { AttributeValue, Cell, PersonId } from '../model/types.ts'
+import type { AttributeValue, Cell, PersonId, Side } from '../model/types.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
 import type { LevelJson, SuspectJson } from '../io/LevelSchema.ts'
 import type { ClueJson } from '../clues/ClueFactory.ts'
@@ -27,6 +27,7 @@ interface Theme {
 const OCCUPIABLE: ObjectDef[] = [
   { char: 's', type: 'chair', occupiable: true },
   { char: 'r', type: 'carpet', occupiable: true },
+  { char: 'b', type: 'bed', occupiable: true },
 ]
 const BLOCKING: ObjectDef[] = [
   { char: 't', type: 'table', occupiable: false },
@@ -34,16 +35,59 @@ const BLOCKING: ObjectDef[] = [
   { char: 'g', type: 'shelf', occupiable: false },
   { char: 'x', type: 'box', occupiable: false },
   { char: 'f', type: 'tv', occupiable: false },
+  { char: 'u', type: 'shrub', occupiable: false },
 ]
 const ALL_OBJECTS = [...OCCUPIABLE, ...BLOCKING]
 
+/** Object types the generator can place (for the UI's per-object toggles). */
+export const GENERATOR_OBJECT_TYPES: string[] = ALL_OBJECTS.map((o) => o.type)
+
 const THEMES: Theme[] = [
-  { id: 'crime-scene', rooms: ['Flur', 'Wohnzimmer', 'Küche', 'Bad', 'Schlafzimmer', 'Büro', 'Keller', 'Garage'] },
-  { id: 'auto-shop', rooms: ['Werkstatt', 'Lager', 'Büro', 'Wartebereich', 'Hof', 'Waschhalle'] },
-  { id: 'game-night', rooms: ['Wohnzimmer', 'Esszimmer', 'Küche', 'Flur', 'Balkon'] },
-  { id: 'office', rooms: ['Großraumbüro', 'Besprechung', 'Küche', 'Empfang', 'Serverraum', 'Archiv'] },
+  {
+    id: 'crime-scene',
+    rooms: ['Flur', 'Wohnzimmer', 'Küche', 'Bad', 'Schlafzimmer', 'Büro', 'Keller', 'Garage', 'Esszimmer', 'Dachboden', 'Gästezimmer', 'Abstellraum', 'Waschküche', 'Veranda', 'Kinderzimmer'],
+  },
+  {
+    id: 'auto-shop',
+    rooms: ['Werkstatt', 'Lager', 'Büro', 'Wartebereich', 'Hof', 'Waschhalle', 'Ersatzteillager', 'Reifenlager', 'Empfang', 'Lackiererei', 'Montagehalle', 'Prüfstand', 'Sozialraum', 'Kasse', 'Tankstelle'],
+  },
+  {
+    id: 'game-night',
+    rooms: ['Wohnzimmer', 'Esszimmer', 'Küche', 'Flur', 'Balkon', 'Spielzimmer', 'Bar', 'Lounge', 'Terrasse', 'Bibliothek', 'Wintergarten', 'Diele', 'Vorratskammer', 'Gästebad', 'Arbeitszimmer'],
+  },
+  {
+    id: 'office',
+    rooms: ['Großraumbüro', 'Besprechung', 'Küche', 'Empfang', 'Serverraum', 'Archiv', 'Chefbüro', 'Kopierraum', 'Teeküche', 'Lager', 'Konferenzraum', 'Lobby', 'Aufenthaltsraum', 'Poststelle', 'Druckerraum'],
+  },
+  {
+    id: 'mansion',
+    rooms: ['Eingangshalle', 'Salon', 'Speisesaal', 'Bibliothek', 'Musikzimmer', 'Wintergarten', 'Galerie', 'Boudoir', 'Rauchzimmer', 'Ballsaal', 'Gewächshaus', 'Weinkeller', 'Bedienstetenzimmer', 'Ankleidezimmer', 'Kaminzimmer'],
+  },
+  {
+    id: 'hotel',
+    rooms: ['Lobby', 'Rezeption', 'Restaurant', 'Bar', 'Suite', 'Konferenzraum', 'Spa', 'Fitnessraum', 'Küche', 'Gepäckraum', 'Frühstücksraum', 'Dachterrasse', 'Aufzug', 'Flur', 'Wäscherei'],
+  },
+  {
+    id: 'school',
+    rooms: ['Klassenzimmer', 'Aula', 'Turnhalle', 'Bibliothek', 'Lehrerzimmer', 'Sekretariat', 'Pausenhof', 'Chemieraum', 'Musiksaal', 'Mensa', 'Werkraum', 'Computerraum', 'Umkleide', 'Kunstraum', 'Flur'],
+  },
+  {
+    id: 'hospital',
+    rooms: ['Empfang', 'Wartezimmer', 'OP-Saal', 'Station', 'Labor', 'Apotheke', 'Röntgen', 'Intensivstation', 'Aufenthaltsraum', 'Notaufnahme', 'Kreißsaal', 'Sterilisation', 'Büro', 'Cafeteria', 'Flur'],
+  },
+  {
+    id: 'museum',
+    rooms: ['Eingangshalle', 'Hauptgalerie', 'Ausstellung', 'Tresor', 'Café', 'Sicherheitsraum', 'Werkstatt', 'Archiv', 'Garderobe', 'Sonderausstellung', 'Foyer', 'Bibliothek', 'Lager', 'Auditorium', 'Toilette'],
+  },
+  {
+    id: 'restaurant',
+    rooms: ['Speisesaal', 'Küche', 'Bar', 'Weinkeller', 'Terrasse', 'Lager', 'Büro', 'Empfang', 'Spülküche', 'Vorbereitung', 'Kühlraum', 'Personalraum', 'Lounge', 'Toilette', 'Garderobe'],
+  },
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
+
+/** Theme ids the generator knows (for the UI's theme picker). */
+export const THEME_IDS: string[] = THEMES.map((t) => t.id)
 
 export type GenDifficulty = 'easy' | 'medium' | 'hard'
 
@@ -54,6 +98,8 @@ export interface GenerateOptions {
   seed?: number
   themeId?: string
   difficulty?: GenDifficulty
+  /** Object types allowed on the board (default: all). */
+  objects?: string[]
 }
 
 const HAIR_COLORS: AttributeValue[] = ['blond', 'brown', 'black', 'white']
@@ -126,12 +172,14 @@ export function generateLevel(options: GenerateOptions): LevelJson {
       const tier = rateTier(result.level)
       result.level.difficulty = tier
       const mismatch = target && tier !== target ? 1 : 0
-      const score = result.pins * 1000 + mismatch // pin-free first, then difficulty
+      const lines = countLineClues(result.level)
+      // pin-free first, then right difficulty, then prefer line-free (variety).
+      const score = result.pins * 1000 + mismatch * 10 + lines
       if (score < bestScore) {
         best = result.level
         bestScore = score
       }
-      if (result.pins === 0 && mismatch === 0) break // pin-free and right difficulty
+      if (result.pins === 0 && mismatch === 0 && lines === 0) break
     }
     if (best && performance.now() > deadline) break // stay within the time budget
   }
@@ -154,8 +202,9 @@ function tryGenerate(
   seedIndex: number,
 ): { level: LevelJson; pins: number } | null {
   const { width, height, suspects } = options
-  const theme =
-    THEMES.find((t) => t.id === options.themeId) ?? rng.pick(THEMES)
+  const baseTheme = THEMES.find((t) => t.id === options.themeId) ?? rng.pick(THEMES)
+  // Shuffle the theme's room pool so each level uses a random subset → variety.
+  const theme: Theme = { id: baseTheme.id, rooms: rng.shuffle([...baseTheme.rooms]) }
 
   const roomCount = Math.max(3, Math.min(theme.rooms.length, Math.round(suspects * 0.7)))
   const rooms = generateRooms(width, height, roomCount, rng)
@@ -168,7 +217,12 @@ function tryGenerate(
   if (!placed) return null
 
   const peopleCells = new Set<Cell>(placed.placement.values())
-  const objects = placeObjects(width, height, peopleCells, rng)
+  const allow = options.objects
+  const occ = allow ? OCCUPIABLE.filter((o) => allow.includes(o.type)) : OCCUPIABLE
+  const blocking = allow ? BLOCKING.filter((o) => allow.includes(o.type)) : BLOCKING
+  const objects = placeObjects(width, height, peopleCells, rng, occ, blocking)
+  // Windows are optional — only some levels have them (and then 2–6).
+  const windows = rng.chance(0.5) ? placeWindows(width, height, rng) : []
 
   const usedName = new Set<string>()
   const suspectMeta: SuspectJson[] = suspectIds.map((id, i) => {
@@ -179,7 +233,7 @@ function tryGenerate(
 
   const victim = victimPerson(rng)
   const victimMeta = { name: victim.name, attributes: makeAttributes(victim.gender, rng) }
-  const base = buildLevel(theme, width, height, rooms, objects, suspectMeta, victimMeta, seedIndex)
+  const base = buildLevel(theme, width, height, rooms, objects, windows, suspectMeta, victimMeta, seedIndex)
   const basePuzzle = loadLevel(base)
   const solution = new Solution(placed.placement)
 
@@ -277,30 +331,60 @@ function placeObjects(
   height: number,
   peopleCells: Set<Cell>,
   rng: Rng,
+  occ: ObjectDef[],
+  blocking: ObjectDef[],
 ): { groundMap: string[]; topMap: string[] } {
   const ground: string[][] = Array.from({ length: height }, () => new Array<string>(width).fill('.'))
   const top: string[][] = Array.from({ length: height }, () => new Array<string>(width).fill('.'))
+
+  // Carpets are a ground layer; chairs/beds sit on top.
+  const placeOcc = (r: number, c: number, def: ObjectDef): void => {
+    if (def.type === 'carpet') ground[r][c] = def.char
+    else top[r][c] = def.char
+  }
 
   for (let cell = 0; cell < width * height; cell++) {
     const r = Math.floor(cell / width)
     const c = cell % width
     if (peopleCells.has(cell)) {
-      const roll = rng.next()
-      if (roll < 0.4) top[r][c] = 's'
-      else if (roll < 0.6) ground[r][c] = 'r'
+      if (occ.length > 0 && rng.next() < 0.5) placeOcc(r, c, rng.pick(occ))
       continue
     }
     const roll = rng.next()
-    if (roll < 0.3) top[r][c] = rng.pick(BLOCKING).char
-    else if (roll < 0.45) {
-      if (rng.chance(0.5)) top[r][c] = 's'
-      else ground[r][c] = 'r'
-    }
+    if (blocking.length > 0 && roll < 0.3) top[r][c] = rng.pick(blocking).char
+    else if (occ.length > 0 && roll < 0.45) placeOcc(r, c, rng.pick(occ))
   }
   return {
     groundMap: ground.map((row) => row.join('')),
     topMap: top.map((row) => row.join('')),
   }
+}
+
+/**
+ * Place a handful of windows on the outer wall (2–6), each owned by a border cell
+ * on its outward side. Several windows keep "beside a window" non-unique.
+ */
+function placeWindows(
+  width: number,
+  height: number,
+  rng: Rng,
+): { r: number; c: number; side: Side }[] {
+  const border: { r: number; c: number; sides: Side[] }[] = []
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) {
+      const sides: Side[] = []
+      if (r === 0) sides.push('N')
+      if (r === height - 1) sides.push('S')
+      if (c === 0) sides.push('W')
+      if (c === width - 1) sides.push('E')
+      if (sides.length > 0) border.push({ r, c, sides })
+    }
+  }
+  const count = Math.min(border.length, 2 + rng.int(5)) // 2..6
+  return rng
+    .shuffle(border)
+    .slice(0, count)
+    .map((b) => ({ r: b.r, c: b.c, side: b.sides[rng.int(b.sides.length)] }))
 }
 
 // --- level json -----------------------------------------------------------
@@ -311,6 +395,7 @@ function buildLevel(
   height: number,
   rooms: { roomMap: string[]; ids: string[] },
   objects: { groundMap: string[]; topMap: string[] },
+  windows: { r: number; c: number; side: Side }[],
   suspects: SuspectJson[],
   victim: { name: string; attributes: Record<string, AttributeValue> },
   seedIndex: number,
@@ -332,6 +417,7 @@ function buildLevel(
     roomMap: rooms.roomMap,
     groundMap: objects.groundMap,
     topMap: objects.topMap,
+    windows,
     suspects,
     victim,
   }
@@ -366,6 +452,7 @@ function candidatesFor(
   out.push({ type: 'inRow', row })
   out.push({ type: 'inCol', col })
   if (board.isCorner(cell)) out.push({ type: 'corner' })
+  if (board.hasWindow(cell)) out.push({ type: 'nearWindow' })
 
   const sameRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
   if (sameRoom.length === 0) out.push({ type: 'alone' })
@@ -450,7 +537,7 @@ function selectClues(
   const unique = (): boolean =>
     isUnique(base, new Map(suspectIds.map((id) => [id, clueOf(id)])))
 
-  const MAX_LINE = 1
+  const MAX_LINE = 1 // ≤1 line clue; generateLevel further prefers line-free levels
   const isLine = (clue: ClueJson): boolean => clue.type === 'inRow' || clue.type === 'inCol'
   const lineSuspects = (): number => {
     let n = 0
@@ -506,6 +593,17 @@ function selectClues(
   }
 
   return new Map(suspectIds.map((id) => [id, clueOf(id)]))
+}
+
+/** How many suspects use a row/column clue — minimised for variety. */
+function countLineClues(level: LevelJson): number {
+  let n = 0
+  for (const s of level.suspects) {
+    const clues = s.clues ?? []
+    const flat = clues.flatMap((c) => (c.type === 'and' ? c.clues : [c]))
+    if (flat.some((c) => c.type === 'inRow' || c.type === 'inCol')) n++
+  }
+  return n
 }
 
 /** Count "exact cell" coordinate pins (inRow AND inCol) — must be 0. */

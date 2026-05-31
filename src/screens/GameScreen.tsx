@@ -11,7 +11,7 @@ import {
 } from '../engine/index.ts'
 import { Renderer } from '../i18n/Renderer.ts'
 import { useGameSession } from '../game/useGameSession.ts'
-import { markSolved } from '../game/storage.ts'
+import { markSolved, saveCustomLevel, exportLevelJson, isCustomSaved } from '../game/storage.ts'
 import type { LevelMeta } from '../game/levels.ts'
 import BoardCanvas from '../components/BoardCanvas.tsx'
 import CluePanel from '../components/CluePanel.tsx'
@@ -22,6 +22,9 @@ import ResultDialog from '../components/ResultDialog.tsx'
 interface Props {
   meta: LevelMeta
   onBack: () => void
+  /** True when this level was just generated (offers save/export/new on a win). */
+  generated?: boolean
+  onNew?: () => void
 }
 
 interface Result {
@@ -39,7 +42,7 @@ function formatTime(total: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 }
 
-export default function GameScreen({ meta, onBack }: Props) {
+export default function GameScreen({ meta, onBack, generated, onNew }: Props) {
   const { t, i18n } = useTranslation()
   const puzzle = useMemo(() => loadLevel(meta.json), [meta])
   const solution = useMemo(() => new SearchSolver(puzzle).firstSolution(), [puzzle])
@@ -60,6 +63,7 @@ export default function GameScreen({ meta, onBack }: Props) {
   const [hint, setHint] = useState<string | null>(null)
   const [result, setResult] = useState<Result | null>(null)
   const [elapsed, setElapsed] = useState(0)
+  const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
 
   useEffect(() => {
     if (result?.win) return
@@ -165,6 +169,7 @@ export default function GameScreen({ meta, onBack }: Props) {
           occupantAt={session.occupantAt}
           onPlaceMark={session.placeMark}
           onCommit={session.commit}
+          onRemove={session.remove}
           onSetCross={session.setCross}
           onSelectSuspect={selectFromBoard}
         />
@@ -175,7 +180,7 @@ export default function GameScreen({ meta, onBack }: Props) {
         onToggleX={toggleX}
         onUndo={session.undo}
         canUndo={session.canUndo}
-        onClearAll={session.clearAllCrosses}
+        onReset={session.resetAll}
         onHint={showHint}
         onSubmit={submit}
         allPlaced={session.allPlaced}
@@ -188,6 +193,15 @@ export default function GameScreen({ meta, onBack }: Props) {
           murderer={result.win ? result.murderer : null}
           onRetry={() => setResult(null)}
           onBack={onBack}
+          generated={generated}
+          saved={saved}
+          defaultName={meta.title}
+          onSave={(name) => {
+            saveCustomLevel({ ...meta.json, title: name })
+            setSaved(true)
+          }}
+          onExport={(name) => exportLevelJson({ ...meta.json, title: name })}
+          onNew={onNew}
         />
       )}
     </div>
