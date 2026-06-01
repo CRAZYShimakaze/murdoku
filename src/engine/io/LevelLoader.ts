@@ -8,6 +8,7 @@ import { Puzzle } from '../model/Puzzle.ts'
 import { VICTIM_ID } from '../model/types.ts'
 import type { Cell, Side } from '../model/types.ts'
 import { createClue } from '../clues/ClueFactory.ts'
+import { createBoardClue } from '../clues/boardClues.ts'
 import type { LevelJson } from './LevelSchema.ts'
 
 const EMPTY_CHAR = '.'
@@ -67,7 +68,7 @@ export function loadLevel(level: LevelJson): Puzzle {
 
   const rooms = new Map<string, Room>()
   for (const [id, def] of Object.entries(level.rooms)) {
-    rooms.set(id, new Room(id, def.nameKey, def.color))
+    rooms.set(id, new Room(id, def.nameKey, def.color, def.outside ?? false))
   }
 
   const objectDefs = buildObjectDefs(level)
@@ -95,7 +96,28 @@ export function loadLevel(level: LevelJson): Puzzle {
     windows.set(cell, sides)
   }
 
-  const board = new Board(width, height, tiles, rooms, windows)
+  // Doors are two-sided: register each on its cell AND the neighbour across the edge.
+  const doors = new Map<Cell, Set<Side>>()
+  const addDoor = (r: number, c: number, side: Side): void => {
+    if (r < 0 || r >= height || c < 0 || c >= width) return
+    const cell = r * width + c
+    const set = doors.get(cell) ?? new Set<Side>()
+    set.add(side)
+    doors.set(cell, set)
+  }
+  const opposite: Record<Side, Side> = { N: 'S', S: 'N', E: 'W', W: 'E' }
+  const step: Record<Side, [number, number]> = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] }
+  for (const d of level.doors ?? []) {
+    assert(
+      d.r >= 0 && d.r < height && d.c >= 0 && d.c < width,
+      `door out of bounds at ${d.r},${d.c}`,
+    )
+    addDoor(d.r, d.c, d.side)
+    const [dr, dc] = step[d.side]
+    addDoor(d.r + dr, d.c + dc, opposite[d.side])
+  }
+
+  const board = new Board(width, height, tiles, rooms, windows, doors)
 
   const seen = new Set<string>()
   const suspects = level.suspects.map((s) => {
@@ -108,6 +130,7 @@ export function loadLevel(level: LevelJson): Puzzle {
 
   const victim = new Victim(level.victim.name, level.victim.attributes ?? {})
   const globalClues = (level.globalClues ?? []).map(createClue)
+  const boardClues = (level.boardClues ?? []).map(createBoardClue)
 
-  return new Puzzle(level.id, board, suspects, victim, globalClues)
+  return new Puzzle(level.id, board, suspects, victim, globalClues, boardClues)
 }

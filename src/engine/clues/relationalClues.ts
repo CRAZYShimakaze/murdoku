@@ -3,6 +3,34 @@ import type { Solution } from '../model/Solution.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
 import type { Cell, Direction, Explanation, PersonId } from '../model/types.ts'
 
+/** "{name} and {target} were one inside and one outside." (opposite areas) */
+export class InsideXorClue extends Clue {
+  constructor(readonly target: PersonId) {
+    super()
+  }
+
+  test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
+    const a = puzzle.board.isOutside(solution.cellOf(subjectId))
+    const b = puzzle.board.isOutside(solution.cellOf(this.target))
+    return a !== b
+  }
+
+  override violatedBy(
+    subjectId: PersonId,
+    placement: ReadonlyMap<PersonId, Cell>,
+    puzzle: Puzzle,
+  ): boolean {
+    const a = placement.get(subjectId)
+    const b = placement.get(this.target)
+    if (a === undefined || b === undefined) return false
+    return puzzle.board.isOutside(a) === puzzle.board.isOutside(b)
+  }
+
+  describe(): Explanation {
+    return { key: 'clue.insideXor', params: { target: this.target } }
+  }
+}
+
 /** "{name} was {north/south/east/west} of {target}." (half-plane semantics) */
 export class DirectionClue extends Clue {
   constructor(

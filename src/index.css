@@ -1403,6 +1403,97 @@ button {
   display: block;
   margin-bottom: 0.2rem;
 }
+.mk-hintchain {
+  margin: 0.45rem 0 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  font-size: 0.78rem;
+  opacity: 0.92;
+}
+.mk-hintchain li {
+  list-style: decimal;
+}
+.mk-hintchain li:last-child {
+  list-style: none;
+  margin-left: -1.2rem;
+  margin-top: 0.1rem;
+  font-weight: 600;
+  color: var(--brass);
+}
+
+/* Board-wide clues (outdoor rooms, "exactly one on a mud puddle", …) — each is
+ * its own clearly-visible card, not a small combined list. */
+.mk-boardclues {
+  margin: 0 0 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.mk-boardclue {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--r-md);
+  background: rgba(120, 150, 210, 0.16);
+  border: 1px solid rgba(120, 150, 210, 0.5);
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-family: var(--font-type);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--bone);
+}
+.mk-boardclue__icon {
+  flex: none;
+  font-size: 1.05rem;
+  opacity: 0.9;
+}
+
+/* Editor: global board-clue cards (stacked controls so nothing gets cramped). */
+.mk-boardclue-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.mk-bce {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.6rem;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+}
+.mk-bce .mk-select-input {
+  width: 100%;
+}
+.mk-bce__count {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+.mk-bce__count input {
+  width: 4rem;
+}
+.mk-bce__del {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.4rem;
+  background: none;
+  border: none;
+  color: var(--bone);
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.mk-bce__del:hover {
+  opacity: 1;
+}
 
 /* ================================================================= COACH */
 .mk-coach {

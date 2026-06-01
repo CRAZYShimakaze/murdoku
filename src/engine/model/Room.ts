@@ -4,5 +4,7 @@ export class Room {
     readonly id: string,
     readonly nameKey: string,
     readonly color: string,
+    /** Outdoor area (pasture/yard/garden) vs indoor — used by inside/outside clues. */
+    readonly outside: boolean = false,
   ) {}
 }

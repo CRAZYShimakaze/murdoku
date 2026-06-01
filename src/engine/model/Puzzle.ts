@@ -3,6 +3,7 @@ import type { Board } from './Board.ts'
 import type { Suspect } from './Suspect.ts'
 import type { Victim } from './Victim.ts'
 import type { Clue } from '../clues/Clue.ts'
+import type { BoardClue } from '../clues/boardClues.ts'
 
 /** A person on the board (suspect or victim) reduced to what the solver needs. */
 export interface Person {
@@ -20,6 +21,7 @@ export class Puzzle {
     readonly suspects: readonly Suspect[],
     readonly victim: Victim,
     readonly globalClues: readonly Clue[] = [],
+    readonly boardClues: readonly BoardClue[] = [],
   ) {}
 
   /** Suspects followed by the victim. */

@@ -7,12 +7,13 @@ import {
   loadLevel,
   VICTIM_ID,
   type Cell,
+  type HintResult,
   type PersonId,
 } from '../engine/index.ts'
 import { Renderer } from '../i18n/Renderer.ts'
 import { useGameSession } from '../game/useGameSession.ts'
 import { useTutorialFlow } from '../game/useTutorialFlow.ts'
-import { CANDIDATE_BLUE } from '../game/palette.ts'
+import { CANDIDATE_BLUE, HINT_BLACK } from '../game/palette.ts'
 import { markSolved, saveCustomLevel, exportLevelJson, isCustomSaved } from '../game/storage.ts'
 import type { LevelMeta } from '../game/levels.ts'
 import BoardCanvas from '../components/BoardCanvas.tsx'
@@ -70,7 +71,14 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
   const [hoveredSuspect, setHoveredSuspect] = useState<PersonId | null>(null)
   const [xTool, setXTool] = useState(false)
   const tut = useTutorialFlow({ enabled: !!tutorial, puzzle, solution, session, selected, setSelected })
-  const [hint, setHint] = useState<string | null>(null)
+  const [hint, setHint] = useState<HintResult | null>(null)
+  const [hintShown, setHintShown] = useState(false) // hint requested (even if none was found)
+  // Hints shown this round (until the board changes), so pressing "hint" again
+  // advances to the next deduction instead of repeating the same one.
+  const [hintProgress, setHintProgress] = useState<{
+    placed: Map<PersonId, Cell>
+    eliminated: Map<PersonId, Set<Cell>>
+  }>(() => ({ placed: new Map(), eliminated: new Map() }))
   const [result, setResult] = useState<Result | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
@@ -80,6 +88,13 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
     const id = setInterval(() => setElapsed((e) => e + 1), 1000)
     return () => clearInterval(id)
   }, [result?.win])
+
+  // A board change makes any shown hint stale — drop it and restart the hint walk.
+  useEffect(() => {
+    setHint(null)
+    setHintShown(false)
+    setHintProgress({ placed: new Map(), eliminated: new Map() })
+  }, [session.state])
 
   const highlight = useMemo<Set<Cell> | null>(() => {
     if (!selected) return null
@@ -100,26 +115,61 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
       ? { victimCell: result.victimCell, murdererId: result.murderer?.id ?? null }
       : null
 
+  const clearHint = () => {
+    setHint(null)
+    setHintShown(false)
+    setHintProgress({ placed: new Map(), eliminated: new Map() })
+  }
   const selectFromCard = (id: PersonId) => {
     setSelected((prev) => (prev === id ? null : id))
     setXTool(false)
-    setHint(null)
+    clearHint()
   }
   const selectFromBoard = (id: PersonId | null) => {
     setSelected(id)
     setXTool(false)
-    setHint(null)
+    clearHint()
   }
-  const toggleX = () =>
+  const toggleX = () => {
+    clearHint()
     setXTool((v) => {
       if (!v) setSelected(null)
       return !v
     })
+  }
 
   const showHint = () => {
-    const step = engine.nextHint(session.state.placements)
-    setHint(step ? renderer.render(step.explanation) : t('tool.hintNone'))
+    setSelected(null) // the black hint highlight replaces the blue selection
+    setXTool(false)
+    const h = engine.nextHint(session.state.placements, session.state.crosses, hintProgress)
+    setHint(h)
+    setHintShown(true)
+    if (!h) return
+    // Record this hint so the next press moves on to the following deduction.
+    const placedNext = new Map(hintProgress.placed)
+    const elimNext = new Map([...hintProgress.eliminated].map(([k, v]) => [k, new Set(v)]))
+    if (h.step.placedCell !== undefined && h.step.personId) {
+      placedNext.set(h.step.personId, h.step.placedCell)
+    }
+    for (const e of h.step.eliminated ?? []) {
+      const set = elimNext.get(e.personId) ?? new Set<Cell>()
+      for (const c of e.cells) set.add(c)
+      elimNext.set(e.personId, set)
+    }
+    setHintProgress({ placed: placedNext, eliminated: elimNext })
   }
+
+  // Hint (black) wins the board highlight; otherwise the tutorial / selected suspect (blue).
+  const boardHighlight =
+    !tut.active && hint ? new Set(hint.focus) : tut.active ? tut.highlight : highlight
+  const boardHighlightColor = !tut.active && hint ? HINT_BLACK : CANDIDATE_BLUE
+  const hintText = hint
+    ? renderer.render(hint.step.explanation)
+    : hintShown
+      ? t('tool.hintNone')
+      : null
+  // Readable contradiction chain ("if X here → … → impossible"), when the hint has one.
+  const hintChain = hint?.step.chain?.map((e) => renderer.render(e)) ?? null
 
   const submit = () => {
     if (!session.allPlaced || !solution) return
@@ -164,7 +214,8 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
         selectedSuspect={selected}
         onSelect={tut.active ? tut.onSelect : selectFromCard}
         onHoverSuspect={setHoveredSuspect}
-        hint={hint}
+        hint={hintText}
+        hintChain={hintChain}
       />
 
       <div className="mk-board">
@@ -173,8 +224,8 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
           state={session.state}
           suspectIndex={suspectIndex}
           selectedSuspect={selected}
-          highlight={tut.active ? tut.highlight : highlight}
-          highlightColor={CANDIDATE_BLUE}
+          highlight={boardHighlight}
+          highlightColor={boardHighlightColor}
           emphasize={hoveredSuspect}
           xTool={tut.active ? false : xTool}
           reveal={reveal}

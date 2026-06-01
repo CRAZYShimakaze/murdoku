@@ -7,5 +7,7 @@ export type {
   DeductionResult,
   DeductionStep,
   Elimination,
+  HintKind,
+  HintResult,
   Technique,
 } from './DeductionStep.ts'

@@ -25,10 +25,18 @@
     "mode_ground": "Boden",
     "mode_top": "Objekte",
     "mode_window": "Fenster",
+    "mode_door": "Türen",
+    "mode_global": "Global",
     "rooms": "Räume",
     "objects": "Objekte",
     "windows": "Fenster",
+    "doors": "Türen",
+    "globalClues": "Globale Hinweise",
+    "addClue": "+ Hinweis",
+    "count": "Anzahl",
+    "boardClueKind": { "countOnObject": "Anzahl auf Objekt", "emptyRooms": "Leere Räume", "everyRoomCount": "Pro Raum genau" },
     "windowHint": "Klicke nahe dem Rand eines Feldes, um dort ein Fenster zu setzen. Nochmal klicken entfernt es.",
+    "doorHint": "Klicke nahe dem Rand eines Feldes, um dort eine Tür zu setzen (gilt von beiden Seiten). Nochmal klicken entfernt sie.",
     "room": "Raum",
     "erase": "Löschen",
     "suspectsSoon": "Verdächtige & Hinweise folgen in der nächsten Stufe.",
@@ -176,7 +184,8 @@
     "school": "Schule",
     "hospital": "Krankenhaus",
     "museum": "Museum",
-    "restaurant": "Restaurant"
+    "restaurant": "Restaurant",
+    "farm": "Bauernhof"
   },
   "select": {
     "title": "Die Akten",
@@ -197,6 +206,7 @@
   "game": {
     "suspects": "Verdächtige",
     "selectPrompt": "Antippen zum Auswählen · lang drücken zum Setzen",
+    "outsideLabel": "Draußen",
     "victim": "Das Opfer",
     "victimStatement": "war allein mit dem Mörder.",
     "tools": "Werkzeuge"
@@ -243,7 +253,11 @@
     "shelf": "einem Regal",
     "box": "einer Kiste",
     "window": "einem Fenster",
-    "car": "einem Auto"
+    "car": "einem Auto",
+    "cow": "einer Kuh",
+    "horse": "einem Pferd",
+    "pig": "einem Schwein",
+    "mud": "einer Schlammpfütze"
   },
   "objName": {
     "floor": "Boden",
@@ -259,7 +273,12 @@
     "shelf": "Regal",
     "box": "Kiste",
     "window": "Fenster",
-    "car": "Auto"
+    "door": "Tür",
+    "car": "Auto",
+    "cow": "Kuh",
+    "horse": "Pferd",
+    "pig": "Schwein",
+    "mud": "Schlammpfütze"
   },
   "legend": {
     "title": "Legende",
@@ -272,6 +291,10 @@
     "south": "südlich",
     "east": "östlich",
     "west": "westlich"
+  },
+  "side": {
+    "inside": "drinnen",
+    "outside": "draußen"
   },
   "attr": {
     "beard": "einen Bart",
@@ -316,7 +339,22 @@
     "vault": "Tresor",
     "lobby": "Lobby",
     "cafe": "Café",
-    "security": "Sicherheitsraum"
+    "security": "Sicherheitsraum",
+    "pasture": "Weide",
+    "shed": "Schuppen",
+    "farmhouse": "Haus",
+    "cowshed": "Kuhstall",
+    "yard": "Hof",
+    "garden": "Garten",
+    "pigsty": "Schweinestall",
+    "barn": "Scheune",
+    "henhouse": "Hühnerstall",
+    "stable": "Pferdestall",
+    "greenhouse": "Gewächshaus",
+    "pantry": "Vorratskammer",
+    "dairy": "Milchkammer",
+    "field": "Feld",
+    "pond": "Teich"
   },
   "pron": { "m": "er", "f": "sie" },
   "poss": { "m": "seinem", "f": "ihrem" },
@@ -324,6 +362,7 @@
     "negWord": "nicht ",
     "onObject": "{{subject}} war {{neg}}[[auf:onObject]] {{object}}",
     "nearObject": "{{subject}} war {{neg}}[[neben:nearObject]] {{object}}",
+    "nearObjectAny": "{{subject}} war {{neg}}[[neben:nearObject]] {{objects}}",
     "nearWindow": "{{subject}} war {{neg}}[[neben einem Fenster:nearWindow]]",
     "inRoom": "{{subject}} war {{neg}}im Raum {{room}}",
     "inRow": "{{subject}} war {{neg}}in [[Zeile:inRow]] {{row}}",
@@ -346,9 +385,21 @@
     "aloneWith": "{{subject}} war {{neg}}[[allein mit:aloneWith]] {{who}}",
     "roomExistsOnObject": "In {{poss}} Raum saß {{who}} [[auf:onObject]] {{object}}",
     "sameRoom": "{{subject}} war {{neg}}[[im selben Raum wie:sameRoom]] {{target}}",
+    "nearDoor": "{{subject}} war {{neg}}[[neben einer Tür:nearDoor]]",
+    "inside": "{{subject}} war {{neg}}[[drinnen:inside]]",
+    "outside": "{{subject}} war {{neg}}[[draußen:outside]]",
+    "notAlone": "{{subject}} war {{neg}}[[nicht allein im Raum:notAlone]]",
+    "insideXor": "{{subject}} und {{target}} waren weder beide [[drinnen:inside]] noch beide [[draußen:outside]]",
+    "aloneWithPeople": "{{subject}} war allein mit {{target}} und einer Frau",
+    "aloneWithDir": "{{subject}} war allein mit {{target}} und einer Frau, die {{direction}} von ihr war",
     "connAnd": "und",
     "connOr": "oder",
     "not": "nicht ({{child}})"
+  },
+  "boardClue": {
+    "countOnObject": "Genau {{count}} Person war auf {{object}}.",
+    "emptyRooms": "Genau {{count}} Räume sind leer.",
+    "everyRoomCount": "In jedem Raum sind genau {{count}} Personen."
   },
   "tip": {
     "onObject": "Steht direkt auf diesem Objekt (es ist betretbar).",
@@ -367,7 +418,11 @@
     "roomAttrSome": "Mindestens eine Person im selben Raum hat dieses Merkmal.",
     "roomAttrAll": "Alle im selben Raum haben dieses Merkmal.",
     "inRow": "Die genannte Zeile (von oben gezählt).",
-    "inCol": "Die genannte Spalte (von links gezählt)."
+    "inCol": "Die genannte Spalte (von links gezählt).",
+    "nearDoor": "Auf dem Feld direkt an einer Tür (Türen zählen von beiden Seiten).",
+    "inside": "In einem Innenraum (nicht Weide, Hof oder Garten).",
+    "outside": "In einem Außenbereich (Weide, Hof oder Garten).",
+    "notAlone": "Mindestens eine weitere Person ist im selben Raum."
   },
   "info": {
     "male": "männlich",
@@ -383,13 +438,18 @@
     "nearObject": "Neben Objekt",
     "nearWindow": "Am Fenster",
     "uniqueNearWindow": "Einzige(r) am Fenster",
+    "nearDoor": "An einer Tür",
+    "inside": "Drinnen",
+    "outside": "Draußen",
     "inRow": "In Zeile",
     "inCol": "In Spalte",
     "corner": "In einer Ecke",
     "atWall": "An einer Wand",
     "alone": "Allein im Raum",
+    "notAlone": "Nicht allein",
     "sameRoom": "Gleicher Raum wie",
     "direction": "Richtung von",
+    "insideXor": "Andere Seite (drin/draußen) als",
     "roomAttribute": "Im Raum …",
     "not": "NICHT",
     "add": "+ Bedingung",
@@ -419,16 +479,42 @@
     "hiddenSingleCol": "Nur {{name}} kann in Spalte {{line}} sein – also dort.",
     "nakedGroupRows": "{{people}}: nur Zeilen {{lines}} möglich – für andere gesperrt.",
     "nakedGroupCols": "{{people}}: nur Spalten {{lines}} möglich – für andere gesperrt.",
+    "rectangle": "Egal wo {{name}} steht, {{cell}} bleibt blockiert – dort kann niemand stehen.",
+    "insideXor": "{{other}} ist {{otherSide}}, also ist {{name}} nicht {{otherSide}} – Felder ausgeschlossen.",
+    "boardCountFull": "Schon {{count}} Person auf {{object}} – für alle anderen ausgeschlossen.",
+    "boardCountConfine": "Nur {{name}} kann auf {{object}} sein – muss also dorthin.",
     "relationalDirection": "{{name}} ist {{direction}} von {{target}} – unmögliche Felder gestrichen.",
     "relationalSameRoom": "{{name}} ist im selben Raum wie {{target}} – andere Räume gestrichen.",
     "aloneExcludeRoom": "{{name}} muss allein sein, aber im {{room}} ist schon jemand – also nicht dort.",
     "aloneReserve": "{{name}} ist allein im {{room}} – alle anderen dort ausgeschlossen.",
     "attrExcludeRoom": "In {{name}}s Raum darf niemand {{attribute}} haben; im {{room}} ist so jemand – also nicht dort.",
     "attrReserve": "{{name}} ist im {{room}}, dort darf niemand {{attribute}} haben – solche Personen ausgeschlossen.",
+    "murderVictimNotRoom": "Im {{room}} sind schon {{count}} Verdächtige – das Opfer war dort nicht (es war allein mit dem Mörder).",
+    "murderIdentified": "Das Opfer ist im {{room}}; dort ist {{name}} – also ist {{name}} der Mörder, alle anderen verlassen den {{room}}.",
+    "murderConfine": "Das Opfer ist im {{room}}; nur {{name}} kann dort sein – {{name}} muss dorthin (allein mit dem Opfer).",
+    "assume": "Angenommen, {{name}} steht auf {{cell}}:",
     "forcing": "Annahme {{name}} auf {{cell}} führt zum Widerspruch – Feld ausgeschlossen.",
+    "satPlace": "{{name}} muss auf {{cell}} – jedes andere Feld führt zum Widerspruch.",
+    "satExclude": "{{count}} Felder von {{name}} führen zum Widerspruch – ausgeschlossen.",
     "victim": "Das Opfer {{name}} bleibt auf dem letzten freien Feld {{cell}}.",
     "murderer": "Mörder: {{name}} war allein mit dem Opfer im Raum {{room}}.",
     "murdererAmbiguous": "Kein eindeutiger Mörder: {{count}} Verdächtige im Raum {{room}}.",
     "stuck": "Stecken geblieben: {{count}} Person(en) offen (Technik noch nicht implementiert)."
+  },
+  "contra": {
+    "empty": "{{name}} hätte dann kein mögliches Feld mehr – Widerspruch.",
+    "murder": "dann wäre das Opfer mit niemandem mehr allein – Widerspruch.",
+    "general": "dann geht die Anordnung nicht mehr auf – Widerspruch.",
+    "exhausted": "dann lässt sich der Rest nicht mehr zu Ende bringen (alle Möglichkeiten geprüft) – Widerspruch."
+  },
+  "why": {
+    "crossed": "{{cell}}: hast du ausgekreuzt.",
+    "occupied": "{{cell}}: dort steht schon {{name}}.",
+    "row": "{{cell}}: in dieser Zeile steht schon {{name}}.",
+    "col": "{{cell}}: in dieser Spalte steht schon {{name}}.",
+    "rowReserved": "{{cell}}: diese Zeile bleibt nur für {{name}}.",
+    "colReserved": "{{cell}}: diese Spalte bleibt nur für {{name}}.",
+    "eliminated": "{{cell}}: durch die Hinweise ausgeschlossen.",
+    "only": "→ also muss {{name}} auf {{cell}}."
   }
 }

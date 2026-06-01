@@ -214,3 +214,45 @@ export function drawBookshelf(ctx: Ctx, x: number, y: number, S: number): void {
   }
   ctx.restore()
 }
+
+/** An occupiable mud puddle: an organic brown blob with a dark rim and ripples. */
+export function drawMud(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S / 2
+  const cy = y + S * 0.54
+  const rx = S * 0.42
+  const ry = S * 0.32
+  // wobbly outline (deterministic, so it doesn't shimmer between redraws)
+  const pts = 14
+  ctx.beginPath()
+  for (let i = 0; i <= pts; i++) {
+    const a = (i / pts) * Math.PI * 2
+    const wob = 0.82 + 0.16 * Math.sin(a * 3 + 1.3) + 0.06 * Math.cos(a * 5)
+    const px = cx + Math.cos(a) * rx * wob
+    const py = cy + Math.sin(a) * ry * wob
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)
+  }
+  ctx.closePath()
+  ctx.save()
+  ctx.fillStyle = '#3f2c18' // dark muddy rim
+  ctx.fill()
+  ctx.clip()
+  ctx.fillStyle = '#6b4a28'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, rx * 0.92, ry * 0.92, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#7d5832'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy - ry * 0.08, rx * 0.6, ry * 0.55, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // ripple ring + a couple of light glints
+  ctx.strokeStyle = 'rgba(180, 140, 90, 0.5)'
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  ctx.beginPath()
+  ctx.ellipse(cx - rx * 0.12, cy - ry * 0.1, rx * 0.32, ry * 0.24, 0, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.fillStyle = 'rgba(214, 184, 140, 0.55)'
+  ctx.beginPath()
+  ctx.ellipse(cx + rx * 0.3, cy + ry * 0.22, S * 0.045, S * 0.028, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+}

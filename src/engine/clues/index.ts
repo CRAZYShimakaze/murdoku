@@ -2,17 +2,22 @@ export { Clue, UnaryClue } from './Clue.ts'
 export {
   OnObjectClue,
   NearObjectClue,
+  NearAnyObjectClue,
   NearWindowClue,
+  NearDoorClue,
+  OutsideClue,
   InRoomClue,
   InRowClue,
   InColClue,
   CornerClue,
   AtWallClue,
 } from './unaryClues.ts'
-export { DirectionClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
+export { DirectionClue, InsideXorClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
 export { UniqueOnObjectClue, UniqueNearWindowClue } from './uniquenessClues.ts'
 export {
   AloneClue,
+  NotAloneClue,
+  AloneWithClue,
   RoomAttributeClue,
   RoomCompanionClue,
   RoomExistsClue,
@@ -21,3 +26,10 @@ export type { Quantifier } from './socialClues.ts'
 export { NotClue, AndClue, OrClue } from './compositeClues.ts'
 export { createClue } from './ClueFactory.ts'
 export type { ClueJson } from './ClueFactory.ts'
+export {
+  BoardClue,
+  CountOnObjectClue,
+  EmptyRoomsClue,
+  EveryRoomCountClue,
+  createBoardClue,
+} from './boardClues.ts'

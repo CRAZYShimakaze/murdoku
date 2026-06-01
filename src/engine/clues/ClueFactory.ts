@@ -5,13 +5,23 @@ import {
   InColClue,
   InRoomClue,
   InRowClue,
+  NearAnyObjectClue,
+  NearDoorClue,
   NearObjectClue,
   NearWindowClue,
   OnObjectClue,
+  OutsideClue,
 } from './unaryClues.ts'
-import { DirectionClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
+import { DirectionClue, InsideXorClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
 import { UniqueOnObjectClue, UniqueNearWindowClue } from './uniquenessClues.ts'
-import { AloneClue, RoomAttributeClue, RoomCompanionClue, RoomExistsClue } from './socialClues.ts'
+import {
+  AloneClue,
+  AloneWithClue,
+  NotAloneClue,
+  RoomAttributeClue,
+  RoomCompanionClue,
+  RoomExistsClue,
+} from './socialClues.ts'
 import type { Quantifier } from './socialClues.ts'
 import { AndClue, NotClue, OrClue } from './compositeClues.ts'
 import type { AttributeValue, Direction, PersonId } from '../model/types.ts'
@@ -20,7 +30,11 @@ import type { AttributeValue, Direction, PersonId } from '../model/types.ts'
 export type ClueJson =
   | { type: 'onObject'; object: string }
   | { type: 'nearObject'; object: string }
+  | { type: 'nearObjectAny'; objects: string[] }
   | { type: 'nearWindow' }
+  | { type: 'nearDoor' }
+  | { type: 'inside' }
+  | { type: 'outside' }
   | { type: 'inRoom'; room: string }
   | { type: 'inRow'; row: number }
   | { type: 'inCol'; col: number }
@@ -29,6 +43,15 @@ export type ClueJson =
   | { type: 'uniqueOnObject'; object: string }
   | { type: 'uniqueNearWindow' }
   | { type: 'alone' }
+  | { type: 'notAlone' }
+  | {
+      type: 'aloneWith'
+      people: PersonId[]
+      attribute: string
+      value: AttributeValue
+      extraCount: number
+      dir?: Direction
+    }
   | {
       type: 'roomAttribute'
       quantifier: Quantifier
@@ -37,6 +60,7 @@ export type ClueJson =
       excludeSelf?: boolean
     }
   | { type: 'direction'; of: PersonId; dir: Direction }
+  | { type: 'insideXor'; with: PersonId }
   | { type: 'offset'; of: PersonId; dir: Direction; distance: number }
   | { type: 'sameRoom'; as: PersonId }
   | { type: 'roomCompanion'; count: number; attribute: string; value: AttributeValue }
@@ -52,8 +76,16 @@ export function createClue(json: ClueJson): Clue {
       return new OnObjectClue(json.object)
     case 'nearObject':
       return new NearObjectClue(json.object)
+    case 'nearObjectAny':
+      return new NearAnyObjectClue(json.objects)
     case 'nearWindow':
       return new NearWindowClue()
+    case 'nearDoor':
+      return new NearDoorClue()
+    case 'inside':
+      return new OutsideClue(false)
+    case 'outside':
+      return new OutsideClue(true)
     case 'inRoom':
       return new InRoomClue(json.room)
     case 'inRow':
@@ -70,6 +102,18 @@ export function createClue(json: ClueJson): Clue {
       return new UniqueNearWindowClue()
     case 'alone':
       return new AloneClue()
+    case 'notAlone':
+      return new NotAloneClue()
+    case 'aloneWith':
+      return new AloneWithClue(
+        json.people,
+        json.attribute,
+        json.value,
+        json.extraCount,
+        json.dir ?? null,
+      )
+    case 'insideXor':
+      return new InsideXorClue(json.with)
     case 'roomAttribute':
       return new RoomAttributeClue(
         json.quantifier,

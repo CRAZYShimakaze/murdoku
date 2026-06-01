@@ -11,6 +11,9 @@ interface Props {
   /** In window mode, a click toggles a window; fx,fy are the fractional position in the cell. */
   windowMode?: boolean
   onPaintWindow?: (cell: Cell, fx: number, fy: number) => void
+  /** In door mode, a click toggles a door on the nearest edge (same geometry as windows). */
+  doorMode?: boolean
+  onPaintDoor?: (cell: Cell, fx: number, fy: number) => void
 }
 
 interface Layout {
@@ -25,7 +28,7 @@ function roomName(key: string): string {
 }
 
 /** The editable board: live preview of the editor state + click/drag to paint. */
-export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow }: Props) {
+export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow, doorMode, onPaintDoor }: Props) {
   const W = state.size
   const H = state.size
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -102,11 +105,12 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow 
     const cell = cellAt(e)
     if (cell === null || !layout) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    if (windowMode) {
+    if (windowMode || doorMode) {
       const rect = e.currentTarget.getBoundingClientRect()
       const fx = (e.clientX - rect.left) / layout.cell - (cell % W)
       const fy = (e.clientY - rect.top) / layout.cell - Math.floor(cell / W)
-      onPaintWindow?.(cell, fx, fy)
+      if (doorMode) onPaintDoor?.(cell, fx, fy)
+      else onPaintWindow?.(cell, fx, fy)
       return
     }
     painting.current = true

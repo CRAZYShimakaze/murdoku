@@ -1,4 +1,4 @@
-import type { AttributeValue, LevelJson, Side, SuspectJson } from '../engine/index.ts'
+import type { AttributeValue, BoardClueJson, LevelJson, Side, SuspectJson } from '../engine/index.ts'
 import { emptyClueGroup, groupToClues, type ClueGroup } from './editorClues.ts'
 
 /** Up to 15 room slots the editor can paint (matching a theme's room count). */
@@ -42,6 +42,10 @@ export const EDITOR_OBJECTS: EditorObject[] = [
   { char: 'u', type: 'shrub', occupiable: false, layer: 'top' },
   { char: 'y', type: 'statue', occupiable: false, layer: 'top' },
   { char: 'z', type: 'rubble', occupiable: false, layer: 'top' },
+  { char: 'h', type: 'horse', occupiable: true, layer: 'top' },
+  { char: 'm', type: 'mud', occupiable: true, layer: 'top' },
+  { char: 'k', type: 'cow', occupiable: false, layer: 'top' },
+  { char: 'i', type: 'pig', occupiable: false, layer: 'top' },
 ]
 
 export const GROUND_OBJECTS = EDITOR_OBJECTS.filter((o) => o.layer === 'ground')
@@ -76,6 +80,10 @@ export interface EditorState {
   groundMap: string[]
   topMap: string[]
   windows: EditorWindow[]
+  /** Doors (two-sided edges), same shape as windows. */
+  doors: EditorWindow[]
+  /** Board-wide clues (counts / empty rooms). */
+  boardClues: BoardClueJson[]
   suspects: EditorSuspect[]
   victim: EditorVictim
   /** Display name (nameKey) per room slot 0..7 — usually picked from a theme. */
@@ -118,6 +126,8 @@ export function emptyEditorState(size: number, roomNames: string[] = DEFAULT_ROO
     groundMap: Array.from({ length: size }, () => EMPTY_ROW(size, '.')),
     topMap: Array.from({ length: size }, () => EMPTY_ROW(size, '.')),
     windows: [],
+    doors: [],
+    boardClues: [],
     suspects: fitSuspects([], size - 1),
     victim: { name: 'Opfer', gender: 'm' },
     roomNames: ROOM_IDS.map((_, i) => roomNames[i] ?? DEFAULT_ROOM_NAMES[i]),
@@ -132,8 +142,7 @@ export function toggleWindow(windows: EditorWindow[], r: number, c: number, side
 }
 
 const SIDES: Side[] = ['N', 'S', 'W', 'E']
-/** Outer band (fraction of a cell) within which a click counts as "near an edge". */
-const EDGE_BAND = 0.3
+const STEP: Record<Side, [number, number]> = { N: [-1, 0], S: [1, 0], W: [0, -1], E: [0, 1] }
 
 /** Perpendicular distance from a fractional click (fx,fy in [0,1]) to an edge. */
 function edgeDist(side: Side, fx: number, fy: number): number {
@@ -143,15 +152,13 @@ function edgeDist(side: Side, fx: number, fy: number): number {
   return 1 - fx
 }
 
-function nearestBy(sides: Side[], fx: number, fy: number): Side {
-  return sides.reduce((a, b) => (edgeDist(b, fx, fy) < edgeDist(a, fx, fy) ? b : a))
+function nearestSide(fx: number, fy: number): Side {
+  return SIDES.reduce((a, b) => (edgeDist(b, fx, fy) < edgeDist(a, fx, fy) ? b : a))
 }
 
 /**
- * Toggle a window from a click inside a cell (fx,fy are the fractional position
- * 0..1). Forgiving on removal: a tap near the centre removes the nearest existing
- * window, while a tap near a free edge adds one there — so you never have to hit a
- * precise quadrant, which matters on touch screens.
+ * Toggle a window on the edge nearest the click (fx,fy fractional 0..1). Simple
+ * and predictable: clicking the same edge again removes it. Windows are one-sided.
  */
 export function toggleWindowAt(
   windows: EditorWindow[],
@@ -160,16 +167,61 @@ export function toggleWindowAt(
   fx: number,
   fy: number,
 ): EditorWindow[] {
-  const here = windows.filter((w) => w.r === r && w.c === c).map((w) => w.side)
-  const nearest = nearestBy(SIDES, fx, fy)
-  // 1) the clicked edge already has a window → remove it
-  if (here.includes(nearest)) return toggleWindow(windows, r, c, nearest)
-  // 2) clearly near a free edge → add a window there
-  if (edgeDist(nearest, fx, fy) < EDGE_BAND) return toggleWindow(windows, r, c, nearest)
-  // 3) interior tap with existing window(s) → remove the nearest one
-  if (here.length) return toggleWindow(windows, r, c, nearestBy(here, fx, fy))
-  // 4) interior tap, no windows yet → add on the nearest edge
-  return toggleWindow(windows, r, c, nearest)
+  return toggleWindow(windows, r, c, nearestSide(fx, fy))
+}
+
+/** Canonical key for a wall edge: anchored at the top/left cell, side S (down) or
+ *  E (right), so a two-sided door toggles the same whichever cell you click. */
+function canonicalEdge(r: number, c: number, side: Side): { r: number; c: number; side: Side } {
+  if (side === 'N') return { r: r - 1, c, side: 'S' }
+  if (side === 'W') return { r, c: c - 1, side: 'E' }
+  return { r, c, side }
+}
+
+/**
+ * Toggle a (two-sided) door on the nearest edge. The edge is canonicalised so
+ * clicking from either side hits the same door; boundary edges (only one cell on
+ * the board) are skipped since a door connects two cells.
+ */
+export function toggleDoorAt(
+  doors: EditorWindow[],
+  r: number,
+  c: number,
+  fx: number,
+  fy: number,
+  size: number,
+): EditorWindow[] {
+  const e = canonicalEdge(r, c, nearestSide(fx, fy))
+  if (e.r < 0 || e.c < 0) return doors
+  if (e.side === 'S' && e.r >= size - 1) return doors
+  if (e.side === 'E' && e.c >= size - 1) return doors
+  return toggleWindow(doors, e.r, e.c, e.side)
+}
+
+/**
+ * Drop windows/doors that no longer sit on a wall after a room repaint: a window
+ * survives on a room boundary or the board edge; a door survives only between two
+ * different rooms.
+ */
+export function pruneWallEdges(
+  roomMap: string[],
+  size: number,
+  windows: EditorWindow[],
+  doors: EditorWindow[],
+): { windows: EditorWindow[]; doors: EditorWindow[] } {
+  const roomAt = (r: number, c: number): string | null =>
+    r < 0 || r >= size || c < 0 || c >= size ? null : roomMap[r][c]
+  const onWall = (e: EditorWindow): boolean => {
+    const [dr, dc] = STEP[e.side]
+    return roomAt(e.r, e.c) !== roomAt(e.r + dr, e.c + dc)
+  }
+  const doorBetweenRooms = (e: EditorWindow): boolean => {
+    const [dr, dc] = STEP[e.side]
+    const a = roomAt(e.r, e.c)
+    const b = roomAt(e.r + dr, e.c + dc)
+    return a !== null && b !== null && a !== b
+  }
+  return { windows: windows.filter(onWall), doors: doors.filter(doorBetweenRooms) }
 }
 
 /** Set one character in a row-string array (returns a new array). */
@@ -189,10 +241,14 @@ export function buildEditorLevel(
   suspects: SuspectJson[] = [],
   victim: { name: string; attributes?: Record<string, string | number | boolean> } = { name: '?' },
   title?: string,
+  /** Room names that count as outdoors (from the theme) → rooms[].outside. */
+  outdoorRooms: string[] = [],
 ): LevelJson {
+  const outside = new Set(outdoorRooms)
   const rooms: LevelJson['rooms'] = {}
   ROOM_IDS.forEach((id, i) => {
-    rooms[id] = { nameKey: state.roomNames[i] ?? `room.editor${id}`, color: ROOM_COLORS[i] }
+    const nameKey = state.roomNames[i] ?? `room.editor${id}`
+    rooms[id] = { nameKey, color: ROOM_COLORS[i], outside: outside.has(nameKey) }
   })
   const objects: LevelJson['objects'] = {}
   for (const o of EDITOR_OBJECTS) objects[o.char] = { type: o.type, occupiable: o.occupiable }
@@ -208,8 +264,10 @@ export function buildEditorLevel(
     groundMap: state.groundMap,
     topMap: state.topMap,
     windows: state.windows,
+    doors: state.doors,
     suspects,
     victim,
+    boardClues: state.boardClues,
   }
 }
 
@@ -233,12 +291,14 @@ export function buildPlayableLevel(
   id: string,
   title?: string,
   difficulty?: string,
+  outdoorRooms: string[] = [],
 ): LevelJson {
   const level = buildEditorLevel(
     state,
     state.suspects.map(suspectToJson),
     { name: state.victim.name || '?', attributes: { gender: state.victim.gender } },
     title,
+    outdoorRooms,
   )
   return difficulty ? { ...level, id, difficulty } : { ...level, id }
 }

@@ -28,7 +28,10 @@ export class NakedGroupTechnique extends Technique {
       unplaced.map((id) => [id, ctx.linesOf(id, this.axis)]),
     )
 
-    for (let k = 1; k < n; k++) {
+    // Cap group size: naked quads are the practical ceiling, and the subset count
+    // explodes (2^n) on big boards, so never enumerate beyond k = 4.
+    const maxK = Math.min(4, n - 1)
+    for (let k = 1; k <= maxK; k++) {
       for (const subset of combinations(unplaced, k)) {
         const union = new Set<number>()
         for (const id of subset) {

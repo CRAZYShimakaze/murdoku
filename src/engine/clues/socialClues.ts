@@ -3,7 +3,7 @@ import type { Board } from '../model/Board.ts'
 import type { Solution } from '../model/Solution.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
 import { VICTIM_ID } from '../model/types.ts'
-import type { AttributeValue, Cell, Explanation, PersonId } from '../model/types.ts'
+import type { AttributeValue, Cell, Direction, Explanation, PersonId } from '../model/types.ts'
 
 /** "{name} was alone." — no other person at all shares the room, NOT even the victim,
  *  so an "alone" suspect is never the murderer (the murderer is alone *with* the victim).
@@ -35,6 +35,93 @@ export class AloneClue extends Clue {
 
   describe(): Explanation {
     return { key: 'clue.alone' }
+  }
+}
+
+/** "{name} was not alone." — at least one other person shares the subject's room. */
+export class NotAloneClue extends Clue {
+  test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
+    const board = puzzle.board
+    const room = board.roomIdOf(solution.cellOf(subjectId))
+    for (const id of puzzle.allIds()) {
+      if (id !== subjectId && board.roomIdOf(solution.cellOf(id)) === room) return true
+    }
+    return false
+  }
+
+  describe(): Explanation {
+    return { key: 'clue.notAlone' }
+  }
+}
+
+/**
+ * "{name} was alone with [people] and `extraCount` person(s) matching attr=value,
+ * one of whom was `dir` of them." The room contains EXACTLY the subject, the named
+ * people, and `extraCount` matching others — nobody else (not even the victim).
+ * Tailored to clues like "alone with Joaquin and a woman east of her".
+ */
+export class AloneWithClue extends Clue {
+  constructor(
+    readonly people: PersonId[],
+    readonly attribute: string,
+    readonly value: AttributeValue,
+    readonly extraCount: number,
+    readonly dir: Direction | null = null,
+  ) {
+    super()
+  }
+
+  test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
+    const board = puzzle.board
+    const myCell = solution.cellOf(subjectId)
+    const room = board.roomIdOf(myCell)
+    const mates = puzzle
+      .allIds()
+      .filter((id) => id !== subjectId && board.roomIdOf(solution.cellOf(id)) === room)
+    for (const p of this.people) if (!mates.includes(p)) return false
+    const extras = mates.filter((id) => !this.people.includes(id))
+    if (extras.length !== this.extraCount) return false
+    if (!extras.every((id) => puzzle.attributesOf(id)[this.attribute] === this.value)) return false
+    if (this.dir) {
+      const { row, col } = board.rc(myCell)
+      const inDir = (cell: Cell): boolean => {
+        const p = board.rc(cell)
+        if (this.dir === 'north') return p.row < row
+        if (this.dir === 'south') return p.row > row
+        if (this.dir === 'east') return p.col > col
+        return p.col < col
+      }
+      if (!extras.some((id) => inDir(solution.cellOf(id)))) return false
+    }
+    return true
+  }
+
+  override violatedBy(
+    subjectId: PersonId,
+    placement: ReadonlyMap<PersonId, Cell>,
+    puzzle: Puzzle,
+  ): boolean {
+    const cell = placement.get(subjectId)
+    if (cell === undefined) return false
+    const room = puzzle.board.roomIdOf(cell)
+    for (const p of this.people) {
+      const pc = placement.get(p)
+      if (pc !== undefined && puzzle.board.roomIdOf(pc) !== room) return true
+    }
+    let extras = 0
+    for (const [id, c] of placement) {
+      if (id === subjectId || puzzle.board.roomIdOf(c) !== room || this.people.includes(id)) continue
+      if (puzzle.attributesOf(id)[this.attribute] !== this.value) return true
+      if (++extras > this.extraCount) return true
+    }
+    return false
+  }
+
+  describe(): Explanation {
+    return {
+      key: this.dir ? 'clue.aloneWithDir' : 'clue.aloneWithPeople',
+      params: { target: this.people[0] ?? '', who: `${this.value}_dat`, direction: this.dir ?? '' },
+    }
   }
 }
 

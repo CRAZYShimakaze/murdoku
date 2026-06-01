@@ -1,4 +1,4 @@
-import type { Cell, Side } from './types.ts'
+import { MULTI_CELL_TYPES, type Cell, type Side } from './types.ts'
 import type { Tile } from './Tile.ts'
 import type { Room } from './Room.ts'
 
@@ -22,6 +22,8 @@ export function edgeKey(row: number, col: number, side: Side): string {
  */
 export class Board {
   private readonly occupiable: Cell[] = []
+  /** Lazily-built footprint pairing for two-tile objects (see bigObjectPartners). */
+  private bigPartners?: ReadonlyMap<Cell, Cell | null>
 
   constructor(
     readonly width: number,
@@ -34,6 +36,12 @@ export class Board {
      * shared edge is not automatically beside the neighbour across the wall).
      */
     private readonly windows: ReadonlyMap<Cell, ReadonlySet<Side>>,
+    /**
+     * Doors by cell → the sides they sit on. Unlike windows a door is TWO-sided:
+     * the loader registers it on both cells of the shared edge, so both count as
+     * "beside a door".
+     */
+    private readonly doors: ReadonlyMap<Cell, ReadonlySet<Side>> = new Map(),
   ) {
     for (let c = 0; c < tiles.length; c++) {
       if (tiles[c].occupiable) this.occupiable.push(c)
@@ -91,6 +99,40 @@ export class Board {
     return sides ? [...sides] : []
   }
 
+  /** Whether this cell is beside a door (doors are two-sided). */
+  hasDoor(cell: Cell): boolean {
+    return this.doors.has(cell)
+  }
+
+  /** The sides of this cell that carry a door (for rendering). */
+  doorSides(cell: Cell): Side[] {
+    const sides = this.doors.get(cell)
+    return sides ? [...sides] : []
+  }
+
+  /** Occupiable cells beside a door. */
+  cellsNearDoor(): Set<Cell> {
+    const out = new Set<Cell>()
+    for (const cell of this.occupiable) {
+      if (this.hasDoor(cell)) out.add(cell)
+    }
+    return out
+  }
+
+  /** Whether a cell's room is an outdoor area (pasture/yard/garden). */
+  isOutside(cell: Cell): boolean {
+    return this.rooms.get(this.roomIdOf(cell))?.outside ?? false
+  }
+
+  /** Occupiable cells in an outdoor (true) or indoor (false) room. */
+  cellsOutside(outside: boolean): Set<Cell> {
+    const out = new Set<Cell>()
+    for (const cell of this.occupiable) {
+      if (this.isOutside(cell) === outside) out.add(cell)
+    }
+    return out
+  }
+
   /** A side is a wall when it leaves the board or crosses into another room. */
   private isWall(row: number, col: number, room: string): boolean {
     return !this.inBounds(row, col) || this.tiles[this.idx(row, col)].roomId !== room
@@ -130,12 +172,53 @@ export class Board {
     return out
   }
 
-  /** Occupiable cells with a same-room orthogonal neighbour carrying `type`. */
+  /**
+   * Footprint pairing for two-tile objects (bed/car): each such cell mapped to its
+   * partner cell, or null when it stands alone. Cells are paired greedily in
+   * row-major order — RIGHT first, else BELOW — IDENTICAL to how the board is
+   * drawn, so the picture and "beside an object" never disagree. Built once.
+   */
+  bigObjectPartners(): ReadonlyMap<Cell, Cell | null> {
+    if (this.bigPartners) return this.bigPartners
+    const partner = new Map<Cell, Cell | null>()
+    const consumed = new Set<Cell>()
+    for (let cell = 0; cell < this.tiles.length; cell++) {
+      const type = this.tiles[cell].top?.type
+      if (!type || !MULTI_CELL_TYPES.has(type) || consumed.has(cell)) continue
+      const { row, col } = this.rc(cell)
+      const room = this.tiles[cell].roomId
+      const free = (r: number, c: number): boolean => {
+        if (!this.inBounds(r, c)) return false
+        const i = this.idx(r, c)
+        return !consumed.has(i) && this.tiles[i].top?.type === type && this.tiles[i].roomId === room
+      }
+      let mate: Cell | null = null
+      if (free(row, col + 1)) mate = this.idx(row, col + 1)
+      else if (free(row + 1, col)) mate = this.idx(row + 1, col)
+      partner.set(cell, mate)
+      consumed.add(cell)
+      if (mate !== null) {
+        partner.set(mate, cell)
+        consumed.add(mate)
+      }
+    }
+    this.bigPartners = partner
+    return partner
+  }
+
+  /**
+   * Occupiable cells with a same-room orthogonal neighbour carrying `type`. For a
+   * two-tile object (bed/car) a cell is NOT "beside" its own other half — the pair
+   * is one object — so that half is excluded (but a DIFFERENT adjacent object counts).
+   */
   cellsNearObject(type: string): Set<Cell> {
+    const partners = MULTI_CELL_TYPES.has(type) ? this.bigObjectPartners() : null
     const out = new Set<Cell>()
     for (const cell of this.occupiable) {
       const room = this.tiles[cell].roomId
+      const ownHalf = partners?.get(cell) ?? null
       for (const nb of this.neighbors4(cell)) {
+        if (nb === ownHalf) continue // neighbour is this cell's own other half (same object)
         if (this.tiles[nb].roomId === room && this.tiles[nb].hasObjectType(type)) {
           out.add(cell)
           break

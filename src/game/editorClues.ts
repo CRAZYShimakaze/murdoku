@@ -14,13 +14,18 @@ export type CondKind =
   | 'nearObject'
   | 'nearWindow'
   | 'uniqueNearWindow'
+  | 'nearDoor'
+  | 'inside'
+  | 'outside'
   | 'inRow'
   | 'inCol'
   | 'corner'
   | 'atWall'
   | 'alone'
+  | 'notAlone'
   | 'sameRoom'
   | 'direction'
+  | 'insideXor'
   | 'roomAttribute'
 
 /** Condition kinds the user can pick, in menu order. */
@@ -31,13 +36,18 @@ export const COND_KINDS: CondKind[] = [
   'nearObject',
   'nearWindow',
   'uniqueNearWindow',
+  'nearDoor',
+  'inside',
+  'outside',
   'inRow',
   'inCol',
   'corner',
   'atWall',
   'alone',
+  'notAlone',
   'sameRoom',
   'direction',
+  'insideXor',
   'roomAttribute',
 ]
 
@@ -94,6 +104,12 @@ function baseJson(c: Condition): ClueJson | null {
       return { type: 'nearWindow' }
     case 'uniqueNearWindow':
       return { type: 'uniqueNearWindow' }
+    case 'nearDoor':
+      return { type: 'nearDoor' }
+    case 'inside':
+      return { type: 'inside' }
+    case 'outside':
+      return { type: 'outside' }
     case 'inRow':
       return { type: 'inRow', row: c.index ?? 0 }
     case 'inCol':
@@ -104,10 +120,14 @@ function baseJson(c: Condition): ClueJson | null {
       return { type: 'atWall' }
     case 'alone':
       return { type: 'alone' }
+    case 'notAlone':
+      return { type: 'notAlone' }
     case 'sameRoom':
       return c.of ? { type: 'sameRoom', as: c.of } : null
     case 'direction':
       return c.of ? { type: 'direction', of: c.of, dir: c.dir ?? 'north' } : null
+    case 'insideXor':
+      return c.of ? { type: 'insideXor', with: c.of } : null
     case 'roomAttribute': {
       const { attribute, value } = attrValue(c)
       return {

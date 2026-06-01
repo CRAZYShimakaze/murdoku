@@ -25,10 +25,18 @@
     "mode_ground": "Floor",
     "mode_top": "Objects",
     "mode_window": "Windows",
+    "mode_door": "Doors",
+    "mode_global": "Global",
     "rooms": "Rooms",
     "objects": "Objects",
     "windows": "Windows",
+    "doors": "Doors",
+    "globalClues": "Global clues",
+    "addClue": "+ Clue",
+    "count": "Count",
+    "boardClueKind": { "countOnObject": "Count on object", "emptyRooms": "Empty rooms", "everyRoomCount": "Per room exactly" },
     "windowHint": "Click near the edge of a tile to place a window there. Click again to remove it.",
+    "doorHint": "Click near the edge of a tile to place a door there (counts from both sides). Click again to remove it.",
     "room": "Room",
     "erase": "Erase",
     "suspectsSoon": "Suspects & clues come in the next stage.",
@@ -176,7 +184,8 @@
     "school": "School",
     "hospital": "Hospital",
     "museum": "Museum",
-    "restaurant": "Restaurant"
+    "restaurant": "Restaurant",
+    "farm": "Farm"
   },
   "select": {
     "title": "The Case Files",
@@ -197,6 +206,7 @@
   "game": {
     "suspects": "Suspects",
     "selectPrompt": "Tap to select · long-press to place",
+    "outsideLabel": "Outside",
     "victim": "The Victim",
     "victimStatement": "was alone with the murderer.",
     "tools": "Tools"
@@ -243,7 +253,11 @@
     "shelf": "a shelf",
     "box": "a box",
     "window": "a window",
-    "car": "a car"
+    "car": "a car",
+    "cow": "a cow",
+    "horse": "a horse",
+    "pig": "a pig",
+    "mud": "a mud puddle"
   },
   "objName": {
     "floor": "Floor",
@@ -259,7 +273,12 @@
     "shelf": "Shelf",
     "box": "Box",
     "window": "Window",
-    "car": "Car"
+    "door": "Door",
+    "car": "Car",
+    "cow": "Cow",
+    "horse": "Horse",
+    "pig": "Pig",
+    "mud": "Mud puddle"
   },
   "legend": {
     "title": "Legend",
@@ -272,6 +291,10 @@
     "south": "south",
     "east": "east",
     "west": "west"
+  },
+  "side": {
+    "inside": "inside",
+    "outside": "outside"
   },
   "attr": {
     "beard": "a beard",
@@ -316,7 +339,22 @@
     "vault": "Vault",
     "lobby": "Lobby",
     "cafe": "Cafe",
-    "security": "Security"
+    "security": "Security",
+    "pasture": "Pasture",
+    "shed": "Shed",
+    "farmhouse": "Farmhouse",
+    "cowshed": "Cowshed",
+    "yard": "Yard",
+    "garden": "Garden",
+    "pigsty": "Pigsty",
+    "barn": "Barn",
+    "henhouse": "Henhouse",
+    "stable": "Stable",
+    "greenhouse": "Greenhouse",
+    "pantry": "Pantry",
+    "dairy": "Dairy",
+    "field": "Field",
+    "pond": "Pond"
   },
   "pron": { "m": "he", "f": "she" },
   "poss": { "m": "his", "f": "her" },
@@ -324,6 +362,7 @@
     "negWord": "not ",
     "onObject": "{{subject}} was {{neg}}[[on:onObject]] {{object}}",
     "nearObject": "{{subject}} was {{neg}}[[beside:nearObject]] {{object}}",
+    "nearObjectAny": "{{subject}} was {{neg}}[[beside:nearObject]] {{objects}}",
     "nearWindow": "{{subject}} was {{neg}}[[beside a window:nearWindow]]",
     "inRoom": "{{subject}} was {{neg}}in the {{room}}",
     "inRow": "{{subject}} was {{neg}}in [[row:inRow]] {{row}}",
@@ -346,9 +385,21 @@
     "aloneWith": "{{subject}} was {{neg}}[[alone with:aloneWith]] {{who}}",
     "roomExistsOnObject": "{{who}} was [[on:onObject]] {{object}} in {{poss}} area",
     "sameRoom": "{{subject}} was {{neg}}[[in the same room as:sameRoom]] {{target}}",
+    "nearDoor": "{{subject}} was {{neg}}[[beside a door:nearDoor]]",
+    "inside": "{{subject}} was {{neg}}[[inside:inside]]",
+    "outside": "{{subject}} was {{neg}}[[outside:outside]]",
+    "notAlone": "{{subject}} was {{neg}}[[not alone in the room:notAlone]]",
+    "insideXor": "{{subject}} and {{target}} were neither both [[inside:inside]] nor both [[outside:outside]]",
+    "aloneWithPeople": "{{subject}} was alone with {{target}} and a woman",
+    "aloneWithDir": "{{subject}} was alone with {{target}} and a woman {{direction}} of them",
     "connAnd": "and",
     "connOr": "or",
     "not": "not ({{child}})"
+  },
+  "boardClue": {
+    "countOnObject": "Exactly {{count}} person was on {{object}}.",
+    "emptyRooms": "Exactly {{count}} rooms are empty.",
+    "everyRoomCount": "Every room has exactly {{count}} people."
   },
   "tip": {
     "onObject": "Standing directly on this object (it is walkable).",
@@ -367,7 +418,11 @@
     "roomAttrSome": "At least one person in the same room has this trait.",
     "roomAttrAll": "Everyone in the same room has this trait.",
     "inRow": "The named row (counted from the top).",
-    "inCol": "The named column (counted from the left)."
+    "inCol": "The named column (counted from the left).",
+    "nearDoor": "On the tile right at a door (doors count from both sides).",
+    "inside": "In an indoor room (not pasture, yard or garden).",
+    "outside": "In an outdoor area (pasture, yard or garden).",
+    "notAlone": "At least one other person is in the same room."
   },
   "info": {
     "male": "male",
@@ -383,13 +438,18 @@
     "nearObject": "Beside object",
     "nearWindow": "Beside a window",
     "uniqueNearWindow": "Only one at window",
+    "nearDoor": "Beside a door",
+    "inside": "Inside",
+    "outside": "Outside",
     "inRow": "In row",
     "inCol": "In column",
     "corner": "In a corner",
     "atWall": "Beside a wall",
     "alone": "Alone in room",
+    "notAlone": "Not alone",
     "sameRoom": "Same room as",
     "direction": "Direction from",
+    "insideXor": "Opposite side (in/out) to",
     "roomAttribute": "In the room …",
     "not": "NOT",
     "add": "+ Condition",
@@ -419,16 +479,42 @@
     "hiddenSingleCol": "Only {{name}} can be in column {{line}} – so placed there.",
     "nakedGroupRows": "{{people}}: only rows {{lines}} possible – blocked for others.",
     "nakedGroupCols": "{{people}}: only columns {{lines}} possible – blocked for others.",
+    "rectangle": "Wherever {{name}} ends up, {{cell}} stays blocked – nobody can be there.",
+    "insideXor": "{{other}} is {{otherSide}}, so {{name}} is not {{otherSide}} – cells excluded.",
+    "boardCountFull": "Already {{count}} person on {{object}} – excluded for everyone else.",
+    "boardCountConfine": "Only {{name}} can be on {{object}} – so must go there.",
     "relationalDirection": "{{name}} is {{direction}} of {{target}} – impossible cells removed.",
     "relationalSameRoom": "{{name}} is in the same room as {{target}} – other rooms removed.",
     "aloneExcludeRoom": "{{name}} must be alone, but someone is already in the {{room}} – so not there.",
     "aloneReserve": "{{name}} is alone in the {{room}} – everyone else is excluded from it.",
     "attrExcludeRoom": "No one in {{name}}'s room may have {{attribute}}; the {{room}} has such a person – so not there.",
     "attrReserve": "{{name}} is in the {{room}}, which must have no {{attribute}} – such people are excluded.",
+    "murderVictimNotRoom": "The {{room}} already holds {{count}} suspects – the victim wasn't there (they were alone with the murderer).",
+    "murderIdentified": "The victim is in the {{room}}; {{name}} is there too – so {{name}} is the murderer, everyone else leaves the {{room}}.",
+    "murderConfine": "The victim is in the {{room}}; only {{name}} can be there – {{name}} must go there (alone with the victim).",
+    "assume": "Suppose {{name}} were on {{cell}}:",
     "forcing": "Assuming {{name}} on {{cell}} leads to a contradiction – cell excluded.",
+    "satPlace": "{{name}} must be on {{cell}} – every other cell leads to a contradiction.",
+    "satExclude": "{{count}} cells lead to a contradiction for {{name}} – excluded.",
     "victim": "The victim {{name}} remains on the last free cell {{cell}}.",
     "murderer": "Murderer: {{name}} was alone with the victim in the {{room}}.",
     "murdererAmbiguous": "No unique murderer: {{count}} suspects in the {{room}}.",
     "stuck": "Stuck: {{count}} person(s) unresolved (technique not yet implemented)."
+  },
+  "contra": {
+    "empty": "{{name}} would then have no possible cell left – contradiction.",
+    "murder": "the victim could then no longer be alone with anyone – contradiction.",
+    "general": "the arrangement then no longer works out – contradiction.",
+    "exhausted": "the rest then can't be completed (all possibilities checked) – contradiction."
+  },
+  "why": {
+    "crossed": "{{cell}}: you've crossed it out.",
+    "occupied": "{{cell}}: {{name}} is already there.",
+    "row": "{{cell}}: {{name}} is already in this row.",
+    "col": "{{cell}}: {{name}} is already in this column.",
+    "rowReserved": "{{cell}}: this row is reserved for {{name}}.",
+    "colReserved": "{{cell}}: this column is reserved for {{name}}.",
+    "eliminated": "{{cell}}: excluded by the clues.",
+    "only": "→ so {{name}} must be on {{cell}}."
   }
 }

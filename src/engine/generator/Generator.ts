@@ -22,7 +22,7 @@ interface ObjectDef {
 interface Theme {
   id: string
   rooms: string[]
-  /** Room names that count as outdoor/garage — the only places a car may stand. */
+  /** Outdoor rooms: where a car may stand AND what counts as "outside" for inside/outside clues. */
   outdoor: string[]
 }
 
@@ -74,7 +74,7 @@ const THEMES: Theme[] = [
   {
     id: 'mansion',
     rooms: ['Eingangshalle', 'Salon', 'Speisesaal', 'Bibliothek', 'Musikzimmer', 'Wintergarten', 'Galerie', 'Boudoir', 'Rauchzimmer', 'Ballsaal', 'Gewächshaus', 'Weinkeller', 'Bedienstetenzimmer', 'Ankleidezimmer', 'Kaminzimmer'],
-    outdoor: ['Gewächshaus'],
+    outdoor: [],
   },
   {
     id: 'hotel',
@@ -89,17 +89,22 @@ const THEMES: Theme[] = [
   {
     id: 'hospital',
     rooms: ['Empfang', 'Wartezimmer', 'OP-Saal', 'Station', 'Labor', 'Apotheke', 'Röntgen', 'Intensivstation', 'Aufenthaltsraum', 'Notaufnahme', 'Kreißsaal', 'Sterilisation', 'Büro', 'Cafeteria', 'Flur'],
-    outdoor: ['Notaufnahme'],
+    outdoor: [],
   },
   {
     id: 'museum',
     rooms: ['Eingangshalle', 'Hauptgalerie', 'Ausstellung', 'Tresor', 'Café', 'Sicherheitsraum', 'Werkstatt', 'Archiv', 'Garderobe', 'Sonderausstellung', 'Foyer', 'Bibliothek', 'Lager', 'Auditorium', 'Toilette'],
-    outdoor: ['Werkstatt'],
+    outdoor: [],
   },
   {
     id: 'restaurant',
     rooms: ['Speisesaal', 'Küche', 'Bar', 'Weinkeller', 'Terrasse', 'Lager', 'Büro', 'Empfang', 'Spülküche', 'Vorbereitung', 'Kühlraum', 'Personalraum', 'Lounge', 'Toilette', 'Garderobe'],
     outdoor: ['Terrasse'],
+  },
+  {
+    id: 'farm',
+    rooms: ['Weide', 'Hof', 'Garten', 'Schuppen', 'Haus', 'Kuhstall', 'Schweinestall', 'Scheune', 'Hühnerstall', 'Pferdestall', 'Gewächshaus', 'Vorratskammer', 'Milchkammer', 'Feld', 'Teich'],
+    outdoor: ['Weide', 'Hof', 'Garten', 'Feld', 'Teich'],
   },
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
@@ -110,6 +115,11 @@ export const THEME_IDS: string[] = THEMES.map((t) => t.id)
 /** A theme's room names (used as nameKeys, same as generated levels). */
 export function themeRooms(id: string): string[] {
   return (THEMES.find((t) => t.id === id) ?? THEMES[0]).rooms
+}
+
+/** A theme's outdoor room names (→ rooms[].outside for inside/outside clues). */
+export function themeOutdoor(id: string): string[] {
+  return (THEMES.find((t) => t.id === id) ?? THEMES[0]).outdoor
 }
 
 export type GenDifficulty = 'easy' | 'medium' | 'hard'

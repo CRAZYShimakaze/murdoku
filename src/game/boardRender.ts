@@ -1,4 +1,11 @@
-import { VICTIM_ID, type Cell, type PersonId, type Puzzle, type Side } from '../engine/index.ts'
+import {
+  MULTI_CELL_TYPES,
+  VICTIM_ID,
+  type Cell,
+  type PersonId,
+  type Puzzle,
+  type Side,
+} from '../engine/index.ts'
 import { BOARD, ROOM_HL, suspectColor } from './palette.ts'
 import { OBJECT_GLYPHS } from './glyphs.ts'
 import { drawBigObject, drawSingleObject } from './bigObjects.ts'
@@ -6,12 +13,10 @@ import {
   drawArmchair,
   drawBookshelf,
   drawCarpetTile,
+  drawMud,
   drawTableTile,
   type Conn,
 } from './objectArt.ts'
-
-/** Object types drawn as detailed 2-cell vector images (instead of an emoji). */
-const BIG_OBJECTS = new Set(['bed', 'car'])
 
 export interface RevealInfo {
   victimCell: Cell
@@ -192,20 +197,28 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     for (const side of sides) drawWindow(ctx, x, y, S, side)
   }
 
-  // Big objects (bed/car) span 2 adjacent tiles OF THE SAME ROOM; draw once at the
-  // left/top cell. A pair straddling two rooms renders as two single 1-tile objects.
-  const sameType = (type: string, room: string, r: number, c: number) =>
-    board.inBounds(r, c) &&
-    board.tileAt(board.idx(r, c)).top?.type === type &&
-    board.roomIdOf(board.idx(r, c)) === room
-  const drawBig = (type: string, c: Cell): void => {
-    const { row, col } = board.rc(c)
+  // --- doors (brown, two-sided; each shared edge is drawn from both cells) --
+  for (let c = 0; c < W * H; c++) {
+    const sides = board.doorSides(c)
+    if (sides.length === 0) continue
     const { x, y } = xy(c)
-    const room = board.roomIdOf(c)
-    if (sameType(type, room, row, col - 1) || sameType(type, room, row - 1, col)) return // secondary
-    if (sameType(type, room, row, col + 1)) drawBigObject(ctx, type, x, y, S, false)
-    else if (sameType(type, room, row + 1, col)) drawBigObject(ctx, type, x, y, S, true)
-    else drawSingleObject(ctx, type, x, y, S) // isolated / cross-room → single 1-tile
+    for (const side of sides) drawDoor(ctx, x, y, S, side)
+  }
+
+  // Big objects (bed/car) span 2 tiles. The footprint pairing lives on the board
+  // (one source of truth shared with the "beside an object" clue logic): draw the
+  // pair once at its primary (top-left) cell, skip the secondary half, and render
+  // unpaired cells as a single 1-tile object.
+  const bigPartners = board.bigObjectPartners()
+  const drawBig = (type: string, c: Cell): void => {
+    const { x, y } = xy(c)
+    const mate = bigPartners.get(c) ?? null
+    if (mate === null) {
+      drawSingleObject(ctx, type, x, y, S) // isolated / cross-room → single 1-tile
+    } else if (mate > c) {
+      drawBigObject(ctx, type, x, y, S, mate === c + W) // partner below ⇒ vertical, else right
+    }
+    // mate < c ⇒ secondary half; the primary cell already drew the whole pair.
   }
 
   // --- merged table surface (auto-tiles with adjacent same-room tables) ---
@@ -220,7 +233,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     const top = board.tileAt(c).top
     if (!top || top.type === 'table') continue // table drawn in the merged pass
     const { x, y } = xy(c)
-    if (BIG_OBJECTS.has(top.type)) {
+    if (MULTI_CELL_TYPES.has(top.type)) {
       drawBig(top.type, c)
       continue
     }
@@ -230,6 +243,10 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     }
     if (top.type === 'shelf') {
       drawBookshelf(ctx, x, y, S)
+      continue
+    }
+    if (top.type === 'mud') {
+      drawMud(ctx, x, y, S)
       continue
     }
     const glyph = OBJECT_GLYPHS[top.type]
@@ -491,6 +508,53 @@ function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, S: numb
     ctx.lineTo(rx + rw / 2, ry + rh)
   }
   ctx.stroke()
+}
+
+/** A brown door straddling one wall of a cell (two-sided; drawn from both cells). */
+function drawDoor(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, side: Side): void {
+  const t = S * 0.2
+  const inset = S * 0.13
+  let rx: number, ry: number, rw: number, rh: number, vertical: boolean
+  switch (side) {
+    case 'N':
+      rx = x + inset; ry = y - t / 2; rw = S - 2 * inset; rh = t; vertical = false
+      break
+    case 'S':
+      rx = x + inset; ry = y + S - t / 2; rw = S - 2 * inset; rh = t; vertical = false
+      break
+    case 'W':
+      rx = x - t / 2; ry = y + inset; rw = t; rh = S - 2 * inset; vertical = true
+      break
+    case 'E':
+      rx = x + S - t / 2; ry = y + inset; rw = t; rh = S - 2 * inset; vertical = true
+      break
+  }
+  ctx.fillStyle = '#8a5a2b'
+  ctx.strokeStyle = '#4a2f15'
+  ctx.lineWidth = Math.max(1.2, S * 0.028)
+  ctx.beginPath()
+  ctx.roundRect(rx, ry, rw, rh, t * 0.2)
+  ctx.fill()
+  ctx.stroke()
+  // centre panel groove
+  ctx.strokeStyle = 'rgba(74, 47, 21, 0.55)'
+  ctx.lineWidth = Math.max(1, S * 0.015)
+  ctx.beginPath()
+  if (vertical) {
+    ctx.moveTo(rx + rw / 2, ry + rh * 0.12)
+    ctx.lineTo(rx + rw / 2, ry + rh * 0.88)
+  } else {
+    ctx.moveTo(rx + rw * 0.12, ry + rh / 2)
+    ctx.lineTo(rx + rw * 0.88, ry + rh / 2)
+  }
+  ctx.stroke()
+  // brass handle near one end
+  ctx.fillStyle = '#e8c46a'
+  const hx = vertical ? rx + rw / 2 : rx + rw * 0.8
+  const hy = vertical ? ry + rh * 0.8 : ry + rh / 2
+  ctx.beginPath()
+  ctx.arc(hx, hy, Math.max(1.2, S * 0.03), 0, Math.PI * 2)
+  ctx.fill()
 }
 
 /** The victim token: a crimson disc with a skull. */

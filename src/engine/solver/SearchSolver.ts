@@ -132,12 +132,14 @@ export class SearchSolver {
   private readonly roomExists: { subjectId: PersonId; clue: RoomExistsClue }[] = []
   private readonly roomMask = new Map<string, BitSet>()
   private readonly roomRestrictors = new Map<PersonId, Restrictor[]>()
+  private readonly n: number
   /** Number of search nodes visited by the last search (diagnostics). */
   nodes = 0
 
   constructor(private readonly puzzle: Puzzle) {
     const board = puzzle.board
     const n = board.width * board.height
+    this.n = n
 
     this.forbid = new Array<BitSet>(n)
     for (let cell = 0; cell < n; cell++) {
@@ -189,6 +191,16 @@ export class SearchSolver {
     return this.countSolutions(2) === 1
   }
 
+  /** True if at least one full solution exists with the given people fixed to cells. */
+  hasSolutionWith(forced: ReadonlyMap<PersonId, Cell>): boolean {
+    let found = false
+    this.search(() => {
+      found = true
+      return true
+    }, forced)
+    return found
+  }
+
   countSolutions(limit = 2): number {
     let count = 0
     this.search(() => {
@@ -217,10 +229,24 @@ export class SearchSolver {
     return out
   }
 
-  private search(onSolution: (solution: Solution) => boolean): void {
+  private search(
+    onSolution: (solution: Solution) => boolean,
+    forced?: ReadonlyMap<PersonId, Cell>,
+  ): void {
     const people = this.puzzle.people()
     const domains = new Map<PersonId, BitSet>()
-    for (const person of people) domains.set(person.id, this.initialDomains.get(person.id)!.clone())
+    for (const person of people) {
+      const dom = this.initialDomains.get(person.id)!.clone()
+      const cell = forced?.get(person.id)
+      if (cell !== undefined) {
+        // Pin this person to the single cell; the recursion places them first and
+        // forward-checks the rest. An out-of-domain cell empties it → no solution.
+        const only = BitSet.empty(this.n)
+        only.add(cell)
+        dom.and(only)
+      }
+      domains.set(person.id, dom)
+    }
     const placement = new Map<PersonId, Cell>()
     this.nodes = 0
 
@@ -242,6 +268,28 @@ export class SearchSolver {
       return true
     }
 
+    const boardCluesHold = (solution: Solution): boolean => {
+      for (const clue of this.puzzle.boardClues) {
+        if (!clue.test(solution, this.puzzle)) return false
+      }
+      return true
+    }
+
+    // The core rule of every case: the victim was ALONE with the murderer, so the
+    // victim's room must hold exactly one suspect. Solutions that put 0 or ≥2
+    // suspects with the victim are not valid scenarios.
+    const board = this.puzzle.board
+    const murderAlone = (): boolean => {
+      const victimRoom = board.roomIdOf(placement.get(VICTIM_ID)!)
+      let withVictim = 0
+      for (const suspect of this.puzzle.suspects) {
+        if (board.roomIdOf(placement.get(suspect.id)!) === victimRoom && ++withVictim > 1) {
+          return false
+        }
+      }
+      return withVictim === 1
+    }
+
     const recurse = (): boolean => {
       this.nodes++
       let pick: PersonId | null = null
@@ -257,7 +305,7 @@ export class SearchSolver {
 
       if (pick === null) {
         const solution = new Solution(new Map(placement))
-        return allCluesHold(solution) && onSolution(solution)
+        return allCluesHold(solution) && murderAlone() && boardCluesHold(solution) && onSolution(solution)
       }
       if (best === 0) return false
 

@@ -38,6 +38,44 @@ export class NearWindowClue extends UnaryClue {
   }
 }
 
+/** "{name} was beside one of these objects." (any of a list — reads as one phrase) */
+export class NearAnyObjectClue extends UnaryClue {
+  constructor(readonly objects: string[]) {
+    super()
+  }
+  candidateCells(board: Board): Set<Cell> {
+    const out = new Set<Cell>()
+    for (const object of this.objects) for (const c of board.cellsNearObject(object)) out.add(c)
+    return out
+  }
+  describe(): Explanation {
+    return { key: 'clue.nearObjectAny', params: { objects: this.objects.join(',') } }
+  }
+}
+
+/** "{name} was beside a door." (doors are two-sided) */
+export class NearDoorClue extends UnaryClue {
+  candidateCells(board: Board): Set<Cell> {
+    return board.cellsNearDoor()
+  }
+  describe(): Explanation {
+    return { key: 'clue.nearDoor' }
+  }
+}
+
+/** "{name} was outside / inside." (outdoor area vs indoor room) */
+export class OutsideClue extends UnaryClue {
+  constructor(readonly outside: boolean) {
+    super()
+  }
+  candidateCells(board: Board): Set<Cell> {
+    return board.cellsOutside(this.outside)
+  }
+  describe(): Explanation {
+    return { key: this.outside ? 'clue.outside' : 'clue.inside' }
+  }
+}
+
 /** "{name} was in {room}." */
 export class InRoomClue extends UnaryClue {
   constructor(readonly room: string) {

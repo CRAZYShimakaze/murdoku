@@ -4,7 +4,7 @@ import LanguageToggle from '../components/LanguageToggle.tsx'
 import EditorBoard from '../components/EditorBoard.tsx'
 import SuspectsPanel from '../components/SuspectsPanel.tsx'
 import { OBJECT_GLYPHS } from '../game/glyphs.ts'
-import { THEME_IDS, themeRooms } from '../engine/generator/index.ts'
+import { THEME_IDS, themeRooms, themeOutdoor } from '../engine/generator/index.ts'
 import { levelMetaFromJson, type Difficulty, type LevelMeta } from '../game/levels.ts'
 import { saveCustomLevel, exportLevelJson, loadEditorDraft, saveEditorDraft } from '../game/storage.ts'
 import {
@@ -14,14 +14,17 @@ import {
   TOP_OBJECTS,
   buildPlayableLevel,
   emptyEditorState,
+  presentObjectTypes,
+  pruneWallEdges,
   setCell,
+  toggleDoorAt,
   toggleWindowAt,
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
-import { SearchSolver, findMurderer, loadLevel, type Cell } from '../engine/index.ts'
+import { SearchSolver, findMurderer, loadLevel, type BoardClueJson, type Cell } from '../engine/index.ts'
 
-type Mode = 'rooms' | 'ground' | 'top' | 'window'
+type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
 type CheckResult = { kind: 'ok' | 'multi' | 'none' | 'error' | 'saved' | 'exported'; murderer?: string }
 type EditDifficulty = Exclude<Difficulty, 'tutorial'>
 const DIFFS: EditDifficulty[] = ['easy', 'medium', 'hard']
@@ -94,7 +97,7 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
     setState((s) => ({ ...s, victim: { name, gender } }))
 
   const build = (id: string) =>
-    buildPlayableLevel(state, id, name.trim() || undefined, difficulty)
+    buildPlayableLevel(state, id, name.trim() || undefined, difficulty, themeOutdoor(theme))
 
   const check = () => {
     try {
@@ -149,7 +152,12 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
     const row = Math.floor(cell / cols)
     const col = cell % cols
     setState((s) => {
-      if (mode === 'rooms') return { ...s, roomMap: setCell(s.roomMap, row, col, paintRoom) }
+      if (mode === 'rooms') {
+        const roomMap = setCell(s.roomMap, row, col, paintRoom)
+        // Moving a wall can orphan windows/doors — drop the ones no longer on a wall.
+        const { windows, doors } = pruneWallEdges(roomMap, s.size, s.windows, s.doors)
+        return { ...s, roomMap, windows, doors }
+      }
       if (mode === 'ground') return { ...s, groundMap: setCell(s.groundMap, row, col, paintObj || '.') }
       if (mode === 'top') return { ...s, topMap: setCell(s.topMap, row, col, paintObj || '.') }
       return s
@@ -161,6 +169,25 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
     const col = cell % cols
     setState((s) => ({ ...s, windows: toggleWindowAt(s.windows, row, col, fx, fy) }))
   }
+
+  const paintDoor = (cell: Cell, fx: number, fy: number) => {
+    const row = Math.floor(cell / cols)
+    const col = cell % cols
+    setState((s) => ({ ...s, doors: toggleDoorAt(s.doors, row, col, fx, fy, s.size) }))
+  }
+
+  const updateBoardClue = (i: number, next: BoardClueJson) =>
+    setState((s) => ({ ...s, boardClues: s.boardClues.map((b, j) => (j === i ? next : b)) }))
+  const removeBoardClue = (i: number) =>
+    setState((s) => ({ ...s, boardClues: s.boardClues.filter((_, j) => j !== i) }))
+  const addBoardClue = () =>
+    setState((s) => ({
+      ...s,
+      boardClues: [
+        ...s.boardClues,
+        { type: 'countOnObject', object: presentObjectTypes(s)[0] ?? 'mud', count: 1 },
+      ],
+    }))
 
   // Keep the paint selection valid for the active mode.
   const palette = useMemo(() => {
@@ -218,7 +245,7 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
           ))}
         </select>
         <div className="mk-editor__modes">
-          {(['rooms', 'ground', 'top', 'window'] as Mode[]).map((m) => (
+          {(['rooms', 'ground', 'top', 'window', 'door', 'global'] as Mode[]).map((m) => (
             <button
               key={m}
               type="button"
@@ -261,16 +288,93 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
           onPaint={paint}
           windowMode={mode === 'window'}
           onPaintWindow={paintWindow}
+          doorMode={mode === 'door'}
+          onPaintDoor={paintDoor}
         />
       </div>
 
       <aside className="mk-tools mk-editor__palette">
         <div className="mk-editor__palettescroll">
           <span className="mk-tools__label">
-            {mode === 'rooms' ? t('editor.rooms') : mode === 'window' ? t('editor.windows') : t('editor.objects')}
+            {t(
+              mode === 'rooms'
+                ? 'editor.rooms'
+                : mode === 'window'
+                  ? 'editor.windows'
+                  : mode === 'door'
+                    ? 'editor.doors'
+                    : mode === 'global'
+                      ? 'editor.globalClues'
+                      : 'editor.objects',
+            )}
           </span>
 
           {mode === 'window' && <p className="mk-empty">{t('editor.windowHint')}</p>}
+          {mode === 'door' && <p className="mk-empty">{t('editor.doorHint')}</p>}
+
+          {mode === 'global' && (
+            <div className="mk-boardclue-edit">
+              {state.boardClues.map((bc, i) => (
+                <div key={i} className="mk-bce">
+                  <button
+                    type="button"
+                    className="mk-bce__del"
+                    onClick={() => removeBoardClue(i)}
+                    aria-label={t('cond.remove')}
+                  >
+                    ✕
+                  </button>
+                  <select
+                    className="mk-select-input"
+                    value={bc.type}
+                    onChange={(e) => {
+                      const type = e.target.value as BoardClueJson['type']
+                      updateBoardClue(
+                        i,
+                        type === 'countOnObject'
+                          ? { type, object: presentObjectTypes(state)[0] ?? 'mud', count: bc.count }
+                          : { type, count: bc.count },
+                      )
+                    }}
+                  >
+                    {(['countOnObject', 'emptyRooms', 'everyRoomCount'] as const).map((k) => (
+                      <option key={k} value={k}>
+                        {t(`editor.boardClueKind.${k}`)}
+                      </option>
+                    ))}
+                  </select>
+                  {bc.type === 'countOnObject' && (
+                    <select
+                      className="mk-select-input"
+                      value={bc.object}
+                      onChange={(e) => updateBoardClue(i, { ...bc, object: e.target.value })}
+                    >
+                      {presentObjectTypes(state).map((o) => (
+                        <option key={o} value={o}>
+                          {t(`objName.${o}`)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <label className="mk-bce__count">
+                    <span>{t('editor.count')}</span>
+                    <input
+                      className="mk-input"
+                      type="number"
+                      min={0}
+                      value={bc.count}
+                      onChange={(e) =>
+                        updateBoardClue(i, { ...bc, count: Math.max(0, Number(e.target.value)) })
+                      }
+                    />
+                  </label>
+                </div>
+              ))}
+              <button type="button" className="mk-btn mk-btn--ghost mk-cb__add" onClick={addBoardClue}>
+                {t('editor.addClue')}
+              </button>
+            </div>
+          )}
 
           {mode === 'rooms' &&
             ROOM_IDS.map((id, i) => (

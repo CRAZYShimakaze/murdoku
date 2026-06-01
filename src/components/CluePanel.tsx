@@ -16,6 +16,8 @@ interface Props {
   onSelect: (id: PersonId) => void
   onHoverSuspect?: (id: PersonId | null) => void
   hint: string | null
+  /** Optional step-by-step reasoning chain shown under the hint. */
+  hintChain?: string[] | null
 }
 
 function attrChips(attributes: Readonly<Record<string, unknown>>): string[] {
@@ -35,6 +37,7 @@ export default function CluePanel({
   onSelect,
   onHoverSuspect,
   hint,
+  hintChain,
 }: Props) {
   const { t, i18n } = useTranslation()
 
@@ -43,6 +46,16 @@ export default function CluePanel({
     () => new Renderer(i18n.getResourceBundle(lang, 'translation'), puzzle),
     [i18n, lang, puzzle],
   )
+
+  // Board-wide notes shown above the suspects: which rooms are outdoors + any
+  // board clues ("exactly one person on a mud puddle", …).
+  const boardNotes = useMemo(() => {
+    const notes: string[] = []
+    const outside = [...puzzle.board.rooms.values()].filter((r) => r.outside).map((r) => t(r.nameKey))
+    if (outside.length > 0) notes.push(`${t('game.outsideLabel')}: ${outside.join(', ')}`)
+    for (const clue of puzzle.boardClues) notes.push(renderer.render(clue.describe()))
+    return notes
+  }, [puzzle, renderer, t])
 
   const attrInfo = (attributes: Readonly<Record<string, unknown>>): ReactNode => (
     <span className="mk-tipinfo">
@@ -60,10 +73,28 @@ export default function CluePanel({
       <p className="mk-clues__title">{t('game.suspects')}</p>
       <p className="mk-clues__hint">{t('game.selectPrompt')}</p>
 
+      {boardNotes.length > 0 && (
+        <div className="mk-boardclues">
+          {boardNotes.map((note, i) => (
+            <p key={i} className="mk-boardclue">
+              <span className="mk-boardclue__icon">🔍</span>
+              {note}
+            </p>
+          ))}
+        </div>
+      )}
+
       {hint && (
         <div className="mk-hintbar">
           <strong>{t('tool.hint')}</strong>
           {hint}
+          {hintChain && hintChain.length > 0 && (
+            <ol className="mk-hintchain">
+              {hintChain.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ol>
+          )}
         </div>
       )}
 

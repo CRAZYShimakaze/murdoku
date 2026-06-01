@@ -10,7 +10,11 @@ export type Technique =
   | 'relational'
   | 'nakedGroupRows'
   | 'nakedGroupCols'
+  | 'rectangle'
+  | 'insideXor'
+  | 'boardCount'
   | 'roomReasoning'
+  | 'murderRule'
   | 'forcing'
   | 'satForcing'
   | 'victim'
@@ -31,6 +35,34 @@ export interface DeductionStep {
   candidates?: Cell[]
   eliminated?: Elimination[]
   explanation: Explanation
+  /** For proof-by-contradiction steps: the readable chain of consequences that
+   *  the assumption triggers, ending in the contradiction. */
+  chain?: Explanation[]
+}
+
+/**
+ * How a hint's highlighted cells should be read:
+ * - `place`   the single cell a person is forced onto;
+ * - `narrow`  every cell that person can still occupy after the deduction;
+ * - `exclude` cells that can now be ruled out (crossed) for someone.
+ */
+export type HintKind = 'place' | 'narrow' | 'exclude'
+
+/** A hint = the next deduction plus the cells to highlight for it on the board. */
+export interface HintResult {
+  step: DeductionStep
+  focus: Cell[]
+  kind: HintKind
+}
+
+/**
+ * Hints already shown this round, fed back so pressing "hint" again advances to the
+ * NEXT deduction instead of repeating (a step-through of the solution). Reset when
+ * the player actually changes the board.
+ */
+export interface HintProgress {
+  placed: ReadonlyMap<PersonId, Cell>
+  eliminated: ReadonlyMap<PersonId, ReadonlySet<Cell>>
 }
 
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'expert'
@@ -48,7 +80,11 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   relational: 3,
   nakedGroupRows: 3,
   nakedGroupCols: 3,
+  rectangle: 3,
+  insideXor: 3,
+  boardCount: 4,
   roomReasoning: 4,
+  murderRule: 5,
   forcing: 6,
   satForcing: 7,
 }

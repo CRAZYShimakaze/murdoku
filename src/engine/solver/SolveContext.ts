@@ -90,6 +90,28 @@ export class SolveContext {
     return this.board.roomIdOf(cell)
   }
 
+  /**
+   * Could the victim still end up ALONE with exactly one suspect? Necessary
+   * condition (never a false contradiction): at least one room can still hold the
+   * victim plus exactly one suspect — i.e. ≤1 suspect is locked into it and ≥1
+   * suspect can be in it.
+   */
+  murderPossible(): boolean {
+    for (const room of this.roomsOf(this.puzzle.victim.id)) {
+      let locked = 0
+      let possible = 0
+      for (const person of this.people) {
+        if (this.isVictim(person.id)) continue
+        const rooms = this.roomsOf(person.id)
+        if (!rooms.has(room)) continue
+        possible++
+        if (rooms.size === 1) locked++
+      }
+      if (locked <= 1 && possible >= 1) return true
+    }
+    return false
+  }
+
   /** The single room all of a person's candidates lie in, or null. */
   guaranteedRoomOf(id: PersonId): string | null {
     let room: string | null = null

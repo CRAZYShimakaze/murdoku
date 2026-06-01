@@ -3,7 +3,13 @@ import { UniqueConstraintTechnique } from './techniques/UniqueConstraintTechniqu
 import { HiddenSingleTechnique } from './techniques/HiddenSingleTechnique.ts'
 import { RelationalTechnique } from './techniques/RelationalTechnique.ts'
 import { NakedGroupTechnique } from './techniques/NakedGroupTechnique.ts'
+import { RectangleTechnique } from './techniques/RectangleTechnique.ts'
+import { InsideXorTechnique } from './techniques/InsideXorTechnique.ts'
+import { BoardCountTechnique } from './techniques/BoardCountTechnique.ts'
 import { RoomReasoningTechnique } from './techniques/RoomReasoningTechnique.ts'
+import { MurderTechnique } from './techniques/MurderTechnique.ts'
+import { ForcingTechnique } from './techniques/ForcingTechnique.ts'
+import { SearchSolver } from './SearchSolver.ts'
 import type { Technique } from './techniques/Technique.ts'
 import type { SolveContext } from './SolveContext.ts'
 import type { DeductionStep } from './DeductionStep.ts'
@@ -16,7 +22,7 @@ import type { Puzzle } from '../model/Puzzle.ts'
  * inside the search. Shared by the hint engine and the search solver.
  */
 export function createForwardTechniques(puzzle: Puzzle): Technique[] {
-  const all: Technique[] = [
+  const base: Technique[] = [
     new NakedSingleTechnique(),
     new UniqueConstraintTechnique(),
     new HiddenSingleTechnique('row'),
@@ -24,9 +30,16 @@ export function createForwardTechniques(puzzle: Puzzle): Technique[] {
     new RelationalTechnique(),
     new NakedGroupTechnique('row'),
     new NakedGroupTechnique('col'),
+    new RectangleTechnique(),
+    new InsideXorTechnique(),
+    new BoardCountTechnique(),
     new RoomReasoningTechnique(),
-  ]
-  return all.filter((technique) => technique.relevant(puzzle))
+    new MurderTechnique(),
+  ].filter((technique) => technique.relevant(puzzle))
+  // Forcing is the expensive, complete fallback: it focuses on the person with the
+  // fewest options, proves impossible cells WITH a readable consequence chain
+  // (transparent where possible, exhaustive search for the deep cases), and so goes last.
+  return [...base, new ForcingTechnique(base, new SearchSolver(puzzle))]
 }
 
 /** Apply the techniques to a fixpoint, returning the steps taken (in order). */

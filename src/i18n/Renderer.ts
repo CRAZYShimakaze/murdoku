@@ -52,6 +52,15 @@ export class Renderer {
           .join(' & ')
       case 'object':
         return this.lookup(`object.${value}`) ?? String(value)
+      case 'objects': {
+        const parts = String(value)
+          .split(',')
+          .filter(Boolean)
+          .map((t) => this.lookup(`object.${t}`) ?? t)
+        if (parts.length <= 1) return parts[0] ?? ''
+        const or = this.lookup('clue.connOr') ?? 'oder'
+        return `${parts.slice(0, -1).join(', ')} ${or} ${parts[parts.length - 1]}`
+      }
       case 'attribute':
         return this.lookup(`attr.${value}`) ?? String(value)
       case 'who':
@@ -62,6 +71,9 @@ export class Renderer {
       }
       case 'direction':
         return this.lookup(`dir.${value}`) ?? String(value)
+      case 'side':
+      case 'otherSide':
+        return this.lookup(`side.${value}`) ?? String(value)
       case 'cell':
         return this.cell(Number(value))
       default:

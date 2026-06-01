@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "id": "79_Der_Bauernhof",
+  "title": "Der Bauernhof",
+  "difficulty": "expert",
+  "size": { "width": 12, "height": 12 },
+  "rooms": {
+    "W": { "nameKey": "room.pasture", "color": "#cfe8b0", "outside": true },
+    "S": { "nameKey": "room.shed", "color": "#d8c4a0" },
+    "H": { "nameKey": "room.farmhouse", "color": "#e6cdb0" },
+    "K": { "nameKey": "room.cowshed", "color": "#dab9a8" },
+    "O": { "nameKey": "room.yard", "color": "#e0d2a6", "outside": true },
+    "G": { "nameKey": "room.garden", "color": "#bcdba6", "outside": true },
+    "C": { "nameKey": "room.pigsty", "color": "#d6bcc8" }
+  },
+  "objects": {
+    "S": { "type": "shrub", "occupiable": false },
+    "R": { "type": "shelf", "occupiable": false },
+    "T": { "type": "table", "occupiable": false },
+    "K": { "type": "cow", "occupiable": false },
+    "B": { "type": "bed", "occupiable": true },
+    "s": { "type": "chair", "occupiable": true },
+    "P": { "type": "horse", "occupiable": true },
+    "C": { "type": "mud", "occupiable": true },
+    "I": { "type": "pig", "occupiable": false }
+  },
+  "roomMap": [
+    "WWWWWSSSHHHH",
+    "WWWWWSSSHHHH",
+    "KKWWWSSSHHHH",
+    "KKKWWOOOHHHH",
+    "KKKKOOOOOHHO",
+    "KKKKOOOOOOOO",
+    "KKKOOOOOOOOO",
+    "GGOOOOOOOOOO",
+    "GGOOOOOCCCCC",
+    "GGGOOCCCCCCC",
+    "GGGOOOCCCCCC",
+    "GGOOOOCCCCCC"
+  ],
+  "topMap": [
+    "S...SRTR...T",
+    "...K....B.s.",
+    ".....R..B..R",
+    "TKT.PS...s.T",
+    "KT..........",
+    "T.K.C.CS.P.S",
+    "TT.....KS...",
+    ".S.C......I.",
+    ".......I...T",
+    "S........I.T",
+    "SS....T....I",
+    "..C.SP.I...I"
+  ],
+  "doors": [
+    { "r": 2, "c": 7, "side": "S" },
+    { "r": 4, "c": 3, "side": "E" },
+    { "r": 4, "c": 9, "side": "S" },
+    { "r": 4, "c": 10, "side": "S" },
+    { "r": 5, "c": 3, "side": "E" },
+    { "r": 7, "c": 9, "side": "S" },
+    { "r": 8, "c": 5, "side": "S" }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Ariana",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "and", "clues": [{ "type": "inside" }, { "type": "nearDoor" }] }]
+    },
+    {
+      "id": "B",
+      "name": "Branka",
+      "attributes": { "gender": "f" },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            { "type": "sameRoom", "as": "J" },
+            { "type": "aloneWith", "people": ["J"], "attribute": "gender", "value": "f", "extraCount": 1, "dir": "east" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carola",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "and", "clues": [{ "type": "alone" }, { "type": "insideXor", "with": "K" }] }]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": { "gender": "m" },
+      "clues": [{ "type": "onObject", "object": "chair" }]
+    },
+    {
+      "id": "E",
+      "name": "Eli",
+      "attributes": { "gender": "m", "glasses": true },
+      "clues": [{ "type": "and", "clues": [{ "type": "nearObject", "object": "cow" }, { "type": "notAlone" }] }]
+    },
+    {
+      "id": "F",
+      "name": "Filomena",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "nearObject", "object": "shelf" }]
+    },
+    {
+      "id": "G",
+      "name": "Gina",
+      "attributes": { "gender": "f" },
+      "clues": [
+        { "type": "not", "clue": { "type": "nearObjectAny", "objects": ["shrub", "cow", "horse", "pig"] } }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Holger",
+      "attributes": { "gender": "m" },
+      "clues": [{ "type": "onObject", "object": "horse" }]
+    },
+    {
+      "id": "I",
+      "name": "Irene",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "nearObject", "object": "pig" }]
+    },
+    {
+      "id": "J",
+      "name": "Joaquin",
+      "attributes": { "gender": "m", "beard": true },
+      "clues": [{ "type": "or", "clues": [{ "type": "inRow", "row": 0 }, { "type": "inRow", "row": 11 }] }]
+    },
+    {
+      "id": "K",
+      "name": "Kelly",
+      "attributes": { "gender": "f" },
+      "clues": [{ "type": "or", "clues": [{ "type": "inCol", "col": 0 }, { "type": "inCol", "col": 11 }] }]
+    }
+  ],
+  "difficulty": "hard",
+  "victim": { "name": "Osgar", "attributes": { "gender": "m" } },
+  "boardClues": [{ "type": "countOnObject", "object": "mud", "count": 1 }]
+}

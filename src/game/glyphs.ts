@@ -17,7 +17,12 @@ export const OBJECT_GLYPHS: Record<string, string> = {
   statue: '🗿',
   rubble: '🧱',
   window: '🪟',
+  door: '🚪',
   car: '🚗',
+  cow: '🐄',
+  horse: '🐎',
+  pig: '🐖',
+  mud: '🟤', // legend chip only — the board draws a hand-painted puddle
 }
 
 /** Small chips shown on suspect cards so attribute clues are playable. */

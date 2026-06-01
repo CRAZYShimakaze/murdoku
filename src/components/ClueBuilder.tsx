@@ -95,6 +95,7 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
           </select>
         )
       case 'sameRoom':
+      case 'insideXor':
         return (
           <select
             className="mk-select-input mk-cond__val"
