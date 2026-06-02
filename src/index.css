@@ -416,14 +416,18 @@ button {
 .mk-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.4rem 2rem;
-  margin-bottom: 1.8rem;
-  padding-bottom: 1.4rem;
+  align-items: center;
+  gap: 0.5rem 1.6rem;
+  margin-bottom: 1.1rem;
+  padding-bottom: 0.9rem;
   border-bottom: 1px dashed var(--line-strong);
 }
+/* Desktop: label sits inline with its chips so the whole bar is one line tall. */
 .mk-filtergroup {
-  display: grid;
+  display: flex;
+  align-items: center;
   gap: 0.55rem;
+  min-width: 0;
 }
 .mk-filtergroup__label {
   font-family: var(--font-type);
@@ -431,11 +435,47 @@ button {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--bone-faint);
+  white-space: nowrap;
 }
 .mk-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+}
+/* Compact dropdown alternative — hidden on desktop, shown on narrow screens.
+   Scoped under .mk-filtergroup to outrank the base .mk-select-input rule that
+   is defined later in this file (equal specificity would otherwise win). */
+.mk-filtergroup .mk-filterselect {
+  display: none;
+  appearance: none;
+  padding: 0.45rem 1.5rem 0.45rem 0.6rem;
+  font-size: 0.85rem;
+  background-color: var(--ink-700);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none' stroke='%23a79f8c' stroke-width='1.4'><path d='M1 1l4 4 4-4'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  background-size: 0.62rem;
+}
+
+@media (max-width: 640px) {
+  .mk-filters {
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  /* Each filter becomes an equal-width column with the dropdown under its label. */
+  .mk-filtergroup {
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.3rem;
+  }
+  .mk-filtergroup .mk-chips {
+    display: none;
+  }
+  .mk-filtergroup .mk-filterselect {
+    display: block;
+    width: 100%;
+  }
 }
 .mk-chip {
   border: 1px solid var(--line-strong);

@@ -6,7 +6,26 @@ import { ATTR_CHIPS } from '../game/glyphs.ts'
 import Avatar from './Avatar.tsx'
 import ClueText from './ClueText.tsx'
 import InfoTip from './InfoTip.tsx'
-import { VICTIM_ID, type Cell, type PersonId, type Puzzle } from '../engine/index.ts'
+import {
+  AndClue,
+  InsideXorClue,
+  NotClue,
+  OrClue,
+  OutsideClue,
+  VICTIM_ID,
+  type Clue,
+  type Cell,
+  type PersonId,
+  type Puzzle,
+} from '../engine/index.ts'
+
+/** True if a clue (or any nested sub-clue) depends on the indoor/outdoor split. */
+function refersToInsideOutside(clue: Clue): boolean {
+  if (clue instanceof OutsideClue || clue instanceof InsideXorClue) return true
+  if (clue instanceof NotClue) return refersToInsideOutside(clue.inner)
+  if (clue instanceof AndClue || clue instanceof OrClue) return clue.clues.some(refersToInsideOutside)
+  return false
+}
 
 interface Props {
   puzzle: Puzzle
@@ -51,8 +70,14 @@ export default function CluePanel({
   // board clues ("exactly one person on a mud puddle", …).
   const boardNotes = useMemo(() => {
     const notes: string[] = []
+    // Only show the indoor/outdoor legend when a clue actually relies on it.
+    const usesInsideOutside =
+      puzzle.suspects.some((s) => s.clues.some(refersToInsideOutside)) ||
+      puzzle.globalClues.some(refersToInsideOutside)
     const outside = [...puzzle.board.rooms.values()].filter((r) => r.outside).map((r) => t(r.nameKey))
-    if (outside.length > 0) notes.push(`${t('game.outsideLabel')}: ${outside.join(', ')}`)
+    if (usesInsideOutside && outside.length > 0) {
+      notes.push(`${t('game.outsideLabel')}: ${outside.join(', ')}`)
+    }
     for (const clue of puzzle.boardClues) notes.push(renderer.render(clue.describe()))
     return notes
   }, [puzzle, renderer, t])

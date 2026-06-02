@@ -22,6 +22,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
   const { t } = useTranslation()
   const [diff, setDiff] = useState<Difficulty | 'all'>('all')
   const [size, setSize] = useState<string | 'all'>('all')
+  const [status, setStatus] = useState<'all' | 'solved' | 'unsolved'>('all')
   const [solved] = useState(() => loadSolved())
   const [custom] = useState(() => loadCustomLevels().map((j) => levelMetaFromJson(j, true)))
 
@@ -32,10 +33,53 @@ export default function LevelSelect({ onPick, onBack }: Props) {
       .filter(
         (l) =>
           (diff === 'all' || l.difficulty === diff) &&
-          (size === 'all' || `${l.width}×${l.height}` === size),
+          (size === 'all' || `${l.width}×${l.height}` === size) &&
+          (status === 'all' || solved.has(l.id) === (status === 'solved')),
       )
       .sort(compareLevels) // difficulty → size; custom levels sort in like any other
-  }, [diff, size, custom])
+  }, [diff, size, status, solved, custom])
+
+  // One source of truth for the three filters; rendered as inline chips on
+  // desktop and as compact dropdowns on mobile (CSS toggles which is visible).
+  const filters: {
+    key: string
+    label: string
+    value: string
+    set: (v: string) => void
+    options: { value: string; label: string }[]
+  }[] = [
+    {
+      key: 'difficulty',
+      label: t('select.filterDifficulty'),
+      value: diff,
+      set: setDiff as (v: string) => void,
+      options: [
+        { value: 'all', label: t('select.all') },
+        ...DIFFICULTIES.map((d) => ({ value: d, label: t(`difficulty.${d}`) })),
+      ],
+    },
+    {
+      key: 'size',
+      label: t('select.filterSize'),
+      value: size,
+      set: setSize,
+      options: [
+        { value: 'all', label: t('select.all') },
+        ...LEVEL_SIZES.map((s) => ({ value: s, label: s })),
+      ],
+    },
+    {
+      key: 'status',
+      label: t('select.filterStatus'),
+      value: status,
+      set: setStatus as (v: string) => void,
+      options: [
+        { value: 'all', label: t('select.all') },
+        { value: 'solved', label: t('select.solved') },
+        { value: 'unsolved', label: t('select.unsolved') },
+      ],
+    },
+  ]
 
   return (
     <div className="mk-screen">
@@ -52,38 +96,35 @@ export default function LevelSelect({ onPick, onBack }: Props) {
         </header>
 
         <div className="mk-filters">
-          <div className="mk-filtergroup">
-            <span className="mk-filtergroup__label">{t('select.filterDifficulty')}</span>
-            <div className="mk-chips">
-              <button className="mk-chip" data-active={diff === 'all'} onClick={() => setDiff('all')}>
-                {t('select.all')}
-              </button>
-              {DIFFICULTIES.map((d) => (
-                <button
-                  key={d}
-                  className="mk-chip"
-                  data-active={diff === d}
-                  onClick={() => setDiff(d)}
-                >
-                  {t(`difficulty.${d}`)}
-                </button>
-              ))}
+          {filters.map((f) => (
+            <div className="mk-filtergroup" key={f.key}>
+              <span className="mk-filtergroup__label">{f.label}</span>
+              <div className="mk-chips">
+                {f.options.map((o) => (
+                  <button
+                    key={o.value}
+                    className="mk-chip"
+                    data-active={f.value === o.value}
+                    onClick={() => f.set(o.value)}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              <select
+                className="mk-select-input mk-filterselect"
+                aria-label={f.label}
+                value={f.value}
+                onChange={(e) => f.set(e.target.value)}
+              >
+                {f.options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
-
-          <div className="mk-filtergroup">
-            <span className="mk-filtergroup__label">{t('select.filterSize')}</span>
-            <div className="mk-chips">
-              <button className="mk-chip" data-active={size === 'all'} onClick={() => setSize('all')}>
-                {t('select.all')}
-              </button>
-              {LEVEL_SIZES.map((s) => (
-                <button key={s} className="mk-chip" data-active={size === s} onClick={() => setSize(s)}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
 
         <div className="mk-level-grid">

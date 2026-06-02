@@ -192,7 +192,9 @@
     "subtitle": "Wähle einen Fall",
     "filterDifficulty": "Schwierigkeit",
     "filterSize": "Größe",
+    "filterStatus": "Status",
     "all": "Alle",
+    "unsolved": "Ungelöst",
     "empty": "Keine Fälle mit diesen Filtern.",
     "solved": "Gelöst",
     "custom": "Eigen"

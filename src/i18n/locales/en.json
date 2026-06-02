@@ -192,7 +192,9 @@
     "subtitle": "Pick a case",
     "filterDifficulty": "Difficulty",
     "filterSize": "Size",
+    "filterStatus": "Status",
     "all": "All",
+    "unsolved": "Unsolved",
     "empty": "No cases match these filters.",
     "solved": "Solved",
     "custom": "Custom"
