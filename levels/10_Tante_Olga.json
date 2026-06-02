@@ -1,0 +1,319 @@
+{
+  "schema": 1,
+  "id": "editor-10-tante-olga",
+  "title": "10. Tante Olga",
+  "size": {
+    "width": 8,
+    "height": 8
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Badezimmer",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "Küche",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "Wohnzimmer",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "Gästezimmer",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "Flur",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "Kinderzimmer 1",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "Kinderzimmer 2",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "Arbeitszimmer",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "Garage",
+      "color": "#e0c4a0",
+      "outside": true
+    },
+    "A": {
+      "nameKey": "Schlafzimmer",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "Esszimmer",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "Balkon",
+      "color": "#e0b0a8",
+      "outside": true
+    },
+    "D": {
+      "nameKey": "Abstellkammer",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "Waschküche",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "Vorratskammer",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "AAAA4444",
+    "AA114444",
+    "AA114444",
+    "AA11BBBB",
+    "3333BBBB",
+    "3333BBBB",
+    "3333BB22",
+    "33322222"
+  ],
+  "groundMap": [
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........"
+  ],
+  "topMap": [
+    "bb.gbtb.",
+    "...tbtb.",
+    ".......t",
+    ".g.....t",
+    ".s..st..",
+    ".t.fst..",
+    ".....s.t",
+    "ggp....g"
+  ],
+  "windows": [
+    {
+      "r": 1,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 5,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 6,
+      "c": 0,
+      "side": "W"
+    }
+  ],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Albert",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "shelf"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Berti",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "bed"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carolin",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "plant"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Desiree",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "alone"
+            },
+            {
+              "type": "inRoom",
+              "room": "A"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Ellen",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Farouk",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "nearWindow"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Gustav",
+      "attributes": {
+        "gender": "m",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "corner"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Olga",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [
+    {
+      "type": "countOnObject",
+      "object": "bed",
+      "count": 1
+    }
+  ],
+  "difficulty": "easy"
+}

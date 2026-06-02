@@ -1,0 +1,261 @@
+{
+  "schema": 1,
+  "id": "editor-06-mord-im-buchladen",
+  "title": "06. Mord im Buchladen",
+  "size": {
+    "width": 6,
+    "height": 6
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Eingangshalle",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "Hauptgalerie",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "Ausstellung",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "Tresor",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "Café",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "Sicherheitsraum",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "Werkstatt",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "Archiv",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "Garderobe",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "Sonderausstellung",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "Foyer",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "Bibliothek",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "Lager",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "Auditorium",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "Toilette",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "AAACCC",
+    "AAACCC",
+    "8888CC",
+    "888811",
+    "333311",
+    "333311"
+  ],
+  "groundMap": [
+    "......",
+    "......",
+    "......",
+    "......",
+    "......",
+    "......"
+  ],
+  "topMap": [
+    ".gtg..",
+    ".....g",
+    "...g.g",
+    "g.g...",
+    ".g.g.f",
+    "gg.g.g"
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Aria",
+      "attributes": {
+        "gender": "f",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "3"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Benno",
+      "attributes": {
+        "gender": "m",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "table"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Calvin",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "not",
+          "clue": {
+            "type": "nearObject",
+            "object": "shelf"
+          }
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Damian",
+      "attributes": {
+        "gender": "m",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "direction",
+          "of": "A",
+          "dir": "south"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Erika",
+      "attributes": {
+        "gender": "f",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "C"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Olga",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "easy"
+}

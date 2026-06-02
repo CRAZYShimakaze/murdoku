@@ -1,0 +1,290 @@
+{
+  "schema": 1,
+  "id": "editor-07-das-caf",
+  "title": "07. Das Café",
+  "size": {
+    "width": 6,
+    "height": 6
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Eingangshalle",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "Hauptgalerie",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "Ausstellung",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "Tresor",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "Café",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "Sicherheitsraum",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "Werkstatt",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "Archiv",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "Garderobe",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "Sonderausstellung",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "Foyer",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "Bibliothek",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "Lager",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "Auditorium",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "Toilette",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "5555FF",
+    "5555FF",
+    "5555BB",
+    "BBBBBB",
+    "BBBBBB",
+    "BBBBBB"
+  ],
+  "groundMap": [
+    "......",
+    "......",
+    "......",
+    "......",
+    "......",
+    "......"
+  ],
+  "topMap": [
+    "...t.s",
+    "...t..",
+    ".gttst",
+    ".stts.",
+    "..sst.",
+    "s.p.sp"
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Astrid",
+      "attributes": {
+        "gender": "f",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "plant"
+            },
+            {
+              "type": "not",
+              "clue": {
+                "type": "onObject",
+                "object": "chair"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bea",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "shelf"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Chloe",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 1
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dirk",
+      "attributes": {
+        "gender": "m",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "direction",
+              "of": "C",
+              "dir": "north"
+            },
+            {
+              "type": "inRoom",
+              "room": "B"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Eberhard",
+      "attributes": {
+        "gender": "m",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "chair"
+            },
+            {
+              "type": "not",
+              "clue": {
+                "type": "nearObject",
+                "object": "table"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Opfer",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "easy"
+}
