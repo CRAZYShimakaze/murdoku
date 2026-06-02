@@ -232,6 +232,7 @@
     "winMurderer": "Der Mörder war {{name}} im {{room}}.",
     "loseTitle": "Das stimmt noch nicht.",
     "loseBody": "Mindestens eine Person steht falsch. Bleib dran!",
+    "loseClues": "Diese Hinweise sind noch nicht erfüllt:",
     "retry": "Weiter rätseln",
     "back": "Zur Levelauswahl",
     "save": "Behalten",
@@ -402,6 +403,9 @@
     "countOnObject": "Genau {{count}} Person war auf {{object}}.",
     "emptyRooms": "Genau {{count}} Räume sind leer.",
     "everyRoomCount": "In jedem Raum sind genau {{count}} Personen."
+  },
+  "rule": {
+    "aloneWithVictim": "Das Opfer muss mit genau einer verdächtigen Person allein in einem Raum sein."
   },
   "tip": {
     "onObject": "Steht direkt auf diesem Objekt (es ist betretbar).",

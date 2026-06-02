@@ -232,6 +232,7 @@
     "winMurderer": "The murderer was {{name}} in the {{room}}.",
     "loseTitle": "That's not right yet.",
     "loseBody": "At least one person is misplaced. Keep at it!",
+    "loseClues": "These clues aren't satisfied yet:",
     "retry": "Keep solving",
     "back": "Back to cases",
     "save": "Keep it",
@@ -402,6 +403,9 @@
     "countOnObject": "Exactly {{count}} person was on {{object}}.",
     "emptyRooms": "Exactly {{count}} rooms are empty.",
     "everyRoomCount": "Every room has exactly {{count}} people."
+  },
+  "rule": {
+    "aloneWithVictim": "The victim must be alone in a room with exactly one suspect."
   },
   "tip": {
     "onObject": "Standing directly on this object (it is walkable).",

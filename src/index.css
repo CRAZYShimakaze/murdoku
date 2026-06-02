@@ -1299,6 +1299,37 @@ button {
   color: var(--crimson) !important;
   font-size: 1.05rem !important;
 }
+/* List of unfulfilled clues shown on a wrong solution. */
+.mk-dialog__clues {
+  width: 100%;
+  text-align: left;
+  background: var(--ink-900);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  padding: 0.7rem 0.9rem;
+  max-height: 11rem;
+  overflow-y: auto;
+}
+.mk-dialog__clues p.mk-dialog__clues-title {
+  margin: 0 0 0.45rem;
+  font-family: var(--font-type);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+.mk-dialog__clues ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.3rem;
+}
+.mk-dialog__clues li {
+  color: var(--bone-dim);
+  font-family: var(--font-type);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
 .mk-dialog__actions {
   display: flex;
   flex-wrap: wrap;

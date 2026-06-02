@@ -35,12 +35,13 @@ export class Renderer {
     return String(this.puzzle.attributesOf(id).gender) === 'm' ? 'm' : 'f'
   }
 
-  resolveParam(name: string, value: string | number): string {
+  resolveParam(name: string, value: string | number, nameSubject = false): string {
     switch (name) {
       case 'name':
       case 'target':
         return this.puzzle.nameOf(String(value))
       case 'subject':
+        if (nameSubject) return this.puzzle.nameOf(String(value))
         return this.lookup(`pron.${this.genderOf(String(value))}`) ?? this.puzzle.nameOf(String(value))
       case 'poss':
         return this.lookup(`poss.${this.genderOf(String(value))}`) ?? this.puzzle.nameOf(String(value))
@@ -86,13 +87,17 @@ export class Renderer {
    * "{{subject}} war …" clues do), render it with "nicht " injected so it reads
    * "X war nicht …". Otherwise fall back to wrapping it as "nicht (…)".
    */
-  private renderNot(child: Explanation, extra: Record<string, string | number>): string {
+  private renderNot(
+    child: Explanation,
+    extra: Record<string, string | number>,
+    nameSubject = false,
+  ): string {
     const neg = this.lookup('clue.negWord') ?? 'nicht '
     const template = child.children && child.children.length > 0 ? null : this.lookup(child.key)
     if (template && template.includes('{{neg}}')) {
-      return this.render(child, { ...extra, neg })
+      return this.render(child, { ...extra, neg }, nameSubject)
     }
-    const inner = this.render(child, extra)
+    const inner = this.render(child, extra, nameSubject)
     return (this.lookup('clue.not') ?? 'nicht ({{child}})').replace('{{child}}', inner)
   }
 
@@ -102,10 +107,20 @@ export class Renderer {
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
   }
 
-  render(exp: Explanation, extra: Record<string, string | number> = {}): string {
+  /**
+   * Like {@link clue}, but names the subject instead of using a pronoun — for
+   * standalone messages shown outside the suspect's card (e.g. listing which
+   * clue a wrong solution fails to satisfy).
+   */
+  namedClue(exp: Explanation, subjectId: string): string {
+    const text = this.render(exp, { name: subjectId, subject: subjectId, poss: subjectId }, true)
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
+  }
+
+  render(exp: Explanation, extra: Record<string, string | number> = {}, nameSubject = false): string {
     if (exp.children && exp.children.length > 0) {
-      if (exp.key === 'clue.not') return this.renderNot(exp.children[0], extra)
-      const parts = exp.children.map((child) => this.render(child, extra))
+      if (exp.key === 'clue.not') return this.renderNot(exp.children[0], extra, nameSubject)
+      const parts = exp.children.map((child) => this.render(child, extra, nameSubject))
       if (exp.key === 'clue.and') return parts.join(` ${this.lookup('clue.connAnd') ?? 'und'} `)
       if (exp.key === 'clue.or') return parts.join(` ${this.lookup('clue.connOr') ?? 'oder'} `)
       return parts.join(' ')
@@ -118,7 +133,7 @@ export class Renderer {
     )
     const params = { ...extra, ...(exp.params ?? {}) }
     return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) =>
-      this.resolveParam(key, params[key] ?? ''),
+      this.resolveParam(key, params[key] ?? '', nameSubject),
     )
   }
 }

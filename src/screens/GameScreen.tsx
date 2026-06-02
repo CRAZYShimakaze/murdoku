@@ -5,6 +5,7 @@ import {
   SearchSolver,
   findMurderer,
   loadLevel,
+  unsatisfiedClues,
   VICTIM_ID,
   type Cell,
   type HintResult,
@@ -39,6 +40,8 @@ interface Result {
   win: boolean
   murderer: { name: string; room: string; id: PersonId | null } | null
   victimCell: Cell | null
+  /** On a loss: the clues the current placement doesn't satisfy. */
+  failures?: string[]
 }
 
 function formatTime(total: number): string {
@@ -177,7 +180,12 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
       puzzle.suspects.every((s) => session.state.placements.get(s.id) === solution.cellOf(s.id)) &&
       session.state.placements.get(VICTIM_ID) === solution.cellOf(VICTIM_ID)
     if (!win) {
-      setResult({ win: false, murderer: null, victimCell: null })
+      // Pinpoint which clue(s) the placement breaks — suspects, the "alone with
+      // the victim" rule, and global/board clues — so it's not just "wrong".
+      const failures = unsatisfiedClues(puzzle, session.state.placements).map((f) =>
+        f.personId ? renderer.namedClue(f.explanation, f.personId) : renderer.render(f.explanation),
+      )
+      setResult({ win: false, murderer: null, victimCell: null, failures })
       return
     }
     markSolved(storageId)
@@ -255,6 +263,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
         <ResultDialog
           win={result.win}
           murderer={result.win ? result.murderer : null}
+          failures={result.win ? undefined : result.failures}
           onRetry={() => setResult(null)}
           onBack={onBack}
           generated={generated}

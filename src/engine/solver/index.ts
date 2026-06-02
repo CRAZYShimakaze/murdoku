@@ -3,6 +3,8 @@ export { DeductionEngine } from './DeductionEngine.ts'
 export { SearchSolver } from './SearchSolver.ts'
 export { findMurderer } from './murderer.ts'
 export type { MurdererResult } from './murderer.ts'
+export { unsatisfiedClues } from './diagnose.ts'
+export type { ClueFailure } from './diagnose.ts'
 export type {
   DeductionResult,
   DeductionStep,

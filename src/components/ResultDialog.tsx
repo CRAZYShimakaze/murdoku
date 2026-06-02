@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 interface Props {
   win: boolean
   murderer: { name: string; room: string } | null
+  /** On a loss: human-readable clues the current placement fails to satisfy. */
+  failures?: string[]
   onRetry: () => void
   onBack: () => void
   /** Generated-level extras (only shown on a win of a freshly generated level). */
@@ -18,6 +20,7 @@ interface Props {
 export default function ResultDialog({
   win,
   murderer,
+  failures,
   onRetry,
   onBack,
   generated,
@@ -44,6 +47,16 @@ export default function ResultDialog({
           <p className="mk-dialog__murderer">
             {t('result.winMurderer', { name: murderer.name, room: murderer.room })}
           </p>
+        )}
+        {!win && failures && failures.length > 0 && (
+          <div className="mk-dialog__clues">
+            <p className="mk-dialog__clues-title">{t('result.loseClues')}</p>
+            <ul>
+              {failures.map((f, i) => (
+                <li key={i}>{f}</li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {showGen && (
