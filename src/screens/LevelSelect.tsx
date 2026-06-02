@@ -1,17 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import LanguageToggle from '../components/LanguageToggle.tsx'
 import BoardPreview from '../components/BoardPreview.tsx'
 import {
+  DEFAULT_FILTER,
   DIFFICULTIES,
-  LEVELS,
   LEVEL_SIZES,
-  compareLevels,
+  allLevels,
+  filterLevels,
   levelMetaFromJson,
-  type Difficulty,
+  type LevelFilter,
   type LevelMeta,
 } from '../game/levels.ts'
-import { loadCustomLevels, loadSolved } from '../game/storage.ts'
+import { loadCustomLevels, loadFilter, loadSolved, saveFilter } from '../game/storage.ts'
 
 interface Props {
   onPick: (level: LevelMeta) => void
@@ -20,39 +21,33 @@ interface Props {
 
 export default function LevelSelect({ onPick, onBack }: Props) {
   const { t } = useTranslation()
-  const [diff, setDiff] = useState<Difficulty | 'all'>('all')
-  const [size, setSize] = useState<string | 'all'>('all')
-  const [status, setStatus] = useState<'all' | 'solved' | 'unsolved'>('all')
+  // Filter is persisted so it survives leaving for a level and coming back.
+  const [filter, setFilter] = useState<LevelFilter>(() => loadFilter(DEFAULT_FILTER))
   const [solved] = useState(() => loadSolved())
   const [custom] = useState(() => loadCustomLevels().map((j) => levelMetaFromJson(j, true)))
 
-  const levels = useMemo(() => {
-    const seen = new Set<string>()
-    return [...custom, ...LEVELS]
-      .filter((l) => !seen.has(l.id) && seen.add(l.id) !== undefined) // de-dupe by id
-      .filter(
-        (l) =>
-          (diff === 'all' || l.difficulty === diff) &&
-          (size === 'all' || `${l.width}×${l.height}` === size) &&
-          (status === 'all' || solved.has(l.id) === (status === 'solved')),
-      )
-      .sort(compareLevels) // difficulty → size; custom levels sort in like any other
-  }, [diff, size, status, solved, custom])
+  useEffect(() => saveFilter(filter), [filter])
+
+  const levels = useMemo(
+    () => filterLevels(allLevels(custom), filter, solved),
+    [filter, custom, solved],
+  )
+
+  const update = (key: keyof LevelFilter, value: string) =>
+    setFilter((f) => ({ ...f, [key]: value }) as LevelFilter)
 
   // One source of truth for the three filters; rendered as inline chips on
   // desktop and as compact dropdowns on mobile (CSS toggles which is visible).
   const filters: {
-    key: string
+    key: keyof LevelFilter
     label: string
     value: string
-    set: (v: string) => void
     options: { value: string; label: string }[]
   }[] = [
     {
       key: 'difficulty',
       label: t('select.filterDifficulty'),
-      value: diff,
-      set: setDiff as (v: string) => void,
+      value: filter.difficulty,
       options: [
         { value: 'all', label: t('select.all') },
         ...DIFFICULTIES.map((d) => ({ value: d, label: t(`difficulty.${d}`) })),
@@ -61,8 +56,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
     {
       key: 'size',
       label: t('select.filterSize'),
-      value: size,
-      set: setSize,
+      value: filter.size,
       options: [
         { value: 'all', label: t('select.all') },
         ...LEVEL_SIZES.map((s) => ({ value: s, label: s })),
@@ -71,8 +65,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
     {
       key: 'status',
       label: t('select.filterStatus'),
-      value: status,
-      set: setStatus as (v: string) => void,
+      value: filter.status,
       options: [
         { value: 'all', label: t('select.all') },
         { value: 'solved', label: t('select.solved') },
@@ -105,7 +98,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
                     key={o.value}
                     className="mk-chip"
                     data-active={f.value === o.value}
-                    onClick={() => f.set(o.value)}
+                    onClick={() => update(f.key, o.value)}
                   >
                     {o.label}
                   </button>
@@ -115,7 +108,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
                 className="mk-select-input mk-filterselect"
                 aria-label={f.label}
                 value={f.value}
-                onChange={(e) => f.set(e.target.value)}
+                onChange={(e) => update(f.key, e.target.value)}
               >
                 {f.options.map((o) => (
                   <option key={o.value} value={o.value}>

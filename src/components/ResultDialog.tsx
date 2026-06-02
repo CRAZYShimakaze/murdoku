@@ -6,6 +6,8 @@ interface Props {
   murderer: { name: string; room: string } | null
   /** On a loss: human-readable clues the current placement fails to satisfy. */
   failures?: string[]
+  /** On a win: jump straight to the next level (omitted when none is available). */
+  onNext?: () => void
   onRetry: () => void
   onBack: () => void
   /** Generated-level extras (only shown on a win of a freshly generated level). */
@@ -21,6 +23,7 @@ export default function ResultDialog({
   win,
   murderer,
   failures,
+  onNext,
   onRetry,
   onBack,
   generated,
@@ -83,6 +86,11 @@ export default function ResultDialog({
               {t('result.retry')}
             </button>
           )}
+          {win && onNext && (
+            <button type="button" className="mk-btn mk-btn--primary" onClick={onNext}>
+              {t('result.nextLevel')}
+            </button>
+          )}
           {showGen && (
             <>
               <button
@@ -103,7 +111,9 @@ export default function ResultDialog({
           )}
           <button
             type="button"
-            className={win && !generated ? 'mk-btn mk-btn--primary' : 'mk-btn mk-btn--ghost'}
+            className={
+              win && !generated && !onNext ? 'mk-btn mk-btn--primary' : 'mk-btn mk-btn--ghost'
+            }
             onClick={onBack}
           >
             {t('result.back')}

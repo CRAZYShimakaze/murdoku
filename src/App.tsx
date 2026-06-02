@@ -88,6 +88,11 @@ export default function App() {
             )
           }
           onNew={() => setScreen({ name: 'generate' })}
+          onNext={
+            screen.generated || screen.fromEditor
+              ? undefined
+              : (level) => setScreen({ name: 'game', level })
+          }
         />
       )
   }

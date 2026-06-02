@@ -15,8 +15,23 @@ import { Renderer } from '../i18n/Renderer.ts'
 import { useGameSession } from '../game/useGameSession.ts'
 import { useTutorialFlow } from '../game/useTutorialFlow.ts'
 import { CANDIDATE_BLUE, HINT_BLACK } from '../game/palette.ts'
-import { markSolved, saveCustomLevel, exportLevelJson, isCustomSaved } from '../game/storage.ts'
-import type { LevelMeta } from '../game/levels.ts'
+import {
+  markSolved,
+  saveCustomLevel,
+  exportLevelJson,
+  isCustomSaved,
+  loadCustomLevels,
+  loadFilter,
+  loadSolved,
+} from '../game/storage.ts'
+import {
+  DEFAULT_FILTER,
+  allLevels,
+  filterLevels,
+  levelMetaFromJson,
+  nextLevel,
+  type LevelMeta,
+} from '../game/levels.ts'
 import BoardCanvas from '../components/BoardCanvas.tsx'
 import CluePanel from '../components/CluePanel.tsx'
 import Toolbar from '../components/Toolbar.tsx'
@@ -32,6 +47,8 @@ interface Props {
   /** True when this level was just generated (offers save/export/new on a win). */
   generated?: boolean
   onNew?: () => void
+  /** Play another level after a win (omitted for generated / editor test-plays). */
+  onNext?: (level: LevelMeta) => void
   /** Tutorial mode: fresh start, separate storage slot (doesn't touch the demo). */
   tutorial?: boolean
 }
@@ -42,6 +59,8 @@ interface Result {
   victimCell: Cell | null
   /** On a loss: the clues the current placement doesn't satisfy. */
   failures?: string[]
+  /** On a win: the next level matching the saved filter (null if none). */
+  next?: LevelMeta | null
 }
 
 function formatTime(total: number): string {
@@ -53,7 +72,7 @@ function formatTime(total: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 }
 
-export default function GameScreen({ meta, onBack, generated, onNew, tutorial }: Props) {
+export default function GameScreen({ meta, onBack, generated, onNew, onNext, tutorial }: Props) {
   const { t, i18n } = useTranslation()
   const storageId = tutorial ? '__tutorial__' : meta.id
   const puzzle = useMemo(() => loadLevel(meta.json), [meta])
@@ -192,6 +211,13 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
     session.clearSaved()
     const m = findMurderer(puzzle, solution)
     const room = puzzle.board.rooms.get(m.roomId)
+    // Next level honours the saved filter and the (now updated) solved set.
+    let next: LevelMeta | null = null
+    if (onNext) {
+      const custom = loadCustomLevels().map((j) => levelMetaFromJson(j, true))
+      const filtered = filterLevels(allLevels(custom), loadFilter(DEFAULT_FILTER), loadSolved())
+      next = nextLevel(meta, filtered)
+    }
     setResult({
       win: true,
       murderer: {
@@ -200,6 +226,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
         id: m.suspectId,
       },
       victimCell: solution.cellOf(VICTIM_ID),
+      next,
     })
   }
 
@@ -264,6 +291,11 @@ export default function GameScreen({ meta, onBack, generated, onNew, tutorial }:
           win={result.win}
           murderer={result.win ? result.murderer : null}
           failures={result.win ? undefined : result.failures}
+          onNext={
+            result.win && result.next && onNext
+              ? () => onNext(result.next!)
+              : undefined
+          }
           onRetry={() => setResult(null)}
           onBack={onBack}
           generated={generated}

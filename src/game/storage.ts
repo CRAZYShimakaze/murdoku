@@ -1,10 +1,12 @@
 /** localStorage persistence: solved levels, in-progress board, saved levels. */
 import type { LevelJson } from '../engine/index.ts'
+import type { LevelFilter } from './levels.ts'
 
 const SOLVED_KEY = 'murdoku.solved.v1'
 const PROGRESS_PREFIX = 'murdoku.progress.v1.'
 const CUSTOM_KEY = 'murdoku.custom.v1'
 const EDITOR_DRAFT_KEY = 'murdoku.editordraft.v1'
+const FILTER_KEY = 'murdoku.filter.v1'
 
 /** A board state flattened to JSON-friendly arrays (Maps/Sets don't serialize). */
 export interface SavedState {
@@ -32,6 +34,15 @@ function write(key: string, value: unknown): void {
 
 export function loadSolved(): Set<string> {
   return new Set(read<string[]>(SOLVED_KEY, []))
+}
+
+/** The level picker's last filter selection. Pass DEFAULT_FILTER as the fallback. */
+export function loadFilter(fallback: LevelFilter): LevelFilter {
+  return read<LevelFilter>(FILTER_KEY, fallback)
+}
+
+export function saveFilter(filter: LevelFilter): void {
+  write(FILTER_KEY, filter)
 }
 
 export function markSolved(id: string): void {

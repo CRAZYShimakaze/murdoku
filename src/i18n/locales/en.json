@@ -234,6 +234,7 @@
     "loseBody": "At least one person is misplaced. Keep at it!",
     "loseClues": "These clues aren't satisfied yet:",
     "retry": "Keep solving",
+    "nextLevel": "Next level",
     "back": "Back to cases",
     "save": "Keep it",
     "saved": "Saved ✓",

@@ -39,6 +39,48 @@ export function compareLevels(a: LevelMeta, b: LevelMeta): number {
   )
 }
 
+/** Solved-status the picker can filter by. */
+export type LevelStatus = 'all' | 'solved' | 'unsolved'
+
+/** The level picker's filter selection (persisted so it survives navigation). */
+export interface LevelFilter {
+  difficulty: Difficulty | 'all'
+  size: string | 'all'
+  status: LevelStatus
+}
+
+export const DEFAULT_FILTER: LevelFilter = { difficulty: 'all', size: 'all', status: 'all' }
+
+/** Bundled + custom levels, de-duped by id and sorted — the picker's universe. */
+export function allLevels(custom: LevelMeta[]): LevelMeta[] {
+  const seen = new Set<string>()
+  return [...custom, ...LEVELS]
+    .filter((l) => !seen.has(l.id) && seen.add(l.id) !== undefined)
+    .sort(compareLevels)
+}
+
+/** Apply the picker's filter to a level list; `solved` drives the status filter. */
+export function filterLevels(
+  levels: LevelMeta[],
+  filter: LevelFilter,
+  solved: ReadonlySet<string>,
+): LevelMeta[] {
+  return levels.filter(
+    (l) =>
+      (filter.difficulty === 'all' || l.difficulty === filter.difficulty) &&
+      (filter.size === 'all' || `${l.width}×${l.height}` === filter.size) &&
+      (filter.status === 'all' || solved.has(l.id) === (filter.status === 'solved')),
+  )
+}
+
+/** The level to play after `current` within a (sorted) filtered list. Wraps
+ *  around at the end; null when no other level matches the filter. */
+export function nextLevel(current: LevelMeta, filtered: LevelMeta[]): LevelMeta | null {
+  const others = filtered.filter((l) => l.id !== current.id)
+  if (others.length === 0) return null
+  return others.find((l) => compareLevels(current, l) < 0) ?? others[0]
+}
+
 /** Build a LevelMeta from a raw level (e.g. a freshly generated / saved one). */
 export function levelMetaFromJson(json: LevelJson, custom = false): LevelMeta {
   return {
