@@ -23,6 +23,17 @@ export const OBJECT_GLYPHS: Record<string, string> = {
   horse: '🐎',
   pig: '🐖',
   mud: '🟤', // legend chip only — the board draws a hand-painted puddle
+  boulder: '🪨',
+  gift: '🎁',
+  pc: '🖥️',
+  fuelpump: '⛽',
+  tree: '🌳',
+  trash: '🗑️',
+  locker: '🗄️', // legend chip only — the board draws a hand-painted locker
+  punchbag: '🥊', // legend chip only — the board draws a hand-painted punching bag
+  oil: '🛢️', // legend chip only — the board draws a hand-painted oil slick
+  cash: '💰', // legend chip only — the board draws a hand-painted cash register
+  crate: '🪵', // legend chip only — the board draws a hand-painted wooden crate
 }
 
 /** Small chips shown on suspect cards so attribute clues are playable. */

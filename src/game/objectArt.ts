@@ -160,6 +160,11 @@ const BOOK_COLORS = ['#9a4f3a', '#5f7392', '#76895a', '#b0813f', '#7d5f8e', '#9a
 
 /** A wooden bookshelf filled with colourful book spines (blocking). */
 export function drawBookshelf(ctx: Ctx, x: number, y: number, S: number): void {
+  // Shrink to 80% about the cell centre so the white "blocked" card shows around it.
+  ctx.save()
+  ctx.translate(x + S / 2, y + S / 2)
+  ctx.scale(0.8, 0.8)
+  ctx.translate(-(x + S / 2), -(y + S / 2))
   const pad = S * 0.1
   const left = x + pad
   const top = y + pad
@@ -212,7 +217,8 @@ export function drawBookshelf(ctx: Ctx, x: number, y: number, S: number): void {
       i++
     }
   }
-  ctx.restore()
+  ctx.restore() // clip
+  ctx.restore() // 80% scale
 }
 
 /** An occupiable mud puddle: an organic brown blob with a dark rim and ripples. */
@@ -229,7 +235,8 @@ export function drawMud(ctx: Ctx, x: number, y: number, S: number): void {
     const wob = 0.82 + 0.16 * Math.sin(a * 3 + 1.3) + 0.06 * Math.cos(a * 5)
     const px = cx + Math.cos(a) * rx * wob
     const py = cy + Math.sin(a) * ry * wob
-    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)
+    if (i === 0) ctx.moveTo(px, py)
+    else ctx.lineTo(px, py)
   }
   ctx.closePath()
   ctx.save()
@@ -255,4 +262,284 @@ export function drawMud(ctx: Ctx, x: number, y: number, S: number): void {
   ctx.ellipse(cx + rx * 0.3, cy + ry * 0.22, S * 0.045, S * 0.028, 0, 0, Math.PI * 2)
   ctx.fill()
   ctx.restore()
+}
+
+/** An occupiable oil slick: a glossy near-black blob with an iridescent sheen. */
+export function drawOil(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S / 2
+  const cy = y + S * 0.54
+  const rx = S * 0.42
+  const ry = S * 0.32
+  const pts = 16
+  ctx.beginPath()
+  for (let i = 0; i <= pts; i++) {
+    const a = (i / pts) * Math.PI * 2
+    const wob = 0.8 + 0.18 * Math.sin(a * 3 + 0.7) + 0.07 * Math.cos(a * 5 + 2)
+    const px = cx + Math.cos(a) * rx * wob
+    const py = cy + Math.sin(a) * ry * wob
+    if (i === 0) ctx.moveTo(px, py)
+    else ctx.lineTo(px, py)
+  }
+  ctx.closePath()
+  ctx.save()
+  ctx.fillStyle = '#0c0a10' // near-black oil
+  ctx.fill()
+  ctx.clip()
+  ctx.fillStyle = '#15131c'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy, rx * 0.95, ry * 0.95, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // iridescent sheen patches (oil-on-water rainbow)
+  ctx.fillStyle = 'rgba(80, 120, 150, 0.5)'
+  ctx.beginPath()
+  ctx.ellipse(cx - rx * 0.25, cy - ry * 0.2, rx * 0.42, ry * 0.32, -0.4, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = 'rgba(150, 90, 140, 0.42)'
+  ctx.beginPath()
+  ctx.ellipse(cx + rx * 0.3, cy + ry * 0.18, rx * 0.32, ry * 0.24, 0.5, 0, Math.PI * 2)
+  ctx.fill()
+  // glossy highlight
+  ctx.fillStyle = 'rgba(220, 230, 240, 0.7)'
+  ctx.beginPath()
+  ctx.ellipse(cx - rx * 0.15, cy - ry * 0.28, S * 0.06, S * 0.03, -0.3, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+}
+
+/**
+ * A metal locker (blocking), drawn front-on in the same framed style as the
+ * bookshelf: an outlined metal frame holding two doors, each with louvered
+ * vents up top, a name-plate slot and a handle.
+ */
+export function drawLocker(ctx: Ctx, x: number, y: number, S: number): void {
+  // Shrink to 80% about the cell centre so the white "blocked" card shows around it.
+  ctx.save()
+  ctx.translate(x + S / 2, y + S / 2)
+  ctx.scale(0.8, 0.8)
+  ctx.translate(-(x + S / 2), -(y + S / 2))
+  const pad = S * 0.1
+  const left = x + pad
+  const top = y + pad
+  const w = S - 2 * pad
+  const h = S - 2 * pad
+  const metal = '#9aa6b2'
+  const dark = '#4b535c'
+
+  // outer frame (metal body) with a dark outline — mirrors the bookshelf
+  ctx.fillStyle = metal
+  ctx.strokeStyle = dark
+  ctx.lineWidth = Math.max(1.4, S * 0.05)
+  ctx.beginPath()
+  ctx.roundRect(left, top, w, h, S * 0.06)
+  ctx.fill()
+  ctx.stroke()
+
+  // recessed inner area (the two doors live here)
+  const ib = S * 0.05
+  const iL = left + ib
+  const iT = top + ib
+  const iW = w - 2 * ib
+  const iH = h - 2 * ib
+  ctx.fillStyle = '#aeb8c2'
+  ctx.beginPath()
+  ctx.roundRect(iL, iT, iW, iH, S * 0.03)
+  ctx.fill()
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(iL, iT, iW, iH)
+  ctx.clip()
+
+  const doorGap = S * 0.025
+  const doorW = (iW - doorGap) / 2
+  const doors = [iL, iL + doorW + doorGap]
+  for (const dL of doors) {
+    // door panel + slight shine, with a thin seam outline
+    ctx.fillStyle = '#9aa6b2'
+    ctx.fillRect(dL, iT, doorW, iH)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.16)'
+    ctx.fillRect(dL + doorW * 0.12, iT, doorW * 0.18, iH)
+    ctx.strokeStyle = dark
+    ctx.lineWidth = Math.max(1, S * 0.018)
+    ctx.strokeRect(dL + 0.5, iT + 0.5, doorW - 1, iH - 1)
+    // louvered vents near the top
+    ctx.strokeStyle = 'rgba(40, 48, 56, 0.6)'
+    ctx.lineWidth = Math.max(1, S * 0.016)
+    for (let i = 0; i < 3; i++) {
+      const vy = iT + iH * (0.1 + i * 0.07)
+      ctx.beginPath()
+      ctx.moveTo(dL + doorW * 0.18, vy)
+      ctx.lineTo(dL + doorW * 0.82, vy)
+      ctx.stroke()
+    }
+    // name-plate slot
+    ctx.fillStyle = '#dfe5ea'
+    ctx.fillRect(dL + doorW * 0.28, iT + iH * 0.34, doorW * 0.44, iH * 0.1)
+    // vertical handle
+    ctx.fillStyle = '#3a4048'
+    ctx.beginPath()
+    ctx.roundRect(dL + doorW * 0.78, iT + iH * 0.52, doorW * 0.08, iH * 0.26, doorW * 0.04)
+    ctx.fill()
+  }
+  ctx.restore() // clip
+  ctx.restore() // 80% scale
+}
+
+/** A red boxing bag (blocking): a hanging leather cylinder seen from a slight angle. */
+export function drawPunchbag(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S / 2
+  // contact shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.16)'
+  ctx.beginPath()
+  ctx.ellipse(cx, y + S * 0.82, S * 0.18, S * 0.06, 0, 0, Math.PI * 2)
+  ctx.fill()
+  const top = y + S * 0.22
+  const bot = y + S * 0.8
+  const r = S * 0.18 // half-width
+  // strap + ceiling mount ring
+  ctx.strokeStyle = '#555'
+  ctx.lineWidth = Math.max(1.2, S * 0.03)
+  ctx.beginPath()
+  ctx.moveTo(cx, y + S * 0.13)
+  ctx.lineTo(cx, top)
+  ctx.stroke()
+  ctx.fillStyle = '#777'
+  ctx.beginPath()
+  ctx.arc(cx, y + S * 0.13, Math.max(1.4, S * 0.04), 0, Math.PI * 2)
+  ctx.fill()
+  // body (red leather) with dark outline
+  ctx.fillStyle = '#1c1822'
+  ctx.beginPath()
+  ctx.roundRect(cx - r - S * 0.02, top - S * 0.02, 2 * r + S * 0.04, bot - top + S * 0.04, r * 0.6)
+  ctx.fill()
+  ctx.fillStyle = '#c0392b'
+  ctx.beginPath()
+  ctx.roundRect(cx - r, top, 2 * r, bot - top, r * 0.5)
+  ctx.fill()
+  // rounded top cap
+  ctx.fillStyle = '#a93226'
+  ctx.beginPath()
+  ctx.ellipse(cx, top + S * 0.02, r, S * 0.06, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // vertical shine
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'
+  ctx.beginPath()
+  ctx.roundRect(cx - r * 0.6, top + S * 0.06, r * 0.35, bot - top - S * 0.16, r * 0.3)
+  ctx.fill()
+  // strap bands
+  ctx.strokeStyle = 'rgba(60, 20, 16, 0.7)'
+  ctx.lineWidth = Math.max(1, S * 0.025)
+  for (const f of [0.32, 0.62]) {
+    const by = top + (bot - top) * f
+    ctx.beginPath()
+    ctx.moveTo(cx - r, by)
+    ctx.lineTo(cx + r, by)
+    ctx.stroke()
+  }
+}
+
+/** A checkout cash register (blocking): a drawer base, a body with a keypad, and
+ *  a small green display tilted up at the back. Sized to sit on the white card. */
+export function drawCashRegister(ctx: Ctx, x: number, y: number, S: number): void {
+  const dark = '#2a2f36'
+  ctx.lineWidth = Math.max(1.2, S * 0.03)
+  ctx.strokeStyle = dark
+
+  // drawer base (bottom, widest)
+  const dw = S * 0.62
+  const dh = S * 0.18
+  const dx = x + (S - dw) / 2
+  const dy = y + S * 0.6
+  ctx.fillStyle = '#aab2ba'
+  ctx.beginPath()
+  ctx.roundRect(dx, dy, dw, dh, S * 0.03)
+  ctx.fill()
+  ctx.stroke()
+  // drawer handle slot
+  ctx.fillStyle = '#5a6068'
+  ctx.fillRect(dx + dw * 0.3, dy + dh * 0.55, dw * 0.4, dh * 0.18)
+
+  // register body (on the drawer)
+  const bw = S * 0.5
+  const bh = S * 0.3
+  const bx = x + (S - bw) / 2
+  const by = dy - bh + S * 0.02
+  ctx.fillStyle = '#c7ccd2'
+  ctx.beginPath()
+  ctx.roundRect(bx, by, bw, bh, S * 0.04)
+  ctx.fill()
+  ctx.stroke()
+  // keypad (3×2 little buttons) on the body
+  ctx.fillStyle = '#5a6068'
+  const kw = bw * 0.16
+  const kh = bh * 0.2
+  for (let r = 0; r < 2; r++) {
+    for (let cc = 0; cc < 3; cc++) {
+      ctx.beginPath()
+      ctx.roundRect(bx + bw * 0.16 + cc * bw * 0.26, by + bh * 0.42 + r * bh * 0.3, kw, kh, kw * 0.3)
+      ctx.fill()
+    }
+  }
+
+  // display screen tilted up at the back-left, with a green readout
+  const sw = S * 0.32
+  const sh = S * 0.16
+  const sx = bx + bw * 0.08
+  const sy = by - sh + S * 0.02
+  ctx.fillStyle = dark
+  ctx.beginPath()
+  ctx.roundRect(sx, sy, sw, sh, S * 0.025)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#6ee7a0' // LCD glow
+  ctx.fillRect(sx + sw * 0.14, sy + sh * 0.34, sw * 0.72, sh * 0.3)
+}
+
+/** A wooden crate (blocking): a slatted fruit/storage box. Sized for the white card. */
+export function drawCrate(ctx: Ctx, x: number, y: number, S: number): void {
+  const pad = S * 0.16
+  const left = x + pad
+  const top = y + pad
+  const w = S - 2 * pad
+  const h = S - 2 * pad
+  const wood = '#c39a5e'
+  const rail = '#b3853f'
+  const gap = '#5a3d22'
+
+  // dark outline + the gap colour showing between the slats
+  ctx.fillStyle = gap
+  ctx.beginPath()
+  ctx.roundRect(left - S * 0.015, top - S * 0.015, w + S * 0.03, h + S * 0.03, S * 0.04)
+  ctx.fill()
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.roundRect(left, top, w, h, S * 0.03)
+  ctx.clip()
+  // vertical planks with gaps between them
+  const planks = 4
+  const slot = w / planks
+  ctx.fillStyle = wood
+  for (let i = 0; i < planks; i++) {
+    ctx.fillRect(left + i * slot + slot * 0.1, top, slot * 0.8, h)
+  }
+  // top & bottom rails frame the slats
+  ctx.fillStyle = rail
+  ctx.fillRect(left, top, w, h * 0.18)
+  ctx.fillRect(left, top + h * 0.82, w, h * 0.18)
+  // diagonal brace (classic crate)
+  ctx.strokeStyle = rail
+  ctx.lineWidth = Math.max(1.5, S * 0.04)
+  ctx.beginPath()
+  ctx.moveTo(left, top + h * 0.82)
+  ctx.lineTo(left + w, top + h * 0.18)
+  ctx.stroke()
+  ctx.restore()
+
+  // crisp dark border
+  ctx.strokeStyle = '#3a2716'
+  ctx.lineWidth = Math.max(1.2, S * 0.03)
+  ctx.beginPath()
+  ctx.roundRect(left, top, w, h, S * 0.03)
+  ctx.stroke()
 }

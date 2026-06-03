@@ -28,6 +28,7 @@
     "mode_door": "Doors",
     "mode_global": "Global",
     "rooms": "Rooms",
+    "roomEmpty": "Empty (no room)",
     "objects": "Objects",
     "windows": "Windows",
     "doors": "Doors",
@@ -185,7 +186,8 @@
     "hospital": "Hospital",
     "museum": "Museum",
     "restaurant": "Restaurant",
-    "farm": "Farm"
+    "farm": "Farm",
+    "supermarkt": "Supermarket"
   },
   "select": {
     "title": "The Case Files",
@@ -261,7 +263,18 @@
     "cow": "a cow",
     "horse": "a horse",
     "pig": "a pig",
-    "mud": "a mud puddle"
+    "mud": "a mud puddle",
+    "boulder": "a boulder",
+    "gift": "a gift",
+    "pc": "a PC",
+    "locker": "a locker",
+    "punchbag": "a punching bag",
+    "fuelpump": "a fuel pump",
+    "tree": "a tree",
+    "trash": "a trash can",
+    "oil": "an oil slick",
+    "cash": "a cash register",
+    "crate": "a wooden crate"
   },
   "objName": {
     "floor": "Floor",
@@ -282,7 +295,18 @@
     "cow": "Cow",
     "horse": "Horse",
     "pig": "Pig",
-    "mud": "Mud puddle"
+    "mud": "Mud puddle",
+    "boulder": "Boulder",
+    "gift": "Gift",
+    "pc": "PC",
+    "locker": "Locker",
+    "punchbag": "Punching bag",
+    "fuelpump": "Fuel pump",
+    "tree": "Tree",
+    "trash": "Trash can",
+    "oil": "Oil slick",
+    "cash": "Cash register",
+    "crate": "Wooden crate"
   },
   "legend": {
     "title": "Legend",
@@ -294,7 +318,31 @@
     "north": "north",
     "south": "south",
     "east": "east",
-    "west": "west"
+    "west": "west",
+    "northeast": "north-east",
+    "northwest": "north-west",
+    "southeast": "south-east",
+    "southwest": "south-west"
+  },
+  "line": {
+    "col": "column",
+    "row": "row",
+    "either": "column or row"
+  },
+  "roomRel": {
+    "any": "",
+    "same": ", in the same room",
+    "other": ", in a different room"
+  },
+  "lineLabel": {
+    "col": "Column",
+    "row": "Row",
+    "either": "Column or row"
+  },
+  "roomRelLabel": {
+    "any": "Room: any",
+    "same": "Same room",
+    "other": "Different room"
   },
   "side": {
     "inside": "inside",
@@ -389,6 +437,8 @@
     "aloneWith": "{{subject}} was {{neg}}[[alone with:aloneWith]] {{who}}",
     "roomExistsOnObject": "{{who}} was [[on:onObject]] {{object}} in {{poss}} area",
     "sameRoom": "{{subject}} was {{neg}}[[in the same room as:sameRoom]] {{target}}",
+    "sameLineAsObject": "{{subject}} was {{neg}}in the same {{line}} as {{object}}{{roomRel}}",
+    "directionFromObject": "{{subject}} was {{neg}}{{direction}} of {{object}}{{roomRel}}",
     "nearDoor": "{{subject}} was {{neg}}[[beside a door:nearDoor]]",
     "inside": "{{subject}} was {{neg}}[[inside:inside]]",
     "outside": "{{subject}} was {{neg}}[[outside:outside]]",
@@ -456,6 +506,8 @@
     "notAlone": "Not alone",
     "sameRoom": "Same room as",
     "direction": "Direction from",
+    "sameLineAsObject": "Same line as object",
+    "directionFromObject": "Direction from object",
     "insideXor": "Opposite side (in/out) to",
     "roomAttribute": "In the room …",
     "not": "NOT",

@@ -1,5 +1,5 @@
 import type { ClueJson } from '../engine/index.ts'
-import type { AttributeValue, Direction } from '../engine/index.ts'
+import type { AttributeValue, Direction8, LineKind, RoomRel } from '../engine/index.ts'
 
 /**
  * The flat clue builder: a suspect's clue is a list of conditions joined by ONE
@@ -27,6 +27,8 @@ export type CondKind =
   | 'direction'
   | 'insideXor'
   | 'roomAttribute'
+  | 'sameLineAsObject'
+  | 'directionFromObject'
 
 /** Condition kinds the user can pick, in menu order. */
 export const COND_KINDS: CondKind[] = [
@@ -34,6 +36,8 @@ export const COND_KINDS: CondKind[] = [
   'onObject',
   'uniqueOnObject',
   'nearObject',
+  'sameLineAsObject',
+  'directionFromObject',
   'nearWindow',
   'uniqueNearWindow',
   'nearDoor',
@@ -51,6 +55,23 @@ export const COND_KINDS: CondKind[] = [
   'roomAttribute',
 ]
 
+/** Line a person can share with an object (column / row / either). */
+export const LINE_KINDS: LineKind[] = ['col', 'row', 'either']
+/** Room qualifier for object clues (no constraint / same / different room). */
+export const ROOM_RELS: RoomRel[] = ['any', 'same', 'other']
+/** Eight compass directions, offered by BOTH the person- and object-direction
+ *  clues (cardinals = half-plane, diagonals = both cardinals at once). */
+export const DIRECTIONS_8: Direction8[] = [
+  'north',
+  'northeast',
+  'east',
+  'southeast',
+  'south',
+  'southwest',
+  'west',
+  'northwest',
+]
+
 export type Quantifier = 'none' | 'some' | 'all'
 export const QUANTIFIERS: Quantifier[] = ['none', 'some', 'all']
 
@@ -58,7 +79,6 @@ export const QUANTIFIERS: Quantifier[] = ['none', 'some', 'all']
 export type AttrKind = 'beard' | 'glasses' | 'bald' | 'hair'
 export const ATTR_KINDS: AttrKind[] = ['beard', 'glasses', 'bald', 'hair']
 export const HAIR_COLORS = ['blond', 'brown', 'black', 'red', 'grey', 'white']
-export const DIRECTIONS: Direction[] = ['north', 'south', 'east', 'west']
 
 /** One row in the builder. Optional fields apply only to the matching `kind`. */
 export interface Condition {
@@ -68,10 +88,12 @@ export interface Condition {
   object?: string // onObject / nearObject — object TYPE (e.g. "chair")
   index?: number // inRow / inCol — 0-based line index
   of?: string // sameRoom / direction — other suspect id
-  dir?: Direction // direction
+  dir?: Direction8 // direction / directionFromObject — 8 compass directions
   quantifier?: Quantifier // roomAttribute
   attribute?: AttrKind // roomAttribute
   hair?: string // roomAttribute, when attribute === "hair"
+  line?: LineKind // sameLineAsObject — column / row / either
+  roomRel?: RoomRel // sameLineAsObject / directionFromObject — room qualifier
 }
 
 export interface ClueGroup {
@@ -124,6 +146,14 @@ function baseJson(c: Condition): ClueJson | null {
       return { type: 'notAlone' }
     case 'sameRoom':
       return c.of ? { type: 'sameRoom', as: c.of } : null
+    case 'sameLineAsObject':
+      return c.object
+        ? { type: 'sameLineAsObject', object: c.object, line: c.line ?? 'col', room: c.roomRel ?? 'any' }
+        : null
+    case 'directionFromObject':
+      return c.object
+        ? { type: 'directionFromObject', object: c.object, dir: c.dir ?? 'north', room: c.roomRel ?? 'any' }
+        : null
     case 'direction':
       return c.of ? { type: 'direction', of: c.of, dir: c.dir ?? 'north' } : null
     case 'insideXor':
@@ -171,5 +201,7 @@ export function defaultCondition(
     quantifier: 'some',
     attribute: 'beard',
     hair: 'blond',
+    line: 'col',
+    roomRel: 'any',
   }
 }

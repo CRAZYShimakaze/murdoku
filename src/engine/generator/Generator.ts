@@ -106,6 +106,11 @@ const THEMES: Theme[] = [
     rooms: ['Weide', 'Hof', 'Garten', 'Schuppen', 'Haus', 'Kuhstall', 'Schweinestall', 'Scheune', 'Hühnerstall', 'Pferdestall', 'Gewächshaus', 'Vorratskammer', 'Milchkammer', 'Feld', 'Teich'],
     outdoor: ['Weide', 'Hof', 'Garten', 'Feld', 'Teich'],
   },
+  {
+    id: 'supermarkt',
+    rooms: ['Kasse', 'Snacks', 'Getränke', 'Wurstabteilung', 'Obstabteilung', 'Kühlregale', 'Spielzeugabteilung', 'Lagerraum', 'Bäckerei', 'Gemüseabteilung', 'Käsetheke', 'Tiefkühlung', 'Drogerie', 'Personalraum', 'Parkplatz'],
+    outdoor: ['Parkplatz'],
+  },
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
 

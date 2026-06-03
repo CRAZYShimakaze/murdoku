@@ -7,8 +7,56 @@ export type PersonId = string
 /** Internal id used for the victim person. */
 export const VICTIM_ID: PersonId = 'victim'
 
+/**
+ * Reserved roomMap char for a cell that belongs to NO room: empty exterior /
+ * void. Such cells are never occupiable, count as no room for clues, and render
+ * as bare board background (no fill, no grid, no enclosing outer wall).
+ */
+export const VOID_ROOM = '.'
+
 /** Cardinal directions for relational clues ("south of X"). */
 export type Direction = 'north' | 'south' | 'east' | 'west'
+
+/** The four diagonals — each means BOTH cardinals (e.g. southwest = south AND west). */
+export type Diagonal = 'northeast' | 'northwest' | 'southeast' | 'southwest'
+
+/** Eight compass directions: cardinals are half-planes, diagonals are quadrants. */
+export type Direction8 = Direction | Diagonal
+
+/**
+ * Whether cell {row,col} `s` lies in `direction` relative to anchor `t`.
+ * Cardinals are half-planes (south = any cell strictly below); diagonals are the
+ * intersection of two half-planes (southwest = strictly below AND strictly left),
+ * NOT only the diagonal line.
+ */
+export function inDirection8(
+  direction: Direction8,
+  s: { row: number; col: number },
+  t: { row: number; col: number },
+): boolean {
+  const n = s.row < t.row
+  const so = s.row > t.row
+  const e = s.col > t.col
+  const w = s.col < t.col
+  switch (direction) {
+    case 'north':
+      return n
+    case 'south':
+      return so
+    case 'east':
+      return e
+    case 'west':
+      return w
+    case 'northeast':
+      return n && e
+    case 'northwest':
+      return n && w
+    case 'southeast':
+      return so && e
+    case 'southwest':
+      return so && w
+  }
+}
 
 /** Which side of a tile an edge (e.g. a window) sits on. */
 export type Side = 'N' | 'E' | 'S' | 'W'

@@ -22,7 +22,7 @@ import {
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
-import { SearchSolver, findMurderer, loadLevel, type BoardClueJson, type Cell } from '../engine/index.ts'
+import { SearchSolver, findMurderer, loadLevel, VOID_ROOM, type BoardClueJson, type Cell } from '../engine/index.ts'
 
 type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
 type CheckResult = { kind: 'ok' | 'multi' | 'none' | 'error' | 'saved' | 'exported'; murderer?: string }
@@ -376,19 +376,34 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
             </div>
           )}
 
-          {mode === 'rooms' &&
-            ROOM_IDS.map((id, i) => (
+          {mode === 'rooms' && (
+            <>
               <button
-                key={id}
                 type="button"
                 className="mk-pal mk-pal--room"
-                data-active={paintRoom === id}
-                onClick={() => setPaintRoom(id)}
+                data-active={paintRoom === VOID_ROOM}
+                onClick={() => setPaintRoom(VOID_ROOM)}
               >
-                <span className="mk-pal__swatch" style={{ background: ROOM_COLORS[i] }} />
-                {t(state.roomNames[i] ?? `room.editor${id}`)}
+                <span
+                  className="mk-pal__swatch"
+                  style={{ background: '#191722', border: '1px dashed #6f6a78' }}
+                />
+                {t('editor.roomEmpty')}
               </button>
-            ))}
+              {ROOM_IDS.map((id, i) => (
+                <button
+                  key={id}
+                  type="button"
+                  className="mk-pal mk-pal--room"
+                  data-active={paintRoom === id}
+                  onClick={() => setPaintRoom(id)}
+                >
+                  <span className="mk-pal__swatch" style={{ background: ROOM_COLORS[i] }} />
+                  {t(state.roomNames[i] ?? `room.editor${id}`)}
+                </button>
+              ))}
+            </>
+          )}
 
           {(mode === 'ground' || mode === 'top') && (
             <>

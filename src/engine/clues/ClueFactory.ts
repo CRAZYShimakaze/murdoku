@@ -13,6 +13,8 @@ import {
   OutsideClue,
 } from './unaryClues.ts'
 import { DirectionClue, InsideXorClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
+import { DirectionFromObjectClue, SameLineAsObjectClue } from './objectClues.ts'
+import type { LineKind, RoomRel } from './objectClues.ts'
 import { UniqueOnObjectClue, UniqueNearWindowClue } from './uniquenessClues.ts'
 import {
   AloneClue,
@@ -24,7 +26,7 @@ import {
 } from './socialClues.ts'
 import type { Quantifier } from './socialClues.ts'
 import { AndClue, NotClue, OrClue } from './compositeClues.ts'
-import type { AttributeValue, Direction, PersonId } from '../model/types.ts'
+import type { AttributeValue, Direction, Direction8, PersonId } from '../model/types.ts'
 
 /** JSON shape of a clue, mirroring the Clue class hierarchy. */
 export type ClueJson =
@@ -59,10 +61,12 @@ export type ClueJson =
       value: AttributeValue
       excludeSelf?: boolean
     }
-  | { type: 'direction'; of: PersonId; dir: Direction }
+  | { type: 'direction'; of: PersonId; dir: Direction8 }
   | { type: 'insideXor'; with: PersonId }
   | { type: 'offset'; of: PersonId; dir: Direction; distance: number }
   | { type: 'sameRoom'; as: PersonId }
+  | { type: 'sameLineAsObject'; object: string; line: LineKind; room: RoomRel }
+  | { type: 'directionFromObject'; object: string; dir: Direction8; room: RoomRel }
   | { type: 'roomCompanion'; count: number; attribute: string; value: AttributeValue }
   | { type: 'roomExists'; attribute: string; value: AttributeValue; object: string }
   | { type: 'not'; clue: ClueJson }
@@ -127,6 +131,10 @@ export function createClue(json: ClueJson): Clue {
       return new OffsetClue(json.of, json.dir, json.distance)
     case 'sameRoom':
       return new SameRoomClue(json.as)
+    case 'sameLineAsObject':
+      return new SameLineAsObjectClue(json.object, json.line, json.room)
+    case 'directionFromObject':
+      return new DirectionFromObjectClue(json.object, json.dir, json.room)
     case 'roomCompanion':
       return new RoomCompanionClue(json.count, json.attribute, json.value)
     case 'roomExists':

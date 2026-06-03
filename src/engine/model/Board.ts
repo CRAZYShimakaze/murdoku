@@ -1,4 +1,4 @@
-import { MULTI_CELL_TYPES, type Cell, type Side } from './types.ts'
+import { MULTI_CELL_TYPES, VOID_ROOM, type Cell, type Side } from './types.ts'
 import type { Tile } from './Tile.ts'
 import type { Room } from './Room.ts'
 
@@ -44,8 +44,14 @@ export class Board {
     private readonly doors: ReadonlyMap<Cell, ReadonlySet<Side>> = new Map(),
   ) {
     for (let c = 0; c < tiles.length; c++) {
-      if (tiles[c].occupiable) this.occupiable.push(c)
+      // Void (no-room) cells are exterior — never occupiable, whatever sits on them.
+      if (tiles[c].occupiable && tiles[c].roomId !== VOID_ROOM) this.occupiable.push(c)
     }
+  }
+
+  /** Whether a cell belongs to no room (empty exterior / void). */
+  isVoid(cell: Cell): boolean {
+    return this.tiles[cell].roomId === VOID_ROOM
   }
 
   idx(row: number, col: number): Cell {
@@ -69,7 +75,7 @@ export class Board {
   }
 
   isOccupiable(cell: Cell): boolean {
-    return this.tiles[cell].occupiable
+    return this.tiles[cell].occupiable && this.tiles[cell].roomId !== VOID_ROOM
   }
 
   /** All occupiable cells, in ascending index order. */
@@ -168,6 +174,16 @@ export class Board {
     const out = new Set<Cell>()
     for (const cell of this.occupiable) {
       if (this.tiles[cell].hasObjectType(type)) out.add(cell)
+    }
+    return out
+  }
+
+  /** ALL cells (occupiable or not) carrying the object type — for relating a
+   *  person's row/column/direction to where a (possibly blocking) object sits. */
+  objectCells(type: string): Cell[] {
+    const out: Cell[] = []
+    for (let cell = 0; cell < this.tiles.length; cell++) {
+      if (this.tiles[cell].hasObjectType(type)) out.push(cell)
     }
     return out
   }

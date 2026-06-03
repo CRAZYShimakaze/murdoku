@@ -5,7 +5,7 @@ import { Room } from '../model/Room.ts'
 import { Suspect } from '../model/Suspect.ts'
 import { Victim } from '../model/Victim.ts'
 import { Puzzle } from '../model/Puzzle.ts'
-import { VICTIM_ID } from '../model/types.ts'
+import { VICTIM_ID, VOID_ROOM } from '../model/types.ts'
 import type { Cell, Side } from '../model/types.ts'
 import { createClue } from '../clues/ClueFactory.ts'
 import { createBoardClue } from '../clues/boardClues.ts'
@@ -77,7 +77,12 @@ export function loadLevel(level: LevelJson): Puzzle {
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
       const roomChar = level.roomMap[row][col]
-      assert(rooms.has(roomChar), `unknown room "${roomChar}" at ${row},${col}`)
+      // VOID_ROOM marks a cell that belongs to no room (empty exterior) — it has
+      // no Room entry and is never occupiable; everything else must be declared.
+      assert(
+        roomChar === VOID_ROOM || rooms.has(roomChar),
+        `unknown room "${roomChar}" at ${row},${col}`,
+      )
       const ground = lookupObject(objectDefs, charAt(level.groundMap, row, col), 'groundMap')
       const top = lookupObject(objectDefs, charAt(level.topMap, row, col), 'topMap')
       tiles.push(new Tile(row, col, roomChar, ground, top))

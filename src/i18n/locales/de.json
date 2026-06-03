@@ -28,6 +28,7 @@
     "mode_door": "Türen",
     "mode_global": "Global",
     "rooms": "Räume",
+    "roomEmpty": "Leer (kein Raum)",
     "objects": "Objekte",
     "windows": "Fenster",
     "doors": "Türen",
@@ -185,7 +186,8 @@
     "hospital": "Krankenhaus",
     "museum": "Museum",
     "restaurant": "Restaurant",
-    "farm": "Bauernhof"
+    "farm": "Bauernhof",
+    "supermarkt": "Supermarkt"
   },
   "select": {
     "title": "Die Akten",
@@ -261,7 +263,18 @@
     "cow": "einer Kuh",
     "horse": "einem Pferd",
     "pig": "einem Schwein",
-    "mud": "einer Schlammpfütze"
+    "mud": "einer Schlammpfütze",
+    "boulder": "einem Felsbrocken",
+    "gift": "einem Geschenk",
+    "pc": "einem PC",
+    "locker": "einem Spind",
+    "punchbag": "einem Boxsack",
+    "fuelpump": "einer Zapfsäule",
+    "tree": "einem Baum",
+    "trash": "einem Mülleimer",
+    "oil": "einer Ölpfütze",
+    "cash": "einer Kasse",
+    "crate": "einer Holzkiste"
   },
   "objName": {
     "floor": "Boden",
@@ -282,7 +295,18 @@
     "cow": "Kuh",
     "horse": "Pferd",
     "pig": "Schwein",
-    "mud": "Schlammpfütze"
+    "mud": "Schlammpfütze",
+    "boulder": "Felsbrocken",
+    "gift": "Geschenk",
+    "pc": "PC",
+    "locker": "Spind",
+    "punchbag": "Boxsack",
+    "fuelpump": "Zapfsäule",
+    "tree": "Baum",
+    "trash": "Mülleimer",
+    "oil": "Ölpfütze",
+    "cash": "Kasse",
+    "crate": "Holzkiste"
   },
   "legend": {
     "title": "Legende",
@@ -294,7 +318,31 @@
     "north": "nördlich",
     "south": "südlich",
     "east": "östlich",
-    "west": "westlich"
+    "west": "westlich",
+    "northeast": "nordöstlich",
+    "northwest": "nordwestlich",
+    "southeast": "südöstlich",
+    "southwest": "südwestlich"
+  },
+  "line": {
+    "col": "Spalte",
+    "row": "Zeile",
+    "either": "Spalte oder Zeile"
+  },
+  "roomRel": {
+    "any": "",
+    "same": ", im selben Raum",
+    "other": ", in einem anderen Raum"
+  },
+  "lineLabel": {
+    "col": "Spalte",
+    "row": "Zeile",
+    "either": "Spalte oder Zeile"
+  },
+  "roomRelLabel": {
+    "any": "Raum: egal",
+    "same": "Selber Raum",
+    "other": "Anderer Raum"
   },
   "side": {
     "inside": "drinnen",
@@ -389,6 +437,8 @@
     "aloneWith": "{{subject}} war {{neg}}[[allein mit:aloneWith]] {{who}}",
     "roomExistsOnObject": "In {{poss}} Raum saß {{who}} [[auf:onObject]] {{object}}",
     "sameRoom": "{{subject}} war {{neg}}[[im selben Raum wie:sameRoom]] {{target}}",
+    "sameLineAsObject": "{{subject}} war {{neg}}in derselben {{line}} mit {{object}}{{roomRel}}",
+    "directionFromObject": "{{subject}} war {{neg}}{{direction}} von {{object}}{{roomRel}}",
     "nearDoor": "{{subject}} war {{neg}}[[neben einer Tür:nearDoor]]",
     "inside": "{{subject}} war {{neg}}[[drinnen:inside]]",
     "outside": "{{subject}} war {{neg}}[[draußen:outside]]",
@@ -456,6 +506,8 @@
     "notAlone": "Nicht allein",
     "sameRoom": "Gleicher Raum wie",
     "direction": "Richtung von",
+    "sameLineAsObject": "In gleicher Linie wie Objekt",
+    "directionFromObject": "Richtung zu Objekt",
     "insideXor": "Andere Seite (drin/draußen) als",
     "roomAttribute": "Im Raum …",
     "not": "NICHT",

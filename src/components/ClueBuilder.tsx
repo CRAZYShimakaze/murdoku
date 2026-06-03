@@ -2,9 +2,11 @@ import { useTranslation } from 'react-i18next'
 import {
   ATTR_KINDS,
   COND_KINDS,
-  DIRECTIONS,
+  DIRECTIONS_8,
   HAIR_COLORS,
+  LINE_KINDS,
   QUANTIFIERS,
+  ROOM_RELS,
   defaultCondition,
   type AttrKind,
   type ClueGroup,
@@ -12,7 +14,7 @@ import {
   type Condition,
   type Quantifier,
 } from '../game/editorClues.ts'
-import type { Direction } from '../engine/index.ts'
+import type { Direction8, LineKind, RoomRel } from '../engine/index.ts'
 
 export interface ClueCtx {
   rooms: string[]
@@ -46,6 +48,36 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
 
   const objName = (type: string) => t(`objName.${type}`)
 
+  /** Object-type picker (shared by every object-based condition). */
+  const objectSelect = (c: Condition, i: number) => (
+    <select
+      className="mk-select-input mk-cond__val"
+      value={c.object ?? ''}
+      onChange={(e) => update(i, { object: e.target.value })}
+    >
+      {ctx.objects.map((o) => (
+        <option key={o} value={o}>
+          {objName(o)}
+        </option>
+      ))}
+    </select>
+  )
+
+  /** Room qualifier (egal / same room / other room) for object clues. */
+  const roomRelSelect = (c: Condition, i: number) => (
+    <select
+      className="mk-select-input mk-cond__val"
+      value={c.roomRel ?? 'any'}
+      onChange={(e) => update(i, { roomRel: e.target.value as RoomRel })}
+    >
+      {ROOM_RELS.map((r) => (
+        <option key={r} value={r}>
+          {t(`roomRelLabel.${r}`)}
+        </option>
+      ))}
+    </select>
+  )
+
   /** The value control(s) for one condition's kind. */
   const valueControls = (c: Condition, i: number) => {
     switch (c.kind) {
@@ -66,18 +98,42 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
       case 'onObject':
       case 'uniqueOnObject':
       case 'nearObject':
+        return objectSelect(c, i)
+      case 'sameLineAsObject':
         return (
-          <select
-            className="mk-select-input mk-cond__val"
-            value={c.object ?? ''}
-            onChange={(e) => update(i, { object: e.target.value })}
-          >
-            {ctx.objects.map((o) => (
-              <option key={o} value={o}>
-                {objName(o)}
-              </option>
-            ))}
-          </select>
+          <>
+            {objectSelect(c, i)}
+            <select
+              className="mk-select-input mk-cond__val"
+              value={c.line ?? 'col'}
+              onChange={(e) => update(i, { line: e.target.value as LineKind })}
+            >
+              {LINE_KINDS.map((l) => (
+                <option key={l} value={l}>
+                  {t(`lineLabel.${l}`)}
+                </option>
+              ))}
+            </select>
+            {roomRelSelect(c, i)}
+          </>
+        )
+      case 'directionFromObject':
+        return (
+          <>
+            {objectSelect(c, i)}
+            <select
+              className="mk-select-input mk-cond__val"
+              value={c.dir ?? 'north'}
+              onChange={(e) => update(i, { dir: e.target.value as Direction8 })}
+            >
+              {DIRECTIONS_8.map((d) => (
+                <option key={d} value={d}>
+                  {t(`dir.${d}`)}
+                </option>
+              ))}
+            </select>
+            {roomRelSelect(c, i)}
+          </>
         )
       case 'inRow':
       case 'inCol':
@@ -115,9 +171,9 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
             <select
               className="mk-select-input mk-cond__val"
               value={c.dir ?? 'north'}
-              onChange={(e) => update(i, { dir: e.target.value as Direction })}
+              onChange={(e) => update(i, { dir: e.target.value as Direction8 })}
             >
-              {DIRECTIONS.map((d) => (
+              {DIRECTIONS_8.map((d) => (
                 <option key={d} value={d}>
                   {t(`dir.${d}`)}
                 </option>

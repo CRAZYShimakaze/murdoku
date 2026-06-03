@@ -13,6 +13,8 @@ export {
   AtWallClue,
 } from './unaryClues.ts'
 export { DirectionClue, InsideXorClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
+export { SameLineAsObjectClue, DirectionFromObjectClue } from './objectClues.ts'
+export type { LineKind, RoomRel } from './objectClues.ts'
 export { UniqueOnObjectClue, UniqueNearWindowClue } from './uniquenessClues.ts'
 export {
   AloneClue,

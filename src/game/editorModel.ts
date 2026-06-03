@@ -1,4 +1,4 @@
-import type { AttributeValue, BoardClueJson, LevelJson, Side, SuspectJson } from '../engine/index.ts'
+import { VOID_ROOM, type AttributeValue, type BoardClueJson, type LevelJson, type Side, type SuspectJson } from '../engine/index.ts'
 import { emptyClueGroup, groupToClues, type ClueGroup } from './editorClues.ts'
 
 /** Up to 15 room slots the editor can paint (matching a theme's room count). */
@@ -46,6 +46,17 @@ export const EDITOR_OBJECTS: EditorObject[] = [
   { char: 'm', type: 'mud', occupiable: true, layer: 'top' },
   { char: 'k', type: 'cow', occupiable: false, layer: 'top' },
   { char: 'i', type: 'pig', occupiable: false, layer: 'top' },
+  { char: 'o', type: 'boulder', occupiable: false, layer: 'top' },
+  { char: 'e', type: 'gift', occupiable: false, layer: 'top' },
+  { char: 'd', type: 'pc', occupiable: false, layer: 'top' },
+  { char: 'l', type: 'locker', occupiable: false, layer: 'top' },
+  { char: 'q', type: 'punchbag', occupiable: false, layer: 'top' },
+  { char: 'v', type: 'fuelpump', occupiable: false, layer: 'top' },
+  { char: 'a', type: 'tree', occupiable: false, layer: 'top' },
+  { char: 'w', type: 'trash', occupiable: false, layer: 'top' },
+  { char: 'j', type: 'oil', occupiable: true, layer: 'top' },
+  { char: 'K', type: 'cash', occupiable: false, layer: 'top' },
+  { char: 'n', type: 'crate', occupiable: false, layer: 'top' },
 ]
 
 export const GROUND_OBJECTS = EDITOR_OBJECTS.filter((o) => o.layer === 'ground')
@@ -303,11 +314,12 @@ export function buildPlayableLevel(
   return difficulty ? { ...level, id, difficulty } : { ...level, id }
 }
 
-/** Distinct room ids actually painted on the board, in first-seen order. */
+/** Distinct room ids actually painted on the board, in first-seen order
+ *  (excluding empty/void cells, which are no room). */
 export function usedRooms(state: EditorState): string[] {
   const seen: string[] = []
   for (const row of state.roomMap) {
-    for (const ch of row) if (!seen.includes(ch)) seen.push(ch)
+    for (const ch of row) if (ch !== VOID_ROOM && !seen.includes(ch)) seen.push(ch)
   }
   return seen
 }

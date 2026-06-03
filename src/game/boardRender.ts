@@ -1,6 +1,7 @@
 import {
   MULTI_CELL_TYPES,
   VICTIM_ID,
+  VOID_ROOM,
   type Cell,
   type PersonId,
   type Puzzle,
@@ -13,7 +14,12 @@ import {
   drawArmchair,
   drawBookshelf,
   drawCarpetTile,
+  drawCashRegister,
+  drawCrate,
+  drawLocker,
   drawMud,
+  drawOil,
+  drawPunchbag,
   drawTableTile,
   type Conn,
 } from './objectArt.ts'
@@ -63,6 +69,7 @@ function roomBottomRuns(puzzle: Puzzle): Map<string, { row: number; c0: number; 
   const bottomRow = new Map<string, number>()
   for (let cell = 0; cell < W * board.height; cell++) {
     const id = board.roomIdOf(cell)
+    if (id === VOID_ROOM) continue // void has no name plate
     const { row } = board.rc(cell)
     bottomRow.set(id, Math.max(bottomRow.get(id) ?? 0, row))
   }
@@ -85,6 +92,18 @@ function roomBottomRuns(puzzle: Puzzle): Map<string, { row: number; c0: number; 
     runs.set(id, { row: br, c0: best.c0, c1: best.c1 })
   }
   return runs
+}
+
+/** The soft white "blocked" card drawn behind non-occupiable objects. */
+function drawBlockedCard(ctx: CanvasRenderingContext2D, x: number, y: number, S: number): void {
+  const pad = S * 0.08
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.78)'
+  ctx.strokeStyle = 'rgba(40, 32, 48, 0.18)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.roundRect(x + pad, y + pad, S - 2 * pad, S - 2 * pad, S * 0.16)
+  ctx.fill()
+  ctx.stroke()
 }
 
 export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void {
@@ -125,6 +144,18 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   // --- room fills + highlight wash ---------------------------------------
   for (let c = 0; c < W * H; c++) {
     const { x, y } = xy(c)
+    if (board.isVoid(c)) {
+      // Empty exterior: punch a transparent hole so the page/board background
+      // shows through (re-tinting the CSS background re-tints these cells too).
+      // Expand 1px only at the board edge to clear the mortar border there.
+      const { row, col } = board.rc(c)
+      const x0 = col === 0 ? x - 1 : x
+      const y0 = row === 0 ? y - 1 : y
+      const x1 = col === W - 1 ? x + S + 1 : x + S
+      const y1 = row === H - 1 ? y + S + 1 : y + S
+      ctx.clearRect(x0, y0, x1 - x0, y1 - y0)
+      continue
+    }
     const room = board.rooms.get(board.roomIdOf(c))
     ctx.fillStyle = room?.color ?? '#cfcfcf'
     ctx.fillRect(x, y, S, S)
@@ -151,6 +182,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   for (let r = 0; r < H; r++) {
     for (let col = 0; col < W; col++) {
       const id = board.roomIdOf(board.idx(r, col))
+      if (id === VOID_ROOM) continue // no interior grid in the empty exterior
       if (col + 1 < W && board.roomIdOf(board.idx(r, col + 1)) === id) {
         const x = Math.round(ox + (col + 1) * S) + 0.5
         ctx.moveTo(x, oy + r * S)
@@ -185,9 +217,32 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     }
   }
   ctx.stroke()
+  // Outer wall: only along the board edge where the boundary cell IS a room, so
+  // empty exterior cells don't get enclosed (the building floats on the board).
   ctx.strokeStyle = BOARD.outer
   ctx.lineWidth = thick * 1.1
-  ctx.strokeRect(ox, oy, W * S, H * S)
+  ctx.beginPath()
+  for (let col = 0; col < W; col++) {
+    if (!board.isVoid(board.idx(0, col))) {
+      ctx.moveTo(ox + col * S, oy)
+      ctx.lineTo(ox + (col + 1) * S, oy)
+    }
+    if (!board.isVoid(board.idx(H - 1, col))) {
+      ctx.moveTo(ox + col * S, oy + H * S)
+      ctx.lineTo(ox + (col + 1) * S, oy + H * S)
+    }
+  }
+  for (let r = 0; r < H; r++) {
+    if (!board.isVoid(board.idx(r, 0))) {
+      ctx.moveTo(ox, oy + r * S)
+      ctx.lineTo(ox, oy + (r + 1) * S)
+    }
+    if (!board.isVoid(board.idx(r, W - 1))) {
+      ctx.moveTo(ox + W * S, oy + r * S)
+      ctx.lineTo(ox + W * S, oy + (r + 1) * S)
+    }
+  }
+  ctx.stroke()
 
   // --- windows (drawn on the wall they sit on) ---------------------------
   for (let c = 0; c < W * H; c++) {
@@ -242,6 +297,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       continue
     }
     if (top.type === 'shelf') {
+      if (!preview) drawBlockedCard(ctx, x, y, S)
       drawBookshelf(ctx, x, y, S)
       continue
     }
@@ -249,18 +305,34 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       drawMud(ctx, x, y, S)
       continue
     }
+    if (top.type === 'oil') {
+      drawOil(ctx, x, y, S)
+      continue
+    }
+    // blocked custom-art objects sit on the same white card as blocked emoji
+    if (top.type === 'locker') {
+      if (!preview) drawBlockedCard(ctx, x, y, S)
+      drawLocker(ctx, x, y, S)
+      continue
+    }
+    if (top.type === 'punchbag') {
+      if (!preview) drawBlockedCard(ctx, x, y, S)
+      drawPunchbag(ctx, x, y, S)
+      continue
+    }
+    if (top.type === 'cash') {
+      if (!preview) drawBlockedCard(ctx, x, y, S)
+      drawCashRegister(ctx, x, y, S)
+      continue
+    }
+    if (top.type === 'crate') {
+      if (!preview) drawBlockedCard(ctx, x, y, S)
+      drawCrate(ctx, x, y, S)
+      continue
+    }
     const glyph = OBJECT_GLYPHS[top.type]
     if (!glyph) continue
-    if (!preview && !top.occupiable) {
-      const pad = S * 0.08
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.78)'
-      ctx.strokeStyle = 'rgba(40, 32, 48, 0.18)'
-      ctx.lineWidth = 1
-      ctx.beginPath()
-      ctx.roundRect(x + pad, y + pad, S - 2 * pad, S - 2 * pad, S * 0.16)
-      ctx.fill()
-      ctx.stroke()
-    }
+    if (!preview && !top.occupiable) drawBlockedCard(ctx, x, y, S)
     ctx.fillStyle = '#1c1822' // opaque, so any monochrome glyph stays bold (not faint)
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
@@ -404,7 +476,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   }
 
   // --- hover: outline the whole room (blue, inside the walls) -----------
-  if (view.hover != null) {
+  if (view.hover != null && !board.isVoid(view.hover)) {
     const room = board.roomIdOf(view.hover)
     const wall = (r: number, c: number) =>
       !board.inBounds(r, c) || board.roomIdOf(board.idx(r, c)) !== room

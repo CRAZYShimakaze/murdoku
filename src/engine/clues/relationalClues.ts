@@ -1,7 +1,8 @@
 import { Clue } from './Clue.ts'
+import { inDirection8 } from '../model/types.ts'
 import type { Solution } from '../model/Solution.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
-import type { Cell, Direction, Explanation, PersonId } from '../model/types.ts'
+import type { Cell, Direction, Direction8, Explanation, PersonId } from '../model/types.ts'
 
 /** "{name} and {target} were one inside and one outside." (opposite areas) */
 export class InsideXorClue extends Clue {
@@ -31,11 +32,15 @@ export class InsideXorClue extends Clue {
   }
 }
 
-/** "{name} was {north/south/east/west} of {target}." (half-plane semantics) */
+/**
+ * "{name} was {direction} of {target}." Cardinals are half-planes (south = any
+ * cell strictly below); diagonals mean BOTH cardinals (southwest = below AND
+ * left), not only the diagonal line.
+ */
 export class DirectionClue extends Clue {
   constructor(
     readonly target: PersonId,
-    readonly direction: Direction,
+    readonly direction: Direction8,
   ) {
     super()
   }
@@ -43,16 +48,7 @@ export class DirectionClue extends Clue {
   test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
     const s = puzzle.board.rc(solution.cellOf(subjectId))
     const t = puzzle.board.rc(solution.cellOf(this.target))
-    switch (this.direction) {
-      case 'north':
-        return s.row < t.row
-      case 'south':
-        return s.row > t.row
-      case 'east':
-        return s.col > t.col
-      case 'west':
-        return s.col < t.col
-    }
+    return inDirection8(this.direction, s, t)
   }
 
   override violatedBy(
@@ -63,18 +59,7 @@ export class DirectionClue extends Clue {
     const s = placement.get(subjectId)
     const t = placement.get(this.target)
     if (s === undefined || t === undefined) return false
-    const sub = puzzle.board.rc(s)
-    const tar = puzzle.board.rc(t)
-    switch (this.direction) {
-      case 'north':
-        return sub.row >= tar.row
-      case 'south':
-        return sub.row <= tar.row
-      case 'east':
-        return sub.col <= tar.col
-      case 'west':
-        return sub.col >= tar.col
-    }
+    return !inDirection8(this.direction, puzzle.board.rc(s), puzzle.board.rc(t))
   }
 
   describe(): Explanation {

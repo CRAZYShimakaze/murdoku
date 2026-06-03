@@ -1,0 +1,333 @@
+{
+  "schema": 1,
+  "id": "editor-13-die-taverne",
+  "title": "13. Die Taverne",
+  "size": {
+    "width": 8,
+    "height": 8
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Speisesaal",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "Küche",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "Bar",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "Weinkeller",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "Terrasse",
+      "color": "#e6cda0",
+      "outside": true
+    },
+    "6": {
+      "nameKey": "Lager",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "Büro",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "Empfang",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "Spülküche",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "Vorbereitung",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "Kühlraum",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "Personalraum",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "Lounge",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "Toilette",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "Garderobe",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    }
+  },
+  "roomMap": [
+    "1111EEEE",
+    "11111EEE",
+    "11111EEE",
+    "11111111",
+    "11111111",
+    "22222266",
+    "22222266",
+    "22222666"
+  ],
+  "groundMap": [
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........"
+  ],
+  "topMap": [
+    ".stss.s.",
+    "p....t.t",
+    "g.st....",
+    "t.t...pt",
+    "..ssss.f",
+    "t.tttt.g",
+    "t...f...",
+    "gg....g."
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Amir",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 0
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Baldur",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "tv"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Calvin",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "shelf"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Damian",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "E"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Eric",
+      "attributes": {
+        "gender": "m",
+        "glasses": true
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "chair"
+            },
+            {
+              "type": "inRoom",
+              "room": "E"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Finn",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "plant"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Gerhard",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "chair"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Oleg",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "easy"
+}

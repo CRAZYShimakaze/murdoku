@@ -1,0 +1,407 @@
+{
+  "schema": 1,
+  "id": "editor-15-der-supermarkt",
+  "title": "15. Der Supermarkt",
+  "size": {
+    "width": 9,
+    "height": 9
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "Kasse",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "Snacks",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "Getränke",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "Wurstabteilung",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "Obstabteilung",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "Kühlregale",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "Spielzeugabteilung",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "Lagerraum",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "Bäckerei",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "Gemüseabteilung",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "Käsetheke",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "Tiefkühlung",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "Drogerie",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "Personalraum",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "Parkplatz",
+      "color": "#ded0e6",
+      "outside": true
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "111118888",
+    "111118888",
+    "111118866",
+    "222223366",
+    "222223366",
+    "222223366",
+    "222223366",
+    "222223333",
+    "222223333"
+  ],
+  "groundMap": [
+    ".........",
+    ".........",
+    ".........",
+    "..rr.....",
+    "...r.....",
+    "...r.r...",
+    "...r.rr..",
+    "...r.r...",
+    "........."
+  ],
+  "topMap": [
+    ".fggt...n",
+    ".....n...",
+    "..tKt..gg",
+    ".........",
+    ".g..g.g.g",
+    ".gg.f.g.g",
+    ".tt....g.",
+    ".t....ttg",
+    "........n"
+  ],
+  "windows": [
+    {
+      "r": 8,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 7,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 5,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 4,
+      "c": 0,
+      "side": "W"
+    }
+  ],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anton",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "uniqueOnObject",
+          "object": "carpet"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bärbel",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "2"
+            },
+            {
+              "type": "nearObject",
+              "object": "table"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Camilla",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "corner"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "not",
+              "clue": {
+                "type": "nearObject",
+                "object": "shelf"
+              }
+            },
+            {
+              "type": "not",
+              "clue": {
+                "type": "nearObject",
+                "object": "table"
+              }
+            },
+            {
+              "type": "not",
+              "clue": {
+                "type": "nearObject",
+                "object": "crate"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Eileen",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "3"
+            },
+            {
+              "type": "not",
+              "clue": {
+                "type": "sameRoom",
+                "as": "A"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Fred",
+      "attributes": {
+        "gender": "m"
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 8
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Gwen",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "nearWindow"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Hanno",
+      "attributes": {
+        "gender": "f"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "cash"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Ottilie",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "easy"
+}
