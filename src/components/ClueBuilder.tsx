@@ -3,10 +3,10 @@ import {
   ATTR_KINDS,
   COND_KINDS,
   DIRECTIONS_8,
-  HAIR_COLORS,
   LINE_KINDS,
   QUANTIFIERS,
   ROOM_RELS,
+  VALUED_ATTRS,
   defaultCondition,
   type AttrKind,
   type ClueGroup,
@@ -217,19 +217,23 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
                 </option>
               ))}
             </select>
-            {c.attribute === 'hair' && (
-              <select
-                className="mk-select-input mk-cond__val"
-                value={c.hair ?? 'blond'}
-                onChange={(e) => update(i, { hair: e.target.value })}
-              >
-                {HAIR_COLORS.map((h) => (
-                  <option key={h} value={h}>
-                    {t(`hairColor.${h}`)}
-                  </option>
-                ))}
-              </select>
-            )}
+            {(() => {
+              const spec = VALUED_ATTRS[c.attribute ?? 'beard']
+              if (!spec) return null
+              return (
+                <select
+                  className="mk-select-input mk-cond__val"
+                  value={c.value ?? c.hair ?? spec.values[0]}
+                  onChange={(e) => update(i, { value: e.target.value })}
+                >
+                  {spec.values.map((v) => (
+                    <option key={v} value={v}>
+                      {t(`${spec.labelKey}.${v}`)}
+                    </option>
+                  ))}
+                </select>
+              )
+            })()}
           </>
         )
       default:

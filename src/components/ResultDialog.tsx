@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import Avatar from './Avatar.tsx'
+import type { AvatarAttrs } from '../game/avatar.ts'
 
 interface Props {
   win: boolean
   murderer: { name: string; room: string } | null
+  /** The murderer's avatar (shown alongside the reveal on a win). */
+  avatar?: { attrs: AvatarAttrs; color: string; letter: string } | null
   /** On a loss: human-readable clues the current placement fails to satisfy. */
   failures?: string[]
   /** On a win: jump straight to the next level (omitted when none is available). */
@@ -22,6 +26,7 @@ interface Props {
 export default function ResultDialog({
   win,
   murderer,
+  avatar,
   failures,
   onNext,
   onRetry,
@@ -47,9 +52,17 @@ export default function ResultDialog({
         <h3>{win ? t('result.winTitle') : t('result.loseTitle')}</h3>
         <p>{win ? t('result.winBody') : t('result.loseBody')}</p>
         {win && murderer && (
-          <p className="mk-dialog__murderer">
-            {t('result.winMurderer', { name: murderer.name, room: murderer.room })}
-          </p>
+          <div className="mk-dialog__murderer">
+            {avatar && (
+              <Avatar
+                className="mk-dialog__avatar"
+                attrs={avatar.attrs}
+                color={avatar.color}
+                letter={avatar.letter}
+              />
+            )}
+            <p>{t('result.winMurderer', { name: murderer.name, room: murderer.room })}</p>
+          </div>
         )}
         {!win && failures && failures.length > 0 && (
           <div className="mk-dialog__clues">

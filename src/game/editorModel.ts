@@ -1,5 +1,6 @@
 import { VOID_ROOM, type AttributeValue, type BoardClueJson, type LevelJson, type Side, type SuspectJson } from '../engine/index.ts'
 import { emptyClueGroup, groupToClues, type ClueGroup } from './editorClues.ts'
+import { resolveHairstyle } from './avatar.ts'
 
 /** Up to 15 room slots the editor can paint (matching a theme's room count). */
 export const ROOM_IDS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F']
@@ -68,7 +69,8 @@ export interface EditorWindow {
   side: Side
 }
 
-/** A suspect as edited: identity + visible traits + the flat clue builder. */
+/** A suspect as edited: identity + visible traits + the flat clue builder.
+ *  Style fields ('' = auto/derived) only render when their toggle is on. */
 export interface EditorSuspect {
   id: string
   name: string
@@ -77,6 +79,10 @@ export interface EditorSuspect {
   glasses: boolean
   bald: boolean
   hair: string // '' = unset, else a colour name
+  hairstyle?: string // '' = auto from id, else a style id
+  beardStyle?: string // '' = full, else a beard style id
+  glassesShape?: string // '' = round, else a glasses shape id
+  glassesColor?: string // '' = black, else a glasses colour id
   clue: ClueGroup
 }
 
@@ -119,6 +125,10 @@ function makeSuspect(i: number): EditorSuspect {
     glasses: false,
     bald: false,
     hair: '',
+    hairstyle: '',
+    beardStyle: '',
+    glassesShape: '',
+    glassesColor: '',
     clue: emptyClueGroup(),
   }
 }
@@ -282,12 +292,25 @@ export function buildEditorLevel(
   }
 }
 
-/** The attribute record a suspect contributes (only set traits are included). */
+/**
+ * The attribute record a suspect contributes. Style values are folded in so a
+ * clue can reference them and the puzzle stays consistent with the avatar: every
+ * non-bald person has a concrete hairstyle (explicit or derived from the id),
+ * bearded/bespectacled people carry their style/shape/colour.
+ */
 export function suspectAttributes(s: EditorSuspect): Record<string, AttributeValue> {
   const attrs: Record<string, AttributeValue> = { gender: s.gender }
-  if (s.beard) attrs.beard = true
-  if (s.glasses) attrs.glasses = true
+  if (s.beard) {
+    attrs.beard = true
+    attrs.beardStyle = s.beardStyle || 'full'
+  }
+  if (s.glasses) {
+    attrs.glasses = true
+    attrs.glassesShape = s.glassesShape || 'round'
+    attrs.glassesColor = s.glassesColor || 'black'
+  }
   if (s.bald) attrs.bald = true
+  else attrs.hairstyle = resolveHairstyle(s.gender, s.hairstyle, s.id)
   if (s.hair) attrs.hair = s.hair
   return attrs
 }

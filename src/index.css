@@ -1164,6 +1164,24 @@ button {
   align-items: center;
   gap: 0.7rem;
 }
+/* Larger avatar in the editor dialog so the chosen look reads clearly. */
+.mk-suspedit__avatar {
+  width: 80px;
+  height: 80px;
+}
+/* Compact labelled dropdown: a small caption above each style select so it's
+   obvious which value (e.g. beard vs glasses shape vs colour) belongs where. */
+.mk-fieldlet {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.mk-fieldlet__label {
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  color: var(--bone-dim);
+  padding-left: 0.15rem;
+}
 .mk-suspedit__traits {
   display: flex;
   flex-wrap: wrap;
@@ -1296,8 +1314,20 @@ button {
   line-height: 1.55;
 }
 .mk-dialog__murderer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+}
+.mk-dialog__murderer p {
   color: var(--crimson) !important;
   font-size: 1.05rem !important;
+}
+.mk-dialog__avatar {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 /* List of unfulfilled clues shown on a wrong solution. */
 .mk-dialog__clues {

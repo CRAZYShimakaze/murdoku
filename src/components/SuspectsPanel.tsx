@@ -5,6 +5,7 @@ import ClueBuilder, { type ClueCtx } from './ClueBuilder.tsx'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
 import { HAIR_COLORS, type ClueGroup } from '../game/editorClues.ts'
+import { BEARD_STYLES, GLASSES_COLORS, GLASSES_SHAPES, hairstylesFor } from '../game/avatar.ts'
 import {
   ROOM_IDS,
   buildPlayableLevel,
@@ -142,12 +143,41 @@ function SuspectEditor({ state, index, onChange, onClose }: EditorProps) {
     </button>
   )
 
+  /** A labelled style dropdown (hairstyle / beard / glasses) writing one field. */
+  const styleSelect = (
+    key: 'hairstyle' | 'beardStyle' | 'glassesShape' | 'glassesColor',
+    value: string,
+    options: readonly string[],
+    labelPrefix: string,
+    autoLabel?: string,
+  ) => (
+    <label className="mk-fieldlet">
+      <span className="mk-fieldlet__label">{t(`editor.${key}`)}</span>
+      <select
+        className="mk-select-input"
+        value={value}
+        onChange={(e) => onChange({ ...s, [key]: e.target.value })}
+      >
+        {autoLabel !== undefined && <option value="">{autoLabel}</option>}
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {t(`${labelPrefix}.${o}`)}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+
+  // Only offer hairstyles valid for the current gender; cross-gender → "auto".
+  const hairOptions = hairstylesFor(s.gender)
+  const hairstyleValue = s.hairstyle && hairOptions.includes(s.hairstyle) ? s.hairstyle : ''
+
   return (
     <div className="mk-overlay" onClick={onClose}>
       <div className="mk-dialog mk-suspedit" onClick={(e) => e.stopPropagation()}>
         <div className="mk-suspedit__head">
           <Avatar
-            className="mk-avatar"
+            className="mk-avatar mk-suspedit__avatar"
             attrs={suspectAttributes(s)}
             color={suspectColor(index)}
             letter={s.id}
@@ -167,7 +197,7 @@ function SuspectEditor({ state, index, onChange, onClose }: EditorProps) {
               type="button"
               className="mk-chip"
               data-active={s.gender === g}
-              onClick={() => onChange({ ...s, gender: g })}
+              onClick={() => onChange({ ...s, gender: g, hairstyle: '' })}
             >
               {g === 'm' ? `♂ ${t('info.male')}` : `♀ ${t('info.female')}`}
             </button>
@@ -175,19 +205,36 @@ function SuspectEditor({ state, index, onChange, onClose }: EditorProps) {
           {trait('beard', `🧔 ${t('info.beard')}`)}
           {trait('glasses', `👓 ${t('info.glasses')}`)}
           {trait('bald', `🧑‍🦲 ${t('info.bald')}`)}
-          <select
-            className="mk-select-input"
-            value={s.hair}
-            onChange={(e) => onChange({ ...s, hair: e.target.value })}
-            disabled={s.bald}
-          >
-            <option value="">{t('editor.hairDefault')}</option>
-            {HAIR_COLORS.map((h) => (
-              <option key={h} value={h}>
-                {t(`hairColor.${h}`)}
-              </option>
-            ))}
-          </select>
+        </div>
+
+        <div className="mk-suspedit__traits">
+          {!s.bald && (
+            <>
+              <label className="mk-fieldlet">
+                <span className="mk-fieldlet__label">{t('editor.hair')}</span>
+                <select
+                  className="mk-select-input"
+                  value={s.hair}
+                  onChange={(e) => onChange({ ...s, hair: e.target.value })}
+                >
+                  <option value="">{t('editor.hairDefault')}</option>
+                  {HAIR_COLORS.map((h) => (
+                    <option key={h} value={h}>
+                      {t(`hairColor.${h}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {styleSelect('hairstyle', hairstyleValue, hairOptions, 'hairstyle', t('editor.styleAuto'))}
+            </>
+          )}
+          {s.beard && styleSelect('beardStyle', s.beardStyle || 'full', BEARD_STYLES, 'beardStyle')}
+          {s.glasses && (
+            <>
+              {styleSelect('glassesShape', s.glassesShape || 'round', GLASSES_SHAPES, 'glassesShape')}
+              {styleSelect('glassesColor', s.glassesColor || 'black', GLASSES_COLORS, 'glassesColor')}
+            </>
+          )}
         </div>
 
         <p className="mk-suspedit__label">{t('editor.clueTitle')}</p>

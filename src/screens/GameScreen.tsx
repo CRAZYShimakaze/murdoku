@@ -14,7 +14,7 @@ import {
 import { Renderer } from '../i18n/Renderer.ts'
 import { useGameSession } from '../game/useGameSession.ts'
 import { useTutorialFlow } from '../game/useTutorialFlow.ts'
-import { CANDIDATE_BLUE, HINT_BLACK } from '../game/palette.ts'
+import { CANDIDATE_BLUE, HINT_BLACK, suspectColor } from '../game/palette.ts'
 import {
   markSolved,
   saveCustomLevel,
@@ -290,6 +290,15 @@ export default function GameScreen({ meta, onBack, generated, onNew, onNext, tut
         <ResultDialog
           win={result.win}
           murderer={result.win ? result.murderer : null}
+          avatar={
+            result.win && result.murderer?.id
+              ? {
+                  attrs: puzzle.attributesOf(result.murderer.id),
+                  color: suspectColor(suspectIndex.get(result.murderer.id) ?? 0),
+                  letter: result.murderer.id,
+                }
+              : null
+          }
           failures={result.win ? undefined : result.failures}
           onNext={
             result.win && result.next && onNext

@@ -1,5 +1,6 @@
 import type { ClueJson } from '../engine/index.ts'
 import type { AttributeValue, Direction8, LineKind, RoomRel } from '../engine/index.ts'
+import { BEARD_STYLES, GLASSES_COLORS, GLASSES_SHAPES, HAIRSTYLE_IDS } from './avatar.ts'
 
 /**
  * The flat clue builder: a suspect's clue is a list of conditions joined by ONE
@@ -76,9 +77,39 @@ export type Quantifier = 'none' | 'some' | 'all'
 export const QUANTIFIERS: Quantifier[] = ['none', 'some', 'all']
 
 /** Attributes usable in a room-attribute clue → the value they imply. */
-export type AttrKind = 'beard' | 'glasses' | 'bald' | 'hair'
-export const ATTR_KINDS: AttrKind[] = ['beard', 'glasses', 'bald', 'hair']
+export type AttrKind =
+  | 'beard'
+  | 'beardStyle'
+  | 'glasses'
+  | 'glassesShape'
+  | 'glassesColor'
+  | 'bald'
+  | 'hair'
+  | 'hairstyle'
+export const ATTR_KINDS: AttrKind[] = [
+  'beard',
+  'beardStyle',
+  'glasses',
+  'glassesShape',
+  'glassesColor',
+  'bald',
+  'hair',
+  'hairstyle',
+]
 export const HAIR_COLORS = ['blond', 'brown', 'black', 'red', 'grey', 'white']
+
+/**
+ * Valued attributes → their allowed values + the i18n prefix for the short
+ * dropdown labels. Boolean attributes (beard/glasses/bald) are absent here.
+ * Single source for both the clue value picker and the suspect-editor dropdowns.
+ */
+export const VALUED_ATTRS: Record<string, { values: string[]; labelKey: string }> = {
+  hair: { values: HAIR_COLORS, labelKey: 'hairColor' },
+  hairstyle: { values: [...HAIRSTYLE_IDS], labelKey: 'hairstyle' },
+  beardStyle: { values: [...BEARD_STYLES], labelKey: 'beardStyle' },
+  glassesShape: { values: [...GLASSES_SHAPES], labelKey: 'glassesShape' },
+  glassesColor: { values: [...GLASSES_COLORS], labelKey: 'glassesColor' },
+}
 
 /** One row in the builder. Optional fields apply only to the matching `kind`. */
 export interface Condition {
@@ -91,7 +122,8 @@ export interface Condition {
   dir?: Direction8 // direction / directionFromObject — 8 compass directions
   quantifier?: Quantifier // roomAttribute
   attribute?: AttrKind // roomAttribute
-  hair?: string // roomAttribute, when attribute === "hair"
+  value?: string // roomAttribute, when the attribute is valued (hair, hairstyle, …)
+  hair?: string // legacy roomAttribute value (read for old drafts; new ones use `value`)
   line?: LineKind // sameLineAsObject — column / row / either
   roomRel?: RoomRel // sameLineAsObject / directionFromObject — room qualifier
 }
@@ -107,8 +139,10 @@ export function emptyClueGroup(): ClueGroup {
 
 /** The (attribute, value) a room-attribute condition encodes. */
 function attrValue(c: Condition): { attribute: string; value: AttributeValue } {
-  if (c.attribute === 'hair') return { attribute: 'hair', value: c.hair ?? 'blond' }
-  return { attribute: c.attribute ?? 'beard', value: true }
+  const attribute = c.attribute ?? 'beard'
+  const spec = VALUED_ATTRS[attribute]
+  if (spec) return { attribute, value: c.value ?? c.hair ?? spec.values[0] }
+  return { attribute, value: true } // boolean traits: beard / glasses / bald
 }
 
 /** Convert one condition to its engine clue JSON (sans the NICHT wrapper). */
@@ -200,7 +234,7 @@ export function defaultCondition(
     dir: 'north',
     quantifier: 'some',
     attribute: 'beard',
-    hair: 'blond',
+    value: 'blond',
     line: 'col',
     roomRel: 'any',
   }
