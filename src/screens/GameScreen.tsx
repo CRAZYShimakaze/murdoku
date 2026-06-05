@@ -47,6 +47,8 @@ interface Props {
   /** True when this level was just generated (offers save/export/new on a win). */
   generated?: boolean
   onNew?: () => void
+  /** Open the current level in the editor to tweak it. */
+  onEdit?: () => void
   /** Play another level after a win (omitted for generated / editor test-plays). */
   onNext?: (level: LevelMeta) => void
   /** Tutorial mode: fresh start, separate storage slot (doesn't touch the demo). */
@@ -72,7 +74,7 @@ function formatTime(total: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 }
 
-export default function GameScreen({ meta, onBack, generated, onNew, onNext, tutorial }: Props) {
+export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onNext, tutorial }: Props) {
   const { t, i18n } = useTranslation()
   const storageId = tutorial ? '__tutorial__' : meta.id
   const puzzle = useMemo(() => loadLevel(meta.json), [meta])
@@ -239,6 +241,11 @@ export default function GameScreen({ meta, onBack, generated, onNew, onNext, tut
         <h2>
           {meta.title} <span className="mk-game__sz">{meta.width}×{meta.height}</span>
         </h2>
+        {onEdit && !tutorial && (
+          <button type="button" className="mk-game__edit" onClick={onEdit}>
+            ✎ {t('game.openInEditor')}
+          </button>
+        )}
         <span className="mk-timer">{formatTime(elapsed)}</span>
       </header>
 

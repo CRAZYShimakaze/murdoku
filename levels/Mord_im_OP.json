@@ -1,86 +1,86 @@
 {
   "schema": 1,
-  "id": "editor-15-der-supermarkt",
-  "title": "15. Der Supermarkt",
+  "id": "editor-mord-im-op",
+  "title": "Mord im OP",
   "size": {
-    "width": 9,
-    "height": 9
+    "width": 7,
+    "height": 7
   },
   "rooms": {
     "1": {
-      "nameKey": "Kasse",
+      "nameKey": "Empfang",
       "color": "#e8d8b0",
       "outside": false
     },
     "2": {
-      "nameKey": "Snacks",
+      "nameKey": "Wartezimmer",
       "color": "#b9d0e6",
       "outside": false
     },
     "3": {
-      "nameKey": "Getränke",
+      "nameKey": "OP-Saal",
       "color": "#cfe0cf",
       "outside": false
     },
     "4": {
-      "nameKey": "Wurstabteilung",
+      "nameKey": "Station",
       "color": "#d8c0c0",
       "outside": false
     },
     "5": {
-      "nameKey": "Obstabteilung",
+      "nameKey": "Labor",
       "color": "#e6cda0",
       "outside": false
     },
     "6": {
-      "nameKey": "Kühlregale",
+      "nameKey": "Apotheke",
       "color": "#e6c0d2",
       "outside": false
     },
     "7": {
-      "nameKey": "Spielzeugabteilung",
+      "nameKey": "Röntgen",
       "color": "#c6c0e0",
       "outside": false
     },
     "8": {
-      "nameKey": "Lagerraum",
+      "nameKey": "Intensivstation",
       "color": "#c0e0c8",
       "outside": false
     },
     "9": {
-      "nameKey": "Bäckerei",
+      "nameKey": "Aufenthaltsraum",
       "color": "#e0c4a0",
       "outside": false
     },
     "A": {
-      "nameKey": "Gemüseabteilung",
+      "nameKey": "Notaufnahme",
       "color": "#a8c8e0",
       "outside": false
     },
     "B": {
-      "nameKey": "Käsetheke",
+      "nameKey": "Kreißsaal",
       "color": "#d8e0a8",
       "outside": false
     },
     "C": {
-      "nameKey": "Tiefkühlung",
+      "nameKey": "Sterilisation",
       "color": "#e0b0a8",
       "outside": false
     },
     "D": {
-      "nameKey": "Drogerie",
+      "nameKey": "Büro",
       "color": "#c8b0d8",
       "outside": false
     },
     "E": {
-      "nameKey": "Personalraum",
+      "nameKey": "Cafeteria",
       "color": "#a8e0d0",
       "outside": false
     },
     "F": {
-      "nameKey": "Parkplatz",
+      "nameKey": "Flur",
       "color": "#ded0e6",
-      "outside": true
+      "outside": false
     }
   },
   "objects": {
@@ -194,46 +194,45 @@
     }
   },
   "roomMap": [
-    "111118888",
-    "111118888",
-    "111118866",
-    "222223366",
-    "222223366",
-    "222223366",
-    "222223366",
-    "222223333",
-    "222223333"
+    "3334444",
+    "3334444",
+    "3334444",
+    "D33EE44",
+    "DDDEEAA",
+    "DDEEAAA",
+    "DDEEAAA"
   ],
   "groundMap": [
-    ".........",
-    ".........",
-    ".........",
-    "..rr.....",
-    "...r.....",
-    "...r.r...",
-    "...r.rr..",
-    "...r.r...",
-    "........."
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    "....rrr",
+    "......."
   ],
   "topMap": [
-    ".fggt...n",
-    ".....n...",
-    "..tKt..gg",
-    ".........",
-    ".g..g.g.g",
-    ".gg.f.g.g",
-    ".tt....g.",
-    ".t....ttg",
-    "........n"
+    "......g",
+    ".bbsbsb",
+    "...lb.b",
+    "psdg..p",
+    ".....ss",
+    "stt....",
+    "p.s.sss"
   ],
   "windows": [
     {
-      "r": 8,
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    },
+    {
+      "r": 1,
       "c": 0,
       "side": "W"
     },
     {
-      "r": 7,
+      "r": 4,
       "c": 0,
       "side": "W"
     },
@@ -243,18 +242,108 @@
       "side": "W"
     },
     {
-      "r": 4,
-      "c": 0,
-      "side": "W"
+      "r": 5,
+      "c": 6,
+      "side": "E"
+    },
+    {
+      "r": 2,
+      "c": 6,
+      "side": "E"
+    },
+    {
+      "r": 1,
+      "c": 6,
+      "side": "E"
+    },
+    {
+      "r": 0,
+      "c": 4,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 3,
+      "side": "N"
     }
   ],
-  "doors": [],
+  "doors": [
+    {
+      "r": 5,
+      "c": 3,
+      "side": "E"
+    },
+    {
+      "r": 3,
+      "c": 4,
+      "side": "E"
+    },
+    {
+      "r": 4,
+      "c": 2,
+      "side": "E"
+    },
+    {
+      "r": 0,
+      "c": 2,
+      "side": "E"
+    }
+  ],
   "suspects": [
     {
       "id": "A",
-      "name": "Anton",
+      "name": "Alex",
       "attributes": {
-        "gender": "m"
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "bald": true,
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "4"
+            },
+            {
+              "type": "nearWindow"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "braids",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "locker"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "bun",
+        "hair": "brown"
       },
       "clues": [
         {
@@ -264,93 +353,48 @@
       ]
     },
     {
-      "id": "B",
-      "name": "Bärbel",
-      "attributes": {
-        "gender": "f"
-      },
-      "clues": [
-        {
-          "type": "and",
-          "clues": [
-            {
-              "type": "inRoom",
-              "room": "2"
-            },
-            {
-              "type": "nearObject",
-              "object": "table"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "C",
-      "name": "Camilla",
-      "attributes": {
-        "gender": "f"
-      },
-      "clues": [
-        {
-          "type": "corner"
-        }
-      ]
-    },
-    {
       "id": "D",
       "name": "Dylan",
       "attributes": {
-        "gender": "m"
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "bald": true,
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "shelf"
-              }
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "table"
-              }
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "crate"
-              }
-            }
-          ]
+          "type": "nearObject",
+          "object": "plant"
         }
       ]
     },
     {
       "id": "E",
-      "name": "Eileen",
+      "name": "Elsa",
       "attributes": {
-        "gender": "f"
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "pixie",
+        "hair": "brown"
       },
       "clues": [
         {
           "type": "and",
           "clues": [
             {
-              "type": "inRoom",
-              "room": "3"
+              "type": "nearObject",
+              "object": "carpet"
             },
             {
               "type": "not",
               "clue": {
-                "type": "sameRoom",
-                "as": "A"
+                "type": "corner"
               }
             }
           ]
@@ -359,49 +403,32 @@
     },
     {
       "id": "F",
-      "name": "Fred",
+      "name": "Floyd",
       "attributes": {
-        "gender": "m"
+        "gender": "m",
+        "hairstyle": "mohawk",
+        "hair": "white"
       },
       "clues": [
         {
-          "type": "inCol",
-          "col": 8
-        }
-      ]
-    },
-    {
-      "id": "G",
-      "name": "Gwen",
-      "attributes": {
-        "gender": "f"
-      },
-      "clues": [
-        {
-          "type": "nearWindow"
-        }
-      ]
-    },
-    {
-      "id": "H",
-      "name": "Hanno",
-      "attributes": {
-        "gender": "f"
-      },
-      "clues": [
-        {
-          "type": "nearObject",
-          "object": "cash"
+          "type": "inRow",
+          "row": 3
         }
       ]
     }
   ],
   "victim": {
-    "name": "Ottilie",
+    "name": "Veit",
     "attributes": {
-      "gender": "f"
+      "gender": "m"
     }
   },
-  "boardClues": [],
-  "difficulty": "original"
+  "boardClues": [
+    {
+      "type": "countOnObject",
+      "object": "bed",
+      "count": 1
+    }
+  ],
+  "difficulty": "medium"
 }

@@ -48,6 +48,8 @@
     "saveKeep": "Behalten",
     "saveExport": "Als JSON",
     "saveHint": "»Behalten« speichert im Browser (erscheint unter »Fall öffnen«). »Als JSON« lädt eine Datei herunter — die kannst du in den levels-Ordner legen.",
+    "levelExists": "Dieses Level gibt es schon.",
+    "nameTaken": "Es gibt schon ein Level mit diesem Namen — überschreiben?",
     "result_saved": "Gespeichert ✓ — unter »Fall öffnen« verfügbar.",
     "result_exported": "JSON heruntergeladen ✓",
     "resultOk": "Lösbar & eindeutig ✓ — Mörder: {{name}}",
@@ -65,7 +67,11 @@
     "hairstyle": "Frisur",
     "beardStyle": "Bartform",
     "glassesShape": "Brillenform",
-    "glassesColor": "Brillenfarbe"
+    "glassesColor": "Brillenfarbe",
+    "random": "Zufällig setzen",
+    "randomHint": "Verdächtige mit Hinweisen zufällig erzeugen",
+    "randomizing": "Erzeuge Fall …",
+    "result_genfail": "Kein lösbares Level gefunden — Brett anpassen oder erneut versuchen."
   },
   "tutorial": {
     "next": "Weiter",
@@ -172,6 +178,11 @@
     "suspects": "{{n}} Verdächtige",
     "difficulty": "Schwierigkeit",
     "objects": "Objekte",
+    "objectsOccupiable": "Begehbar (Personen können darauf stehen)",
+    "objectsBlocking": "Blockierend",
+    "openings": "Fenster & Türen",
+    "windows": "Fenster",
+    "doors": "Türen",
     "theme": "Thema",
     "create": "Erstellen",
     "generating": "Generiere Level …",
@@ -211,7 +222,8 @@
     "tutorial": "Tutorial",
     "easy": "Leicht",
     "medium": "Mittel",
-    "hard": "Schwer"
+    "hard": "Schwer",
+    "original": "Original"
   },
   "game": {
     "suspects": "Verdächtige",
@@ -219,7 +231,8 @@
     "outsideLabel": "Draußen",
     "victim": "Das Opfer",
     "victimStatement": "war allein mit dem Mörder.",
-    "tools": "Werkzeuge"
+    "tools": "Werkzeuge",
+    "openInEditor": "Im Editor öffnen"
   },
   "tool": {
     "x": "X",
@@ -671,6 +684,11 @@
     "col": "{{cell}}: in dieser Spalte steht schon {{name}}.",
     "rowReserved": "{{cell}}: diese Zeile bleibt nur für {{name}}.",
     "colReserved": "{{cell}}: diese Spalte bleibt nur für {{name}}.",
+    "clueForbids": "{{cell}}: durch {{name}}s Hinweis ({{child}}) ausgeschlossen.",
+    "onlyRow": "{{cell}}: hier nicht – in Zeile {{line}} kann nur {{name}} stehen, die anderen sind woanders festgelegt (u.a. {{bound}}).",
+    "onlyCol": "{{cell}}: hier nicht – in Spalte {{line}} kann nur {{name}} stehen, die anderen sind woanders festgelegt (u.a. {{bound}}).",
+    "confinedRow": "{{cell}}: {{name}} ist nur in Zeile {{line}} möglich.",
+    "confinedCol": "{{cell}}: {{name}} ist nur in Spalte {{line}} möglich.",
     "eliminated": "{{cell}}: durch die Hinweise ausgeschlossen.",
     "only": "→ also muss {{name}} auf {{cell}}."
   }

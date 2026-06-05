@@ -219,6 +219,93 @@ export function groupToClues(group: ClueGroup): ClueJson[] {
   return [{ type: group.connector, clues: parts }]
 }
 
+/** Reverse of `condJson`: turn one engine clue back into a builder condition.
+ *  Returns null for clue types the flat builder can't represent (roomCompanion,
+ *  roomExists, aloneWith, offset, nearObjectAny, nested and/or). */
+function jsonToCondition(json: ClueJson): Condition | null {
+  let not = false
+  let c: ClueJson = json
+  if (c.type === 'not') {
+    not = true
+    c = c.clue
+  }
+  const make = (kind: CondKind, extra: Partial<Condition> = {}): Condition => ({
+    kind,
+    not,
+    dir: 'north',
+    line: 'col',
+    roomRel: 'any',
+    quantifier: 'some',
+    attribute: 'beard',
+    value: 'blond',
+    index: 0,
+    ...extra,
+  })
+  switch (c.type) {
+    case 'inRoom':
+      return make('inRoom', { room: c.room })
+    case 'onObject':
+      return make('onObject', { object: c.object })
+    case 'uniqueOnObject':
+      return make('uniqueOnObject', { object: c.object })
+    case 'nearObject':
+      return make('nearObject', { object: c.object })
+    case 'sameLineAsObject':
+      return make('sameLineAsObject', { object: c.object, line: c.line, roomRel: c.room })
+    case 'directionFromObject':
+      return make('directionFromObject', { object: c.object, dir: c.dir, roomRel: c.room })
+    case 'nearWindow':
+      return make('nearWindow')
+    case 'uniqueNearWindow':
+      return make('uniqueNearWindow')
+    case 'nearDoor':
+      return make('nearDoor')
+    case 'inside':
+      return make('inside')
+    case 'outside':
+      return make('outside')
+    case 'inRow':
+      return make('inRow', { index: c.row })
+    case 'inCol':
+      return make('inCol', { index: c.col })
+    case 'corner':
+      return make('corner')
+    case 'atWall':
+      return make('atWall')
+    case 'alone':
+      return make('alone')
+    case 'notAlone':
+      return make('notAlone')
+    case 'sameRoom':
+      return make('sameRoom', { of: c.as })
+    case 'direction':
+      return make('direction', { of: c.of, dir: c.dir })
+    case 'insideXor':
+      return make('insideXor', { of: c.with })
+    case 'roomAttribute':
+      return make('roomAttribute', {
+        quantifier: c.quantifier,
+        attribute: c.attribute as AttrKind,
+        value: typeof c.value === 'string' ? c.value : undefined,
+      })
+    default:
+      return null
+  }
+}
+
+/** Turn a SuspectJson `clues` array back into a builder group (inverse of
+ *  `groupToClues`). Unrepresentable parts are dropped. */
+export function cluesToGroup(clues: ClueJson[] | undefined): ClueGroup {
+  if (!clues || clues.length === 0) return emptyClueGroup()
+  const top = clues[0]
+  if (top.type === 'and' || top.type === 'or') {
+    const conditions = top.clues.map(jsonToCondition).filter((x): x is Condition => x !== null)
+    return { connector: top.type, conditions }
+  }
+  const one = jsonToCondition(top)
+  return { connector: 'and', conditions: one ? [one] : [] }
+}
+
 /** A fresh condition of a given kind, with sensible defaults for its fields. */
 export function defaultCondition(
   kind: CondKind,

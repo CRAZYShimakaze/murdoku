@@ -36,6 +36,7 @@
   --diff-easy: #79b89a;
   --diff-medium: #e2b75e;
   --diff-hard: #cf463c;
+  --diff-original: #b294d6;
 
   /* Type */
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
@@ -225,6 +226,9 @@ button {
 .mk-pill[data-d='hard'] {
   color: var(--diff-hard);
 }
+.mk-pill[data-d='original'] {
+  color: var(--diff-original);
+}
 
 /* ================================================================= START */
 .mk-screen {
@@ -308,6 +312,10 @@ button {
   animation: fade-up 0.8s ease 0.55s forwards;
 }
 @media (max-width: 560px) {
+  /* Narrow phones can't widen — shrink the screen title so it never wraps awkwardly. */
+  .mk-topbar h1 {
+    font-size: 1.3rem;
+  }
   .mk-start__more {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -616,11 +624,29 @@ button {
   font-weight: 400;
 }
 .mk-timer {
+  flex: 1;
+  text-align: right;
   font-family: var(--font-type);
   font-size: 1.05rem;
   color: var(--brass);
   letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
+}
+/* "Open in editor" — centred between the title (left) and timer (right). */
+.mk-game__edit {
+  flex: none;
+  border: 1px solid var(--line-strong);
+  background: var(--ink-700);
+  color: var(--bone);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--r-md);
+  font-family: var(--font-type);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mk-game__edit:hover {
+  border-color: var(--brass-dim);
 }
 .mk-back {
   border: 1px solid var(--line-strong);
@@ -754,6 +780,29 @@ button {
 }
 .mk-token--victim {
   background: var(--crimson);
+  font-family: var(--font-ui);
+  font-size: 1.15rem;
+}
+/* Random-fill button: spaced apart from the victim so it isn't hit by accident. */
+.mk-clue--random {
+  margin-top: 1.5rem;
+  background: linear-gradient(180deg, #2b2a36, #232231);
+  color: var(--bone);
+  border: 1px solid #6b5a2a;
+  border-style: dashed;
+}
+.mk-clue--random .mk-clue__text {
+  color: var(--bone-dim);
+}
+.mk-clue--random:hover:not(:disabled) {
+  border-color: #e2b75e;
+}
+.mk-clue--random:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+.mk-token--random {
+  background: #3a3550;
   font-family: var(--font-ui);
   font-size: 1.15rem;
 }
@@ -1124,6 +1173,16 @@ button {
   line-height: 1.45;
   color: var(--bone-dim);
 }
+.mk-savedlg__exists {
+  margin: 0.2rem 0 0.6rem;
+  font-weight: 700;
+  color: var(--brass);
+}
+.mk-savedlg__warn {
+  margin: 0.2rem 0 0.6rem;
+  font-size: 0.85rem;
+  color: var(--crimson);
+}
 .mk-editor__result[data-kind='multi'] {
   border-color: var(--brass-dim);
   color: var(--brass);
@@ -1409,7 +1468,7 @@ button {
 
 /* ============================================================== GENERATE */
 .mk-generate {
-  max-width: 560px;
+  max-width: 760px;
   margin: 0 auto;
   padding: clamp(1.2rem, 4vw, 2.6rem);
 }

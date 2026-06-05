@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "id": "editor-15-der-supermarkt",
-  "title": "15. Der Supermarkt",
+  "id": "editor-der-wirklich-andere-supermarkt",
+  "title": "Der wirklich andere Supermarkt",
   "size": {
     "width": 9,
     "height": 9
@@ -248,72 +248,44 @@
       "side": "W"
     }
   ],
-  "doors": [],
+  "doors": [
+    {
+      "r": 2,
+      "c": 6,
+      "side": "S"
+    },
+    {
+      "r": 3,
+      "c": 6,
+      "side": "E"
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "side": "S"
+    },
+    {
+      "r": 3,
+      "c": 4,
+      "side": "E"
+    }
+  ],
   "suspects": [
     {
       "id": "A",
-      "name": "Anton",
+      "name": "Alex",
       "attributes": {
-        "gender": "m"
-      },
-      "clues": [
-        {
-          "type": "uniqueOnObject",
-          "object": "carpet"
-        }
-      ]
-    },
-    {
-      "id": "B",
-      "name": "Bärbel",
-      "attributes": {
-        "gender": "f"
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "curly",
+        "hair": "black"
       },
       "clues": [
         {
           "type": "and",
           "clues": [
-            {
-              "type": "inRoom",
-              "room": "2"
-            },
-            {
-              "type": "nearObject",
-              "object": "table"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "C",
-      "name": "Camilla",
-      "attributes": {
-        "gender": "f"
-      },
-      "clues": [
-        {
-          "type": "corner"
-        }
-      ]
-    },
-    {
-      "id": "D",
-      "name": "Dylan",
-      "attributes": {
-        "gender": "m"
-      },
-      "clues": [
-        {
-          "type": "and",
-          "clues": [
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "shelf"
-              }
-            },
             {
               "type": "not",
               "clue": {
@@ -324,8 +296,67 @@
             {
               "type": "not",
               "clue": {
+                "type": "atWall"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "braids",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "carpet"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "inRow",
+          "row": 5
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "afro",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "1"
+            },
+            {
+              "type": "not",
+              "clue": {
                 "type": "nearObject",
-                "object": "crate"
+                "object": "table"
               }
             }
           ]
@@ -334,23 +365,65 @@
     },
     {
       "id": "E",
-      "name": "Eileen",
+      "name": "Edison",
       "attributes": {
-        "gender": "f"
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "bald": true,
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "inRow",
+          "row": 0
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Floyd",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "mohawk",
+        "hair": "blond"
       },
       "clues": [
         {
           "type": "and",
           "clues": [
             {
-              "type": "inRoom",
-              "room": "3"
+              "type": "atWall"
+            },
+            {
+              "type": "inCol",
+              "col": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": {
+        "gender": "m",
+        "bald": true,
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "carpet"
             },
             {
               "type": "not",
               "clue": {
-                "type": "sameRoom",
-                "as": "A"
+                "type": "nearObject",
+                "object": "table"
               }
             }
           ]
@@ -358,50 +431,36 @@
       ]
     },
     {
-      "id": "F",
-      "name": "Fred",
-      "attributes": {
-        "gender": "m"
-      },
-      "clues": [
-        {
-          "type": "inCol",
-          "col": 8
-        }
-      ]
-    },
-    {
-      "id": "G",
-      "name": "Gwen",
-      "attributes": {
-        "gender": "f"
-      },
-      "clues": [
-        {
-          "type": "nearWindow"
-        }
-      ]
-    },
-    {
       "id": "H",
-      "name": "Hanno",
+      "name": "Hana",
       "attributes": {
-        "gender": "f"
+        "gender": "f",
+        "hairstyle": "long",
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "cash"
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "table"
+            },
+            {
+              "type": "inRow",
+              "row": 2
+            }
+          ]
         }
       ]
     }
   ],
   "victim": {
-    "name": "Ottilie",
+    "name": "Victoria",
     "attributes": {
       "gender": "f"
     }
   },
   "boardClues": [],
-  "difficulty": "original"
+  "difficulty": "easy"
 }

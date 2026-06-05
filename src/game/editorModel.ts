@@ -1,5 +1,5 @@
-import { VOID_ROOM, type AttributeValue, type BoardClueJson, type LevelJson, type Side, type SuspectJson } from '../engine/index.ts'
-import { emptyClueGroup, groupToClues, type ClueGroup } from './editorClues.ts'
+import { OBJECT_CATALOG, VOID_ROOM, type AttributeValue, type BoardClueJson, type LevelJson, type ObjectDef, type Side, type SuspectJson } from '../engine/index.ts'
+import { cluesToGroup, emptyClueGroup, groupToClues, type ClueGroup } from './editorClues.ts'
 import { resolveHairstyle } from './avatar.ts'
 
 /** Up to 15 room slots the editor can paint (matching a theme's room count). */
@@ -22,43 +22,11 @@ export const ROOM_COLORS = [
   '#ded0e6',
 ]
 
-export interface EditorObject {
-  char: string
-  type: string
-  occupiable: boolean
-  layer: 'ground' | 'top'
-}
+/** An object the editor can place. Aliased to the engine's shared catalog type. */
+export type EditorObject = ObjectDef
 
-/** Objects the editor can place. Carpet is a ground layer; the rest sit on top. */
-export const EDITOR_OBJECTS: EditorObject[] = [
-  { char: 'r', type: 'carpet', occupiable: true, layer: 'ground' },
-  { char: 's', type: 'chair', occupiable: true, layer: 'top' },
-  { char: 'b', type: 'bed', occupiable: true, layer: 'top' },
-  { char: 'c', type: 'car', occupiable: true, layer: 'top' },
-  { char: 't', type: 'table', occupiable: false, layer: 'top' },
-  { char: 'f', type: 'tv', occupiable: false, layer: 'top' },
-  { char: 'p', type: 'plant', occupiable: false, layer: 'top' },
-  { char: 'g', type: 'shelf', occupiable: false, layer: 'top' },
-  { char: 'x', type: 'box', occupiable: false, layer: 'top' },
-  { char: 'u', type: 'shrub', occupiable: false, layer: 'top' },
-  { char: 'y', type: 'statue', occupiable: false, layer: 'top' },
-  { char: 'z', type: 'rubble', occupiable: false, layer: 'top' },
-  { char: 'h', type: 'horse', occupiable: true, layer: 'top' },
-  { char: 'm', type: 'mud', occupiable: true, layer: 'top' },
-  { char: 'k', type: 'cow', occupiable: false, layer: 'top' },
-  { char: 'i', type: 'pig', occupiable: false, layer: 'top' },
-  { char: 'o', type: 'boulder', occupiable: false, layer: 'top' },
-  { char: 'e', type: 'gift', occupiable: false, layer: 'top' },
-  { char: 'd', type: 'pc', occupiable: false, layer: 'top' },
-  { char: 'l', type: 'locker', occupiable: false, layer: 'top' },
-  { char: 'q', type: 'punchbag', occupiable: false, layer: 'top' },
-  { char: 'v', type: 'fuelpump', occupiable: false, layer: 'top' },
-  { char: 'a', type: 'tree', occupiable: false, layer: 'top' },
-  { char: 'w', type: 'trash', occupiable: false, layer: 'top' },
-  { char: 'j', type: 'oil', occupiable: true, layer: 'top' },
-  { char: 'K', type: 'cash', occupiable: false, layer: 'top' },
-  { char: 'n', type: 'crate', occupiable: false, layer: 'top' },
-]
+/** Objects the editor can place — the engine-owned catalog (shared with the generator). */
+export const EDITOR_OBJECTS: readonly EditorObject[] = OBJECT_CATALOG
 
 export const GROUND_OBJECTS = EDITOR_OBJECTS.filter((o) => o.layer === 'ground')
 export const TOP_OBJECTS = EDITOR_OBJECTS.filter((o) => o.layer === 'top')
@@ -177,22 +145,8 @@ function nearestSide(fx: number, fy: number): Side {
   return SIDES.reduce((a, b) => (edgeDist(b, fx, fy) < edgeDist(a, fx, fy) ? b : a))
 }
 
-/**
- * Toggle a window on the edge nearest the click (fx,fy fractional 0..1). Simple
- * and predictable: clicking the same edge again removes it. Windows are one-sided.
- */
-export function toggleWindowAt(
-  windows: EditorWindow[],
-  r: number,
-  c: number,
-  fx: number,
-  fy: number,
-): EditorWindow[] {
-  return toggleWindow(windows, r, c, nearestSide(fx, fy))
-}
-
 /** Canonical key for a wall edge: anchored at the top/left cell, side S (down) or
- *  E (right), so a two-sided door toggles the same whichever cell you click. */
+ *  E (right), so a two-sided edge toggles the same whichever cell you click. */
 function canonicalEdge(r: number, c: number, side: Side): { r: number; c: number; side: Side } {
   if (side === 'N') return { r: r - 1, c, side: 'S' }
   if (side === 'W') return { r, c: c - 1, side: 'E' }
@@ -200,29 +154,30 @@ function canonicalEdge(r: number, c: number, side: Side): { r: number; c: number
 }
 
 /**
- * Toggle a (two-sided) door on the nearest edge. The edge is canonicalised so
- * clicking from either side hits the same door; boundary edges (only one cell on
- * the board) are skipped since a door connects two cells.
+ * Toggle a window OR door on the wall edge nearest the click (fx,fy fractional 0..1).
+ * Windows and doors share one mechanic: an interior edge is canonicalised (anchored
+ * at the top/left cell) so clicking from either side hits the same edge and it counts
+ * from both; a boundary/exterior edge keeps the click's own side (only one cell). They
+ * differ only in look and which clue they trigger. Clicking the same edge removes it.
  */
-export function toggleDoorAt(
-  doors: EditorWindow[],
+export function toggleWallEdgeAt(
+  edges: EditorWindow[],
   r: number,
   c: number,
   fx: number,
   fy: number,
-  size: number,
 ): EditorWindow[] {
-  const e = canonicalEdge(r, c, nearestSide(fx, fy))
-  if (e.r < 0 || e.c < 0) return doors
-  if (e.side === 'S' && e.r >= size - 1) return doors
-  if (e.side === 'E' && e.c >= size - 1) return doors
-  return toggleWindow(doors, e.r, e.c, e.side)
+  const side = nearestSide(fx, fy)
+  const e = canonicalEdge(r, c, side)
+  // N/W boundary: the canonical anchor is off-board → keep the click's own side here.
+  if (e.r < 0 || e.c < 0) return toggleWindow(edges, r, c, side)
+  return toggleWindow(edges, e.r, e.c, e.side)
 }
 
 /**
- * Drop windows/doors that no longer sit on a wall after a room repaint: a window
- * survives on a room boundary or the board edge; a door survives only between two
- * different rooms.
+ * Drop windows/doors that no longer sit on a wall after a room repaint. Both follow
+ * the same rule: an edge survives where its two sides differ — between two rooms, or
+ * on the board's outer boundary (one side is off-board / exterior).
  */
 export function pruneWallEdges(
   roomMap: string[],
@@ -236,13 +191,7 @@ export function pruneWallEdges(
     const [dr, dc] = STEP[e.side]
     return roomAt(e.r, e.c) !== roomAt(e.r + dr, e.c + dc)
   }
-  const doorBetweenRooms = (e: EditorWindow): boolean => {
-    const [dr, dc] = STEP[e.side]
-    const a = roomAt(e.r, e.c)
-    const b = roomAt(e.r + dr, e.c + dc)
-    return a !== null && b !== null && a !== b
-  }
-  return { windows: windows.filter(onWall), doors: doors.filter(doorBetweenRooms) }
+  return { windows: windows.filter(onWall), doors: doors.filter(onWall) }
 }
 
 /** Set one character in a row-string array (returns a new array). */
@@ -317,6 +266,64 @@ export function suspectAttributes(s: EditorSuspect): Record<string, AttributeVal
 
 function suspectToJson(s: EditorSuspect): SuspectJson {
   return { id: s.id, name: s.name, attributes: suspectAttributes(s), clues: groupToClues(s.clue) }
+}
+
+/** Inverse of `suspectToJson`: map a level's suspect (traits + clues) back into the
+ *  editor's editable shape. Style fields absent from the attributes become '' (auto). */
+function suspectFromJson(s: SuspectJson): EditorSuspect {
+  const a = s.attributes ?? {}
+  const str = (v: AttributeValue | undefined): string => (typeof v === 'string' ? v : '')
+  return {
+    id: s.id,
+    name: s.name,
+    gender: a.gender === 'f' ? 'f' : 'm',
+    beard: a.beard === true,
+    glasses: a.glasses === true,
+    bald: a.bald === true,
+    hair: str(a.hair),
+    hairstyle: str(a.hairstyle),
+    beardStyle: str(a.beardStyle),
+    glassesShape: str(a.glassesShape),
+    glassesColor: str(a.glassesColor),
+    clue: cluesToGroup(s.clues),
+  }
+}
+
+/** Pull the people (suspects + victim) out of a built level into editor state —
+ *  used by the editor's "random" fill, which keeps the board and replaces the people. */
+export function editorPeopleFromLevel(level: LevelJson): {
+  suspects: EditorSuspect[]
+  victim: EditorVictim
+} {
+  const va = level.victim.attributes ?? {}
+  return {
+    suspects: level.suspects.map(suspectFromJson),
+    victim: { name: level.victim.name, gender: va.gender === 'f' ? 'f' : 'm' },
+  }
+}
+
+/**
+ * Reconstruct a full editor state from a finished level — for "open in the editor".
+ * The level stores the very same room/object/window/door maps the editor uses, so the
+ * board is a direct copy; the people and room names are reverse-mapped. Assumes a square
+ * board (the editor's model); non-square levels fall back to the width.
+ */
+export function editorStateFromLevel(level: LevelJson): EditorState {
+  const { suspects, victim } = editorPeopleFromLevel(level)
+  const size = level.size.width
+  const blank = Array.from({ length: level.size.height }, () => '.'.repeat(size))
+  return {
+    size,
+    roomMap: [...level.roomMap],
+    groundMap: level.groundMap ? [...level.groundMap] : blank,
+    topMap: level.topMap ? [...level.topMap] : blank,
+    windows: [...(level.windows ?? [])],
+    doors: [...(level.doors ?? [])],
+    boardClues: [...(level.boardClues ?? [])],
+    suspects,
+    victim,
+    roomNames: ROOM_IDS.map((id, i) => level.rooms[id]?.nameKey ?? DEFAULT_ROOM_NAMES[i]),
+  }
 }
 
 /** Build a fully playable level (real suspects + victim + clues) with a stable id. */

@@ -1,4 +1,4 @@
-import type { GenerateOptions } from '../engine/generator/index.ts'
+import type { FillBoardOptions, GenerateOptions } from '../engine/generator/index.ts'
 import type { LevelJson } from '../engine/index.ts'
 
 export interface GenHandle {
@@ -7,8 +7,12 @@ export interface GenHandle {
   cancel: () => void
 }
 
-/** Runs the (CPU-heavy) level generator in a Web Worker so the UI stays responsive. */
-export function generateLevelAsync(opts: GenerateOptions): GenHandle {
+type WorkerRequest =
+  | { kind: 'generate'; opts: GenerateOptions }
+  | { kind: 'fill'; board: LevelJson; opts: FillBoardOptions }
+
+/** Runs a (CPU-heavy) generator request in a Web Worker so the UI stays responsive. */
+function runWorker(request: WorkerRequest): GenHandle {
   const worker = new Worker(new URL('./generator.worker.ts', import.meta.url), { type: 'module' })
   let settled = false
   let rejectFn: (e: Error) => void = () => {}
@@ -29,7 +33,7 @@ export function generateLevelAsync(opts: GenerateOptions): GenHandle {
       worker.terminate()
       reject(new Error('worker error'))
     }
-    worker.postMessage(opts)
+    worker.postMessage(request)
   })
 
   const cancel = () => {
@@ -40,4 +44,14 @@ export function generateLevelAsync(opts: GenerateOptions): GenHandle {
   }
 
   return { promise, cancel }
+}
+
+/** Generate a brand-new level from scratch. */
+export function generateLevelAsync(opts: GenerateOptions): GenHandle {
+  return runWorker({ kind: 'generate', opts })
+}
+
+/** Keep the given board, (re)generate its people + clues at the chosen difficulty. */
+export function fillBoardCluesAsync(board: LevelJson, opts: FillBoardOptions): GenHandle {
+  return runWorker({ kind: 'fill', board, opts })
 }

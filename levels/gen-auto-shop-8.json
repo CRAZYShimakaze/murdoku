@@ -98,43 +98,79 @@
   "suspects": [
     {
       "id": "A",
-      "name": "Alex",
+      "name": "Anna",
       "attributes": {
-        "gender": "m",
-        "glasses": false,
-        "hair": "blond",
+        "gender": "f",
+        "glasses": true,
+        "hair": "white",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "inCol",
-          "col": 8
+          "type": "direction",
+          "of": "G",
+          "dir": "south"
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bernd",
+      "name": "Bella",
       "attributes": {
-        "gender": "m",
-        "glasses": true,
+        "gender": "f",
+        "glasses": false,
         "hair": "white",
-        "beard": true,
+        "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "onObject",
-          "object": "chair"
+          "type": "alone"
         }
       ]
     },
     {
       "id": "C",
-      "name": "Cyrus",
+      "name": "Carol",
       "attributes": {
-        "gender": "m",
+        "gender": "f",
+        "glasses": false,
+        "hair": "brown",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "inRow",
+          "row": 2
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "brown",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "sameLineAsObject",
+          "object": "tv",
+          "line": "row",
+          "room": "any"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
         "glasses": true,
         "hair": "white",
         "beard": false,
@@ -142,17 +178,26 @@
       },
       "clues": [
         {
-          "type": "sameRoom",
-          "as": "B"
+          "type": "and",
+          "clues": [
+            {
+              "type": "uniqueOnObject",
+              "object": "carpet"
+            },
+            {
+              "type": "nearObject",
+              "object": "tv"
+            }
+          ]
         }
       ]
     },
     {
-      "id": "D",
-      "name": "Dylan",
+      "id": "F",
+      "name": "Floyd",
       "attributes": {
         "gender": "m",
-        "glasses": false,
+        "glasses": true,
         "hair": "brown",
         "beard": false,
         "bald": false
@@ -162,62 +207,27 @@
           "type": "and",
           "clues": [
             {
-              "type": "onObject",
-              "object": "chair"
+              "type": "nearObject",
+              "object": "box"
             },
             {
-              "type": "nearObject",
-              "object": "chair"
-            },
-            {
-              "type": "nearObject",
-              "object": "table"
+              "type": "not",
+              "clue": {
+                "type": "atWall"
+              }
             }
           ]
         }
       ]
     },
     {
-      "id": "E",
-      "name": "Elsa",
+      "id": "G",
+      "name": "Greta",
       "attributes": {
         "gender": "f",
         "glasses": false,
-        "hair": "black",
-        "beard": false,
-        "bald": false
-      },
-      "clues": [
-        {
-          "type": "nearObject",
-          "object": "shelf"
-        }
-      ]
-    },
-    {
-      "id": "F",
-      "name": "Floyd",
-      "attributes": {
-        "gender": "m",
-        "glasses": false,
         "hair": "white",
-        "beard": true,
-        "bald": false
-      },
-      "clues": [
-        {
-          "type": "corner"
-        }
-      ]
-    },
-    {
-      "id": "G",
-      "name": "Grant",
-      "attributes": {
-        "gender": "m",
-        "glasses": false,
-        "hair": "blond",
-        "beard": true,
+        "beard": false,
         "bald": false
       },
       "clues": [
@@ -225,14 +235,12 @@
           "type": "and",
           "clues": [
             {
-              "type": "roomCompanion",
-              "count": 1,
-              "attribute": "gender",
-              "value": "f"
+              "type": "inRoom",
+              "room": "1"
             },
             {
-              "type": "onObject",
-              "object": "chair"
+              "type": "nearObject",
+              "object": "table"
             }
           ]
         }
@@ -244,24 +252,24 @@
       "attributes": {
         "gender": "f",
         "glasses": false,
-        "hair": "black",
+        "hair": "blond",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "plant"
+          "type": "inRow",
+          "row": 0
         }
       ]
     }
   ],
   "victim": {
-    "name": "Victor",
+    "name": "Viraj",
     "attributes": {
       "gender": "m",
-      "glasses": true,
-      "hair": "blond",
+      "glasses": false,
+      "hair": "brown",
       "beard": false,
       "bald": false
     }

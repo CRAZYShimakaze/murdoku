@@ -21,6 +21,9 @@ interface Props {
   state: EditorState
   onChangeSuspect: (index: number, suspect: EditorSuspect) => void
   onChangeVictim: (name: string, gender: 'm' | 'f') => void
+  /** Generate people + clues onto the current board (kept as-is). */
+  onRandom: () => void
+  randomizing: boolean
 }
 
 /** Render a suspect's clue group to a single readable line (best effort). */
@@ -41,7 +44,13 @@ function useCluePreview(state: EditorState) {
   }
 }
 
-export default function SuspectsPanel({ state, onChangeSuspect, onChangeVictim }: Props) {
+export default function SuspectsPanel({
+  state,
+  onChangeSuspect,
+  onChangeVictim,
+  onRandom,
+  randomizing,
+}: Props) {
   const { t } = useTranslation()
   const [editing, setEditing] = useState<number | 'victim' | null>(null)
   const preview = useCluePreview(state)
@@ -83,6 +92,20 @@ export default function SuspectsPanel({ state, onChangeSuspect, onChangeVictim }
         <span className="mk-clue__main">
           <span className="mk-clue__name">{state.victim.name || t('game.victim')}</span>
           <span className="mk-clue__text">{t('game.victim')}</span>
+        </span>
+      </button>
+
+      {/* Spaced apart from the victim so it isn't pressed by accident. */}
+      <button
+        type="button"
+        className="mk-clue mk-clue--random"
+        onClick={onRandom}
+        disabled={randomizing}
+      >
+        <span className="mk-token mk-token--random">🎲</span>
+        <span className="mk-clue__main">
+          <span className="mk-clue__name">{t('editor.random')}</span>
+          <span className="mk-clue__text">{t('editor.randomHint')}</span>
         </span>
       </button>
 

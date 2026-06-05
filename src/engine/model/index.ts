@@ -8,3 +8,9 @@ export { Victim } from './Victim.ts'
 export { Solution } from './Solution.ts'
 export { Puzzle } from './Puzzle.ts'
 export type { Person } from './Puzzle.ts'
+export {
+  OBJECT_CATALOG,
+  OCCUPIABLE_OBJECT_TYPES,
+  BLOCKING_OBJECT_TYPES,
+  type ObjectDef,
+} from './objects.ts'

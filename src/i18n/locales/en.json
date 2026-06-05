@@ -48,6 +48,8 @@
     "saveKeep": "Keep",
     "saveExport": "As JSON",
     "saveHint": "'Keep' stores it in the browser (shows up under 'Open case'). 'As JSON' downloads a file — drop it into the levels folder.",
+    "levelExists": "This level already exists.",
+    "nameTaken": "A level with this name already exists — overwrite?",
     "result_saved": "Saved ✓ — available under 'Open case'.",
     "result_exported": "JSON downloaded ✓",
     "resultOk": "Solvable & unique ✓ — murderer: {{name}}",
@@ -65,7 +67,11 @@
     "hairstyle": "Hairstyle",
     "beardStyle": "Beard style",
     "glassesShape": "Glasses shape",
-    "glassesColor": "Glasses colour"
+    "glassesColor": "Glasses colour",
+    "random": "Randomize",
+    "randomHint": "Generate suspects & clues at random",
+    "randomizing": "Building case …",
+    "result_genfail": "No solvable level found — adjust the board or try again."
   },
   "tutorial": {
     "next": "Next",
@@ -172,6 +178,11 @@
     "suspects": "{{n}} suspects",
     "difficulty": "Difficulty",
     "objects": "Objects",
+    "objectsOccupiable": "Walkable (people can stand on)",
+    "objectsBlocking": "Blocking",
+    "openings": "Windows & doors",
+    "windows": "Windows",
+    "doors": "Doors",
     "theme": "Theme",
     "create": "Create",
     "generating": "Generating level …",
@@ -211,7 +222,8 @@
     "tutorial": "Tutorial",
     "easy": "Easy",
     "medium": "Medium",
-    "hard": "Hard"
+    "hard": "Hard",
+    "original": "Original"
   },
   "game": {
     "suspects": "Suspects",
@@ -219,7 +231,8 @@
     "outsideLabel": "Outside",
     "victim": "The Victim",
     "victimStatement": "was alone with the murderer.",
-    "tools": "Tools"
+    "tools": "Tools",
+    "openInEditor": "Open in editor"
   },
   "tool": {
     "x": "X",
@@ -671,6 +684,11 @@
     "col": "{{cell}}: {{name}} is already in this column.",
     "rowReserved": "{{cell}}: this row is reserved for {{name}}.",
     "colReserved": "{{cell}}: this column is reserved for {{name}}.",
+    "clueForbids": "{{cell}}: ruled out by {{name}}'s clue ({{child}}).",
+    "onlyRow": "{{cell}}: not here – only {{name}} can be in row {{line}}, the others are fixed elsewhere (e.g. {{bound}}).",
+    "onlyCol": "{{cell}}: not here – only {{name}} can be in column {{line}}, the others are fixed elsewhere (e.g. {{bound}}).",
+    "confinedRow": "{{cell}}: {{name}} can only be in row {{line}}.",
+    "confinedCol": "{{cell}}: {{name}} can only be in column {{line}}.",
     "eliminated": "{{cell}}: excluded by the clues.",
     "only": "→ so {{name}} must be on {{cell}}."
   }

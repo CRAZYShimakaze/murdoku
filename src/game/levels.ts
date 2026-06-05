@@ -1,13 +1,15 @@
 import type { LevelJson } from '../engine/index.ts'
 
-/** The difficulty buckets the level picker filters by. */
-export type Difficulty = 'tutorial' | 'easy' | 'medium' | 'hard'
+/** The difficulty buckets the level picker filters by. `original` is the curated,
+ *  hand-built campaign — set only via the level JSON, never offered in the editor. */
+export type Difficulty = 'tutorial' | 'easy' | 'medium' | 'hard' | 'original'
 
 const DIFF_ORDER: Record<Difficulty, number> = {
   tutorial: 0,
   easy: 1,
   medium: 2,
   hard: 3,
+  original: 4,
 }
 
 export interface LevelMeta {
@@ -106,7 +108,13 @@ function humanize(id: string): string {
 }
 
 function asDifficulty(value: string | undefined): Difficulty {
-  if (value === 'tutorial' || value === 'easy' || value === 'medium' || value === 'hard') {
+  if (
+    value === 'tutorial' ||
+    value === 'easy' ||
+    value === 'medium' ||
+    value === 'hard' ||
+    value === 'original'
+  ) {
     return value
   }
   return 'medium'
@@ -131,4 +139,4 @@ export const LEVEL_SIZES: string[] = [
   .sort((a, b) => a[1] - b[1])
   .map(([label]) => label)
 
-export const DIFFICULTIES: Difficulty[] = ['tutorial', 'easy', 'medium', 'hard']
+export const DIFFICULTIES: Difficulty[] = ['tutorial', 'easy', 'medium', 'hard', 'original']

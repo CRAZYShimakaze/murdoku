@@ -66,9 +66,15 @@ export function loadLevel(level: LevelJson): Puzzle {
   validateMap(level.groundMap, 'groundMap', width, height)
   validateMap(level.topMap, 'topMap', width, height)
 
+  // Only rooms actually painted on the board are real. A level — especially one from
+  // the editor, which declares every room slot — may list rooms it never places on the
+  // grid; those phantom rooms would always read as "empty" and make a "0 empty rooms"
+  // clue unsatisfiable. Register only the rooms that appear in the roomMap.
+  const usedRoomChars = new Set<string>()
+  for (const r of level.roomMap) for (const ch of r) if (ch !== VOID_ROOM) usedRoomChars.add(ch)
   const rooms = new Map<string, Room>()
   for (const [id, def] of Object.entries(level.rooms)) {
-    rooms.set(id, new Room(id, def.nameKey, def.color, def.outside ?? false))
+    if (usedRoomChars.has(id)) rooms.set(id, new Room(id, def.nameKey, def.color, def.outside ?? false))
   }
 
   const objectDefs = buildObjectDefs(level)
@@ -89,38 +95,32 @@ export function loadLevel(level: LevelJson): Puzzle {
     }
   }
 
-  const windows = new Map<Cell, Set<Side>>()
-  for (const w of level.windows ?? []) {
-    assert(
-      w.r >= 0 && w.r < height && w.c >= 0 && w.c < width,
-      `window out of bounds at ${w.r},${w.c}`,
-    )
-    const cell = w.r * width + w.c
-    const sides = windows.get(cell) ?? new Set<Side>()
-    sides.add(w.side)
-    windows.set(cell, sides)
-  }
-
-  // Doors are two-sided: register each on its cell AND the neighbour across the edge.
-  const doors = new Map<Cell, Set<Side>>()
-  const addDoor = (r: number, c: number, side: Side): void => {
-    if (r < 0 || r >= height || c < 0 || c >= width) return
-    const cell = r * width + c
-    const set = doors.get(cell) ?? new Set<Side>()
-    set.add(side)
-    doors.set(cell, set)
-  }
+  // Windows and doors share one mechanic: both sit on a wall and are TWO-SIDED —
+  // registered on their cell AND the neighbour across the edge (a boundary/exterior
+  // edge has no neighbour, so only the one cell counts). They differ only in looks
+  // and which clue they trigger ("beside a window" vs "beside a door").
   const opposite: Record<Side, Side> = { N: 'S', S: 'N', E: 'W', W: 'E' }
   const step: Record<Side, [number, number]> = { N: [-1, 0], S: [1, 0], E: [0, 1], W: [0, -1] }
-  for (const d of level.doors ?? []) {
-    assert(
-      d.r >= 0 && d.r < height && d.c >= 0 && d.c < width,
-      `door out of bounds at ${d.r},${d.c}`,
-    )
-    addDoor(d.r, d.c, d.side)
-    const [dr, dc] = step[d.side]
-    addDoor(d.r + dr, d.c + dc, opposite[d.side])
+  const buildEdges = (list: { r: number; c: number; side: Side }[], label: string): Map<Cell, Set<Side>> => {
+    const map = new Map<Cell, Set<Side>>()
+    const add = (r: number, c: number, side: Side): void => {
+      if (r < 0 || r >= height || c < 0 || c >= width) return
+      const cell = r * width + c
+      const set = map.get(cell) ?? new Set<Side>()
+      set.add(side)
+      map.set(cell, set)
+    }
+    for (const e of list) {
+      assert(e.r >= 0 && e.r < height && e.c >= 0 && e.c < width, `${label} out of bounds at ${e.r},${e.c}`)
+      add(e.r, e.c, e.side)
+      const [dr, dc] = step[e.side]
+      add(e.r + dr, e.c + dc, opposite[e.side])
+    }
+    return map
   }
+
+  const windows = buildEdges(level.windows ?? [], 'window')
+  const doors = buildEdges(level.doors ?? [], 'door')
 
   const board = new Board(width, height, tiles, rooms, windows, doors)
 

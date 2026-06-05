@@ -223,18 +223,18 @@ export class Board {
   }
 
   /**
-   * Occupiable cells with a same-room orthogonal neighbour carrying `type`. For a
-   * two-tile object (bed/car) a cell is NOT "beside" its own other half — the pair
-   * is one object — so that half is excluded (but a DIFFERENT adjacent object counts).
+   * Occupiable cells with a same-room orthogonal neighbour carrying `type`, where the
+   * person is NOT standing on a `type` object themselves. Standing on the object (a
+   * chair, a bed, a rug, …) is being "on" it, never "beside" it — even when another
+   * same-type object sits right next door. (For blocking objects this on-object skip
+   * never fires, since their tiles are not occupiable to begin with.)
    */
   cellsNearObject(type: string): Set<Cell> {
-    const partners = MULTI_CELL_TYPES.has(type) ? this.bigObjectPartners() : null
     const out = new Set<Cell>()
     for (const cell of this.occupiable) {
+      if (this.tiles[cell].hasObjectType(type)) continue // on the object ⇒ not beside it
       const room = this.tiles[cell].roomId
-      const ownHalf = partners?.get(cell) ?? null
       for (const nb of this.neighbors4(cell)) {
-        if (nb === ownHalf) continue // neighbour is this cell's own other half (same object)
         if (this.tiles[nb].roomId === room && this.tiles[nb].hasObjectType(type)) {
           out.add(cell)
           break

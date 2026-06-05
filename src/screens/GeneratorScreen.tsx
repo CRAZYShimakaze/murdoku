@@ -1,14 +1,31 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import LanguageToggle from '../components/LanguageToggle.tsx'
 import { generateLevelAsync, type GenHandle } from '../game/generatorClient.ts'
 import { levelMetaFromJson, type LevelMeta } from '../game/levels.ts'
+import { loadGenSettings, saveGenSettings } from '../game/storage.ts'
 import { OBJECT_GLYPHS } from '../game/glyphs.ts'
-import { GENERATOR_OBJECT_TYPES, THEME_IDS, type GenDifficulty } from '../engine/generator/index.ts'
+import {
+  OCCUPIABLE_OBJECT_TYPES,
+  BLOCKING_OBJECT_TYPES,
+  DEFAULT_OBJECT_TYPES,
+  THEME_IDS,
+  type GenDifficulty,
+} from '../engine/generator/index.ts'
 
 const GEN_DIFFS: GenDifficulty[] = ['easy', 'medium', 'hard']
 const MIN = 4
 const MAX = 16
+
+/** Form defaults for a first-time visitor (windows on, doors off, no trash bin). */
+const DEFAULT_SETTINGS = {
+  size: 8,
+  difficulty: 'medium' as GenDifficulty,
+  theme: 'random',
+  objects: [...DEFAULT_OBJECT_TYPES],
+  windows: true,
+  doors: false,
+}
 
 interface Props {
   onPlay: (level: LevelMeta) => void
@@ -17,13 +34,22 @@ interface Props {
 
 export default function GeneratorScreen({ onPlay, onBack }: Props) {
   const { t } = useTranslation()
-  const [size, setSize] = useState(8)
-  const [difficulty, setDifficulty] = useState<GenDifficulty>('medium')
-  const [objects, setObjects] = useState<Set<string>>(() => new Set(GENERATOR_OBJECT_TYPES))
-  const [theme, setTheme] = useState<string>('random')
+  // Restore the last form selection (size, difficulty, theme, objects, openings).
+  const [saved] = useState(() => loadGenSettings(DEFAULT_SETTINGS))
+  const [size, setSize] = useState(saved.size)
+  const [difficulty, setDifficulty] = useState<GenDifficulty>(saved.difficulty as GenDifficulty)
+  const [objects, setObjects] = useState<Set<string>>(() => new Set(saved.objects))
+  const [windows, setWindows] = useState(saved.windows)
+  const [doors, setDoors] = useState(saved.doors)
+  const [theme, setTheme] = useState<string>(saved.theme)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const handleRef = useRef<GenHandle | null>(null)
+
+  // Persist every change so the next visit reopens with the same settings.
+  useEffect(() => {
+    saveGenSettings({ size, difficulty, theme, objects: [...objects], windows, doors })
+  }, [size, difficulty, theme, objects, windows, doors])
 
   const toggleObject = (type: string) =>
     setObjects((prev) => {
@@ -32,6 +58,27 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
       else next.add(type)
       return next
     })
+
+  /** One toggle group of object chips (walkable vs blocking). */
+  const objectGroup = (label: string, types: readonly string[]) => (
+    <div className="mk-field">
+      <span className="mk-field__label">{label}</span>
+      <div className="mk-chips">
+        {types.map((type) => (
+          <button
+            key={type}
+            type="button"
+            className="mk-chip"
+            data-active={objects.has(type)}
+            disabled={busy}
+            onClick={() => toggleObject(type)}
+          >
+            {OBJECT_GLYPHS[type] ?? '▦'} {t(`objName.${type}`)}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 
   const create = () => {
     setError(null)
@@ -42,6 +89,8 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
       suspects: size - 1,
       difficulty,
       objects: [...objects],
+      windows,
+      doors,
       themeId: theme === 'random' ? undefined : theme,
     })
     handleRef.current = handle
@@ -132,21 +181,30 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
             </select>
           </div>
 
+          {objectGroup(t('generate.objectsOccupiable'), OCCUPIABLE_OBJECT_TYPES)}
+          {objectGroup(t('generate.objectsBlocking'), BLOCKING_OBJECT_TYPES)}
+
           <div className="mk-field">
-            <span className="mk-field__label">{t('generate.objects')}</span>
+            <span className="mk-field__label">{t('generate.openings')}</span>
             <div className="mk-chips">
-              {GENERATOR_OBJECT_TYPES.map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  className="mk-chip"
-                  data-active={objects.has(type)}
-                  disabled={busy}
-                  onClick={() => toggleObject(type)}
-                >
-                  {OBJECT_GLYPHS[type]} {t(`objName.${type}`)}
-                </button>
-              ))}
+              <button
+                type="button"
+                className="mk-chip"
+                data-active={windows}
+                disabled={busy}
+                onClick={() => setWindows((w) => !w)}
+              >
+                {OBJECT_GLYPHS.window} {t('generate.windows')}
+              </button>
+              <button
+                type="button"
+                className="mk-chip"
+                data-active={doors}
+                disabled={busy}
+                onClick={() => setDoors((d) => !d)}
+              >
+                {OBJECT_GLYPHS.door} {t('generate.doors')}
+              </button>
             </div>
           </div>
 

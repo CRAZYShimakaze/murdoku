@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "79_Der_Bauernhof",
   "title": "Der Bauernhof",
-  "difficulty": "expert",
+  "difficulty": "original",
   "size": { "width": 12, "height": 12 },
   "rooms": {
     "W": { "nameKey": "room.pasture", "color": "#cfe8b0", "outside": true },

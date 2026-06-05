@@ -81,6 +81,20 @@ export class Renderer {
         return this.lookup(`side.${value}`) ?? String(value)
       case 'cell':
         return this.cell(Number(value))
+      case 'bound': {
+        // "row|id:line,id:line" → "Name→Z3, Name→Z6" (S for columns), names resolved.
+        const bar = String(value).indexOf('|')
+        const prefix = String(value).slice(0, bar) === 'row' ? 'Z' : 'S'
+        return String(value)
+          .slice(bar + 1)
+          .split(',')
+          .filter(Boolean)
+          .map((pair) => {
+            const [pid, line] = pair.split(':')
+            return `${this.puzzle.nameOf(pid)}→${prefix}${line}`
+          })
+          .join(', ')
+      }
       default:
         return String(value)
     }
@@ -124,6 +138,23 @@ export class Renderer {
   render(exp: Explanation, extra: Record<string, string | number> = {}, nameSubject = false): string {
     if (exp.children && exp.children.length > 0) {
       if (exp.key === 'clue.not') return this.renderNot(exp.children[0], extra, nameSubject)
+      // A wrapper whose template embeds the child sentence(s) at {{child}} — e.g. a
+      // hint that quotes another suspect's own clue. The child is rendered from that
+      // suspect's point of view (their pronoun), then slotted into the wrapper.
+      const wrapper = this.lookup(exp.key)
+      if (wrapper && wrapper.includes('{{child}}')) {
+        const subj = exp.params?.name
+        const childExtra =
+          subj !== undefined ? { ...extra, name: subj, subject: subj, poss: subj } : extra
+        const childText = exp.children.map((child) => this.render(child, childExtra)).join(' ')
+        const params = { ...extra, ...(exp.params ?? {}) }
+        return wrapper
+          .replace(/\{\{child\}\}/g, childText)
+          .replace(/\[\[([^\]]+?):[^\]]+?\]\]/g, '$1')
+          .replace(/\{\{(\w+)\}\}/g, (_match, key: string) =>
+            this.resolveParam(key, params[key] ?? '', nameSubject),
+          )
+      }
       const parts = exp.children.map((child) => this.render(child, extra, nameSubject))
       if (exp.key === 'clue.and') return parts.join(` ${this.lookup('clue.connAnd') ?? 'und'} `)
       if (exp.key === 'clue.or') return parts.join(` ${this.lookup('clue.connOr') ?? 'oder'} `)

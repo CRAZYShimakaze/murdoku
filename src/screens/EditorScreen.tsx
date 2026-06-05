@@ -1,32 +1,44 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import LanguageToggle from '../components/LanguageToggle.tsx'
 import EditorBoard from '../components/EditorBoard.tsx'
 import SuspectsPanel from '../components/SuspectsPanel.tsx'
 import { OBJECT_GLYPHS } from '../game/glyphs.ts'
 import { THEME_IDS, themeRooms, themeOutdoor } from '../engine/generator/index.ts'
-import { levelMetaFromJson, type Difficulty, type LevelMeta } from '../game/levels.ts'
-import { saveCustomLevel, exportLevelJson, loadEditorDraft, saveEditorDraft } from '../game/storage.ts'
+import { fillBoardCluesAsync, type GenHandle } from '../game/generatorClient.ts'
+import { LEVELS, levelMetaFromJson, type Difficulty, type LevelMeta } from '../game/levels.ts'
+import {
+  saveCustomLevel,
+  exportLevelJson,
+  loadCustomLevels,
+  loadEditorDraft,
+  saveEditorDraft,
+} from '../game/storage.ts'
 import {
   GROUND_OBJECTS,
   ROOM_COLORS,
   ROOM_IDS,
   TOP_OBJECTS,
+  buildEditorLevel,
   buildPlayableLevel,
+  editorPeopleFromLevel,
+  editorStateFromLevel,
   emptyEditorState,
   presentObjectTypes,
   pruneWallEdges,
   setCell,
-  toggleDoorAt,
-  toggleWindowAt,
+  toggleWallEdgeAt,
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
-import { SearchSolver, findMurderer, loadLevel, VOID_ROOM, type BoardClueJson, type Cell } from '../engine/index.ts'
+import { SearchSolver, findMurderer, loadLevel, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
 
 type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
-type CheckResult = { kind: 'ok' | 'multi' | 'none' | 'error' | 'saved' | 'exported'; murderer?: string }
-type EditDifficulty = Exclude<Difficulty, 'tutorial'>
+type CheckResult = {
+  kind: 'ok' | 'multi' | 'none' | 'error' | 'saved' | 'exported' | 'genfail'
+  murderer?: string
+}
+type EditDifficulty = Exclude<Difficulty, 'tutorial' | 'original'>
 const DIFFS: EditDifficulty[] = ['easy', 'medium', 'hard']
 const MIN = 4
 const MAX = 16
@@ -37,6 +49,8 @@ const pickTheme = (): string => THEME_IDS[Math.floor(Math.random() * THEME_IDS.l
 interface Props {
   onBack: () => void
   onPlay: (level: LevelMeta) => void
+  /** When set, the editor opens this existing level for editing instead of a draft. */
+  initialLevel?: LevelJson
 }
 
 /** Everything the editor persists so test-playing (or a reload) never loses work. */
@@ -47,10 +61,23 @@ interface EditorDraft {
   theme: string
 }
 
-export default function EditorScreen({ onBack, onPlay }: Props) {
+/** Seed an editor draft from an existing level ("open in the editor"). */
+function draftFromLevel(level: LevelJson): EditorDraft {
+  const diff = level.difficulty
+  return {
+    state: editorStateFromLevel(level),
+    name: level.title ?? '',
+    difficulty: diff === 'easy' || diff === 'medium' || diff === 'hard' ? diff : 'medium',
+    theme: pickTheme(),
+  }
+}
+
+export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   const { t } = useTranslation()
-  // Restore the saved draft (set when leaving to test-play), else start fresh.
-  const [draft] = useState<EditorDraft | null>(() => loadEditorDraft<EditorDraft>())
+  // Open the passed level for editing; otherwise restore the saved draft, else fresh.
+  const [draft] = useState<EditorDraft | null>(() =>
+    initialLevel ? draftFromLevel(initialLevel) : loadEditorDraft<EditorDraft>(),
+  )
   const [theme, setTheme] = useState<string>(() => draft?.theme ?? pickTheme())
   const [state, setState] = useState<EditorState>(
     () => draft?.state ?? emptyEditorState(8, themeRooms(theme)),
@@ -64,6 +91,27 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
   const [showSave, setShowSave] = useState(false)
   // Stable per-session fallback id; a named level uses a slug so re-saving overwrites.
   const [sessionId] = useState(() => `editor-${Date.now()}`)
+  const [randomizing, setRandomizing] = useState(false)
+  const randomHandle = useRef<GenHandle | null>(null)
+
+  // Every level already in the game (bundled + saved): a content signature to spot an
+  // exact duplicate, and the titles to warn about a name clash. Computed once.
+  const existing = useMemo(() => {
+    const sigs = new Set<string>()
+    const titles = new Set<string>()
+    const add = (json: LevelJson) => {
+      sigs.add(JSON.stringify(editorStateFromLevel(json)))
+      const title = (json.title ?? '').trim().toLowerCase()
+      if (title) titles.add(title)
+    }
+    for (const l of LEVELS) add(l.json)
+    for (const j of loadCustomLevels()) add(j)
+    return { sigs, titles }
+  }, [])
+  // This exact board+people already exists ⇒ nothing to save. A different board whose
+  // name is taken ⇒ saving would overwrite, so warn (but still allow it).
+  const contentExists = existing.sigs.has(JSON.stringify(state))
+  const nameTaken = name.trim() !== '' && existing.titles.has(name.trim().toLowerCase())
 
   // Persist the draft on every change so navigating away and back restores it.
   useEffect(() => {
@@ -98,6 +146,43 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
 
   const build = (id: string) =>
     buildPlayableLevel(state, id, name.trim() || undefined, difficulty, themeOutdoor(theme))
+
+  /**
+   * Keep the board (rooms, floor, objects, windows, doors, global clues) exactly as
+   * drawn and let the generator fill the PEOPLE: fresh names, traits and clues so the
+   * case is uniquely solvable at the chosen difficulty. Runs in the worker.
+   */
+  const randomize = () => {
+    setResult(null)
+    setRandomizing(true)
+    const boardLevel = buildEditorLevel(
+      state,
+      state.suspects.map((s) => ({ id: s.id, name: s.name, attributes: { gender: s.gender }, clues: [] })),
+      { name: state.victim.name || '?', attributes: { gender: state.victim.gender } },
+      name.trim() || undefined,
+      themeOutdoor(theme),
+    )
+    const handle = fillBoardCluesAsync(boardLevel, { difficulty })
+    randomHandle.current = handle
+    handle.promise
+      .then((level) => {
+        randomHandle.current = null
+        setRandomizing(false)
+        const people = editorPeopleFromLevel(level)
+        setState((s) => ({ ...s, suspects: people.suspects, victim: people.victim }))
+      })
+      .catch((err: Error) => {
+        randomHandle.current = null
+        setRandomizing(false)
+        if (err.message !== 'cancelled') setResult({ kind: 'genfail' })
+      })
+  }
+
+  const cancelRandom = () => {
+    randomHandle.current?.cancel()
+    randomHandle.current = null
+    setRandomizing(false)
+  }
 
   const check = () => {
     try {
@@ -167,13 +252,13 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
   const paintWindow = (cell: Cell, fx: number, fy: number) => {
     const row = Math.floor(cell / cols)
     const col = cell % cols
-    setState((s) => ({ ...s, windows: toggleWindowAt(s.windows, row, col, fx, fy) }))
+    setState((s) => ({ ...s, windows: toggleWallEdgeAt(s.windows, row, col, fx, fy) }))
   }
 
   const paintDoor = (cell: Cell, fx: number, fy: number) => {
     const row = Math.floor(cell / cols)
     const col = cell % cols
-    setState((s) => ({ ...s, doors: toggleDoorAt(s.doors, row, col, fx, fy, s.size) }))
+    setState((s) => ({ ...s, doors: toggleWallEdgeAt(s.doors, row, col, fx, fy) }))
   }
 
   const updateBoardClue = (i: number, next: BoardClueJson) =>
@@ -280,6 +365,8 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
         state={state}
         onChangeSuspect={changeSuspect}
         onChangeVictim={changeVictim}
+        onRandom={randomize}
+        randomizing={randomizing}
       />
 
       <div className="mk-board">
@@ -475,17 +562,43 @@ export default function EditorScreen({ onBack, onPlay }: Props) {
               ))}
             </div>
             <p className="mk-savedlg__hint">{t('editor.saveHint')}</p>
-            <div className="mk-dialog__actions">
-              <button type="button" className="mk-btn mk-btn--primary" onClick={keep}>
-                {t('editor.saveKeep')}
-              </button>
-              <button type="button" className="mk-btn mk-btn--ghost" onClick={exportJson}>
-                {t('editor.saveExport')}
-              </button>
-              <button type="button" className="mk-btn mk-btn--ghost" onClick={() => setShowSave(false)}>
-                {t('result.back')}
-              </button>
-            </div>
+            {contentExists ? (
+              <>
+                <p className="mk-savedlg__exists">{t('editor.levelExists')}</p>
+                <div className="mk-dialog__actions">
+                  <button type="button" className="mk-btn mk-btn--ghost" onClick={() => setShowSave(false)}>
+                    {t('result.back')}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {nameTaken && <p className="mk-savedlg__warn">{t('editor.nameTaken')}</p>}
+                <div className="mk-dialog__actions">
+                  <button type="button" className="mk-btn mk-btn--primary" onClick={keep}>
+                    {t('editor.saveKeep')}
+                  </button>
+                  <button type="button" className="mk-btn mk-btn--ghost" onClick={exportJson}>
+                    {t('editor.saveExport')}
+                  </button>
+                  <button type="button" className="mk-btn mk-btn--ghost" onClick={() => setShowSave(false)}>
+                    {t('result.back')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {randomizing && (
+        <div className="mk-overlay">
+          <div className="mk-dialog">
+            <span className="mk-spinner" />
+            <p>{t('editor.randomizing')}</p>
+            <button type="button" className="mk-btn mk-btn--ghost" onClick={cancelRandom}>
+              {t('generate.cancel')}
+            </button>
           </div>
         </div>
       )}

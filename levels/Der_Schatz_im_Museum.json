@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "id": "editor-07-das-caf",
-  "title": "07. Das Café",
+  "id": "editor-der-schatz-im-museum",
+  "title": "Der Schatz im Museum",
   "size": {
-    "width": 6,
-    "height": 6
+    "width": 7,
+    "height": 7
   },
   "rooms": {
     "1": {
@@ -147,117 +147,191 @@
     "i": {
       "type": "pig",
       "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
     }
   },
   "roomMap": [
-    "5555FF",
-    "5555FF",
-    "5555BB",
-    "BBBBBB",
-    "BBBBBB",
-    "BBBBBB"
+    "2222333",
+    "2222333",
+    "2222333",
+    "2222444",
+    "1111444",
+    "1111666",
+    "1111666"
   ],
   "groundMap": [
-    "......",
-    "......",
-    "......",
-    "......",
-    "......",
-    "......"
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    "......."
   ],
   "topMap": [
-    "...t.s",
-    "...t..",
-    ".gttst",
-    ".stts.",
-    "..sst.",
-    "s.p.sp"
+    "o..ss.p",
+    "..y..x.",
+    ".y.gs..",
+    "s...l.l",
+    "ps.....",
+    ".ttsdd.",
+    "ps...s."
   ],
-  "windows": [],
-  "doors": [],
+  "windows": [
+    {
+      "r": 0,
+      "c": 2,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 5,
+      "side": "N"
+    },
+    {
+      "r": 1,
+      "c": 6,
+      "side": "E"
+    },
+    {
+      "r": 1,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 5,
+      "c": 0,
+      "side": "W"
+    }
+  ],
+  "doors": [
+    {
+      "r": 3,
+      "c": 3,
+      "side": "S"
+    },
+    {
+      "r": 1,
+      "c": 3,
+      "side": "E"
+    },
+    {
+      "r": 6,
+      "c": 3,
+      "side": "E"
+    },
+    {
+      "r": 4,
+      "c": 6,
+      "side": "S"
+    }
+  ],
   "suspects": [
     {
       "id": "A",
-      "name": "Astrid",
+      "name": "Alex",
       "attributes": {
-        "gender": "f",
-        "hair": "blond"
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "curly",
+        "hair": "black"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "nearObject",
-              "object": "plant"
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "onObject",
-                "object": "chair"
-              }
-            }
-          ]
+          "type": "nearObject",
+          "object": "locker"
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bea",
+      "name": "Bella",
       "attributes": {
-        "gender": "f"
+        "gender": "f",
+        "hairstyle": "braids",
+        "hair": "blond"
       },
       "clues": [
         {
           "type": "nearObject",
-          "object": "shelf"
+          "object": "plant"
         }
       ]
     },
     {
       "id": "C",
-      "name": "Chloe",
+      "name": "Carol",
       "attributes": {
-        "gender": "f"
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "white"
       },
       "clues": [
         {
-          "type": "inCol",
-          "col": 1
+          "type": "inRoom",
+          "room": "6"
         }
       ]
     },
     {
       "id": "D",
-      "name": "Dirk",
+      "name": "Dalia",
       "attributes": {
-        "gender": "m",
-        "hair": "brown"
-      },
-      "clues": [
-        {
-          "type": "and",
-          "clues": [
-            {
-              "type": "direction",
-              "of": "C",
-              "dir": "north"
-            },
-            {
-              "type": "inRoom",
-              "room": "B"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "E",
-      "name": "Eberhard",
-      "attributes": {
-        "gender": "m",
-        "hair": "black"
+        "gender": "f",
+        "hairstyle": "updo",
+        "hair": "blond"
       },
       "clues": [
         {
@@ -268,11 +342,53 @@
               "object": "chair"
             },
             {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "table"
-              }
+              "type": "inRoom",
+              "room": "3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "bald": true,
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "directionFromObject",
+          "object": "box",
+          "dir": "north",
+          "room": "any"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Floyd",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "bald": true,
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "chair"
+            },
+            {
+              "type": "sameLineAsObject",
+              "object": "shelf",
+              "line": "col",
+              "room": "any"
             }
           ]
         }
@@ -280,11 +396,11 @@
     }
   ],
   "victim": {
-    "name": "Opfer",
+    "name": "Vicky",
     "attributes": {
-      "gender": "m"
+      "gender": "f"
     }
   },
   "boardClues": [],
-  "difficulty": "original"
+  "difficulty": "medium"
 }

@@ -13,7 +13,7 @@ type Screen =
   | { name: 'select' }
   | { name: 'generate' }
   | { name: 'tutorial' }
-  | { name: 'editor' }
+  | { name: 'editor'; initial?: LevelMeta }
   | { name: 'game'; level: LevelMeta; generated?: boolean; fromEditor?: boolean }
 
 function findMeta(id: string): LevelMeta | undefined {
@@ -54,6 +54,7 @@ export default function App() {
     case 'editor':
       return (
         <EditorScreen
+          initialLevel={screen.initial?.json}
           onBack={() => setScreen({ name: 'start' })}
           onPlay={(level) => setScreen({ name: 'game', level, fromEditor: true })}
         />
@@ -88,6 +89,7 @@ export default function App() {
             )
           }
           onNew={() => setScreen({ name: 'generate' })}
+          onEdit={() => setScreen({ name: 'editor', initial: screen.level })}
           onNext={
             screen.generated || screen.fromEditor
               ? undefined

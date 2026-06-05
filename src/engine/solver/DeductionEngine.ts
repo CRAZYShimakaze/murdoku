@@ -68,6 +68,10 @@ export class DeductionEngine {
     // (they were the "useless" hints), so the surfaced hint always carries weight.
     let fallback: HintResult | null = null
     while (ctx.state.unplaced().length > 0) {
+      // Snapshot BEFORE applying the step: a placement step removes the person's
+      // domain and propagates its row/column, which would otherwise contaminate the
+      // "why every other cell is ruled out" reasons with the placement itself.
+      const before = ctx.clone()
       let step: DeductionStep | null = null
       for (const technique of this.techniques) {
         step = technique.apply(ctx)
@@ -89,7 +93,7 @@ export class DeductionEngine {
           step.personId &&
           step.technique !== 'satForcing'
         ) {
-          const why = this.explainPlacement(placed, crosses, seen, step.personId, step.placedCell)
+          const why = this.explainPlacement(before, crosses, step.personId, step.placedCell)
           if (why.length > 0) step.chain = why
         }
         return result
@@ -107,17 +111,18 @@ export class DeductionEngine {
    * unconstrained victim.
    */
   private explainPlacement(
-    placed: ReadonlyMap<PersonId, Cell>,
+    ctx: SolveContext,
     crosses: ReadonlySet<Cell>,
-    seen: HintProgress | undefined,
     id: PersonId,
     cell: Cell,
   ): Explanation[] {
     if (id === this.puzzle.victim.id) return []
     const visible = [...this.clueCandidates(id)]
     if (visible.length <= 1 || visible.length > 6) return []
-    // Same board state the hint was derived from (placements + crosses + walk), id open.
-    const ctx = this.buildContext(placed, crosses, seen)
+    // `ctx` is the LIVE deduction state at the moment this placement became forced —
+    // every prior elimination already applied — so each "why" reflects what actually
+    // ruled the cell out (an occupied line, a reserved line, another suspect's clue),
+    // not just the player's raw board.
     const chain: Explanation[] = []
     for (const d of visible) {
       if (d !== cell) chain.push(this.whyExcluded(ctx, crosses, id, d))
@@ -143,6 +148,40 @@ export class DeductionEngine {
       if (p.row === row) return { key: 'why.row', params: { cell: d, name: pid } }
       if (p.col === col) return { key: 'why.col', params: { cell: d, name: pid } }
     }
+    // Another suspect's "only person on/near X" clue keeps everyone else off these
+    // cells — name that suspect and quote their clue ("… only one on a carpet").
+    for (const suspect of this.puzzle.suspects) {
+      if (suspect.id === id) continue
+      for (const clue of suspect.clues) {
+        if (clue.forbiddenForOthers(board)?.has(d)) {
+          return { key: 'why.clueForbids', params: { cell: d, name: suspect.id }, children: [clue.describe()] }
+        }
+      }
+    }
+    // `id` can only be in one row (or column), so any cell outside that line is out.
+    // WHY is `id` stuck there? Usually a hidden single — `id` is the ONLY person who
+    // can still be in that line — which the player can verify on the board, so say it
+    // outright. Otherwise just state the confinement.
+    if (!ctx.state.placed.has(id)) {
+      const onlyHere = (axis: 'row' | 'col', line: number): boolean =>
+        ctx.state.unplaced().every((z) => z === id || !ctx.linesOf(z, axis).has(line))
+      const ownRows = ctx.linesOf(id, 'row')
+      if (ownRows.size === 1 && !ownRows.has(row)) {
+        const line = [...ownRows][0]
+        const bound = onlyHere('row', line) ? this.boundElsewhere('row', id, ctx) : ''
+        if (bound)
+          return { key: 'why.onlyRow', params: { cell: d, name: id, line: line + 1, bound: `row|${bound}` } }
+        return { key: 'why.confinedRow', params: { cell: d, name: id, line: line + 1 } }
+      }
+      const ownCols = ctx.linesOf(id, 'col')
+      if (ownCols.size === 1 && !ownCols.has(col)) {
+        const line = [...ownCols][0]
+        const bound = onlyHere('col', line) ? this.boundElsewhere('col', id, ctx) : ''
+        if (bound)
+          return { key: 'why.onlyCol', params: { cell: d, name: id, line: line + 1, bound: `col|${bound}` } }
+        return { key: 'why.confinedCol', params: { cell: d, name: id, line: line + 1 } }
+      }
+    }
     for (const z of ctx.state.unplaced()) {
       if (z === id) continue
       const rows = ctx.linesOf(z, 'row')
@@ -151,6 +190,27 @@ export class DeductionEngine {
       if (cols.size === 1 && cols.has(col)) return { key: 'why.colReserved', params: { cell: d, name: z } }
     }
     return { key: 'why.eliminated', params: { cell: d } }
+  }
+
+  /**
+   * Everyone else already tied to one row/column (placed there, or their options
+   * have collapsed to a single line) — the concrete evidence that some line is left
+   * for just one person. Encoded as "id:line,…" (1-based) for the renderer; capped.
+   */
+  private boundElsewhere(axis: 'row' | 'col', id: PersonId, ctx: SolveContext): string {
+    const board = this.puzzle.board
+    const out: string[] = []
+    for (const [pid, pc] of ctx.state.placed) {
+      if (pid === id) continue
+      out.push(`${pid}:${(axis === 'row' ? board.rc(pc).row : board.rc(pc).col) + 1}`)
+    }
+    for (const z of ctx.state.unplaced()) {
+      if (out.length >= 6) break
+      if (z === id) continue
+      const lines = ctx.linesOf(z, axis)
+      if (lines.size === 1) out.push(`${z}:${[...lines][0] + 1}`)
+    }
+    return out.slice(0, 6).join(',')
   }
 
   /**

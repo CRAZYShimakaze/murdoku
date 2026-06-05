@@ -7,17 +7,14 @@ import { findMurderer } from '../solver/murderer.ts'
 import { DeductionEngine } from '../solver/DeductionEngine.ts'
 import { difficultyOf } from '../solver/DeductionStep.ts'
 import { createClue } from '../clues/ClueFactory.ts'
-import { VICTIM_ID } from '../model/types.ts'
+import { createBoardClue } from '../clues/boardClues.ts'
+import { MULTI_CELL_TYPES, VICTIM_ID } from '../model/types.ts'
 import type { AttributeValue, Cell, PersonId, Side } from '../model/types.ts'
+import { OBJECT_CATALOG, type ObjectDef } from '../model/objects.ts'
+import type { Board } from '../model/Board.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
-import type { LevelJson, SuspectJson } from '../io/LevelSchema.ts'
+import type { BoardClueJson, LevelJson, SuspectJson } from '../io/LevelSchema.ts'
 import type { ClueJson } from '../clues/ClueFactory.ts'
-
-interface ObjectDef {
-  char: string
-  type: string
-  occupiable: boolean
-}
 
 interface Theme {
   id: string
@@ -26,24 +23,25 @@ interface Theme {
   outdoor: string[]
 }
 
-const OCCUPIABLE: ObjectDef[] = [
-  { char: 's', type: 'chair', occupiable: true },
-  { char: 'r', type: 'carpet', occupiable: true },
-  { char: 'b', type: 'bed', occupiable: true },
-  { char: 'c', type: 'car', occupiable: true },
-]
-const BLOCKING: ObjectDef[] = [
-  { char: 't', type: 'table', occupiable: false },
-  { char: 'p', type: 'plant', occupiable: false },
-  { char: 'g', type: 'shelf', occupiable: false },
-  { char: 'x', type: 'box', occupiable: false },
-  { char: 'f', type: 'tv', occupiable: false },
-  { char: 'u', type: 'shrub', occupiable: false },
-]
-const ALL_OBJECTS = [...OCCUPIABLE, ...BLOCKING]
+// The generator places from the shared object catalog (same one the editor paints).
+const ALL_OBJECTS: readonly ObjectDef[] = OBJECT_CATALOG
+const OCCUPIABLE: ObjectDef[] = ALL_OBJECTS.filter((o) => o.occupiable)
+const BLOCKING: ObjectDef[] = ALL_OBJECTS.filter((o) => !o.occupiable)
 
-/** Object types the generator can place (for the UI's per-object toggles). */
+/** Every placeable object type (for the UI's per-object toggles). */
 export const GENERATOR_OBJECT_TYPES: string[] = ALL_OBJECTS.map((o) => o.type)
+
+/** Object types that may occur by default; the rest are opt-in via `options.objects`. */
+export const DEFAULT_OBJECT_TYPES: string[] = [
+  'carpet',
+  'chair',
+  'bed',
+  'table',
+  'tv',
+  'plant',
+  'shelf',
+  'box',
+]
 
 const THEMES: Theme[] = [
   {
@@ -136,8 +134,12 @@ export interface GenerateOptions {
   seed?: number
   themeId?: string
   difficulty?: GenDifficulty
-  /** Object types allowed on the board (default: all). */
+  /** Object types allowed on the board (default: DEFAULT_OBJECT_TYPES). */
   objects?: string[]
+  /** Allow windows (on by default); some levels then get 2–6 of them. */
+  windows?: boolean
+  /** Place a few doors between rooms (enables "beside a door" clues). */
+  doors?: boolean
 }
 
 const HAIR_COLORS: AttributeValue[] = ['blond', 'brown', 'black', 'white']
@@ -172,20 +174,46 @@ const HARD_MAX_ATTEMPTS = 500
 const HARD_ENOUGH_NODES = 400 // early-exit once a level this hard turns up
 const HARD_TIME_BUDGET_MS = 20000
 
-/** Generate a uniquely-solvable level. Throws if no seed yields one. */
-export function generateLevel(options: GenerateOptions): LevelJson {
-  const { width, height, suspects } = options
-  const baseSeed = options.seed ?? Math.floor(Math.random() * 1e9)
-  const target = options.difficulty
+/** Cap on "was in row X / column Y" clues per level (rows + columns combined) for the
+ *  random fill at medium/hard — they are coordinate-y and dull, so keep them scarce. */
+const MAX_LINE_CLUES = 2
 
+/** One generation attempt → a candidate level (with its pin count), or null. */
+type Attempt = (rng: Rng, seedIndex: number) => { level: LevelJson; pins: number } | null
+
+/** How far apart two difficulty tiers are (so a target prefers the nearest tier). */
+const TIER_RANK: Record<GenDifficulty, number> = { easy: 0, medium: 1, hard: 2 }
+const tierDistance = (a: string, b: GenDifficulty | undefined): number =>
+  b && a in TIER_RANK ? Math.abs(TIER_RANK[a as GenDifficulty] - TIER_RANK[b]) : 0
+
+interface PickOptions {
+  /** Cap on attempts (default 80). */
+  maxAttempts?: number
+  /** Soft budget: once a candidate exists, stop hunting for a better one (default 2800ms). */
+  timeBudgetMs?: number
+  /** Hard cap: give up even with nothing found yet (default: none — keep trying to the
+   *  attempt cap). The fixed-board fill sets this so a stubborn board can't hang. */
+  hardTimeBudgetMs?: number
+}
+
+/**
+ * Run many attempts and keep the best per the target difficulty:
+ *  - 'hard': keep the HARDEST (most search nodes) until hard enough or out of budget;
+ *  - else: prefer pin-free, then the NEAREST difficulty tier, then line-free.
+ * Each attempt's `level.difficulty` is set to its rated tier. Returns null if none.
+ */
+function pickBestLevel(
+  attempt: Attempt,
+  baseSeed: number,
+  target: GenDifficulty | undefined,
+  opts: PickOptions = {},
+): LevelJson | null {
   if (target === 'hard') {
-    // Don't stop at the first hard level — keep the HARDEST one (most search
-    // nodes), generating until it's hard enough or we run out of tries/time.
     const deadline = performance.now() + HARD_TIME_BUDGET_MS
     let hardest: LevelJson | null = null
     let bestNodes = -1
-    for (let attempt = 0; attempt < HARD_MAX_ATTEMPTS; attempt++) {
-      const result = tryGenerate(options, new Rng(baseSeed + attempt * 7919), baseSeed + attempt)
+    for (let a = 0; a < HARD_MAX_ATTEMPTS; a++) {
+      const result = attempt(new Rng(baseSeed + a * 7919), baseSeed + a)
       if (result && result.pins === 0) {
         const nodes = searchDifficulty(result.level)
         if (nodes > bestNodes) {
@@ -197,21 +225,21 @@ export function generateLevel(options: GenerateOptions): LevelJson {
       }
       if (hardest && performance.now() > deadline) break
     }
-    if (!hardest) throw new Error(`Could not generate a hard ${width}x${height} level for ${suspects} suspects`)
     return hardest
   }
 
-  const deadline = performance.now() + 2800
+  const maxAttempts = opts.maxAttempts ?? 80
+  const softDeadline = performance.now() + (opts.timeBudgetMs ?? 2800)
+  const hardDeadline = performance.now() + (opts.hardTimeBudgetMs ?? Infinity)
   let best: LevelJson | null = null
   let bestScore = Infinity
-  for (let attempt = 0; attempt < 80; attempt++) {
-    const result = tryGenerate(options, new Rng(baseSeed + attempt * 7919), baseSeed + attempt)
+  for (let a = 0; a < maxAttempts; a++) {
+    const result = attempt(new Rng(baseSeed + a * 7919), baseSeed + a)
     if (result) {
       const tier = rateTier(result.level)
       result.level.difficulty = tier
-      const mismatch = target && tier !== target ? 1 : 0
+      const mismatch = tierDistance(tier, target)
       const lines = countLineClues(result.level)
-      // pin-free first, then right difficulty, then prefer line-free (variety).
       const score = result.pins * 1000 + mismatch * 10 + lines
       if (score < bestScore) {
         best = result.level
@@ -219,10 +247,183 @@ export function generateLevel(options: GenerateOptions): LevelJson {
       }
       if (result.pins === 0 && mismatch === 0 && lines === 0) break
     }
-    if (best && performance.now() > deadline) break // stay within the time budget
+    // Once we have a candidate, stop hunting at the soft deadline; with nothing yet,
+    // keep trying until the hard cap (so the fill reliably returns *something*).
+    if (best && performance.now() > softDeadline) break
+    if (performance.now() > hardDeadline) break
   }
-  if (!best) throw new Error(`Could not generate a ${width}x${height} level for ${suspects} suspects`)
   return best
+}
+
+/** Generate a uniquely-solvable level. Throws if no seed yields one. */
+export function generateLevel(options: GenerateOptions): LevelJson {
+  const { width, height, suspects } = options
+  const baseSeed = options.seed ?? Math.floor(Math.random() * 1e9)
+  const level = pickBestLevel(
+    (rng, seedIndex) => tryGenerate(options, rng, seedIndex),
+    baseSeed,
+    options.difficulty,
+  )
+  if (!level) throw new Error(`Could not generate a ${width}x${height} level for ${suspects} suspects`)
+  return level
+}
+
+export interface FillBoardOptions {
+  difficulty?: GenDifficulty
+  seed?: number
+}
+
+/**
+ * Keep a finished board (rooms / objects / windows / doors / global clues) EXACTLY
+ * as given, but (re)generate the people: fresh names + traits and a clue per suspect
+ * so the murder puzzle is uniquely solvable at the requested difficulty. Suspect ids
+ * and count come from `board.suspects`. Clues are restricted to the editor's flat
+ * vocabulary so the result round-trips into the editor. Returns the filled level, or
+ * null if no unique arrangement exists on this board.
+ */
+export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {}): LevelJson | null {
+  const suspectIds = board.suspects.map((s) => s.id)
+  if (suspectIds.length === 0) return null
+  const baseSeed = options.seed ?? Math.floor(Math.random() * 1e9)
+
+  // EASY: every successful attempt is ALREADY a valid easy puzzle (≤2 simple clues, no
+  // contradiction). On a hard/uniform board such layouts are rare, so we just keep trying
+  // fresh placements until one lands or a generous time budget runs out — taking the first
+  // that works (the user chose "search longer" over a guaranteed result).
+  if (options.difficulty === 'easy') {
+    const deadline = performance.now() + 20000
+    for (let a = 0; a < 200000 && performance.now() < deadline; a++) {
+      const result = fillAttempt(board, suspectIds, new Rng(baseSeed + a * 7919), 'easy')
+      if (result) {
+        result.level.difficulty = rateTier(result.level)
+        return result.level
+      }
+    }
+    return null
+  }
+
+  // The board is fixed, so a fill is harder to land than free generation — give it
+  // more attempts but a firm time bound (it runs in a worker with a cancel button).
+  return pickBestLevel(
+    (rng) => fillAttempt(board, suspectIds, rng, options.difficulty),
+    baseSeed,
+    options.difficulty,
+    { maxAttempts: 400, timeBudgetMs: 5000, hardTimeBudgetMs: 20000 },
+  )
+}
+
+/** One people-fill attempt on the fixed board: fresh identities, a valid hidden
+ *  placement consistent with the board's global clues, and editor-safe clues. */
+function fillAttempt(
+  board: LevelJson,
+  suspectIds: PersonId[],
+  rng: Rng,
+  difficulty?: GenDifficulty,
+): { level: LevelJson; pins: number } | null {
+  const usedName = new Set<string>()
+  const suspectMeta: SuspectJson[] = suspectIds.map((id, i) => {
+    const gender: 'm' | 'f' = rng.chance(0.5) ? 'm' : 'f'
+    const person = suspectPerson(i, gender, usedName)
+    return { id, name: person.name, attributes: makeAttributes(gender, rng), clues: [] }
+  })
+  const victim = victimPerson(rng)
+  const victimMeta = { name: victim.name, attributes: makeAttributes(victim.gender, rng) }
+  const base: LevelJson = { ...board, suspects: suspectMeta, victim: victimMeta }
+  const basePuzzle = loadLevel(base)
+
+  const placement = placeOnBoard(basePuzzle, suspectIds, rng)
+  if (!placement) return null
+  const solution = new Solution(placement)
+
+  const candidates = new Map<PersonId, ClueJson[]>()
+  for (const id of suspectIds) {
+    const others = suspectIds.filter((o) => o !== id)
+    candidates.set(id, candidatesFor(id, solution, basePuzzle, others, true))
+  }
+
+  // EASY is built by forward construction (place + pin each suspect in the shrinking board).
+  // MEDIUM / HARD use natural clue selection, but the "was in row X / column Y" clue type
+  // stays rare: at most TWO such clues across the whole level (rows and columns combined).
+  const chosen =
+    difficulty === 'easy'
+      ? constructEasyClues(base, suspectIds, solution, candidates, rng)
+      : selectClues(base, suspectIds, candidates, rng, difficulty, MAX_LINE_CLUES)
+  if (!chosen) return null
+
+  // Limit how many suspects are obvious from the START (their own clue pins one cell):
+  // at most ONE for easy, and NONE from medium up — there you must cross something out
+  // before anyone can be placed.
+  const maxAnchors = difficulty === 'easy' ? 1 : 0
+  if (countAnchors(chosen, suspectIds, basePuzzle.board) > maxAnchors) return null
+
+  const level: LevelJson = {
+    ...base,
+    suspects: base.suspects.map((s) => ({ ...s, clues: [chosen.get(s.id)!] })),
+  }
+  const finalPuzzle = loadLevel(level)
+  const finalSolution = new SearchSolver(finalPuzzle).firstSolution()
+  if (!finalSolution || findMurderer(finalPuzzle, finalSolution).suspectId === null) return null
+  if (difficulty === 'easy') {
+    // Confirm the construction is genuinely unique and solvable by SHORT, simple steps —
+    // hidden singles / "only one on X" / row-column cross-out (rank ≤ 2), no harder
+    // technique and never a contradiction.
+    if (new SearchSolver(finalPuzzle).countSolutions(2) !== 1) return null
+    const ded = new DeductionEngine(finalPuzzle).solve()
+    if (!ded.solved || ded.maxRank > 2) return null
+  }
+  return { level, pins: countPins(chosen) }
+}
+
+/**
+ * A random hidden placement of the people. Like the played game, EVERY person sits on a
+ * DISTINCT row AND a DISTINCT column (the Sudoku rule — the solver forbids a person's whole
+ * row and column for the others), on an occupiable cell, with the victim sharing a room
+ * with EXACTLY one suspect (a well-defined murderer) and every global board clue holding.
+ * Returns null if no such arrangement turns up.
+ */
+function placeOnBoard(puzzle: Puzzle, suspectIds: PersonId[], rng: Rng): Map<PersonId, Cell> | null {
+  const board = puzzle.board
+  const W = board.width
+  const H = board.height
+  const people = [...suspectIds, VICTIM_ID]
+  const p = people.length
+  if (p > W || p > H) return null
+  // Occupiable columns available in each row (for the distinct-row/column matching).
+  const colsByRow: number[][] = []
+  for (let r = 0; r < H; r++) {
+    const cs: number[] = []
+    for (let c = 0; c < W; c++) if (board.isOccupiable(r * W + c)) cs.push(c)
+    colsByRow.push(cs)
+  }
+
+  for (let attempt = 0; attempt < 4000; attempt++) {
+    const rows = rng.shuffle([...Array(H).keys()]).slice(0, p)
+    // Backtracking match: give each chosen row a DISTINCT occupiable column.
+    const cols = new Array<number>(p).fill(-1)
+    const usedCols = new Set<number>()
+    const match = (i: number): boolean => {
+      if (i === p) return true
+      for (const c of rng.shuffle([...colsByRow[rows[i]]])) {
+        if (usedCols.has(c)) continue
+        usedCols.add(c)
+        cols[i] = c
+        if (match(i + 1)) return true
+        usedCols.delete(c)
+      }
+      return false
+    }
+    if (!match(0)) continue
+
+    const order = rng.shuffle([...people])
+    const placement = new Map<PersonId, Cell>()
+    for (let i = 0; i < p; i++) placement.set(order[i], rows[i] * W + cols[i])
+    const victimRoom = board.roomIdOf(placement.get(VICTIM_ID)!)
+    const inRoom = suspectIds.filter((id) => board.roomIdOf(placement.get(id)!) === victimRoom)
+    if (inRoom.length !== 1) continue
+    const solution = new Solution(placement)
+    if (puzzle.boardClues.every((bc) => bc.test(solution, puzzle))) return placement
+  }
+  return null
 }
 
 /** A single generation attempt for one seed — for tooling that runs many and
@@ -265,12 +466,15 @@ function tryGenerate(
   if (!placed) return null
 
   const peopleCells = new Set<Cell>(placed.placement.values())
-  const allow = options.objects
-  const occ = allow ? OCCUPIABLE.filter((o) => allow.includes(o.type)) : OCCUPIABLE
-  const blocking = allow ? BLOCKING.filter((o) => allow.includes(o.type)) : BLOCKING
+  const allow = options.objects ?? DEFAULT_OBJECT_TYPES
+  const occ = OCCUPIABLE.filter((o) => allow.includes(o.type))
+  const blocking = BLOCKING.filter((o) => allow.includes(o.type))
   const objects = placeObjects(width, height, peopleCells, rng, occ, blocking, isOutdoor, roomOf)
-  // Windows are optional — only some levels have them (and then 2–6).
-  const windows = rng.chance(0.5) ? placeWindows(width, height, rng) : []
+  // Windows are on by default; when allowed, only some levels get them (then 2–6).
+  const windows =
+    options.windows === false ? [] : rng.chance(0.5) ? placeWindows(width, height, rng) : []
+  // Doors are opt-in; when enabled, a few sit between adjacent rooms.
+  const doors = options.doors ? placeDoors(width, height, rooms.roomMap, rng) : []
 
   const usedName = new Set<string>()
   const suspectMeta: SuspectJson[] = suspectIds.map((id, i) => {
@@ -281,7 +485,7 @@ function tryGenerate(
 
   const victim = victimPerson(rng)
   const victimMeta = { name: victim.name, attributes: makeAttributes(victim.gender, rng) }
-  const base = buildLevel(theme, width, height, rooms, objects, windows, suspectMeta, victimMeta, seedIndex)
+  const base = buildLevel(theme, width, height, rooms, objects, windows, doors, suspectMeta, victimMeta, seedIndex)
   const basePuzzle = loadLevel(base)
   const solution = new Solution(placed.placement)
 
@@ -301,7 +505,41 @@ function tryGenerate(
   const finalPuzzle = loadLevel(base)
   const finalSolution = new SearchSolver(finalPuzzle).firstSolution()
   if (!finalSolution || findMurderer(finalPuzzle, finalSolution).suspectId === null) return null
+  // Now and then add a board-wide clue (consistent with the solution) as bonus
+  // flavour. It is true for the unique solution, so uniqueness/murderer are kept.
+  if (rng.chance(0.35)) {
+    const bc = bonusBoardClue(finalPuzzle, solution, rng)
+    if (bc) base.boardClues = [bc]
+  }
   return { level: base, pins: countPins(chosen) }
+}
+
+/**
+ * A board-wide clue that genuinely holds for `solution` (or null). Because it only
+ * constrains the already-unique solution, adding it never changes the answer — it
+ * is pure extra flavour: "exactly N people stood on a <object>" or "N rooms empty".
+ */
+function bonusBoardClue(puzzle: Puzzle, solution: Solution, rng: Rng): BoardClueJson | null {
+  const board = puzzle.board
+  const candidates: BoardClueJson[] = []
+
+  for (const def of OCCUPIABLE) {
+    if (board.cellsWithObject(def.type).size === 0) continue
+    let n = 0
+    for (const [, cell] of solution.entries()) {
+      if (board.tileAt(cell).hasObjectType(def.type)) n++
+    }
+    if (n > 0) candidates.push({ type: 'countOnObject', object: def.type, count: n })
+  }
+
+  const occupied = new Set<string>()
+  for (const [, cell] of solution.entries()) occupied.add(board.roomIdOf(cell))
+  let empty = 0
+  for (const id of board.rooms.keys()) if (!occupied.has(id)) empty++
+  if (empty > 0) candidates.push({ type: 'emptyRooms', count: empty })
+
+  const valid = candidates.filter((c) => createBoardClue(c).test(solution, puzzle))
+  return valid.length ? rng.pick(valid) : null
 }
 
 // --- board ----------------------------------------------------------------
@@ -445,12 +683,13 @@ function placeObjects(
     return false
   }
 
-  // Carpet is a ground layer; chair on top; bed/car span two tiles.
+  // Ground objects (carpet) sit under people; multi-cell ones (bed/car) span two
+  // tiles; everything else is a single top object. A pair that won't fit is skipped
+  // (no chair fallback) so the chosen object set is respected.
   const placeOcc = (r: number, c: number, def: ObjectDef): void => {
-    if (def.type === 'carpet') ground[r][c] = def.char
-    else if (def.type === 'bed' || def.type === 'car') {
-      if (!placePair(r, c, def)) top[r][c] = 's' // fall back to a chair if no room
-    } else top[r][c] = def.char
+    if (def.layer === 'ground') ground[r][c] = def.char
+    else if (MULTI_CELL_TYPES.has(def.type)) placePair(r, c, def)
+    else top[r][c] = def.char
   }
 
   for (let cell = 0; cell < width * height; cell++) {
@@ -498,6 +737,29 @@ function placeWindows(
     .map((b) => ({ r: b.r, c: b.c, side: b.sides[rng.int(b.sides.length)] }))
 }
 
+/**
+ * Place a few doors (1–3) on interior walls between two adjacent, DIFFERENT rooms.
+ * A door is anchored at the top/left cell of the shared edge (side 'S' or 'E'); the
+ * loader registers it on both cells, so each side counts as "beside a door".
+ */
+function placeDoors(
+  width: number,
+  height: number,
+  roomMap: string[],
+  rng: Rng,
+): { r: number; c: number; side: Side }[] {
+  const edges: { r: number; c: number; side: Side }[] = []
+  for (let r = 0; r < height; r++) {
+    for (let c = 0; c < width; c++) {
+      if (r < height - 1 && roomMap[r][c] !== roomMap[r + 1][c]) edges.push({ r, c, side: 'S' })
+      if (c < width - 1 && roomMap[r][c] !== roomMap[r][c + 1]) edges.push({ r, c, side: 'E' })
+    }
+  }
+  if (edges.length === 0) return []
+  const count = Math.min(edges.length, 1 + rng.int(3)) // 1..3
+  return rng.shuffle(edges).slice(0, count)
+}
+
 // --- level json -----------------------------------------------------------
 
 function buildLevel(
@@ -507,6 +769,7 @@ function buildLevel(
   rooms: { roomMap: string[]; ids: string[] },
   objects: { groundMap: string[]; topMap: string[] },
   windows: { r: number; c: number; side: Side }[],
+  doors: { r: number; c: number; side: Side }[],
   suspects: SuspectJson[],
   victim: { name: string; attributes: Record<string, AttributeValue> },
   seedIndex: number,
@@ -529,6 +792,7 @@ function buildLevel(
     groundMap: objects.groundMap,
     topMap: objects.topMap,
     windows,
+    doors,
     suspects,
     victim,
   }
@@ -536,11 +800,18 @@ function buildLevel(
 
 // --- clues ----------------------------------------------------------------
 
+/**
+ * Build the pool of clues that are TRUE for `suspectId` in this solution, tightest
+ * first. Covers the full clue vocabulary; the test-filter keeps only true ones.
+ * `editorSafe` drops the room-attribute family (roomAttribute / roomCompanion /
+ * roomExists), which the editor's flat clue builder cannot round-trip.
+ */
 function candidatesFor(
   suspectId: PersonId,
   solution: Solution,
   puzzle: Puzzle,
   otherSuspects: PersonId[],
+  editorSafe = false,
 ): ClueJson[] {
   const board = puzzle.board
   const cell = solution.cellOf(suspectId)
@@ -548,6 +819,7 @@ function candidatesFor(
   const room = board.roomIdOf(cell)
   const out: ClueJson[] = []
 
+  // --- object: on / beside ---
   for (const obj of board.tileAt(cell).objects()) {
     if (obj.occupiable) {
       out.push({ type: 'onObject', object: obj.type })
@@ -563,6 +835,18 @@ function candidatesFor(
   }
   for (const type of nearTypes) out.push({ type: 'nearObject', object: type })
 
+  // --- object: same line / direction (objects are fixed → deducible) ---
+  for (const def of ALL_OBJECTS) {
+    if (board.objectCells(def.type).length === 0) continue
+    for (const line of ['col', 'row', 'either'] as const) {
+      out.push({ type: 'sameLineAsObject', object: def.type, line, room: 'any' })
+    }
+    for (const dir of ['north', 'south', 'east', 'west'] as const) {
+      out.push({ type: 'directionFromObject', object: def.type, dir, room: 'any' })
+    }
+  }
+
+  // --- position ---
   out.push({ type: 'inRoom', room })
   out.push({ type: 'inRow', row })
   out.push({ type: 'inCol', col })
@@ -572,7 +856,16 @@ function candidatesFor(
     out.push({ type: 'nearWindow' })
     out.push({ type: 'uniqueNearWindow' }) // "only person beside a window" (test-filtered)
   }
+  if (board.hasDoor(cell)) out.push({ type: 'nearDoor' })
+  // inside/outside only when the board actually mixes indoor and outdoor rooms.
+  if (board.cellsOutside(true).size > 0 && board.cellsOutside(false).size > 0) {
+    out.push(board.isOutside(cell) ? { type: 'outside' } : { type: 'inside' })
+    for (const id of otherSuspects) out.push({ type: 'insideXor', with: id })
+  }
 
+  // --- social: relative to other people ---
+  const inRoomAll = puzzle.allIds().filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
+  if (inRoomAll.length > 1) out.push({ type: 'notAlone' })
   const sameRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
   if (sameRoom.length === 0) out.push({ type: 'alone' })
   for (const id of sameRoom) out.push({ type: 'sameRoom', as: id })
@@ -585,29 +878,62 @@ function candidatesFor(
     else if (col > o.col) out.push({ type: 'direction', of: id, dir: 'east' })
   }
 
-  // "Niemand im Raum hatte X" counts EVERYONE in the room (incl. subject + victim).
-  const inRoomAll = puzzle.allIds().filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
-  for (const attr of ['beard', 'glasses']) {
-    if (!inRoomAll.some((id) => puzzle.attributesOf(id)[attr] === true)) {
-      out.push({ type: 'roomAttribute', quantifier: 'none', attribute: attr, value: true })
+  // --- room-attribute clues: "no one / some / everyone else in the room had X" ---
+  // Boolean traits (beard/glasses/bald) round-trip to the editor, so they are offered
+  // in BOTH modes — with excludeSelf in editor-safe mode to match the editor's flat
+  // builder. Gender (valued) and the roomCompanion/roomExists clues have no editor
+  // equivalent, so they stay generator-only.
+  const attrPairs: { attribute: string; value: AttributeValue }[] = [
+    { attribute: 'beard', value: true },
+    { attribute: 'glasses', value: true },
+    { attribute: 'bald', value: true },
+  ]
+  if (!editorSafe) {
+    attrPairs.push({ attribute: 'gender', value: 'm' }, { attribute: 'gender', value: 'f' })
+  }
+  for (const { attribute, value } of attrPairs) {
+    for (const quantifier of ['none', 'some', 'all'] as const) {
+      out.push({ type: 'roomAttribute', quantifier, attribute, value, excludeSelf: editorSafe })
     }
   }
-  // "allein mit …" / "in seinem Raum saß …" are about OTHER SUSPECTS only — never the
-  // subject, never the victim (else they would reveal the murderer beside the body).
-  const othersInRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
-  if (othersInRoom.length === 1) {
-    const gender = puzzle.attributesOf(othersInRoom[0]).gender
-    out.push({ type: 'roomCompanion', count: 1, attribute: 'gender', value: gender })
-  }
-  for (const id of othersInRoom) {
-    const gender = puzzle.attributesOf(id).gender
-    for (const obj of board.tileAt(solution.cellOf(id)).objects()) {
-      if (obj.occupiable) out.push({ type: 'roomExists', attribute: 'gender', value: gender, object: obj.type })
+  if (!editorSafe) {
+    // "allein mit …" / "in seinem Raum saß …" are about OTHER SUSPECTS only — never the
+    // subject, never the victim (else they would reveal the murderer beside the body).
+    const othersInRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
+    if (othersInRoom.length === 1) {
+      const gender = puzzle.attributesOf(othersInRoom[0]).gender
+      out.push({ type: 'roomCompanion', count: 1, attribute: 'gender', value: gender })
+    }
+    for (const id of othersInRoom) {
+      const gender = puzzle.attributesOf(id).gender
+      for (const obj of board.tileAt(solution.cellOf(id)).objects()) {
+        if (obj.occupiable) out.push({ type: 'roomExists', attribute: 'gender', value: gender, object: obj.type })
+      }
     }
   }
 
-  const trueClues = out.filter((json) => createClue(json).test(suspectId, solution, puzzle))
-  return trueClues.sort((a, b) => tightness(a, puzzle) - tightness(b, puzzle))
+  // --- negations ("NICHT neben einem Regal / an der Wand …") — the hand-made easy
+  // levels use these for elimination. Only the editor-representable fill needs them. ---
+  if (editorSafe) {
+    const roomObjTypes = new Set<string>()
+    for (let c = 0; c < board.width * board.height; c++) {
+      if (board.roomIdOf(c) === room) for (const obj of board.tileAt(c).objects()) roomObjTypes.add(obj.type)
+    }
+    for (const t of roomObjTypes) {
+      out.push({ type: 'not', clue: { type: 'nearObject', object: t } })
+      out.push({ type: 'not', clue: { type: 'onObject', object: t } })
+    }
+    out.push({ type: 'not', clue: { type: 'atWall' } })
+    out.push({ type: 'not', clue: { type: 'corner' } })
+    out.push({ type: 'not', clue: { type: 'nearWindow' } })
+  }
+
+  // Keep only clues TRUE for this solution; sort tightest-first (tightness once each).
+  const scored = out
+    .filter((json) => createClue(json).test(suspectId, solution, puzzle))
+    .map((json) => ({ json, t: tightness(json, puzzle) }))
+  scored.sort((a, b) => a.t - b.t)
+  return scored.map((s) => s.json)
 }
 
 function tightness(json: ClueJson, puzzle: Puzzle): number {
@@ -626,6 +952,10 @@ function tightness(json: ClueJson, puzzle: Puzzle): number {
       return 35
     case 'sameRoom':
       return 40
+    case 'notAlone':
+      return 70
+    case 'insideXor':
+      return 90
     case 'direction':
       return 100
     default:
@@ -633,11 +963,176 @@ function tightness(json: ClueJson, puzzle: Puzzle): number {
   }
 }
 
+/** Easy-clue palette: simple, self-contained clue types (or their negation) — the same
+ *  ones the hand-made easy levels use. No abstract "same line / direction of" or attribute. */
+const EASY_ALLOWED_TYPES = new Set<string>([
+  'onObject', 'uniqueOnObject', 'nearObject', 'inRoom', 'nearWindow', 'uniqueNearWindow',
+  'nearDoor', 'corner', 'atWall', 'inside', 'outside', 'inCol', 'inRow',
+])
+const easyInnerType = (c: ClueJson): string => (c.type === 'not' ? c.clue.type : c.type)
+const isLineClue = (c: ClueJson): boolean => {
+  const t = easyInnerType(c)
+  return t === 'inCol' || t === 'inRow'
+}
+
+/**
+ * Build an EASY puzzle by FORWARD CONSTRUCTION instead of random search: place suspects
+ * one at a time, each pinned to their cell by ≤2 SIMPLE clues that single them out among
+ * the cells STILL AVAILABLE — the rows and columns of already-placed people are gone (the
+ * Sudoku rule the game enforces). So it solves step by step ("this cell is forced, so that
+ * one is too"), with no contradiction and mostly a single clue each. Returns null if some
+ * suspect can't be pinned that way on this layout (then a different placement is tried).
+ */
+function constructEasyClues(
+  base: LevelJson,
+  suspectIds: PersonId[],
+  solution: Solution,
+  candidates: Map<PersonId, ClueJson[]>,
+  rng: Rng,
+): Map<PersonId, ClueJson> | null {
+  const puzzle = loadLevel(base)
+  const board = puzzle.board
+  // How naturally a clue reads (object/room first; bare "column/row N" only as a last
+  // resort; a negation slightly less preferred than its positive).
+  const CLARITY: Record<string, number> = {
+    onObject: 0, uniqueOnObject: 0, nearObject: 0, inRoom: 0,
+    corner: 1, atWall: 1, nearWindow: 1, uniqueNearWindow: 1, nearDoor: 1, inside: 1, outside: 1,
+    inCol: 2, inRow: 2,
+  }
+  const clarityOf = (c: ClueJson): number => (CLARITY[easyInnerType(c)] ?? 3) + (c.type === 'not' ? 0.3 : 0)
+  // Per-suspect easy candidates: clearest type first, then sharpest (fewest cells).
+  const cand = new Map<PersonId, { json: ClueJson; cells: Set<Cell> }[]>()
+  for (const id of suspectIds) {
+    const list: { json: ClueJson; cells: Set<Cell> }[] = []
+    for (const json of candidates.get(id)!) {
+      if (!EASY_ALLOWED_TYPES.has(easyInnerType(json))) continue
+      const cells = createClue(json).candidateCells(board)
+      if (cells) list.push({ json, cells })
+    }
+    list.sort((a, b) => clarityOf(a.json) - clarityOf(b.json) || a.cells.size - b.cells.size)
+    cand.set(id, list)
+  }
+
+  // Suspects never share the victim's row/column (one person per row & column).
+  const vr = board.rc(solution.cellOf(VICTIM_ID))
+  const availRows = new Set<number>()
+  const availCols = new Set<number>()
+  for (let r = 0; r < board.height; r++) if (r !== vr.row) availRows.add(r)
+  for (let c = 0; c < board.width; c++) if (c !== vr.col) availCols.add(c)
+  const inAvail = (cell: Cell): boolean => {
+    const { row, col } = board.rc(cell)
+    return availRows.has(row) && availCols.has(col)
+  }
+
+  const chosen = new Map<PersonId, ClueJson>()
+  const remaining = new Set(suspectIds)
+  while (remaining.size > 0) {
+    let pinnedId: PersonId | null = null
+    let pinnedClue: ClueJson | null = null
+    for (const id of rng.shuffle([...remaining])) {
+      const cell = solution.cellOf(id)
+      const list = cand.get(id)!
+      const avail = list.map((e) => {
+        const s = new Set<Cell>()
+        for (const x of e.cells) if (inAvail(x)) s.add(x)
+        return s
+      })
+      // 1) a single clue whose available cells are exactly {cell}.
+      let idx: number[] | null = null
+      for (let i = 0; i < list.length; i++) {
+        if (avail[i].size === 1 && avail[i].has(cell)) {
+          idx = [i]
+          break
+        }
+      }
+      // 2) else a PAIR whose available cells intersect to exactly {cell} — but never a
+      //    column+row pair (that is a bare coordinate pin, which reads ugly).
+      for (let i = 0; i < list.length && !idx; i++) {
+        if (!avail[i].has(cell)) continue
+        for (let j = i + 1; j < list.length; j++) {
+          if (!avail[j].has(cell)) continue
+          if (isLineClue(list[i].json) && isLineClue(list[j].json)) continue
+          let extra = false
+          for (const x of avail[i]) {
+            if (x !== cell && avail[j].has(x)) {
+              extra = true
+              break
+            }
+          }
+          if (!extra) {
+            idx = [i, j]
+            break
+          }
+        }
+      }
+      if (idx) {
+        pinnedId = id
+        pinnedClue = idx.length === 1 ? list[idx[0]].json : { type: 'and', clues: idx.map((k) => list[k].json) }
+        break
+      }
+    }
+    if (!pinnedId || !pinnedClue) return null // nobody pinnable with ≤2 simple clues — give up
+    chosen.set(pinnedId, pinnedClue)
+    const { row, col } = board.rc(solution.cellOf(pinnedId))
+    availRows.delete(row)
+    availCols.delete(col)
+    remaining.delete(pinnedId)
+  }
+
+  // The cascade pins everyone DIRECTLY — that is too easy. Loosen most suspects so they
+  // need a SHORT elimination chain: give each a clue that leaves only a FEW cells open (so
+  // 1–2 cross-outs resolve them), while keeping the WHOLE puzzle solvable by simple forward
+  // deduction (hidden singles / "only one on X" / row-column cross-out — rank ≤ 2, never a
+  // hard technique or contradiction). Natural object/room clues are preferred over a bare
+  // column/row; suspects with no short-chain option stay direct (the anchors).
+  const SHORT_CHAIN_CELLS = 4
+  const solvableChain = (): boolean => {
+    const lvl = { ...base, suspects: base.suspects.map((s) => ({ ...s, clues: [chosen.get(s.id)!] })) }
+    const res = new DeductionEngine(loadLevel(lvl)).solve()
+    return res.solved && res.maxRank <= 2
+  }
+  for (const id of rng.shuffle([...suspectIds])) {
+    const current = chosen.get(id)!
+    const opts = cand
+      .get(id)!
+      .filter((e) => e.cells.size >= 2 && e.cells.size <= SHORT_CHAIN_CELLS) // a few open cells
+      .sort((a, b) => {
+        const la = isLineClue(a.json) ? 1 : 0
+        const lb = isLineClue(b.json) ? 1 : 0
+        return la - lb || b.cells.size - a.cells.size // natural & loosest-within-cap first
+      })
+    for (const e of opts) {
+      if (e.json === current) continue
+      chosen.set(id, e.json)
+      if (solvableChain()) break
+      chosen.set(id, current)
+    }
+  }
+  return chosen
+}
+
+/** How many suspects are directly placeable from their OWN clue alone (their clues pin a
+ *  single cell, with no need to cross anything out first). */
+function countAnchors(
+  chosen: Map<PersonId, ClueJson>,
+  suspectIds: PersonId[],
+  board: Board,
+): number {
+  let anchors = 0
+  for (const id of suspectIds) {
+    const cc = createClue(chosen.get(id)!).candidateCells(board)
+    if (cc && cc.size === 1) anchors++
+  }
+  return anchors
+}
+
 function selectClues(
   base: LevelJson,
   suspectIds: PersonId[],
   candidates: Map<PersonId, ClueJson[]>,
   rng: Rng,
+  difficulty?: GenDifficulty,
+  maxLineClues = 1,
 ): Map<PersonId, ClueJson> | null {
   for (const id of suspectIds) if (candidates.get(id)!.length === 0) return null
 
@@ -656,7 +1151,7 @@ function selectClues(
   const unique = (): boolean =>
     isUnique(base, new Map(suspectIds.map((id) => [id, clueOf(id)])))
 
-  const MAX_LINE = 1 // ≤1 line clue; generateLevel further prefers line-free levels
+  const MAX_LINE = maxLineClues // how many suspects may use a row/column clue
   const isLine = (clue: ClueJson): boolean => clue.type === 'inRow' || clue.type === 'inCol'
   const lineSuspects = (): number => {
     let n = 0
@@ -667,6 +1162,7 @@ function selectClues(
   }
 
   // Tighten: add a natural clue (never inRow+inCol together, ≤1 line clue) until unique.
+  // (Easy never reaches here — it is built by forward construction in fillAttempt.)
   for (let guard = 0; guard < 300 && !unique(); guard++) {
     const order = rng
       .shuffle([...suspectIds])
@@ -691,7 +1187,9 @@ function selectClues(
   }
   if (!unique()) return null
 
-  // Loosen for difficulty: drop extra ANDed clues, then widen single clues.
+  // MEDIUM / HARD / unspecified: start minimal-unique and loosen for difficulty — drop
+  // redundant ANDed clues (all), then (hard / free generator only) widen single clues to
+  // looser candidates. Medium stays minimal-unique, so it can need a little search.
   for (const id of suspectIds) {
     const u = used.get(id)!
     for (let k = u.length - 1; k >= 0 && u.length > 1; k--) {
@@ -699,15 +1197,17 @@ function selectClues(
       if (!unique()) u.splice(k, 0, removed)
     }
   }
-  for (const id of rng.shuffle([...suspectIds])) {
-    const u = used.get(id)!
-    if (u.length !== 1) continue
-    const list = candidates.get(id)!
-    const current = u[0]
-    for (let j = list.length - 1; j > current; j--) {
-      u[0] = j
-      if (lineSuspects() <= MAX_LINE && unique()) break
-      u[0] = current
+  if (difficulty !== 'medium') {
+    for (const id of rng.shuffle([...suspectIds])) {
+      const u = used.get(id)!
+      if (u.length !== 1) continue
+      const list = candidates.get(id)!
+      const current = u[0]
+      for (let j = list.length - 1; j > current; j--) {
+        u[0] = j
+        if (lineSuspects() <= MAX_LINE && unique()) break
+        u[0] = current
+      }
     }
   }
 

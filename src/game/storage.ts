@@ -7,6 +7,7 @@ const PROGRESS_PREFIX = 'murdoku.progress.v1.'
 const CUSTOM_KEY = 'murdoku.custom.v1'
 const EDITOR_DRAFT_KEY = 'murdoku.editordraft.v1'
 const FILTER_KEY = 'murdoku.filter.v1'
+const GEN_SETTINGS_KEY = 'murdoku.gensettings.v1'
 
 /** A board state flattened to JSON-friendly arrays (Maps/Sets don't serialize). */
 export interface SavedState {
@@ -43,6 +44,25 @@ export function loadFilter(fallback: LevelFilter): LevelFilter {
 
 export function saveFilter(filter: LevelFilter): void {
   write(FILTER_KEY, filter)
+}
+
+/** The generator form's last selection (size, difficulty, theme, objects, openings). */
+export interface GenSettings {
+  size: number
+  difficulty: string
+  theme: string
+  objects: string[]
+  windows: boolean
+  doors: boolean
+}
+
+/** Pass the form defaults as the fallback for a first-time visitor. */
+export function loadGenSettings(fallback: GenSettings): GenSettings {
+  return { ...fallback, ...read<Partial<GenSettings>>(GEN_SETTINGS_KEY, {}) }
+}
+
+export function saveGenSettings(settings: GenSettings): void {
+  write(GEN_SETTINGS_KEY, settings)
 }
 
 export function markSolved(id: string): void {

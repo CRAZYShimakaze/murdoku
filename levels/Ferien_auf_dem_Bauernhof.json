@@ -1,84 +1,84 @@
 {
   "schema": 1,
-  "id": "editor-15-der-supermarkt",
-  "title": "15. Der Supermarkt",
+  "id": "editor-ferien-auf-dem-bauernhof",
+  "title": "Ferien auf dem Bauernhof",
   "size": {
-    "width": 9,
-    "height": 9
+    "width": 8,
+    "height": 8
   },
   "rooms": {
     "1": {
-      "nameKey": "Kasse",
+      "nameKey": "Weide",
       "color": "#e8d8b0",
-      "outside": false
+      "outside": true
     },
     "2": {
-      "nameKey": "Snacks",
+      "nameKey": "Hof",
       "color": "#b9d0e6",
-      "outside": false
+      "outside": true
     },
     "3": {
-      "nameKey": "Getränke",
+      "nameKey": "Garten",
       "color": "#cfe0cf",
-      "outside": false
+      "outside": true
     },
     "4": {
-      "nameKey": "Wurstabteilung",
+      "nameKey": "Schuppen",
       "color": "#d8c0c0",
       "outside": false
     },
     "5": {
-      "nameKey": "Obstabteilung",
+      "nameKey": "Haus",
       "color": "#e6cda0",
       "outside": false
     },
     "6": {
-      "nameKey": "Kühlregale",
+      "nameKey": "Kuhstall",
       "color": "#e6c0d2",
       "outside": false
     },
     "7": {
-      "nameKey": "Spielzeugabteilung",
+      "nameKey": "Schweinestall",
       "color": "#c6c0e0",
       "outside": false
     },
     "8": {
-      "nameKey": "Lagerraum",
+      "nameKey": "Scheune",
       "color": "#c0e0c8",
       "outside": false
     },
     "9": {
-      "nameKey": "Bäckerei",
+      "nameKey": "Hühnerstall",
       "color": "#e0c4a0",
       "outside": false
     },
     "A": {
-      "nameKey": "Gemüseabteilung",
+      "nameKey": "Pferdestall",
       "color": "#a8c8e0",
       "outside": false
     },
     "B": {
-      "nameKey": "Käsetheke",
+      "nameKey": "Gewächshaus",
       "color": "#d8e0a8",
       "outside": false
     },
     "C": {
-      "nameKey": "Tiefkühlung",
+      "nameKey": "Vorratskammer",
       "color": "#e0b0a8",
       "outside": false
     },
     "D": {
-      "nameKey": "Drogerie",
+      "nameKey": "Milchkammer",
       "color": "#c8b0d8",
       "outside": false
     },
     "E": {
-      "nameKey": "Personalraum",
+      "nameKey": "Feld",
       "color": "#a8e0d0",
-      "outside": false
+      "outside": true
     },
     "F": {
-      "nameKey": "Parkplatz",
+      "nameKey": "Teich",
       "color": "#ded0e6",
       "outside": true
     }
@@ -194,80 +194,78 @@
     }
   },
   "roomMap": [
-    "111118888",
-    "111118888",
-    "111118866",
-    "222223366",
-    "222223366",
-    "222223366",
-    "222223366",
-    "222223333",
-    "222223333"
+    "44443333",
+    "44443333",
+    "22243333",
+    "22211111",
+    "22211111",
+    "77777666",
+    "77777666",
+    "77777666"
   ],
   "groundMap": [
-    ".........",
-    ".........",
-    ".........",
-    "..rr.....",
-    "...r.....",
-    "...r.r...",
-    "...r.rr..",
-    "...r.r...",
-    "........."
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........"
   ],
   "topMap": [
-    ".fggt...n",
-    ".....n...",
-    "..tKt..gg",
-    ".........",
-    ".g..g.g.g",
-    ".gg.f.g.g",
-    ".tt....g.",
-    ".t....ttg",
-    "........n"
+    "n.sna..a",
+    "......a.",
+    "..x.....",
+    "s.......",
+    "..p.....",
+    "p...i..k",
+    ".iii.k..",
+    "i......n"
   ],
   "windows": [
     {
-      "r": 8,
-      "c": 0,
-      "side": "W"
+      "r": 1,
+      "c": 3,
+      "side": "E"
     },
     {
-      "r": 7,
-      "c": 0,
-      "side": "W"
-    },
-    {
-      "r": 5,
-      "c": 0,
-      "side": "W"
-    },
-    {
-      "r": 4,
-      "c": 0,
-      "side": "W"
+      "r": 1,
+      "c": 1,
+      "side": "S"
     }
   ],
-  "doors": [],
+  "doors": [
+    {
+      "r": 1,
+      "c": 0,
+      "side": "S"
+    }
+  ],
   "suspects": [
     {
       "id": "A",
-      "name": "Anton",
+      "name": "Anna",
       "attributes": {
-        "gender": "m"
+        "gender": "f",
+        "hairstyle": "ponytailRight",
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "uniqueOnObject",
-          "object": "carpet"
+          "type": "uniqueNearWindow"
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bärbel",
+      "name": "Bernd",
       "attributes": {
-        "gender": "f"
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "bald": true,
+        "hair": "brown"
       },
       "clues": [
         {
@@ -275,11 +273,11 @@
           "clues": [
             {
               "type": "inRoom",
-              "room": "2"
+              "room": "1"
             },
             {
-              "type": "nearObject",
-              "object": "table"
+              "type": "inCol",
+              "col": 4
             }
           ]
         }
@@ -287,9 +285,41 @@
     },
     {
       "id": "C",
-      "name": "Camilla",
+      "name": "Cyrus",
       "attributes": {
-        "gender": "f"
+        "gender": "m",
+        "hairstyle": "caesar",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "plant"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "updo",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "crate"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "pixie",
+        "hair": "black"
       },
       "clues": [
         {
@@ -298,110 +328,73 @@
       ]
     },
     {
-      "id": "D",
-      "name": "Dylan",
-      "attributes": {
-        "gender": "m"
-      },
-      "clues": [
-        {
-          "type": "and",
-          "clues": [
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "shelf"
-              }
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "table"
-              }
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "crate"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "E",
-      "name": "Eileen",
-      "attributes": {
-        "gender": "f"
-      },
-      "clues": [
-        {
-          "type": "and",
-          "clues": [
-            {
-              "type": "inRoom",
-              "room": "3"
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "sameRoom",
-                "as": "A"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
       "id": "F",
-      "name": "Fred",
+      "name": "Freya",
       "attributes": {
-        "gender": "m"
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "curly",
+        "hair": "brown"
       },
       "clues": [
         {
-          "type": "inCol",
-          "col": 8
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "chair"
+            },
+            {
+              "type": "not",
+              "clue": {
+                "type": "atWall"
+              }
+            }
+          ]
         }
       ]
     },
     {
       "id": "G",
-      "name": "Gwen",
+      "name": "Grant",
       "attributes": {
-        "gender": "f"
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "spiky",
+        "hair": "brown"
       },
       "clues": [
         {
-          "type": "nearWindow"
-        }
-      ]
-    },
-    {
-      "id": "H",
-      "name": "Hanno",
-      "attributes": {
-        "gender": "f"
-      },
-      "clues": [
-        {
-          "type": "nearObject",
-          "object": "cash"
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "pig"
+            },
+            {
+              "type": "inRow",
+              "row": 5
+            }
+          ]
         }
       ]
     }
   ],
   "victim": {
-    "name": "Ottilie",
+    "name": "Vivek",
     "attributes": {
-      "gender": "f"
+      "gender": "m"
     }
   },
-  "boardClues": [],
-  "difficulty": "original"
+  "boardClues": [
+    {
+      "type": "emptyRooms",
+      "count": 0
+    }
+  ],
+  "difficulty": "easy"
 }
