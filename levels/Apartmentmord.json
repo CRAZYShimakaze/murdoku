@@ -8,15 +8,15 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Schlafzimmer",
+      "nameKey": "room.bedroom",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Arbeitszimmer",
+      "nameKey": "room.study",
       "color": "#b9d0e6"
     },
     "3": {
-      "nameKey": "Garage",
+      "nameKey": "room.garage",
       "color": "#cfe0cf"
     }
   },

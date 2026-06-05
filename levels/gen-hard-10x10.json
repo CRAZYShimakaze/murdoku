@@ -8,27 +8,27 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Werkstatt",
+      "nameKey": "room.workshop",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Lager",
+      "nameKey": "room.storage",
       "color": "#b9d0e6"
     },
     "3": {
-      "nameKey": "Büro",
+      "nameKey": "room.office",
       "color": "#cfe0cf"
     },
     "4": {
-      "nameKey": "Wartebereich",
+      "nameKey": "room.waiting",
       "color": "#d8c0c0"
     },
     "5": {
-      "nameKey": "Hof",
+      "nameKey": "room.yard",
       "color": "#e6cda0"
     },
     "6": {
-      "nameKey": "Waschhalle",
+      "nameKey": "room.washbay",
       "color": "#e6c0d2"
     }
   },

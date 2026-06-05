@@ -37,5 +37,5 @@
       "clues": [{ "type": "nearWindow" }]
     }
   ],
-  "victim": { "name": "Olli" }
+  "victim": { "name": "Olli", "attributes": { "gender": "m" } }
 }

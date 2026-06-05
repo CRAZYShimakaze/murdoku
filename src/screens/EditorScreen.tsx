@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import LanguageToggle from '../components/LanguageToggle.tsx'
 import EditorBoard from '../components/EditorBoard.tsx'
 import SuspectsPanel from '../components/SuspectsPanel.tsx'
-import { OBJECT_GLYPHS } from '../game/glyphs.ts'
-import { THEME_IDS, themeRooms, themeOutdoor } from '../engine/generator/index.ts'
+import ObjectIcon from '../components/ObjectIcon.tsx'
+import { THEME_IDS, themeRooms, themeOutdoor, themeFromRoomKeys } from '../engine/generator/index.ts'
 import { fillBoardCluesAsync, type GenHandle } from '../game/generatorClient.ts'
 import { LEVELS, levelMetaFromJson, type Difficulty, type LevelMeta } from '../game/levels.ts'
 import {
@@ -64,11 +64,14 @@ interface EditorDraft {
 /** Seed an editor draft from an existing level ("open in the editor"). */
 function draftFromLevel(level: LevelJson): EditorDraft {
   const diff = level.difficulty
+  const state = editorStateFromLevel(level)
   return {
-    state: editorStateFromLevel(level),
+    state,
     name: level.title ?? '',
     difficulty: diff === 'easy' || diff === 'medium' || diff === 'hard' ? diff : 'medium',
-    theme: pickTheme(),
+    // Preselect the theme that matches the level's rooms; fall back to a random one
+    // for levels with only generic room slots (no theme to detect).
+    theme: themeFromRoomKeys(state.roomNames) ?? pickTheme(),
   }
 }
 
@@ -276,9 +279,9 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
 
   // Keep the paint selection valid for the active mode.
   const palette = useMemo(() => {
-    if (mode === 'ground') return GROUND_OBJECTS
-    if (mode === 'top') return TOP_OBJECTS
-    return []
+    const base = mode === 'ground' ? GROUND_OBJECTS : mode === 'top' ? TOP_OBJECTS : []
+    // Walkable objects on top, blocking ones below (stable within each group).
+    return [...base].sort((a, b) => Number(b.occupiable) - Number(a.occupiable))
   }, [mode])
 
   return (
@@ -502,7 +505,7 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
                   data-active={paintObj === o.char}
                   onClick={() => setPaintObj(o.char)}
                 >
-                  <span className="mk-pal__icon">{OBJECT_GLYPHS[o.type] ?? '•'}</span>
+                  <ObjectIcon type={o.type} occupiable={o.occupiable} size={26} className="mk-pal__canvas" />
                   {t(`objName.${o.type}`)}
                 </button>
               ))}

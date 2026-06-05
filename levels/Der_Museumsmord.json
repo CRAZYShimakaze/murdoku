@@ -8,19 +8,19 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Café",
+      "nameKey": "room.cafe",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Archiv",
+      "nameKey": "room.archive",
       "color": "#b9d0e6"
     },
     "3": {
-      "nameKey": "Sonderausstellung",
+      "nameKey": "room.specialexhibit",
       "color": "#cfe0cf"
     },
     "4": {
-      "nameKey": "Foyer",
+      "nameKey": "room.foyer",
       "color": "#d8c0c0"
     }
   },

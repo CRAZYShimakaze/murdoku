@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { loadLevel, type Cell } from '../engine/index.ts'
 import { drawBoard } from '../game/boardRender.ts'
 import { onArtReady } from '../game/objectArt.ts'
@@ -22,13 +23,9 @@ interface Layout {
   h: number
 }
 
-function roomName(key: string): string {
-  const m = /^room\.editor(\d+)$/.exec(key)
-  return m ? `Raum ${m[1]}` : key
-}
-
 /** The editable board: live preview of the editor state + click/drag to paint. */
 export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow, doorMode, onPaintDoor }: Props) {
+  const { t, i18n } = useTranslation()
   const W = state.size
   const H = state.size
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -78,7 +75,7 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow,
       puzzle,
       cell: layout.cell,
       origin: { x: 0, y: 0 },
-      roomName,
+      roomName: (key: string) => t(key),
       suspectIndex: new Map(),
       placements: new Map(),
       marks: new Map(),
@@ -87,7 +84,7 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow,
       press: null,
       reveal: null,
     })
-  }, [layout, puzzle, artTick])
+  }, [layout, puzzle, artTick, t, i18n.language])
 
   // Redraw when bundled board art (e.g. the armchair) finishes loading.
   useEffect(() => onArtReady(() => setArtTick((t) => t + 1)), [])

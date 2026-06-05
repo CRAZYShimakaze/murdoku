@@ -8,77 +8,77 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Weide",
+      "nameKey": "room.pasture",
       "color": "#e8d8b0",
       "outside": true
     },
     "2": {
-      "nameKey": "Hof",
+      "nameKey": "room.yard",
       "color": "#b9d0e6",
       "outside": true
     },
     "3": {
-      "nameKey": "Garten",
+      "nameKey": "room.garden",
       "color": "#cfe0cf",
       "outside": true
     },
     "4": {
-      "nameKey": "Schuppen",
+      "nameKey": "room.shed",
       "color": "#d8c0c0",
       "outside": false
     },
     "5": {
-      "nameKey": "Haus",
+      "nameKey": "room.farmhouse",
       "color": "#e6cda0",
       "outside": false
     },
     "6": {
-      "nameKey": "Kuhstall",
+      "nameKey": "room.cowshed",
       "color": "#e6c0d2",
       "outside": false
     },
     "7": {
-      "nameKey": "Schweinestall",
+      "nameKey": "room.pigsty",
       "color": "#c6c0e0",
       "outside": false
     },
     "8": {
-      "nameKey": "Scheune",
+      "nameKey": "room.barn",
       "color": "#c0e0c8",
       "outside": false
     },
     "9": {
-      "nameKey": "Hühnerstall",
+      "nameKey": "room.henhouse",
       "color": "#e0c4a0",
       "outside": false
     },
     "A": {
-      "nameKey": "Pferdestall",
+      "nameKey": "room.stable",
       "color": "#a8c8e0",
       "outside": false
     },
     "B": {
-      "nameKey": "Gewächshaus",
+      "nameKey": "room.greenhouse",
       "color": "#d8e0a8",
       "outside": false
     },
     "C": {
-      "nameKey": "Vorratskammer",
+      "nameKey": "room.pantry",
       "color": "#e0b0a8",
       "outside": false
     },
     "D": {
-      "nameKey": "Milchkammer",
+      "nameKey": "room.dairy",
       "color": "#c8b0d8",
       "outside": false
     },
     "E": {
-      "nameKey": "Feld",
+      "nameKey": "room.field",
       "color": "#a8e0d0",
       "outside": true
     },
     "F": {
-      "nameKey": "Teich",
+      "nameKey": "room.pond",
       "color": "#ded0e6",
       "outside": true
     }

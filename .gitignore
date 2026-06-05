@@ -9,3 +9,5 @@ node_modules/.tmp
 coverage
 
 .claude/
+
+scripts/migrate-rooms.mjs

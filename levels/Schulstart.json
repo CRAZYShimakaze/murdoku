@@ -8,11 +8,11 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Aula",
+      "nameKey": "room.assemblyhall",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Lehrerzimmer",
+      "nameKey": "room.teachersroom",
       "color": "#b9d0e6"
     }
   },

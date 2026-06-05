@@ -1,84 +1,84 @@
 {
   "schema": 1,
-  "id": "editor-arbeitskollegen",
-  "title": "Arbeitskollegen",
+  "id": "editor-hotelzimmer-13-check-in",
+  "title": "Hotelzimmer 13 Check In",
   "size": {
-    "width": 6,
-    "height": 6
+    "width": 4,
+    "height": 4
   },
   "rooms": {
     "1": {
-      "nameKey": "room.openoffice",
+      "nameKey": "room.lobby",
       "color": "#e8d8b0",
       "outside": false
     },
     "2": {
-      "nameKey": "room.meeting",
+      "nameKey": "room.frontdesk",
       "color": "#b9d0e6",
       "outside": false
     },
     "3": {
-      "nameKey": "room.kitchen",
+      "nameKey": "room.restaurant",
       "color": "#cfe0cf",
       "outside": false
     },
     "4": {
-      "nameKey": "room.reception",
+      "nameKey": "room.bar",
       "color": "#d8c0c0",
       "outside": false
     },
     "5": {
-      "nameKey": "room.serverroom",
+      "nameKey": "room.suite",
       "color": "#e6cda0",
       "outside": false
     },
     "6": {
-      "nameKey": "room.archive",
+      "nameKey": "room.conference",
       "color": "#e6c0d2",
       "outside": false
     },
     "7": {
-      "nameKey": "room.bossoffice",
+      "nameKey": "room.spa",
       "color": "#c6c0e0",
       "outside": false
     },
     "8": {
-      "nameKey": "room.copyroom",
+      "nameKey": "room.gym",
       "color": "#c0e0c8",
       "outside": false
     },
     "9": {
-      "nameKey": "room.kitchenette",
+      "nameKey": "room.kitchen",
       "color": "#e0c4a0",
       "outside": false
     },
     "A": {
-      "nameKey": "room.storage",
+      "nameKey": "room.luggageroom",
       "color": "#a8c8e0",
       "outside": false
     },
     "B": {
-      "nameKey": "room.conference",
+      "nameKey": "room.breakfastroom",
       "color": "#d8e0a8",
       "outside": false
     },
     "C": {
-      "nameKey": "room.lobby",
+      "nameKey": "room.rooftop",
       "color": "#e0b0a8",
-      "outside": false
+      "outside": true
     },
     "D": {
-      "nameKey": "room.commonroom",
+      "nameKey": "room.elevator",
       "color": "#c8b0d8",
       "outside": false
     },
     "E": {
-      "nameKey": "room.mailroom",
+      "nameKey": "room.hallway",
       "color": "#a8e0d0",
       "outside": false
     },
     "F": {
-      "nameKey": "room.printroom",
+      "nameKey": "room.laundrette",
       "color": "#ded0e6",
       "outside": false
     }
@@ -194,109 +194,40 @@
     }
   },
   "roomMap": [
-    "777722",
-    "777722",
-    "777722",
-    "111122",
-    "111DDD",
-    "111DDD"
+    "2555",
+    "2555",
+    "4555",
+    "4455"
   ],
   "groundMap": [
-    "......",
-    "......",
-    "......",
-    "......",
-    "...rrr",
-    "......"
+    "....",
+    "....",
+    "....",
+    "...."
   ],
   "topMap": [
-    "gsg.gs",
-    "ttt.st",
-    ".n..st",
-    ".ss..s",
-    ".tt.s.",
-    "gsspsp"
+    ".gbs",
+    "sx.g",
+    ".sb.",
+    ".s.."
   ],
-  "windows": [
-    {
-      "r": 0,
-      "c": 1,
-      "side": "N"
-    },
-    {
-      "r": 0,
-      "c": 3,
-      "side": "N"
-    },
-    {
-      "r": 0,
-      "c": 5,
-      "side": "E"
-    },
-    {
-      "r": 2,
-      "c": 5,
-      "side": "E"
-    },
-    {
-      "r": 4,
-      "c": 5,
-      "side": "E"
-    },
-    {
-      "r": 4,
-      "c": 0,
-      "side": "W"
-    },
-    {
-      "r": 2,
-      "c": 0,
-      "side": "W"
-    },
-    {
-      "r": 0,
-      "c": 0,
-      "side": "W"
-    }
-  ],
-  "doors": [
-    {
-      "r": 1,
-      "c": 3,
-      "side": "E"
-    },
-    {
-      "r": 3,
-      "c": 3,
-      "side": "E"
-    },
-    {
-      "r": 3,
-      "c": 3,
-      "side": "S"
-    },
-    {
-      "r": 3,
-      "c": 0,
-      "side": "W"
-    }
-  ],
+  "windows": [],
+  "doors": [],
   "suspects": [
     {
       "id": "A",
-      "name": "Anna",
+      "name": "Alex",
       "attributes": {
-        "gender": "f",
+        "gender": "m",
         "glasses": true,
         "glassesShape": "round",
         "glassesColor": "black",
-        "hairstyle": "ponytailRight",
-        "hair": "brown"
+        "bald": true,
+        "hair": "white"
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "shelf"
+          "type": "corner"
         }
       ]
     },
@@ -305,22 +236,17 @@
       "name": "Bernd",
       "attributes": {
         "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
         "bald": true,
-        "hair": "brown"
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "inRoom",
-              "room": "7"
-            },
-            {
-              "type": "onObject",
-              "object": "chair"
-            }
-          ]
+          "type": "alone"
         }
       ]
     },
@@ -329,55 +255,23 @@
       "name": "Cyrus",
       "attributes": {
         "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "hairstyle": "caesar",
-        "hair": "brown"
+        "bald": true,
+        "hair": "black"
       },
       "clues": [
         {
-          "type": "inRow",
-          "row": 2
-        }
-      ]
-    },
-    {
-      "id": "D",
-      "name": "Dylan",
-      "attributes": {
-        "gender": "m",
-        "hairstyle": "afro",
-        "hair": "white"
-      },
-      "clues": [
-        {
-          "type": "inRoom",
-          "room": "1"
-        }
-      ]
-    },
-    {
-      "id": "E",
-      "name": "Elsa",
-      "attributes": {
-        "gender": "f",
-        "hairstyle": "pixie",
-        "hair": "brown"
-      },
-      "clues": [
-        {
-          "type": "inRoom",
-          "room": "7"
+          "type": "inCol",
+          "col": 0
         }
       ]
     }
   ],
   "victim": {
-    "name": "Viraj",
+    "name": "Vivek",
     "attributes": {
       "gender": "m"
     }
   },
   "boardClues": [],
-  "difficulty": "easy"
+  "difficulty": "medium"
 }

@@ -8,77 +8,77 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Wohnzimmer",
+      "nameKey": "room.living",
       "color": "#e8d8b0",
       "outside": false
     },
     "2": {
-      "nameKey": "Esszimmer",
+      "nameKey": "room.dining",
       "color": "#b9d0e6",
       "outside": false
     },
     "3": {
-      "nameKey": "Küche",
+      "nameKey": "room.kitchen",
       "color": "#cfe0cf",
       "outside": false
     },
     "4": {
-      "nameKey": "Flur",
+      "nameKey": "room.hallway",
       "color": "#d8c0c0",
       "outside": false
     },
     "5": {
-      "nameKey": "Balkon",
+      "nameKey": "room.balcony",
       "color": "#e6cda0",
       "outside": true
     },
     "6": {
-      "nameKey": "Spielzimmer",
+      "nameKey": "room.gameroom",
       "color": "#e6c0d2",
       "outside": false
     },
     "7": {
-      "nameKey": "Bar",
+      "nameKey": "room.bar",
       "color": "#c6c0e0",
       "outside": false
     },
     "8": {
-      "nameKey": "Lounge",
+      "nameKey": "room.lounge",
       "color": "#c0e0c8",
       "outside": false
     },
     "9": {
-      "nameKey": "Terrasse",
+      "nameKey": "room.terrace",
       "color": "#e0c4a0",
       "outside": true
     },
     "A": {
-      "nameKey": "Bibliothek",
+      "nameKey": "room.library",
       "color": "#a8c8e0",
       "outside": false
     },
     "B": {
-      "nameKey": "Wintergarten",
+      "nameKey": "room.conservatory",
       "color": "#d8e0a8",
       "outside": false
     },
     "C": {
-      "nameKey": "Diele",
+      "nameKey": "room.vestibule",
       "color": "#e0b0a8",
       "outside": false
     },
     "D": {
-      "nameKey": "Vorratskammer",
+      "nameKey": "room.pantry",
       "color": "#c8b0d8",
       "outside": false
     },
     "E": {
-      "nameKey": "Gästebad",
+      "nameKey": "room.guestbath",
       "color": "#a8e0d0",
       "outside": false
     },
     "F": {
-      "nameKey": "Arbeitszimmer",
+      "nameKey": "room.study",
       "color": "#ded0e6",
       "outside": false
     }

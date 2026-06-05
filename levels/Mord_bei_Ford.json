@@ -8,77 +8,77 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Eingangshalle",
+      "nameKey": "room.entrancehall",
       "color": "#e8d8b0",
       "outside": false
     },
     "2": {
-      "nameKey": "Hauptgalerie",
+      "nameKey": "room.maingallery",
       "color": "#b9d0e6",
       "outside": false
     },
     "3": {
-      "nameKey": "Ausstellung",
+      "nameKey": "room.exposition",
       "color": "#cfe0cf",
       "outside": false
     },
     "4": {
-      "nameKey": "Tresor",
+      "nameKey": "room.vault",
       "color": "#d8c0c0",
       "outside": false
     },
     "5": {
-      "nameKey": "Café",
+      "nameKey": "room.cafe",
       "color": "#e6cda0",
       "outside": false
     },
     "6": {
-      "nameKey": "Sicherheitsraum",
+      "nameKey": "room.security",
       "color": "#e6c0d2",
       "outside": false
     },
     "7": {
-      "nameKey": "Werkstatt",
+      "nameKey": "room.workshop",
       "color": "#c6c0e0",
       "outside": false
     },
     "8": {
-      "nameKey": "Archiv",
+      "nameKey": "room.archive",
       "color": "#c0e0c8",
       "outside": false
     },
     "9": {
-      "nameKey": "Garderobe",
+      "nameKey": "room.cloakroom",
       "color": "#e0c4a0",
       "outside": false
     },
     "A": {
-      "nameKey": "Sonderausstellung",
+      "nameKey": "room.specialexhibit",
       "color": "#a8c8e0",
       "outside": false
     },
     "B": {
-      "nameKey": "Foyer",
+      "nameKey": "room.foyer",
       "color": "#d8e0a8",
       "outside": false
     },
     "C": {
-      "nameKey": "Bibliothek",
+      "nameKey": "room.library",
       "color": "#e0b0a8",
       "outside": false
     },
     "D": {
-      "nameKey": "Lager",
+      "nameKey": "room.storage",
       "color": "#c8b0d8",
       "outside": false
     },
     "E": {
-      "nameKey": "Auditorium",
+      "nameKey": "room.auditorium",
       "color": "#a8e0d0",
       "outside": false
     },
     "F": {
-      "nameKey": "Toilette",
+      "nameKey": "room.restroom",
       "color": "#ded0e6",
       "outside": false
     }
@@ -416,12 +416,6 @@
       "gender": "f"
     }
   },
-  "boardClues": [
-    {
-      "type": "countOnObject",
-      "object": "carpet",
-      "count": 1
-    }
-  ],
+  "boardClues": [],
   "difficulty": "easy"
 }

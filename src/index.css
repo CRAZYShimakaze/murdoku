@@ -283,12 +283,58 @@ button {
 }
 .mk-start__tag {
   font-family: var(--font-type);
-  color: var(--bone-dim);
-  font-size: 1rem;
-  letter-spacing: 0.04em;
+  color: var(--bone);
+  font-size: clamp(1.2rem, 1rem + 1.2vw, 1.7rem);
+  letter-spacing: 0.05em;
   margin: 0;
   opacity: 0;
+  animation: fade-up 0.8s ease 0.4s forwards;
+}
+/* Attribution directly under the title — typewritten dossier footnote, pulled
+   up so it reads as one block with the wordmark, before the larger tagline. */
+.mk-credits {
+  margin-top: -0.85rem;
+  display: grid;
+  gap: 0.15rem;
+  justify-items: center;
+  font-family: var(--font-type);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  line-height: 1.55;
+  color: var(--bone-dim);
+  opacity: 0;
   animation: fade-up 0.8s ease 0.32s forwards;
+}
+.mk-credits__line {
+  margin: 0;
+}
+.mk-credits__name {
+  position: relative;
+  color: var(--brass);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.16s ease;
+}
+.mk-credits__name::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.22s ease;
+}
+.mk-credits__name:hover,
+.mk-credits__name:focus-visible {
+  color: var(--crimson);
+}
+.mk-credits__name:hover::after,
+.mk-credits__name:focus-visible::after {
+  transform: scaleX(1);
 }
 .mk-start__cta {
   margin-top: 0.4rem;
@@ -769,6 +815,11 @@ button {
   padding: 0.05rem 0.45rem;
   line-height: 1.5;
 }
+.mk-clue--victim .mk-attr {
+  /* lighter chip so the ♂/♀ reads on the dark victim card */
+  background: rgba(236, 230, 218, 0.12);
+  border-color: rgba(236, 230, 218, 0.3);
+}
 .mk-clue--victim {
   background: linear-gradient(180deg, #2a2634, #221f2b);
   color: var(--bone);
@@ -837,7 +888,10 @@ button {
   padding: 1rem 0.7rem;
   border-left: 1px solid var(--line);
   background: var(--ink-900);
-  overflow-y: auto;
+  /* The panel itself never scrolls — tools + Solve stay pinned; only the legend
+     (the flexible child) scrolls. The editor palette uses the same pattern. */
+  overflow: hidden;
+  min-height: 0;
 }
 .mk-tools__label {
   font-family: var(--font-type);
@@ -846,9 +900,11 @@ button {
   text-transform: uppercase;
   color: var(--bone-faint);
   text-align: center;
+  flex-shrink: 0;
 }
 .mk-tool {
   position: relative;
+  flex-shrink: 0; /* buttons (incl. Solve) stay pinned; the legend scrolls instead */
   border: 1px solid var(--line-strong);
   background: var(--ink-700);
   color: var(--bone);
@@ -882,9 +938,6 @@ button {
   background: var(--crimson);
   color: #fff;
   border-color: var(--crimson);
-}
-.mk-tools__spacer {
-  flex: 1;
 }
 .mk-tool--submit {
   background: linear-gradient(180deg, var(--brass), var(--brass-dim));
@@ -977,6 +1030,9 @@ button {
   padding: 0.55rem 0.15rem 0.1rem;
   margin-top: 0.3rem;
   border-top: 1px dashed var(--line-strong);
+  /* The one scrollable region in the right panel — title stays, the list scrolls. */
+  flex: 1 1 0;
+  min-height: 0;
 }
 .mk-legend__title {
   font-family: var(--font-type);
@@ -986,6 +1042,7 @@ button {
   color: var(--bone-faint);
   text-align: center;
   margin-bottom: 0.15rem;
+  flex-shrink: 0;
 }
 .mk-legend ul {
   list-style: none;
@@ -993,18 +1050,21 @@ button {
   padding: 0;
   display: grid;
   gap: 0.4rem;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
 }
 .mk-leg {
   display: grid;
-  grid-template-columns: 1.5em 1fr;
-  column-gap: 0.4rem;
+  grid-template-columns: 30px 1fr;
+  column-gap: 0.5rem;
   align-items: center;
 }
-.mk-leg__glyph {
+.mk-leg__icon {
   grid-row: 1 / span 2;
-  font-size: 1.1rem;
-  text-align: center;
   align-self: center;
+  display: block;
+  border-radius: 5px;
 }
 .mk-leg__name {
   font-size: 0.74rem;
@@ -1125,6 +1185,19 @@ button {
   border-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.3);
   flex: none;
+}
+.mk-pal__canvas {
+  flex: none;
+  display: block;
+  border-radius: 5px;
+}
+/* Ring the object tile so it's obvious what you can stand on: green = walkable,
+   red = blocked (matches the legend's status colours). */
+.mk-pal__canvas[data-occupiable='true'] {
+  box-shadow: 0 0 0 2px var(--evergreen);
+}
+.mk-pal__canvas[data-occupiable='false'] {
+  box-shadow: 0 0 0 2px var(--crimson);
 }
 
 .mk-editor__actions {
@@ -1831,9 +1904,6 @@ button {
   .mk-tools__label {
     display: none;
   }
-  .mk-tools__spacer {
-    display: none;
-  }
   .mk-legend {
     display: none;
   }
@@ -1879,6 +1949,7 @@ button {
   .mk-start__kicker,
   .mk-wordmark,
   .mk-start__tag,
+  .mk-credits,
   .mk-start__cta,
   .mk-start__more,
   .mk-start__lang,

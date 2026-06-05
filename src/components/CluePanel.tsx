@@ -1,9 +1,10 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
 import { ATTR_CHIPS } from '../game/glyphs.ts'
 import Avatar from './Avatar.tsx'
+import AppearanceInfo from './AppearanceInfo.tsx'
 import ClueText from './ClueText.tsx'
 import InfoTip from './InfoTip.tsx'
 import {
@@ -66,6 +67,10 @@ export default function CluePanel({
     [i18n, lang, puzzle],
   )
 
+  // The victim carries a gender too — shown as info the player can use (older
+  // levels without it default to male, matching the editor's default).
+  const victimGender: 'm' | 'f' = puzzle.victim.attributes.gender === 'f' ? 'f' : 'm'
+
   // Board-wide notes shown above the suspects: which rooms are outdoors + any
   // board clues ("exactly one person on a mud puddle", …).
   const boardNotes = useMemo(() => {
@@ -81,17 +86,6 @@ export default function CluePanel({
     for (const clue of puzzle.boardClues) notes.push(renderer.render(clue.describe()))
     return notes
   }, [puzzle, renderer, t])
-
-  const attrInfo = (attributes: Readonly<Record<string, unknown>>): ReactNode => (
-    <span className="mk-tipinfo">
-      <span>
-        {attributes.gender === 'm' ? '♂' : '♀'}{' '}
-        {t(attributes.gender === 'm' ? 'info.male' : 'info.female')}
-      </span>
-      {attributes.beard === true && <span>🧔 {t('info.beard')}</span>}
-      {attributes.glasses === true && <span>👓 {t('info.glasses')}</span>}
-    </span>
-  )
 
   return (
     <div className="mk-clues">
@@ -138,7 +132,11 @@ export default function CluePanel({
             onPointerEnter={() => onHoverSuspect?.(s.id)}
             onPointerLeave={() => onHoverSuspect?.(null)}
           >
-            <InfoTip className="mk-avatarwrap" anchor=".mk-clue" content={attrInfo(s.attributes)}>
+            <InfoTip
+              className="mk-avatarwrap"
+              anchor=".mk-clue"
+              content={<AppearanceInfo attrs={s.attributes} letter={s.id} />}
+            >
               <Avatar
                 className="mk-avatar"
                 attrs={s.attributes}
@@ -172,11 +170,25 @@ export default function CluePanel({
         data-placed={placements.has(VICTIM_ID)}
         onClick={() => onSelect(VICTIM_ID)}
       >
-        <span className="mk-token mk-token--victim">☠</span>
+        <InfoTip
+          className="mk-avatarwrap"
+          anchor=".mk-clue"
+          content={
+            <span className="mk-tipinfo">
+              <span>
+                {victimGender === 'm' ? '♂' : '♀'}{' '}
+                {t(victimGender === 'm' ? 'info.male' : 'info.female')}
+              </span>
+            </span>
+          }
+        >
+          <span className="mk-token mk-token--victim">☠</span>
+        </InfoTip>
         <span className="mk-clue__main">
           <span className="mk-clue__name">
             {puzzle.victim.name}
             {placements.has(VICTIM_ID) && <span className="mk-clue__check">✓</span>}
+            <span className="mk-attr">{victimGender === 'm' ? '♂' : '♀'}</span>
           </span>
           <span className="mk-clue__text">
             {t('game.victim')} — {t('game.victimStatement')}

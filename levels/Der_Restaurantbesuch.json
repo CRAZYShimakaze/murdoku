@@ -8,77 +8,77 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Speisesaal",
+      "nameKey": "room.dininghall",
       "color": "#e8d8b0",
       "outside": false
     },
     "2": {
-      "nameKey": "Küche",
+      "nameKey": "room.kitchen",
       "color": "#b9d0e6",
       "outside": false
     },
     "3": {
-      "nameKey": "Bar",
+      "nameKey": "room.bar",
       "color": "#cfe0cf",
       "outside": false
     },
     "4": {
-      "nameKey": "Weinkeller",
+      "nameKey": "room.winecellar",
       "color": "#d8c0c0",
       "outside": false
     },
     "5": {
-      "nameKey": "Terrasse",
+      "nameKey": "room.terrace",
       "color": "#e6cda0",
       "outside": true
     },
     "6": {
-      "nameKey": "Lager",
+      "nameKey": "room.storage",
       "color": "#e6c0d2",
       "outside": false
     },
     "7": {
-      "nameKey": "Büro",
+      "nameKey": "room.office",
       "color": "#c6c0e0",
       "outside": false
     },
     "8": {
-      "nameKey": "Empfang",
+      "nameKey": "room.reception",
       "color": "#c0e0c8",
       "outside": false
     },
     "9": {
-      "nameKey": "Spülküche",
+      "nameKey": "room.scullery",
       "color": "#e0c4a0",
       "outside": false
     },
     "A": {
-      "nameKey": "Vorbereitung",
+      "nameKey": "room.preproom",
       "color": "#a8c8e0",
       "outside": false
     },
     "B": {
-      "nameKey": "Kühlraum",
+      "nameKey": "room.coldroom",
       "color": "#d8e0a8",
       "outside": false
     },
     "C": {
-      "nameKey": "Personalraum",
+      "nameKey": "room.staffroom",
       "color": "#e0b0a8",
       "outside": false
     },
     "D": {
-      "nameKey": "Lounge",
+      "nameKey": "room.lounge",
       "color": "#c8b0d8",
       "outside": false
     },
     "E": {
-      "nameKey": "Toilette",
+      "nameKey": "room.restroom",
       "color": "#a8e0d0",
       "outside": false
     },
     "F": {
-      "nameKey": "Garderobe",
+      "nameKey": "room.cloakroom",
       "color": "#ded0e6",
       "outside": false
     }

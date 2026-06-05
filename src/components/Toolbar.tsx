@@ -110,8 +110,6 @@ export default function Toolbar({
 
       {legend}
 
-      <span className="mk-tools__spacer" />
-
       <button
         type="button"
         className="mk-tool mk-tool--submit"

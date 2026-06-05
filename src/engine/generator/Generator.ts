@@ -43,71 +43,73 @@ export const DEFAULT_OBJECT_TYPES: string[] = [
   'box',
 ]
 
+// Room names are i18n keys (room.*) so they translate in-game (de/en). Each theme
+// lists 15 rooms; the generator picks a random subset per level.
 const THEMES: Theme[] = [
   {
     id: 'apartment',
-    rooms: ['Badezimmer', 'Küche', 'Wohnzimmer', 'Gästezimmer', 'Flur', 'Kinderzimmer 1', 'Kinderzimmer 2', 'Arbeitszimmer', 'Garage', 'Schlafzimmer', 'Esszimmer', 'Balkon', 'Abstellkammer', 'Waschküche', 'Vorratskammer'],
-    outdoor: ['Garage', 'Balkon'],
+    rooms: ['room.bathroom', 'room.kitchen', 'room.living', 'room.guestroom', 'room.hallway', 'room.kids1', 'room.kids2', 'room.study', 'room.garage', 'room.bedroom', 'room.dining', 'room.balcony', 'room.storeroom', 'room.laundry', 'room.pantry'],
+    outdoor: ['room.garage', 'room.balcony'],
   },
   {
     id: 'crime-scene',
-    rooms: ['Flur', 'Wohnzimmer', 'Küche', 'Bad', 'Schlafzimmer', 'Büro', 'Keller', 'Garage', 'Esszimmer', 'Dachboden', 'Gästezimmer', 'Abstellraum', 'Waschküche', 'Veranda', 'Kinderzimmer'],
-    outdoor: ['Garage', 'Veranda'],
+    rooms: ['room.hallway', 'room.living', 'room.kitchen', 'room.bath', 'room.bedroom', 'room.office', 'room.basement', 'room.garage', 'room.dining', 'room.attic', 'room.guestroom', 'room.utilityroom', 'room.laundry', 'room.porch', 'room.kidsroom'],
+    outdoor: ['room.garage', 'room.porch'],
   },
   {
     id: 'auto-shop',
-    rooms: ['Werkstatt', 'Lager', 'Büro', 'Wartebereich', 'Hof', 'Waschhalle', 'Ersatzteillager', 'Reifenlager', 'Empfang', 'Lackiererei', 'Montagehalle', 'Prüfstand', 'Sozialraum', 'Kasse', 'Tankstelle'],
-    outdoor: ['Werkstatt', 'Hof', 'Waschhalle', 'Montagehalle', 'Lackiererei', 'Prüfstand', 'Tankstelle'],
+    rooms: ['room.workshop', 'room.storage', 'room.office', 'room.waiting', 'room.yard', 'room.washbay', 'room.partsstore', 'room.tirestore', 'room.reception', 'room.paintshop', 'room.assembly', 'room.testbay', 'room.breakroom', 'room.checkout', 'room.gasstation'],
+    outdoor: ['room.workshop', 'room.yard', 'room.washbay', 'room.assembly', 'room.paintshop', 'room.testbay', 'room.gasstation'],
   },
   {
     id: 'game-night',
-    rooms: ['Wohnzimmer', 'Esszimmer', 'Küche', 'Flur', 'Balkon', 'Spielzimmer', 'Bar', 'Lounge', 'Terrasse', 'Bibliothek', 'Wintergarten', 'Diele', 'Vorratskammer', 'Gästebad', 'Arbeitszimmer'],
-    outdoor: ['Balkon', 'Terrasse'],
+    rooms: ['room.living', 'room.dining', 'room.kitchen', 'room.hallway', 'room.balcony', 'room.gameroom', 'room.bar', 'room.lounge', 'room.terrace', 'room.library', 'room.conservatory', 'room.vestibule', 'room.pantry', 'room.guestbath', 'room.study'],
+    outdoor: ['room.balcony', 'room.terrace'],
   },
   {
     id: 'office',
-    rooms: ['Großraumbüro', 'Besprechung', 'Küche', 'Empfang', 'Serverraum', 'Archiv', 'Chefbüro', 'Kopierraum', 'Teeküche', 'Lager', 'Konferenzraum', 'Lobby', 'Aufenthaltsraum', 'Poststelle', 'Druckerraum'],
+    rooms: ['room.openoffice', 'room.meeting', 'room.kitchen', 'room.reception', 'room.serverroom', 'room.archive', 'room.bossoffice', 'room.copyroom', 'room.kitchenette', 'room.storage', 'room.conference', 'room.lobby', 'room.commonroom', 'room.mailroom', 'room.printroom'],
     outdoor: [],
   },
   {
     id: 'mansion',
-    rooms: ['Eingangshalle', 'Salon', 'Speisesaal', 'Bibliothek', 'Musikzimmer', 'Wintergarten', 'Galerie', 'Boudoir', 'Rauchzimmer', 'Ballsaal', 'Gewächshaus', 'Weinkeller', 'Bedienstetenzimmer', 'Ankleidezimmer', 'Kaminzimmer'],
+    rooms: ['room.entrancehall', 'room.salon', 'room.dininghall', 'room.library', 'room.musicroom', 'room.conservatory', 'room.gallery', 'room.boudoir', 'room.smokingroom', 'room.ballroom', 'room.greenhouse', 'room.winecellar', 'room.servantsroom', 'room.dressingroom', 'room.firesideroom'],
     outdoor: [],
   },
   {
     id: 'hotel',
-    rooms: ['Lobby', 'Rezeption', 'Restaurant', 'Bar', 'Suite', 'Konferenzraum', 'Spa', 'Fitnessraum', 'Küche', 'Gepäckraum', 'Frühstücksraum', 'Dachterrasse', 'Aufzug', 'Flur', 'Wäscherei'],
-    outdoor: ['Dachterrasse'],
+    rooms: ['room.lobby', 'room.frontdesk', 'room.restaurant', 'room.bar', 'room.suite', 'room.conference', 'room.spa', 'room.gym', 'room.kitchen', 'room.luggageroom', 'room.breakfastroom', 'room.rooftop', 'room.elevator', 'room.hallway', 'room.laundrette'],
+    outdoor: ['room.rooftop'],
   },
   {
     id: 'school',
-    rooms: ['Klassenzimmer', 'Aula', 'Turnhalle', 'Bibliothek', 'Lehrerzimmer', 'Sekretariat', 'Pausenhof', 'Chemieraum', 'Musiksaal', 'Mensa', 'Werkraum', 'Computerraum', 'Umkleide', 'Kunstraum', 'Flur'],
-    outdoor: ['Pausenhof'],
+    rooms: ['room.classroom', 'room.assemblyhall', 'room.gymnasium', 'room.library', 'room.teachersroom', 'room.secretariat', 'room.schoolyard', 'room.chemlab', 'room.musichall', 'room.canteen', 'room.craftroom', 'room.computerroom', 'room.lockerroom', 'room.artroom', 'room.hallway'],
+    outdoor: ['room.schoolyard'],
   },
   {
     id: 'hospital',
-    rooms: ['Empfang', 'Wartezimmer', 'OP-Saal', 'Station', 'Labor', 'Apotheke', 'Röntgen', 'Intensivstation', 'Aufenthaltsraum', 'Notaufnahme', 'Kreißsaal', 'Sterilisation', 'Büro', 'Cafeteria', 'Flur'],
+    rooms: ['room.reception', 'room.waitingroom', 'room.operating', 'room.ward', 'room.lab', 'room.pharmacy', 'room.xray', 'room.icu', 'room.commonroom', 'room.emergency', 'room.deliveryroom', 'room.sterilization', 'room.office', 'room.cafeteria', 'room.hallway'],
     outdoor: [],
   },
   {
     id: 'museum',
-    rooms: ['Eingangshalle', 'Hauptgalerie', 'Ausstellung', 'Tresor', 'Café', 'Sicherheitsraum', 'Werkstatt', 'Archiv', 'Garderobe', 'Sonderausstellung', 'Foyer', 'Bibliothek', 'Lager', 'Auditorium', 'Toilette'],
+    rooms: ['room.entrancehall', 'room.maingallery', 'room.exposition', 'room.vault', 'room.cafe', 'room.security', 'room.workshop', 'room.archive', 'room.cloakroom', 'room.specialexhibit', 'room.foyer', 'room.library', 'room.storage', 'room.auditorium', 'room.restroom'],
     outdoor: [],
   },
   {
     id: 'restaurant',
-    rooms: ['Speisesaal', 'Küche', 'Bar', 'Weinkeller', 'Terrasse', 'Lager', 'Büro', 'Empfang', 'Spülküche', 'Vorbereitung', 'Kühlraum', 'Personalraum', 'Lounge', 'Toilette', 'Garderobe'],
-    outdoor: ['Terrasse'],
+    rooms: ['room.dininghall', 'room.kitchen', 'room.bar', 'room.winecellar', 'room.terrace', 'room.storage', 'room.office', 'room.reception', 'room.scullery', 'room.preproom', 'room.coldroom', 'room.staffroom', 'room.lounge', 'room.restroom', 'room.cloakroom'],
+    outdoor: ['room.terrace'],
   },
   {
     id: 'farm',
-    rooms: ['Weide', 'Hof', 'Garten', 'Schuppen', 'Haus', 'Kuhstall', 'Schweinestall', 'Scheune', 'Hühnerstall', 'Pferdestall', 'Gewächshaus', 'Vorratskammer', 'Milchkammer', 'Feld', 'Teich'],
-    outdoor: ['Weide', 'Hof', 'Garten', 'Feld', 'Teich'],
+    rooms: ['room.pasture', 'room.yard', 'room.garden', 'room.shed', 'room.farmhouse', 'room.cowshed', 'room.pigsty', 'room.barn', 'room.henhouse', 'room.stable', 'room.greenhouse', 'room.pantry', 'room.dairy', 'room.field', 'room.pond'],
+    outdoor: ['room.pasture', 'room.yard', 'room.garden', 'room.field', 'room.pond'],
   },
   {
     id: 'supermarkt',
-    rooms: ['Kasse', 'Snacks', 'Getränke', 'Wurstabteilung', 'Obstabteilung', 'Kühlregale', 'Spielzeugabteilung', 'Lagerraum', 'Bäckerei', 'Gemüseabteilung', 'Käsetheke', 'Tiefkühlung', 'Drogerie', 'Personalraum', 'Parkplatz'],
-    outdoor: ['Parkplatz'],
+    rooms: ['room.checkout', 'room.snacks', 'room.drinks', 'room.deli', 'room.fruit', 'room.chilled', 'room.toys', 'room.stockroom', 'room.bakery', 'room.produce', 'room.cheese', 'room.frozen', 'room.drugstore', 'room.staffroom', 'room.parking'],
+    outdoor: ['room.parking'],
   },
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
@@ -123,6 +125,22 @@ export function themeRooms(id: string): string[] {
 /** A theme's outdoor room names (→ rooms[].outside for inside/outside clues). */
 export function themeOutdoor(id: string): string[] {
   return (THEMES.find((t) => t.id === id) ?? THEMES[0]).outdoor
+}
+
+/**
+ * Guess which theme a level belongs to from its room nameKeys — the theme whose
+ * room set shares the most keys with the level. Used by the editor to preselect
+ * the theme when opening an existing level. Returns null if nothing overlaps
+ * (e.g. a level using only generic room.editor* slots), so callers can keep a default.
+ */
+export function themeFromRoomKeys(keys: readonly string[]): string | null {
+  const wanted = new Set(keys)
+  let best: { id: string; score: number } | null = null
+  for (const theme of THEMES) {
+    const score = theme.rooms.reduce((n, key) => n + (wanted.has(key) ? 1 : 0), 0)
+    if (score > 0 && (!best || score > best.score)) best = { id: theme.id, score }
+  }
+  return best?.id ?? null
 }
 
 export type GenDifficulty = 'easy' | 'medium' | 'hard'

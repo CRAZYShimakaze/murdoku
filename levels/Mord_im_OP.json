@@ -8,77 +8,77 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Empfang",
+      "nameKey": "room.reception",
       "color": "#e8d8b0",
       "outside": false
     },
     "2": {
-      "nameKey": "Wartezimmer",
+      "nameKey": "room.waitingroom",
       "color": "#b9d0e6",
       "outside": false
     },
     "3": {
-      "nameKey": "OP-Saal",
+      "nameKey": "room.operating",
       "color": "#cfe0cf",
       "outside": false
     },
     "4": {
-      "nameKey": "Station",
+      "nameKey": "room.ward",
       "color": "#d8c0c0",
       "outside": false
     },
     "5": {
-      "nameKey": "Labor",
+      "nameKey": "room.lab",
       "color": "#e6cda0",
       "outside": false
     },
     "6": {
-      "nameKey": "Apotheke",
+      "nameKey": "room.pharmacy",
       "color": "#e6c0d2",
       "outside": false
     },
     "7": {
-      "nameKey": "Röntgen",
+      "nameKey": "room.xray",
       "color": "#c6c0e0",
       "outside": false
     },
     "8": {
-      "nameKey": "Intensivstation",
+      "nameKey": "room.icu",
       "color": "#c0e0c8",
       "outside": false
     },
     "9": {
-      "nameKey": "Aufenthaltsraum",
+      "nameKey": "room.commonroom",
       "color": "#e0c4a0",
       "outside": false
     },
     "A": {
-      "nameKey": "Notaufnahme",
+      "nameKey": "room.emergency",
       "color": "#a8c8e0",
       "outside": false
     },
     "B": {
-      "nameKey": "Kreißsaal",
+      "nameKey": "room.deliveryroom",
       "color": "#d8e0a8",
       "outside": false
     },
     "C": {
-      "nameKey": "Sterilisation",
+      "nameKey": "room.sterilization",
       "color": "#e0b0a8",
       "outside": false
     },
     "D": {
-      "nameKey": "Büro",
+      "nameKey": "room.office",
       "color": "#c8b0d8",
       "outside": false
     },
     "E": {
-      "nameKey": "Cafeteria",
+      "nameKey": "room.cafeteria",
       "color": "#a8e0d0",
       "outside": false
     },
     "F": {
-      "nameKey": "Flur",
+      "nameKey": "room.hallway",
       "color": "#ded0e6",
       "outside": false
     }

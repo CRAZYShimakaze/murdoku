@@ -8,35 +8,35 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Empfang",
+      "nameKey": "room.reception",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Wartezimmer",
+      "nameKey": "room.waitingroom",
       "color": "#b9d0e6"
     },
     "3": {
-      "nameKey": "OP-Saal",
+      "nameKey": "room.operating",
       "color": "#cfe0cf"
     },
     "4": {
-      "nameKey": "Station",
+      "nameKey": "room.ward",
       "color": "#d8c0c0"
     },
     "5": {
-      "nameKey": "Labor",
+      "nameKey": "room.lab",
       "color": "#e6cda0"
     },
     "6": {
-      "nameKey": "Apotheke",
+      "nameKey": "room.pharmacy",
       "color": "#e6c0d2"
     },
     "7": {
-      "nameKey": "Röntgen",
+      "nameKey": "room.xray",
       "color": "#c6c0e0"
     },
     "8": {
-      "nameKey": "Intensivstation",
+      "nameKey": "room.icu",
       "color": "#c0e0c8"
     }
   },

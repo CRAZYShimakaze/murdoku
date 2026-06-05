@@ -8,27 +8,27 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Flur",
+      "nameKey": "room.hallway",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Wohnzimmer",
+      "nameKey": "room.living",
       "color": "#b9d0e6"
     },
     "3": {
-      "nameKey": "Küche",
+      "nameKey": "room.kitchen",
       "color": "#cfe0cf"
     },
     "4": {
-      "nameKey": "Bad",
+      "nameKey": "room.bath",
       "color": "#d8c0c0"
     },
     "5": {
-      "nameKey": "Schlafzimmer",
+      "nameKey": "room.bedroom",
       "color": "#e6cda0"
     },
     "6": {
-      "nameKey": "Büro",
+      "nameKey": "room.office",
       "color": "#e6c0d2"
     }
   },

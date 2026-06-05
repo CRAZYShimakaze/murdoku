@@ -31,6 +31,30 @@ export default function StartScreen({
           <h1 className="mk-wordmark">
             MURD<em>O</em>KU
           </h1>
+          <div className="mk-credits">
+            <p className="mk-credits__line">
+              {t('start.original_idea')}{' '}
+              <a
+                className="mk-credits__name"
+                href="https://murdoku.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Manuel Garand
+              </a>
+            </p>
+            <p className="mk-credits__line">
+              {t('start.fan_version')}{' '}
+              <a
+                className="mk-credits__name"
+                href="https://apo-games.de/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Dirk Aporius
+              </a>
+            </p>
+          </div>
           <p className="mk-start__tag">{t('app.subtitle')}</p>
           <div className="mk-start__cta">
             <button type="button" className="mk-btn mk-btn--primary" onClick={onPlay}>

@@ -1,11 +1,10 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { OBJECT_GLYPHS } from '../game/glyphs.ts'
+import ObjectIcon from './ObjectIcon.tsx'
 import type { Puzzle } from '../engine/index.ts'
 
 interface Item {
   type: string
-  glyph: string
   name: string
   status: 'occupiable' | 'blocked' | 'wall'
 }
@@ -18,25 +17,23 @@ export default function Legend({ puzzle }: { puzzle: Puzzle }) {
     const board = puzzle.board
     const types = new Map<string, boolean>() // object type → occupiable
     let hasWindow = false
+    let hasDoor = false
     for (let c = 0; c < board.width * board.height; c++) {
       for (const obj of board.tileAt(c).objects()) {
         if (!types.has(obj.type)) types.set(obj.type, obj.occupiable)
       }
       if (board.windowSides(c).length > 0) hasWindow = true
+      if (board.doorSides(c).length > 0) hasDoor = true
     }
-    const list: Item[] = [{ type: 'floor', glyph: '⬜', name: t('objName.floor'), status: 'occupiable' }]
+    const list: Item[] = [{ type: 'floor', name: t('objName.floor'), status: 'occupiable' }]
     for (const [type, occ] of types) {
-      list.push({
-        type,
-        glyph: OBJECT_GLYPHS[type] ?? '•',
-        name: t(`objName.${type}`),
-        status: occ ? 'occupiable' : 'blocked',
-      })
+      list.push({ type, name: t(`objName.${type}`), status: occ ? 'occupiable' : 'blocked' })
     }
-    if (hasWindow) {
-      list.push({ type: 'window', glyph: OBJECT_GLYPHS.window, name: t('objName.window'), status: 'wall' })
-    }
-    return list
+    if (hasWindow) list.push({ type: 'window', name: t('objName.window'), status: 'wall' })
+    if (hasDoor) list.push({ type: 'door', name: t('objName.door'), status: 'wall' })
+    // Group by what the tile lets you do: walkable first, blocked next, walls last.
+    const rank = { occupiable: 0, blocked: 1, wall: 2 }
+    return list.sort((a, b) => rank[a.status] - rank[b.status])
   }, [puzzle, t])
 
   return (
@@ -45,7 +42,11 @@ export default function Legend({ puzzle }: { puzzle: Puzzle }) {
       <ul>
         {items.map((it) => (
           <li key={it.type} className="mk-leg" data-status={it.status}>
-            <span className="mk-leg__glyph">{it.glyph}</span>
+            <ObjectIcon
+              type={it.type}
+              occupiable={it.status === 'occupiable'}
+              className="mk-leg__icon"
+            />
             <span className="mk-leg__name">{it.name}</span>
             <span className="mk-leg__status">{t(`legend.${it.status}`)}</span>
           </li>

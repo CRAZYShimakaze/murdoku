@@ -8,23 +8,23 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Großraumbüro",
+      "nameKey": "room.openoffice",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Besprechung",
+      "nameKey": "room.meeting",
       "color": "#b9d0e6"
     },
     "3": {
-      "nameKey": "Küche",
+      "nameKey": "room.kitchen",
       "color": "#cfe0cf"
     },
     "4": {
-      "nameKey": "Empfang",
+      "nameKey": "room.reception",
       "color": "#d8c0c0"
     },
     "5": {
-      "nameKey": "Serverraum",
+      "nameKey": "room.serverroom",
       "color": "#e6cda0"
     }
   },

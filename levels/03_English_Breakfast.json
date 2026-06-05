@@ -8,35 +8,35 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Badezimmer",
+      "nameKey": "room.bathroom",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Küche",
+      "nameKey": "room.kitchen",
       "color": "#b9d0e6"
     },
     "3": {
-      "nameKey": "Wohnzimmer",
+      "nameKey": "room.living",
       "color": "#cfe0cf"
     },
     "4": {
-      "nameKey": "Gästezimmer",
+      "nameKey": "room.guestroom",
       "color": "#d8c0c0"
     },
     "5": {
-      "nameKey": "Flur",
+      "nameKey": "room.hallway",
       "color": "#e6cda0"
     },
     "6": {
-      "nameKey": "Kinderzimmer 1",
+      "nameKey": "room.kids1",
       "color": "#e6c0d2"
     },
     "7": {
-      "nameKey": "Kinderzimmer 2",
+      "nameKey": "room.kids2",
       "color": "#c6c0e0"
     },
     "8": {
-      "nameKey": "Arbeitszimmer",
+      "nameKey": "room.study",
       "color": "#c0e0c8"
     }
   },

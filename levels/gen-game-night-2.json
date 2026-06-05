@@ -8,23 +8,23 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "Wohnzimmer",
+      "nameKey": "room.living",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "Esszimmer",
+      "nameKey": "room.dining",
       "color": "#b9d0e6"
     },
     "3": {
-      "nameKey": "Küche",
+      "nameKey": "room.kitchen",
       "color": "#cfe0cf"
     },
     "4": {
-      "nameKey": "Flur",
+      "nameKey": "room.hallway",
       "color": "#d8c0c0"
     },
     "5": {
-      "nameKey": "Balkon",
+      "nameKey": "room.balcony",
       "color": "#e6cda0"
     }
   },

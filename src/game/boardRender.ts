@@ -283,7 +283,9 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     drawTableTile(ctx, x, y, S, connOf(c, 'top', 'table'))
   }
 
-  // --- per-cell objects: bed/car + armchair/shelf as vectors, the rest emoji
+  // --- per-cell objects: bed/car span two tiles; every other object is one
+  //     isolated tile drawn by the shared drawObjectIcon (the legend uses the
+  //     very same function, so its icons match the board exactly).
   for (let c = 0; c < W * H; c++) {
     const top = board.tileAt(c).top
     if (!top || top.type === 'table') continue // table drawn in the merged pass
@@ -292,52 +294,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       drawBig(top.type, c)
       continue
     }
-    if (top.type === 'chair') {
-      drawArmchair(ctx, x, y, S)
-      continue
-    }
-    if (top.type === 'shelf') {
-      if (!preview) drawBlockedCard(ctx, x, y, S)
-      drawBookshelf(ctx, x, y, S)
-      continue
-    }
-    if (top.type === 'mud') {
-      drawMud(ctx, x, y, S)
-      continue
-    }
-    if (top.type === 'oil') {
-      drawOil(ctx, x, y, S)
-      continue
-    }
-    // blocked custom-art objects sit on the same white card as blocked emoji
-    if (top.type === 'locker') {
-      if (!preview) drawBlockedCard(ctx, x, y, S)
-      drawLocker(ctx, x, y, S)
-      continue
-    }
-    if (top.type === 'punchbag') {
-      if (!preview) drawBlockedCard(ctx, x, y, S)
-      drawPunchbag(ctx, x, y, S)
-      continue
-    }
-    if (top.type === 'cash') {
-      if (!preview) drawBlockedCard(ctx, x, y, S)
-      drawCashRegister(ctx, x, y, S)
-      continue
-    }
-    if (top.type === 'crate') {
-      if (!preview) drawBlockedCard(ctx, x, y, S)
-      drawCrate(ctx, x, y, S)
-      continue
-    }
-    const glyph = OBJECT_GLYPHS[top.type]
-    if (!glyph) continue
-    if (!preview && !top.occupiable) drawBlockedCard(ctx, x, y, S)
-    ctx.fillStyle = '#1c1822' // opaque, so any monochrome glyph stays bold (not faint)
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.font = `${S * (preview ? 0.72 : 0.66)}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`
-    ctx.fillText(glyph, x + S / 2, y + S * 0.56)
+    drawObjectIcon(ctx, top.type, x, y, S, top.occupiable, preview)
   }
 
   if (preview) return
@@ -544,8 +501,62 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   }
 }
 
+const NO_CONN: Conn = { n: false, e: false, s: false, w: false }
+
+/**
+ * Draw ONE isolated object into a single cell box (x,y,S) exactly as the board
+ * renders it — table/carpet as a standalone tile, bed/car as the 1-tile version,
+ * vector furniture, then emoji on a white "blocked" card when not occupiable.
+ * Shared by the board's per-cell pass and the Legend so the two never diverge.
+ */
+export function drawObjectIcon(
+  ctx: CanvasRenderingContext2D,
+  type: string,
+  x: number,
+  y: number,
+  S: number,
+  occupiable: boolean,
+  preview = false,
+): void {
+  if (type === 'carpet') return drawCarpetTile(ctx, x, y, S, NO_CONN)
+  if (type === 'table') return drawTableTile(ctx, x, y, S, NO_CONN)
+  if (MULTI_CELL_TYPES.has(type)) return drawSingleObject(ctx, type, x, y, S)
+  if (type === 'chair') return drawArmchair(ctx, x, y, S)
+  if (type === 'mud') return drawMud(ctx, x, y, S)
+  if (type === 'oil') return drawOil(ctx, x, y, S)
+  // blocked custom-art objects sit on the same white card as blocked emoji
+  if (type === 'shelf') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawBookshelf(ctx, x, y, S)
+  }
+  if (type === 'locker') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawLocker(ctx, x, y, S)
+  }
+  if (type === 'punchbag') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawPunchbag(ctx, x, y, S)
+  }
+  if (type === 'cash') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawCashRegister(ctx, x, y, S)
+  }
+  if (type === 'crate') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawCrate(ctx, x, y, S)
+  }
+  const glyph = OBJECT_GLYPHS[type]
+  if (!glyph) return
+  if (!preview && !occupiable) drawBlockedCard(ctx, x, y, S)
+  ctx.fillStyle = '#1c1822' // opaque, so any monochrome glyph stays bold (not faint)
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.font = `${S * (preview ? 0.72 : 0.66)}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`
+  ctx.fillText(glyph, x + S / 2, y + S * 0.56)
+}
+
 /** A light-blue window straddling one wall of a cell. */
-function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, side: Side): void {
+export function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, side: Side): void {
   const t = S * 0.16
   const inset = S * 0.16
   let rx: number, ry: number, rw: number, rh: number, vertical: boolean
@@ -583,7 +594,7 @@ function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, S: numb
 }
 
 /** A brown door straddling one wall of a cell (two-sided; drawn from both cells). */
-function drawDoor(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, side: Side): void {
+export function drawDoor(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, side: Side): void {
   const t = S * 0.2
   const inset = S * 0.13
   let rx: number, ry: number, rw: number, rh: number, vertical: boolean

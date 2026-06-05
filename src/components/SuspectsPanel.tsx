@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Avatar from './Avatar.tsx'
+import AppearanceInfo from './AppearanceInfo.tsx'
+import InfoTip from './InfoTip.tsx'
 import ClueBuilder, { type ClueCtx } from './ClueBuilder.tsx'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
@@ -69,14 +71,25 @@ export default function SuspectsPanel({
             data-suspect={s.id}
             onClick={() => setEditing(i)}
           >
-            <Avatar
-              className="mk-avatar"
-              attrs={suspectAttributes(s)}
-              color={suspectColor(i)}
-              letter={s.id}
-            />
+            <InfoTip
+              className="mk-avatarwrap"
+              anchor=".mk-clue"
+              content={<AppearanceInfo attrs={suspectAttributes(s)} letter={s.id} />}
+            >
+              <Avatar
+                className="mk-avatar"
+                attrs={suspectAttributes(s)}
+                color={suspectColor(i)}
+                letter={s.id}
+              />
+            </InfoTip>
             <span className="mk-clue__main">
-              <span className="mk-clue__name">{s.name || s.id}</span>
+              <span className="mk-clue__name">
+                {s.name || s.id}
+                <span className="mk-attr" title={t(s.gender === 'm' ? 'info.male' : 'info.female')}>
+                  {s.gender === 'm' ? '♂' : '♀'}
+                </span>
+              </span>
               <span className="mk-clue__text">{line ?? t('editor.noClue')}</span>
             </span>
           </button>
@@ -88,9 +101,25 @@ export default function SuspectsPanel({
         className="mk-clue mk-clue--victim"
         onClick={() => setEditing('victim')}
       >
-        <span className="mk-token mk-token--victim">☠</span>
+        <InfoTip
+          className="mk-avatarwrap"
+          anchor=".mk-clue"
+          content={
+            <span className="mk-tipinfo">
+              <span>
+                {state.victim.gender === 'm' ? '♂' : '♀'}{' '}
+                {t(state.victim.gender === 'm' ? 'info.male' : 'info.female')}
+              </span>
+            </span>
+          }
+        >
+          <span className="mk-token mk-token--victim">☠</span>
+        </InfoTip>
         <span className="mk-clue__main">
-          <span className="mk-clue__name">{state.victim.name || t('game.victim')}</span>
+          <span className="mk-clue__name">
+            {state.victim.name || t('game.victim')}
+            <span className="mk-attr">{state.victim.gender === 'm' ? '♂' : '♀'}</span>
+          </span>
           <span className="mk-clue__text">{t('game.victim')}</span>
         </span>
       </button>
