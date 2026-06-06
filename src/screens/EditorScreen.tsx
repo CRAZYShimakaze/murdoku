@@ -246,8 +246,15 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
         const { windows, doors } = pruneWallEdges(roomMap, s.size, s.windows, s.doors)
         return { ...s, roomMap, windows, doors }
       }
-      if (mode === 'ground') return { ...s, groundMap: setCell(s.groundMap, row, col, paintObj || '.') }
-      if (mode === 'top') return { ...s, topMap: setCell(s.topMap, row, col, paintObj || '.') }
+      if (mode === 'ground') {
+        // Clicking the same object that's already there removes it (toggle).
+        const ch = paintObj && s.groundMap[row][col] === paintObj ? '.' : paintObj || '.'
+        return { ...s, groundMap: setCell(s.groundMap, row, col, ch) }
+      }
+      if (mode === 'top') {
+        const ch = paintObj && s.topMap[row][col] === paintObj ? '.' : paintObj || '.'
+        return { ...s, topMap: setCell(s.topMap, row, col, ch) }
+      }
       return s
     })
   }

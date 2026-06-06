@@ -1,0 +1,527 @@
+{
+  "schema": 1,
+  "id": "editor-mord-mit-gutem-essen",
+  "title": "Mord mit gutem Essen",
+  "size": {
+    "width": 10,
+    "height": 10
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.dininghall",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "room.kitchen",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.bar",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.winecellar",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.terrace",
+      "color": "#e6cda0",
+      "outside": true
+    },
+    "6": {
+      "nameKey": "room.storage",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.office",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.reception",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.scullery",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.preproom",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.coldroom",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.staffroom",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.lounge",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.restroom",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.cloakroom",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "3333111111",
+    "3333111111",
+    "3333111111",
+    "5555511111",
+    "5555511111",
+    "5555511111",
+    "5555511111",
+    "4441111888",
+    "4441111888",
+    "4441111888"
+  ],
+  "groundMap": [
+    "..........",
+    ".rrrrrrrr.",
+    "......r.r.",
+    "......r.r.",
+    "......r.r.",
+    "......r.r.",
+    "......r...",
+    "......r...",
+    "....rrrrrr",
+    ".........."
+  ],
+  "topMap": [
+    "n..t.s.s.p",
+    "..st.t.t.s",
+    ".n.t.s.s.t",
+    ".s.s.s.s.s",
+    ".a.y.t.t.t",
+    "..a....sts",
+    ".s...p..sp",
+    "n.n..s.g.g",
+    "....st....",
+    "n....s..s."
+  ],
+  "windows": [
+    {
+      "r": 1,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 2,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 6,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 5,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 8,
+      "side": "N"
+    },
+    {
+      "r": 1,
+      "c": 9,
+      "side": "E"
+    },
+    {
+      "r": 3,
+      "c": 9,
+      "side": "E"
+    },
+    {
+      "r": 4,
+      "c": 9,
+      "side": "E"
+    }
+  ],
+  "doors": [
+    {
+      "r": 5,
+      "c": 4,
+      "side": "E"
+    },
+    {
+      "r": 9,
+      "c": 2,
+      "side": "E"
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "side": "S"
+    },
+    {
+      "r": 8,
+      "c": 9,
+      "side": "E"
+    },
+    {
+      "r": 8,
+      "c": 6,
+      "side": "E"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "ponytailRight",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "sameLineAsObject",
+          "object": "shelf",
+          "line": "row",
+          "room": "any"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "braids",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "not",
+              "clue": {
+                "type": "atWall"
+              }
+            },
+            {
+              "type": "sameLineAsObject",
+              "object": "crate",
+              "line": "row",
+              "room": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "bun",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "sameLineAsObject",
+              "object": "plant",
+              "line": "col",
+              "room": "any"
+            },
+            {
+              "type": "onObject",
+              "object": "chair"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "afro",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "directionFromObject",
+          "object": "shelf",
+          "dir": "east",
+          "room": "any"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "manbun",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "8"
+            },
+            {
+              "type": "sameLineAsObject",
+              "object": "plant",
+              "line": "col",
+              "room": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "curly",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "directionFromObject",
+              "object": "shelf",
+              "dir": "south",
+              "room": "any"
+            },
+            {
+              "type": "onObject",
+              "object": "carpet"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "spiky",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "uniqueNearWindow"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Hana",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "long",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "statue"
+            },
+            {
+              "type": "sameLineAsObject",
+              "object": "statue",
+              "line": "row",
+              "room": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I",
+      "name": "Ivan",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "bald": true,
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "plant"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vasiliy",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "medium"
+}
