@@ -29,6 +29,8 @@
     "mode_window": "Fenster",
     "mode_door": "Türen",
     "mode_global": "Global",
+    "placeLabel": "Platzieren",
+    "wallsLabel": "Wände",
     "rooms": "Räume",
     "roomEmpty": "Leer (kein Raum)",
     "objects": "Objekte",
@@ -295,7 +297,11 @@
     "trash": "einem Mülleimer",
     "oil": "einer Ölpfütze",
     "cash": "einer Kasse",
-    "crate": "einer Holzkiste"
+    "crate": "einer Holzkiste",
+    "toilet": "einer Toilette",
+    "washingmachine": "einer Waschmaschine",
+    "chicken": "einem Huhn",
+    "lamp": "einer Lampe"
   },
   "objName": {
     "floor": "Boden",
@@ -327,7 +333,11 @@
     "trash": "Mülleimer",
     "oil": "Ölpfütze",
     "cash": "Kasse",
-    "crate": "Holzkiste"
+    "crate": "Holzkiste",
+    "toilet": "Toilette",
+    "washingmachine": "Waschmaschine",
+    "chicken": "Huhn",
+    "lamp": "Lampe"
   },
   "legend": {
     "title": "Legende",

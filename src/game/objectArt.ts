@@ -495,6 +495,141 @@ export function drawCashRegister(ctx: Ctx, x: number, y: number, S: number): voi
   ctx.fillRect(sx + sw * 0.14, sy + sh * 0.34, sw * 0.72, sh * 0.3)
 }
 
+/**
+ * A front-loading washing machine (blocking), drawn front-on in the same framed
+ * style as the locker/bookshelf: a white body with a top control panel (dial +
+ * buttons) and a big round porthole door with tinted glass. Sized for the card.
+ */
+export function drawWashingMachine(ctx: Ctx, x: number, y: number, S: number): void {
+  // Shrink to 80% about the cell centre so the white "blocked" card shows around it.
+  ctx.save()
+  ctx.translate(x + S / 2, y + S / 2)
+  ctx.scale(0.8, 0.8)
+  ctx.translate(-(x + S / 2), -(y + S / 2))
+  const pad = S * 0.1
+  const left = x + pad
+  const top = y + pad
+  const w = S - 2 * pad
+  const h = S - 2 * pad
+  const body = '#e9edf1'
+  const dark = '#4b535c'
+
+  // appliance body with a dark outline — mirrors the locker frame
+  ctx.fillStyle = body
+  ctx.strokeStyle = dark
+  ctx.lineWidth = Math.max(1.4, S * 0.05)
+  ctx.beginPath()
+  ctx.roundRect(left, top, w, h, S * 0.07)
+  ctx.fill()
+  ctx.stroke()
+
+  // top control panel strip with a seam line under it
+  const panelH = h * 0.24
+  ctx.fillStyle = '#cdd4db'
+  ctx.beginPath()
+  ctx.roundRect(left, top, w, panelH, [S * 0.07, S * 0.07, 0, 0])
+  ctx.fill()
+  ctx.strokeStyle = dark
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  ctx.beginPath()
+  ctx.moveTo(left, top + panelH)
+  ctx.lineTo(left + w, top + panelH)
+  ctx.stroke()
+  // program dial on the right, two buttons on the left
+  ctx.fillStyle = '#5a6068'
+  ctx.beginPath()
+  ctx.arc(left + w * 0.8, top + panelH * 0.5, Math.max(1.6, S * 0.05), 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#7d8893'
+  for (let i = 0; i < 2; i++) {
+    ctx.beginPath()
+    ctx.roundRect(left + w * (0.13 + i * 0.16), top + panelH * 0.36, w * 0.1, panelH * 0.3, 2)
+    ctx.fill()
+  }
+
+  // round porthole door in the lower body
+  const cx = left + w / 2
+  const cy = top + panelH + (h - panelH) * 0.52
+  const rOuter = Math.min(w, h - panelH) * 0.4
+  // metal ring
+  ctx.fillStyle = '#aab2ba'
+  ctx.strokeStyle = dark
+  ctx.lineWidth = Math.max(1.2, S * 0.03)
+  ctx.beginPath()
+  ctx.arc(cx, cy, rOuter, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // tinted glass
+  ctx.fillStyle = '#3f5b6e'
+  ctx.beginPath()
+  ctx.arc(cx, cy, rOuter * 0.66, 0, Math.PI * 2)
+  ctx.fill()
+  // curved glass highlight
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.34)'
+  ctx.beginPath()
+  ctx.ellipse(cx - rOuter * 0.22, cy - rOuter * 0.26, rOuter * 0.28, rOuter * 0.16, -0.5, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.restore() // 80% scale
+}
+
+/**
+ * A standing floor lamp (blocking): a weighted base, a slim pole and a glowing
+ * trapezoid shade. Drawn front-on like the other blocking props; sits on the card.
+ */
+export function drawFloorLamp(ctx: Ctx, x: number, y: number, S: number): void {
+  ctx.save()
+  ctx.translate(x + S / 2, y + S / 2)
+  ctx.scale(0.8, 0.8)
+  ctx.translate(-(x + S / 2), -(y + S / 2))
+  const cx = x + S / 2
+  const dark = '#3a2f25'
+
+  // weighted base
+  ctx.fillStyle = '#6b543b'
+  ctx.strokeStyle = dark
+  ctx.lineWidth = Math.max(1, S * 0.025)
+  ctx.beginPath()
+  ctx.ellipse(cx, y + S * 0.82, S * 0.16, S * 0.05, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+
+  // pole
+  ctx.fillStyle = '#9a7c56'
+  ctx.beginPath()
+  ctx.rect(cx - S * 0.02, y + S * 0.34, S * 0.04, S * 0.46)
+  ctx.fill()
+  ctx.stroke()
+
+  // soft pool of light under the shade
+  ctx.fillStyle = 'rgba(255, 214, 130, 0.35)'
+  ctx.beginPath()
+  ctx.ellipse(cx, y + S * 0.36, S * 0.2, S * 0.07, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  // trapezoid shade with a warm vertical gradient
+  const topW = S * 0.16
+  const botW = S * 0.3
+  const shTop = y + S * 0.13
+  const shBot = y + S * 0.36
+  ctx.beginPath()
+  ctx.moveTo(cx - topW / 2, shTop)
+  ctx.lineTo(cx + topW / 2, shTop)
+  ctx.lineTo(cx + botW / 2, shBot)
+  ctx.lineTo(cx - botW / 2, shBot)
+  ctx.closePath()
+  const grad = ctx.createLinearGradient(0, shTop, 0, shBot)
+  grad.addColorStop(0, '#f6e2a8')
+  grad.addColorStop(1, '#e3b85f')
+  ctx.fillStyle = grad
+  ctx.fill()
+  ctx.strokeStyle = dark
+  ctx.lineWidth = Math.max(1, S * 0.028)
+  ctx.stroke()
+
+  ctx.restore()
+}
+
 /** A wooden crate (blocking): a slatted fruit/storage box. Sized for the white card. */
 export function drawCrate(ctx: Ctx, x: number, y: number, S: number): void {
   const pad = S * 0.16

@@ -1137,6 +1137,13 @@ button {
   display: inline-flex;
   gap: 0.4rem;
 }
+/* The editor's right column holds the object palette, whose labels are far longer
+   than the game's icon-only tools (e.g. "Waschmaschine", "Eingangshalle"). Give it
+   more width than the game's tool column so those names never force a horizontal
+   scrollbar. Scoped to .mk-editor so the game screen layout is untouched. */
+.mk-editor {
+  grid-template-columns: minmax(240px, 22vw) 1fr minmax(184px, 13vw);
+}
 .mk-editor__palette {
   gap: 0.5rem;
   overflow: hidden; /* inner region scrolls; actions stay pinned at the bottom */
@@ -1157,6 +1164,8 @@ button {
   align-items: center;
   gap: 0.5rem;
   width: 100%;
+  min-width: 0; /* allow the label to wrap instead of overflowing the column */
+  overflow-wrap: anywhere;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-md);
@@ -1198,6 +1207,39 @@ button {
 }
 .mk-pal__canvas[data-occupiable='false'] {
   box-shadow: 0 0 0 2px var(--crimson);
+}
+
+/* Mobile-only object picker: a native dropdown (grouped walkable/blocking) plus
+   a live preview tile of the selected object's real icon. Keeps the palette to a
+   single row so the action buttons below stay reachable. Rendered only on the
+   narrow layout (see useNarrowLayout), so no desktop guard is needed here. */
+.mk-objsel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+.mk-objsel__select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mk-objsel__preview {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+}
+.mk-objsel__preview .mk-pal__icon {
+  font-size: 1.4rem;
+}
+.mk-objsel__swatch {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
 }
 
 .mk-editor__actions {
@@ -1871,14 +1913,57 @@ button {
   }
   /* The editor needs to scroll on mobile (lots of stacked sections) and give the
      suspects real room — so its rows size to content and the whole thing scrolls. */
+  /* Drop the grid entirely on mobile and use a flex column with explicit order —
+     this is unambiguous (grid-area overrides were landing the tools BELOW the
+     suspects). Order: header → board → tools → suspects → sticky action bar. */
   .mk-editor {
+    display: flex;
+    flex-direction: column;
     height: 100dvh;
     overflow-y: auto;
     overflow-x: hidden;
-    grid-template-rows: auto auto auto auto;
+  }
+  .mk-editor > * {
+    flex: none; /* keep natural heights; the column scrolls instead of squashing */
+  }
+  .mk-editor > .mk-editor__result {
+    order: 0;
+  }
+  .mk-editor > .mk-game__head {
+    order: 1;
+  }
+  .mk-editor > .mk-board {
+    order: 2;
+  }
+  .mk-editor > .mk-tools {
+    order: 3;
+  }
+  .mk-editor > .mk-clues {
+    order: 4;
+  }
+  .mk-editor > .mk-editor__actionsbar {
+    order: 5;
+  }
+  /* The 6 mode tabs don't fit a phone header — the consolidated dropdowns in the
+     tools area replace them on mobile. */
+  .mk-editor__modes {
+    display: none;
+  }
+  /* Keep the header strictly inside the screen: let every control shrink and wrap
+     instead of overflowing off the right edge. */
+  .mk-editor__head > * {
+    min-width: 0;
+  }
+  .mk-editor__head .mk-select-input {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .mk-editor__lang {
+    margin-left: 0;
   }
   .mk-editor .mk-board {
-    height: min(92vw, 58dvh);
+    /* a bit shorter than the game board so the tool picker below stays on-screen */
+    height: min(82vw, 44dvh);
   }
   .mk-editor .mk-clues {
     overflow: visible;
@@ -1924,9 +2009,12 @@ button {
   .mk-editor__palette {
     overflow: visible;
   }
+  /* The picker is a compact dropdown on mobile, so the scroll region just sizes
+     to its content (no flex-grow → it can't shrink and spill its contents over
+     the action buttons below, which was the old overlap bug). */
   .mk-editor__palettescroll {
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex: none;
+    flex-direction: column;
     overflow: visible;
   }
   .mk-editor__actions {
@@ -1936,7 +2024,55 @@ button {
   }
   .mk-editor__actions .mk-btn {
     width: auto;
-    flex: 1 0 auto;
+    flex: 1 1 0; /* shrink to fit so all three buttons stay on one line */
+    min-width: 0;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  /* Check / Play / Save: a bar pinned to the bottom of the screen, always
+     reachable while the page above it scrolls. */
+  .mk-editor__actionsbar {
+    grid-area: actions;
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    gap: 0.4rem;
+    padding: 0.55rem 0.7rem;
+    padding-bottom: calc(0.55rem + env(safe-area-inset-bottom, 0px));
+    background: var(--ink-900);
+    border-top: 1px solid var(--line);
+  }
+
+  /* Consolidated tool controls (mobile only): a clearly-bordered card holding two
+     labelled dropdown rows (Place / Walls + Global) so they read as THE toolbar. */
+  .mk-mobtools {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.6rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--ink-850);
+  }
+  .mk-mobtools__row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .mk-mobtools__lbl {
+    flex: 0 0 4.2rem;
+    font-family: var(--font-type);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+  }
+  .mk-mobtools__global {
+    flex: 0 0 auto;
+  }
+  .mk-pal__icon--muted {
+    color: var(--bone-faint);
   }
 }
 

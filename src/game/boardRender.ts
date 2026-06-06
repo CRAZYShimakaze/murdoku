@@ -16,11 +16,13 @@ import {
   drawCarpetTile,
   drawCashRegister,
   drawCrate,
+  drawFloorLamp,
   drawLocker,
   drawMud,
   drawOil,
   drawPunchbag,
   drawTableTile,
+  drawWashingMachine,
   type Conn,
 } from './objectArt.ts'
 
@@ -565,6 +567,14 @@ export function drawObjectIcon(
   if (type === 'crate') {
     if (!preview) drawBlockedCard(ctx, x, y, S)
     return drawCrate(ctx, x, y, S)
+  }
+  if (type === 'washingmachine') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawWashingMachine(ctx, x, y, S)
+  }
+  if (type === 'lamp') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawFloorLamp(ctx, x, y, S)
   }
   const glyph = OBJECT_GLYPHS[type]
   if (!glyph) return

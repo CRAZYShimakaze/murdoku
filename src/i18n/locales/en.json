@@ -29,6 +29,8 @@
     "mode_window": "Windows",
     "mode_door": "Doors",
     "mode_global": "Global",
+    "placeLabel": "Place",
+    "wallsLabel": "Walls",
     "rooms": "Rooms",
     "roomEmpty": "Empty (no room)",
     "objects": "Objects",
@@ -295,7 +297,11 @@
     "trash": "a trash can",
     "oil": "an oil slick",
     "cash": "a cash register",
-    "crate": "a wooden crate"
+    "crate": "a wooden crate",
+    "toilet": "a toilet",
+    "washingmachine": "a washing machine",
+    "chicken": "a chicken",
+    "lamp": "a lamp"
   },
   "objName": {
     "floor": "Floor",
@@ -327,7 +333,11 @@
     "trash": "Trash can",
     "oil": "Oil slick",
     "cash": "Cash register",
-    "crate": "Wooden crate"
+    "crate": "Wooden crate",
+    "toilet": "Toilet",
+    "washingmachine": "Washing machine",
+    "chicken": "Chicken",
+    "lamp": "Lamp"
   },
   "legend": {
     "title": "Legend",

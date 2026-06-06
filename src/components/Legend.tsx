@@ -1,7 +1,11 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import ObjectIcon from './ObjectIcon.tsx'
-import type { Puzzle } from '../engine/index.ts'
+import { OBJECT_CATALOG, type Puzzle } from '../engine/index.ts'
+
+/** type → its position in the shared catalog, so the legend groups thematically
+ *  (furniture, plants, animals, …) exactly like the editor palette. */
+const CATALOG_ORDER = new Map(OBJECT_CATALOG.map((o, i) => [o.type, i]))
 
 interface Item {
   type: string
@@ -31,9 +35,13 @@ export default function Legend({ puzzle }: { puzzle: Puzzle }) {
     }
     if (hasWindow) list.push({ type: 'window', name: t('objName.window'), status: 'wall' })
     if (hasDoor) list.push({ type: 'door', name: t('objName.door'), status: 'wall' })
-    // Group by what the tile lets you do: walkable first, blocked next, walls last.
+    // Group by what the tile lets you do: walkable first, blocked next, walls
+    // last; within a group, follow the catalog order (so the animals/plants/…
+    // clusters read the same as the editor palette). 'floor' stays first.
     const rank = { occupiable: 0, blocked: 1, wall: 2 }
-    return list.sort((a, b) => rank[a.status] - rank[b.status])
+    const order = (it: Item) =>
+      it.type === 'floor' ? -1 : (CATALOG_ORDER.get(it.type) ?? 999)
+    return list.sort((a, b) => rank[a.status] - rank[b.status] || order(a) - order(b))
   }, [puzzle, t])
 
   return (
