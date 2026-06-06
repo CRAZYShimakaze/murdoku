@@ -390,6 +390,10 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   const occupied = new Set(view.placements.values())
   ctx.strokeStyle = BOARD.markOutline
   ctx.lineJoin = 'round'
+  // The victim's id is the literal 'victim'; on the board show its initial
+  // (first letter of the name, uppercased) just like a suspect's letter.
+  const victimLetter = view.puzzle.victim.name.charAt(0).toUpperCase()
+  const markLabel = (id: PersonId) => (id === VICTIM_ID ? victimLetter : id)
   for (const [c, set] of view.marks) {
     if (occupied.has(c) || set.size === 0) continue
     const { x, y } = xy(c)
@@ -400,8 +404,9 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       ctx.font = `800 ${S * 0.44 * scale}px 'Spline Sans', sans-serif`
       ctx.lineWidth = Math.max(1.5, S * 0.06 * scale)
       ctx.fillStyle = suspectColor(view.suspectIndex.get(view.emphasizeMarks) ?? 0)
-      ctx.strokeText(view.emphasizeMarks, x + S / 2, y + S / 2)
-      ctx.fillText(view.emphasizeMarks, x + S / 2, y + S / 2)
+      const label = markLabel(view.emphasizeMarks)
+      ctx.strokeText(label, x + S / 2, y + S / 2)
+      ctx.fillText(label, x + S / 2, y + S / 2)
     } else {
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
@@ -417,8 +422,9 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
         const tx = x + S * 0.13 + col * S * 0.25
         const ty = y + S * 0.12 + row * S * 0.3
         ctx.fillStyle = suspectColor(view.suspectIndex.get(id) ?? 0)
-        ctx.strokeText(id, tx, ty)
-        ctx.fillText(id, tx, ty)
+        const label = markLabel(id)
+        ctx.strokeText(label, tx, ty)
+        ctx.fillText(label, tx, ty)
         i++
       }
     }
