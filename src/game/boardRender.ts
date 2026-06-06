@@ -384,8 +384,12 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.stroke()
   }
 
-  // --- pencil marks (each id in ITS OWN suspect colour; hovered suspect bigger) ---
+  // --- pencil marks (each id in ITS OWN suspect colour; hovered suspect bigger).
+  //     A black outline (stroke under the fill) keeps light marks legible even on
+  //     similar-coloured rooms, where the bare colour would vanish. ---
   const occupied = new Set(view.placements.values())
+  ctx.strokeStyle = BOARD.markOutline
+  ctx.lineJoin = 'round'
   for (const [c, set] of view.marks) {
     if (occupied.has(c) || set.size === 0) continue
     const { x, y } = xy(c)
@@ -394,16 +398,27 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.font = `800 ${S * 0.44 * scale}px 'Spline Sans', sans-serif`
+      ctx.lineWidth = Math.max(1.5, S * 0.06 * scale)
       ctx.fillStyle = suspectColor(view.suspectIndex.get(view.emphasizeMarks) ?? 0)
+      ctx.strokeText(view.emphasizeMarks, x + S / 2, y + S / 2)
       ctx.fillText(view.emphasizeMarks, x + S / 2, y + S / 2)
     } else {
       ctx.textAlign = 'left'
       ctx.textBaseline = 'top'
       ctx.font = `700 ${S * 0.27}px 'Spline Sans', sans-serif`
+      ctx.lineWidth = Math.max(1.2, S * 0.04)
+      // Lay the letters out in a grid: max 3 per row, then wrap to the next row
+      // below — so a cell with many candidates never spills into the neighbour.
+      // Nudged down & right so they sit clear of the top-left corner.
       let i = 0
       for (const id of set) {
+        const col = i % 3
+        const row = Math.floor(i / 3)
+        const tx = x + S * 0.13 + col * S * 0.25
+        const ty = y + S * 0.12 + row * S * 0.3
         ctx.fillStyle = suspectColor(view.suspectIndex.get(id) ?? 0)
-        ctx.fillText(id, x + S * 0.09 + i * S * 0.23, y + S * 0.07)
+        ctx.strokeText(id, tx, ty)
+        ctx.fillText(id, tx, ty)
         i++
       }
     }

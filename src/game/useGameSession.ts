@@ -10,10 +10,13 @@ export interface PlayState {
   marks: Map<Cell, Set<PersonId>>
   /** Cells the player has crossed out as impossible. */
   crosses: Set<Cell>
+  /** Subset of `crosses` the player set by hand (X-tool). The rest are auto-X's
+   *  from placing a figure, which removing that figure may clear again. */
+  manualCrosses: Set<Cell>
 }
 
 function emptyState(): PlayState {
-  return { placements: new Map(), marks: new Map(), crosses: new Set() }
+  return { placements: new Map(), marks: new Map(), crosses: new Set(), manualCrosses: new Set() }
 }
 
 function clonePlay(s: PlayState): PlayState {
@@ -21,6 +24,7 @@ function clonePlay(s: PlayState): PlayState {
     placements: new Map(s.placements),
     marks: new Map([...s.marks].map(([c, set]) => [c, new Set(set)])),
     crosses: new Set(s.crosses),
+    manualCrosses: new Set(s.manualCrosses),
   }
 }
 
@@ -29,6 +33,7 @@ function toSaved(s: PlayState): SavedState {
     placements: [...s.placements],
     marks: [...s.marks].map(([c, set]) => [c, [...set]]),
     crosses: [...s.crosses],
+    manualCrosses: [...s.manualCrosses],
   }
 }
 
@@ -37,6 +42,7 @@ function fromSaved(s: SavedState): PlayState {
     placements: new Map(s.placements),
     marks: new Map(s.marks.map(([c, ids]) => [c, new Set(ids)])),
     crosses: new Set(s.crosses),
+    manualCrosses: new Set(s.manualCrosses ?? []),
   }
 }
 
@@ -130,6 +136,7 @@ export function useGameSession(
           if (c === cell || set.size === 0) next.marks.delete(c)
         }
         next.crosses.delete(cell)
+        next.manualCrosses.delete(cell) // cell now occupied — no cross of any kind
         const { row, col } = board.rc(cell)
         const occupied = new Set(next.placements.values())
         // Cross out the WHOLE row & column — including non-occupiable object
@@ -154,12 +161,18 @@ export function useGameSession(
         // row/column is excluded. Only an occupied cell can't be crossed.
         for (const c of next.placements.values()) if (c === cell) return false
         if (value) {
-          if (next.crosses.has(cell) && !next.marks.has(cell)) return false
+          // No-op only if already a *manual* cross with nothing to clear; an
+          // auto-X gets upgraded to manual here (the player vouches for it).
+          if (next.crosses.has(cell) && next.manualCrosses.has(cell) && !next.marks.has(cell)) {
+            return false
+          }
           next.crosses.add(cell)
+          next.manualCrosses.add(cell) // user-set via the X-tool
           next.marks.delete(cell) // crossing a cell clears its pencil marks
         } else {
           if (!next.crosses.has(cell)) return false
           next.crosses.delete(cell)
+          next.manualCrosses.delete(cell)
         }
         if (autoVictim) autoPlaceVictim(next, board)
       }),
@@ -169,10 +182,31 @@ export function useGameSession(
   const remove = useCallback(
     (personId: PersonId) =>
       apply((next) => {
-        if (!next.placements.has(personId)) return false
+        const cell = next.placements.get(personId)
+        if (cell === undefined) return false
         next.placements.delete(personId)
+        const { row, col } = board.rc(cell)
+        // Any remaining occupant (suspect OR victim) still blocks its own row &
+        // column, so a cross sharing a line with one stays justified.
+        const coveredByOther = (x: Cell): boolean => {
+          const xr = board.rc(x)
+          for (const c of next.placements.values()) {
+            const rc = board.rc(c)
+            if (rc.row === xr.row || rc.col === xr.col) return true
+          }
+          return false
+        }
+        // Clear the auto-X's this figure had stamped across its row/column — but
+        // keep any the player set by hand, and any another figure still blocks.
+        for (const x of [...next.crosses]) {
+          const xr = board.rc(x)
+          if (xr.row !== row && xr.col !== col) continue // not on this figure's lines
+          if (next.manualCrosses.has(x)) continue // user-set → keep
+          if (coveredByOther(x)) continue // another figure still excludes it → keep
+          next.crosses.delete(x)
+        }
       }),
-    [apply],
+    [apply, board],
   )
 
   const resetAll = useCallback(
@@ -184,6 +218,7 @@ export function useGameSession(
         next.placements.clear()
         next.marks.clear()
         next.crosses.clear()
+        next.manualCrosses.clear()
       }),
     [apply],
   )

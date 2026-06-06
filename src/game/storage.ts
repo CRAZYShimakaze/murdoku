@@ -14,6 +14,8 @@ export interface SavedState {
   placements: [string, number][]
   marks: [number, string[]][]
   crosses: number[]
+  /** Subset of `crosses` set by hand (X-tool); optional for back-compat. */
+  manualCrosses?: number[]
 }
 
 function read<T>(key: string, fallback: T): T {
