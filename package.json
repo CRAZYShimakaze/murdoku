@@ -14,6 +14,7 @@
     "show": "tsx src/dev/show.ts",
     "check": "tsx src/dev/check-all.ts",
     "hardest": "tsx src/dev/hardest.ts",
+    "ratings": "tsx src/dev/ratings.ts",
     "easy": "tsx src/dev/easy.ts",
     "solutions": "tsx src/dev/solutions.ts",
     "lint": "eslint .",

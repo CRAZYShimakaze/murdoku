@@ -91,7 +91,10 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
 
 export function difficultyOf(maxRank: number): Difficulty {
   if (maxRank <= 1) return 'easy'
-  if (maxRank <= 3) return 'medium'
+  // Room & capacity reasoning (boardCount/roomReasoning, rank 4) is still "medium":
+  // it's pure forward logic a human follows without trial placements. "Hard" begins
+  // at the murder-rule chains (5) and proof-by-contradiction (6); SAT search is expert.
+  if (maxRank <= 4) return 'medium'
   if (maxRank <= 6) return 'hard'
   return 'expert'
 }

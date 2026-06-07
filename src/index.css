@@ -745,7 +745,11 @@ button {
    `.mk-game` so the editor — which reuses `.mk-game__head` under `.mk-editor` —
    keeps its own flex layout untouched. The two 1fr side columns are equal, so
    the centre title stays optically centred regardless of the side widths. */
-.mk-game > .mk-game__head {
+/* Centred title+author grid for the GAME header only. The editor root is
+   `.mk-game.mk-editor`, so a bare `.mk-game >` would match it too and override its
+   flex header into this 3-column grid (stretching the name/select fields to full
+   width → a 3-row header). Exclude the editor so it keeps its single-line flex bar. */
+.mk-game:not(.mk-editor) > .mk-game__head {
   display: grid;
   grid-template-columns: 1fr minmax(0, auto) 1fr;
 }

@@ -62,6 +62,48 @@ export class SolveContext {
     return used
   }
 
+  /**
+   * Rows (or columns) that lie ENTIRELY within `roomId` — every occupiable cell of
+   * the line belongs to the room. In a full permutation each line has exactly one
+   * occupant, so that occupant is guaranteed to be inside the room. Used to prove a
+   * room is non-empty without pinning a specific person to it.
+   */
+  fullLinesIn(roomId: string, axis: Axis): number[] {
+    const span = axis === 'row' ? this.board.height : this.board.width
+    const out: number[] = []
+    for (let line = 0; line < span; line++) {
+      const cells = axis === 'row' ? this.board.cellsInRow(line) : this.board.cellsInCol(line)
+      if (cells.size === 0) continue
+      let all = true
+      for (const cell of cells) {
+        if (this.board.roomIdOf(cell) !== roomId) {
+          all = false
+          break
+        }
+      }
+      if (all) out.push(line)
+    }
+    return out
+  }
+
+  /**
+   * Upper bound on how many people the given rooms can hold together: in a full
+   * permutation everyone sits in a distinct row AND column, so the count can't
+   * exceed the distinct rows (or columns) the rooms' occupiable cells span.
+   */
+  roomsCapacity(rooms: Iterable<string>): number {
+    const rows = new Set<number>()
+    const cols = new Set<number>()
+    for (const room of rooms) {
+      for (const cell of this.board.cellsInRoom(room)) {
+        const { row, col } = this.board.rc(cell)
+        rows.add(row)
+        cols.add(col)
+      }
+    }
+    return Math.min(rows.size, cols.size)
+  }
+
   /** Remove all candidates of a person matching the predicate; return them. */
   removeWhere(id: PersonId, predicate: (cell: Cell) => boolean): Cell[] {
     const domain = this.state.domain(id)
