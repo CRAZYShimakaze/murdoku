@@ -114,11 +114,15 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   }, [result?.win])
 
   // A board change makes any shown hint stale — drop it and restart the hint walk.
-  useEffect(() => {
+  // Done during render against the previous board (not in an effect) so the reset
+  // lands before paint; showing a hint doesn't touch session.state, so it survives.
+  const [hintBoard, setHintBoard] = useState(session.state)
+  if (hintBoard !== session.state) {
+    setHintBoard(session.state)
     setHint(null)
     setHintShown(false)
     setHintProgress({ placed: new Map(), eliminated: new Map() })
-  }, [session.state])
+  }
 
   const highlight = useMemo<Set<Cell> | null>(() => {
     if (!selected) return null

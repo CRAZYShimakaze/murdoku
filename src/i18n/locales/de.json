@@ -220,7 +220,10 @@
     "unsolved": "Ungelöst",
     "empty": "Keine Fälle mit diesen Filtern.",
     "solved": "Gelöst",
-    "custom": "Eigen"
+    "custom": "Eigen",
+    "garandTag": "Geheimakte",
+    "garandOn": "Manuel Garand: sichtbar",
+    "garandOff": "Manuel Garand: versteckt"
   },
   "difficulty": {
     "tutorial": "Tutorial",

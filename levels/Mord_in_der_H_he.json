@@ -1,0 +1,374 @@
+{
+  "schema": 1,
+  "id": "gen-crime-scene-735883082",
+  "difficulty": "medium",
+  "size": {
+    "width": 8,
+    "height": 8
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.guestroom",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "room.attic",
+      "color": "#b9d0e6"
+    },
+    "3": {
+      "nameKey": "room.laundry",
+      "color": "#cfe0cf"
+    },
+    "4": {
+      "nameKey": "room.living",
+      "color": "#d8c0c0"
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "11111222",
+    "11111222",
+    "11111222",
+    "11111122",
+    "11111122",
+    "11113113",
+    "44443333",
+    "44443333"
+  ],
+  "groundMap": [
+    "r.......",
+    "........",
+    "........",
+    "........",
+    ".......r",
+    "........",
+    ".r......",
+    "........"
+  ],
+  "topMap": [
+    "..g.x.f.",
+    "..bbs...",
+    ".bbt.sf.",
+    ".fttt...",
+    "x.tpbb..",
+    "....f.t.",
+    "s.pbbb..",
+    "..sb..f."
+  ],
+  "windows": [
+    {
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    },
+    {
+      "r": 7,
+      "c": 6,
+      "side": "S"
+    }
+  ],
+  "doors": [
+    {
+      "r": 5,
+      "c": 2,
+      "side": "S"
+    },
+    {
+      "r": 4,
+      "c": 6,
+      "side": "S"
+    },
+    {
+      "r": 4,
+      "c": 7,
+      "side": "S"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alex",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "bed"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "sameLineAsObject",
+              "object": "shelf",
+              "line": "col",
+              "room": "any"
+            },
+            {
+              "type": "nearDoor"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Cyrus",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "brown",
+        "beard": true,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "plant"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "hair": "black",
+        "beard": false,
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 3
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "uniqueOnObject",
+          "object": "carpet"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Floyd",
+      "attributes": {
+        "gender": "m",
+        "glasses": false,
+        "hair": "blond",
+        "beard": true,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "bed"
+            },
+            {
+              "type": "directionFromObject",
+              "object": "shelf",
+              "dir": "west",
+              "room": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Greta",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "black",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "directionFromObject",
+          "object": "carpet",
+          "dir": "west",
+          "room": "any"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Viola",
+    "attributes": {
+      "gender": "f",
+      "glasses": true,
+      "hair": "white",
+      "beard": false,
+      "bald": false
+    }
+  },
+  "boardClues": [
+    {
+      "type": "countOnObject",
+      "object": "bed",
+      "count": 3
+    }
+  ],
+  "title": "Mord in der Höhe"
+}

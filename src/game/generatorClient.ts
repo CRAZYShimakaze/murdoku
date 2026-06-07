@@ -1,3 +1,4 @@
+import { fillBoardClues, generateLevel } from '../engine/generator/index.ts'
 import type { FillBoardOptions, GenBudget, GenerateOptions } from '../engine/generator/index.ts'
 import type { LevelJson } from '../engine/index.ts'
 
@@ -32,15 +33,15 @@ function withBudget(request: WorkerRequest, budget: GenBudget): WorkerRequest {
 /**
  * Run the request on the MAIN THREAD — the fallback for browsers that can't run
  * our module worker (notably some mobile browsers: older iOS Safari, Firefox for
- * Android, several in-app WebViews). The generator import is dynamic so it stays
- * code-split, and the awaits give the "generating" overlay a chance to paint
- * before the (blocking) CPU work begins.
+ * Android, several in-app WebViews). The yield (setTimeout 0) gives the "generating"
+ * overlay a chance to paint before the (blocking) CPU work begins. The generator is
+ * imported statically: the screens that reach this code already pull it in, so a
+ * dynamic import here would never split it into its own chunk anyway.
  */
 function runInline(request: WorkerRequest): GenHandle {
   const req = withBudget(request, FALLBACK_BUDGET)
   let cancelled = false
   const promise = (async () => {
-    const { generateLevel, fillBoardClues } = await import('../engine/generator/index.ts')
     await new Promise((r) => setTimeout(r, 0))
     if (cancelled) throw new Error('cancelled')
     const level =

@@ -77,6 +77,23 @@ export function filterLevels(
   )
 }
 
+/** The level author kept out of the picker until the player unlocks them with the
+ *  secret toggle (five quick taps on the title). Off by default — see LevelSelect. */
+export const HIDDEN_AUTHOR = 'Manuel Garand'
+
+/** The picker's universe minus the hidden author, unless the player unlocked them.
+ *  Drives both the level grid and the available filter options. */
+export function authorVisibleLevels(levels: LevelMeta[], showHidden: boolean): LevelMeta[] {
+  return showHidden ? levels : levels.filter((l) => l.author !== HIDDEN_AUTHOR)
+}
+
+/** Distinct "W×H" sizes present in `levels`, sorted by area — for the size filter. */
+export function availableSizes(levels: LevelMeta[]): string[] {
+  return [...new Map(levels.map((l) => [`${l.width}×${l.height}`, l.width * l.height])).entries()]
+    .sort((a, b) => a[1] - b[1])
+    .map(([label]) => label)
+}
+
 /** The level to play after `current` within a (sorted) filtered list. Wraps
  *  around at the end; null when no other level matches the filter. */
 export function nextLevel(current: LevelMeta, filtered: LevelMeta[]): LevelMeta | null {
@@ -135,12 +152,5 @@ export const LEVELS: LevelMeta[] = Object.values(modules)
     json,
   }))
   .sort(compareLevels)
-
-/** Distinct "W×H" sizes present, sorted by area — for the size filter. */
-export const LEVEL_SIZES: string[] = [
-  ...new Map(LEVELS.map((l) => [`${l.width}×${l.height}`, l.width * l.height])).entries(),
-]
-  .sort((a, b) => a[1] - b[1])
-  .map(([label]) => label)
 
 export const DIFFICULTIES: Difficulty[] = ['tutorial', 'easy', 'medium', 'hard', 'original']

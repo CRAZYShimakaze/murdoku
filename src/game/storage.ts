@@ -7,6 +7,7 @@ const PROGRESS_PREFIX = 'murdoku.progress.v1.'
 const CUSTOM_KEY = 'murdoku.custom.v1'
 const EDITOR_DRAFT_KEY = 'murdoku.editordraft.v1'
 const FILTER_KEY = 'murdoku.filter.v1'
+const SHOW_HIDDEN_AUTHOR_KEY = 'murdoku.showhiddenauthor.v1'
 const GEN_SETTINGS_KEY = 'murdoku.gensettings.v1'
 
 /** A board state flattened to JSON-friendly arrays (Maps/Sets don't serialize). */
@@ -46,6 +47,16 @@ export function loadFilter(fallback: LevelFilter): LevelFilter {
 
 export function saveFilter(filter: LevelFilter): void {
   write(FILTER_KEY, filter)
+}
+
+/** Secret toggle (five quick taps on the picker title): reveal the hidden author's
+ *  levels. Off by default, so those levels stay hidden until the player unlocks them. */
+export function loadShowHiddenAuthor(): boolean {
+  return read<boolean>(SHOW_HIDDEN_AUTHOR_KEY, false)
+}
+
+export function saveShowHiddenAuthor(value: boolean): void {
+  write(SHOW_HIDDEN_AUTHOR_KEY, value)
 }
 
 /** The generator form's last selection (size, difficulty, theme, objects, openings). */

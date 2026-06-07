@@ -220,7 +220,10 @@
     "unsolved": "Unsolved",
     "empty": "No cases match these filters.",
     "solved": "Solved",
-    "custom": "Custom"
+    "custom": "Custom",
+    "garandTag": "Classified",
+    "garandOn": "Manuel Garand: visible",
+    "garandOff": "Manuel Garand: hidden"
   },
   "difficulty": {
     "tutorial": "Tutorial",

@@ -472,6 +472,16 @@ button {
   color: var(--brass);
   font-weight: 400;
 }
+/* The title doubles as a hidden switch (five quick taps). It must stay invisible as
+   an affordance, so no pointer/highlight — but it must swallow the rapid taps
+   cleanly on touch: no text selection, no double-tap zoom. */
+.mk-secret {
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
 .mk-filters {
   display: flex;
   flex-wrap: wrap;
@@ -1929,6 +1939,74 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Secret-toggle confirmation: a case-file evidence strip that rises, holds, then
+   recedes — its whole lifecycle is one animation so a single timer can remove it. */
+.mk-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  max-width: min(90vw, 26rem);
+  padding: 0.7rem 1.5rem;
+  text-align: center;
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border: 1px solid var(--line-strong);
+  border-top: 2px solid var(--brass);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  /* Non-intrusive: never intercepts a tap meant for a card behind it. */
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: mk-toast-life 1.8s ease forwards;
+}
+/* The accent edge reads the result at a glance: unsealed (green) vs sealed (red). */
+.mk-toast[data-on='true'] {
+  border-top-color: var(--evergreen);
+}
+.mk-toast[data-on='false'] {
+  border-top-color: var(--crimson);
+}
+.mk-toast__tag {
+  font-family: var(--font-type);
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.mk-toast__msg {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--bone);
+}
+@keyframes mk-toast-life {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+  14% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  82% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-toast {
+    animation: fade 0.2s ease both;
   }
 }
 @keyframes fade {

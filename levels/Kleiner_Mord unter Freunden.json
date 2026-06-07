@@ -1,0 +1,260 @@
+{
+  "schema": 1,
+  "id": "gen-apartment-278544714",
+  "difficulty": "medium",
+  "size": {
+    "width": 4,
+    "height": 4
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.pantry",
+      "color": "#e8d8b0"
+    },
+    "2": {
+      "nameKey": "room.storeroom",
+      "color": "#b9d0e6"
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "1122",
+    "1112",
+    "1111",
+    "1111"
+  ],
+  "groundMap": [
+    "....",
+    "....",
+    "....",
+    "...."
+  ],
+  "topMap": [
+    "b...",
+    "b...",
+    ".bb.",
+    ".d.."
+  ],
+  "windows": [
+    {
+      "r": 2,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 2,
+      "c": 3,
+      "side": "E"
+    },
+    {
+      "r": 3,
+      "c": 2,
+      "side": "S"
+    },
+    {
+      "r": 1,
+      "c": 3,
+      "side": "E"
+    },
+    {
+      "r": 3,
+      "c": 3,
+      "side": "E"
+    }
+  ],
+  "doors": [
+    {
+      "r": 0,
+      "c": 2,
+      "side": "S"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 2
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "sameRoom",
+          "as": "A"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "hair": "blond",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "atWall"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Victoria",
+    "attributes": {
+      "gender": "f",
+      "glasses": false,
+      "hair": "brown",
+      "beard": false,
+      "bald": false
+    }
+  },
+  "title": "Kleiner Mord unter Freunden"
+}
