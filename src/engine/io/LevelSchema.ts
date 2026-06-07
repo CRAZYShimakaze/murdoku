@@ -26,6 +26,8 @@ export interface LevelJson {
   id: string
   /** Optional display name (e.g. a player-given name for a saved level). */
   title?: string
+  /** Optional credit shown while playing ("A case by …"); omitted when unset. */
+  author?: string
   size: { width: number; height: number }
   /** char -> room metadata; chars are used in `roomMap`. `outside` marks outdoor areas. */
   rooms: Record<string, { nameKey: string; color: string; outside?: boolean }>

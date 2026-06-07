@@ -236,7 +236,8 @@
     "victim": "Das Opfer",
     "victimStatement": "war allein mit dem Mörder.",
     "tools": "Werkzeuge",
-    "openInEditor": "Im Editor öffnen"
+    "openInEditor": "Im Editor öffnen",
+    "author": "Ein Fall von {{name}}"
   },
   "tool": {
     "x": "X",

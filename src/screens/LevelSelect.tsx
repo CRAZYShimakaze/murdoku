@@ -136,6 +136,9 @@ export default function LevelSelect({ onPick, onBack }: Props) {
               <BoardPreview json={l.json} />
               <div className="mk-card__body">
                 <span className="mk-card__title">{l.title}</span>
+                {l.author && (
+                  <span className="mk-card__author">{t('game.author', { name: l.author })}</span>
+                )}
                 <div className="mk-card__meta">
                   <span className="mk-pill" data-d={l.difficulty}>
                     {t(`difficulty.${l.difficulty}`)}

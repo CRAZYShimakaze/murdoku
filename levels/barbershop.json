@@ -1,5 +1,6 @@
 {
   "schema": 1,
+  "author": "Manuel Garand",
   "id": "barbershop",
   "difficulty": "medium",
   "size": { "width": 8, "height": 8 },

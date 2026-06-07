@@ -16,6 +16,8 @@ export interface LevelMeta {
   id: string
   /** Display name derived from the id (no title field in the JSON yet). */
   title: string
+  /** Optional level author, surfaced as a byline while playing (if set). */
+  author?: string
   difficulty: Difficulty
   width: number
   height: number
@@ -88,6 +90,7 @@ export function levelMetaFromJson(json: LevelJson, custom = false): LevelMeta {
   return {
     id: json.id,
     title: json.title ?? titleFromId(json.id),
+    author: json.author,
     difficulty: asDifficulty(json.difficulty),
     width: json.size.width,
     height: json.size.height,
@@ -125,6 +128,7 @@ export const LEVELS: LevelMeta[] = Object.values(modules)
   .map((json) => ({
     id: json.id,
     title: json.title ?? humanize(json.id),
+    author: json.author,
     difficulty: asDifficulty(json.difficulty),
     width: json.size.width,
     height: json.size.height,

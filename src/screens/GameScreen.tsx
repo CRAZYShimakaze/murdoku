@@ -235,17 +235,28 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   return (
     <div className="mk-game">
       <header className="mk-game__head">
-        <button type="button" className="mk-back" onClick={onBack} aria-label="back">
-          ←
-        </button>
-        <h2>
-          {meta.title} <span className="mk-game__sz">{meta.width}×{meta.height}</span>
-        </h2>
-        {onEdit && !tutorial && (
-          <button type="button" className="mk-game__edit" onClick={onEdit}>
-            ✎ {t('game.openInEditor')}
+        <div className="mk-game__lead">
+          <button type="button" className="mk-back" onClick={onBack} aria-label="back">
+            ←
           </button>
-        )}
+          {onEdit && !tutorial && (
+            <button
+              type="button"
+              className="mk-game__edit"
+              onClick={onEdit}
+              aria-label={t('game.openInEditor')}
+            >
+              <span aria-hidden="true">✎</span>
+              <span className="mk-game__edit-label">{t('game.openInEditor')}</span>
+            </button>
+          )}
+        </div>
+        <h2 className="mk-game__title">
+          {meta.title} <span className="mk-game__sz">{meta.width}×{meta.height}</span>
+          {meta.author && (
+            <span className="mk-game__author"> · {t('game.author', { name: meta.author })}</span>
+          )}
+        </h2>
         <span className="mk-timer">{formatTime(elapsed)}</span>
       </header>
 

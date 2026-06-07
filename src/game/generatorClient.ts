@@ -1,4 +1,4 @@
-import type { FillBoardOptions, GenerateOptions } from '../engine/generator/index.ts'
+import type { FillBoardOptions, GenBudget, GenerateOptions } from '../engine/generator/index.ts'
 import type { LevelJson } from '../engine/index.ts'
 
 export interface GenHandle {
@@ -11,6 +11,24 @@ type WorkerRequest =
   | { kind: 'generate'; opts: GenerateOptions }
   | { kind: 'fill'; board: LevelJson; opts: FillBoardOptions }
 
+// In the WORKER, Cancel = worker.terminate(), which kills the thread instantly at any
+// point — so we don't need tight time limits, just a high safety wall in case a config
+// is impossible. The user stops it whenever they like.
+const WORKER_BUDGET: GenBudget = { maxAttempts: 4000, softMs: 8000, hardMs: 90000 }
+// In the MAIN-THREAD fallback the work runs synchronously and Cancel can't interrupt it,
+// so it must self-cap to keep the UI from freezing for long.
+const FALLBACK_BUDGET: GenBudget = { maxAttempts: 200, softMs: 2500, hardMs: 8000 }
+
+/** Return the request with a search budget merged into its opts.
+ *  Branch on `kind` so each arm narrows `request` to one union member — spreading
+ *  the union directly ({ ...request, opts: { ...request.opts, budget } }) loses the
+ *  kind↔opts correlation and won't type-check, so the two arms must stay split. */
+function withBudget(request: WorkerRequest, budget: GenBudget): WorkerRequest {
+  return request.kind === 'fill'
+    ? { ...request, opts: { ...request.opts, budget } }
+    : { ...request, opts: { ...request.opts, budget } }
+}
+
 /**
  * Run the request on the MAIN THREAD — the fallback for browsers that can't run
  * our module worker (notably some mobile browsers: older iOS Safari, Firefox for
@@ -19,15 +37,14 @@ type WorkerRequest =
  * before the (blocking) CPU work begins.
  */
 function runInline(request: WorkerRequest): GenHandle {
+  const req = withBudget(request, FALLBACK_BUDGET)
   let cancelled = false
   const promise = (async () => {
     const { generateLevel, fillBoardClues } = await import('../engine/generator/index.ts')
     await new Promise((r) => setTimeout(r, 0))
     if (cancelled) throw new Error('cancelled')
     const level =
-      request.kind === 'fill'
-        ? fillBoardClues(request.board, request.opts)
-        : generateLevel(request.opts)
+      req.kind === 'fill' ? fillBoardClues(req.board, req.opts) : generateLevel(req.opts)
     if (cancelled) throw new Error('cancelled')
     if (!level) throw new Error('generation failed')
     return level
@@ -72,7 +89,7 @@ function runWorker(request: WorkerRequest): GenHandle {
     fallback = runInline(request)
     fallback.promise.then(resolveFn, rejectFn)
   }
-  worker.postMessage(request)
+  worker.postMessage(withBudget(request, WORKER_BUDGET))
 
   const cancel = () => {
     if (fallback) return fallback.cancel()

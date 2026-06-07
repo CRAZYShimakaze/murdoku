@@ -145,6 +145,22 @@ export function themeFromRoomKeys(keys: readonly string[]): string | null {
 
 export type GenDifficulty = 'easy' | 'medium' | 'hard'
 
+/**
+ * How long the generator may search. The CALLER sets this: the Web Worker passes a
+ * generous budget (it can run long because Cancel = worker.terminate() kills it
+ * instantly), while the main-thread fallback passes a tight one (there a synchronous
+ * run blocks the UI and Cancel can't interrupt). Omitted → each entry point's own
+ * historical default (so dev tools / tests are unaffected).
+ */
+export interface GenBudget {
+  /** Max generation attempts before giving up. */
+  maxAttempts: number
+  /** Soft budget (ms): once a candidate exists, stop hunting for a better one. */
+  softMs: number
+  /** Hard wall-clock cap (ms): give up (and report failure) even with nothing found. */
+  hardMs: number
+}
+
 export interface GenerateOptions {
   width: number
   height: number
@@ -158,6 +174,8 @@ export interface GenerateOptions {
   windows?: boolean
   /** Place a few doors between rooms (enables "beside a door" clues). */
   doors?: boolean
+  /** Search budget (see GenBudget). Omitted → historical defaults. */
+  budget?: GenBudget
 }
 
 const HAIR_COLORS: AttributeValue[] = ['blond', 'brown', 'black', 'white']
@@ -227,23 +245,35 @@ function pickBestLevel(
   opts: PickOptions = {},
 ): LevelJson | null {
   if (target === 'hard') {
-    const deadline = performance.now() + HARD_TIME_BUDGET_MS
-    let hardest: LevelJson | null = null
+    const maxAttempts = opts.maxAttempts ?? HARD_MAX_ATTEMPTS
+    const deadline = performance.now() + (opts.hardTimeBudgetMs ?? HARD_TIME_BUDGET_MS)
+    let hardest: LevelJson | null = null // hardest PIN-FREE level (preferred)
     let bestNodes = -1
-    for (let a = 0; a < HARD_MAX_ATTEMPTS; a++) {
+    let anyValid: LevelJson | null = null // first valid level of any kind (last-resort fallback)
+    for (let a = 0; a < maxAttempts; a++) {
       const result = attempt(new Rng(baseSeed + a * 7919), baseSeed + a)
-      if (result && result.pins === 0) {
-        const nodes = searchDifficulty(result.level)
-        if (nodes > bestNodes) {
+      if (result) {
+        if (!anyValid) {
           result.level.difficulty = rateTier(result.level)
-          hardest = result.level
-          bestNodes = nodes
+          anyValid = result.level
         }
-        if (bestNodes >= HARD_ENOUGH_NODES) break
+        if (result.pins === 0) {
+          const nodes = searchDifficulty(result.level)
+          if (nodes > bestNodes) {
+            result.level.difficulty = rateTier(result.level)
+            hardest = result.level
+            bestNodes = nodes
+          }
+          if (bestNodes >= HARD_ENOUGH_NODES) break
+        }
       }
-      if (hardest && performance.now() > deadline) break
+      // Bounded: stop at the wall-clock deadline even if nothing pin-free turned up
+      // yet (the worker passes a long budget; the main-thread fallback a short one).
+      if (performance.now() > deadline) break
     }
-    return hardest
+    // Prefer the hardest pin-free level; if a stubborn board never yielded one, return
+    // the hardest available (pins allowed) so a 'hard' request still gets a level.
+    return hardest ?? anyValid
   }
 
   const maxAttempts = opts.maxAttempts ?? 80
@@ -277,10 +307,37 @@ function pickBestLevel(
 export function generateLevel(options: GenerateOptions): LevelJson {
   const { width, height, suspects } = options
   const baseSeed = options.seed ?? Math.floor(Math.random() * 1e9)
+  const pick = options.budget ? pickOptsFrom(options.budget) : {}
+
+  // EASY is forward-constructed (cleaner, more easy-typical puzzles), but the
+  // construction lands far less often on a random, sparsely-furnished board than on
+  // a hand-drawn editor board — on some sizes effectively never. So: try the
+  // construction up to the budget (fast-failing attempts), and if nothing lands,
+  // fall back to generic selection rated nearest to easy so we ALWAYS return a level.
+  if (options.difficulty === 'easy') {
+    const deadline = performance.now() + (options.budget?.hardMs ?? 20000)
+    for (let a = 0; a < 200000 && performance.now() < deadline; a++) {
+      const result = tryGenerate(options, new Rng(baseSeed + a * 7919), baseSeed + a)
+      if (result) {
+        result.level.difficulty = rateTier(result.level)
+        return result.level
+      }
+    }
+    const fallback = pickBestLevel(
+      (rng, seedIndex) => tryGenerate(options, rng, seedIndex, false),
+      baseSeed + 104729,
+      'easy',
+      pick,
+    )
+    if (fallback) return fallback
+    throw new Error(`Could not generate an easy ${width}x${height} level for ${suspects} suspects`)
+  }
+
   const level = pickBestLevel(
     (rng, seedIndex) => tryGenerate(options, rng, seedIndex),
     baseSeed,
     options.difficulty,
+    pick,
   )
   if (!level) throw new Error(`Could not generate a ${width}x${height} level for ${suspects} suspects`)
   return level
@@ -289,6 +346,13 @@ export function generateLevel(options: GenerateOptions): LevelJson {
 export interface FillBoardOptions {
   difficulty?: GenDifficulty
   seed?: number
+  /** Search budget (see GenBudget). Omitted → historical defaults. */
+  budget?: GenBudget
+}
+
+/** Translate a caller budget into pickBestLevel's knobs. */
+function pickOptsFrom(budget: GenBudget): PickOptions {
+  return { maxAttempts: budget.maxAttempts, timeBudgetMs: budget.softMs, hardTimeBudgetMs: budget.hardMs }
 }
 
 /**
@@ -309,7 +373,7 @@ export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {})
   // fresh placements until one lands or a generous time budget runs out — taking the first
   // that works (the user chose "search longer" over a guaranteed result).
   if (options.difficulty === 'easy') {
-    const deadline = performance.now() + 20000
+    const deadline = performance.now() + (options.budget?.hardMs ?? 20000)
     for (let a = 0; a < 200000 && performance.now() < deadline; a++) {
       const result = fillAttempt(board, suspectIds, new Rng(baseSeed + a * 7919), 'easy')
       if (result) {
@@ -322,11 +386,14 @@ export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {})
 
   // The board is fixed, so a fill is harder to land than free generation — give it
   // more attempts but a firm time bound (it runs in a worker with a cancel button).
+  const pick = options.budget
+    ? pickOptsFrom(options.budget)
+    : { maxAttempts: 400, timeBudgetMs: 5000, hardTimeBudgetMs: 20000 }
   return pickBestLevel(
     (rng) => fillAttempt(board, suspectIds, rng, options.difficulty),
     baseSeed,
     options.difficulty,
-    { maxAttempts: 400, timeBudgetMs: 5000, hardTimeBudgetMs: 20000 },
+    pick,
   )
 }
 
@@ -457,6 +524,9 @@ function tryGenerate(
   options: GenerateOptions,
   rng: Rng,
   seedIndex: number,
+  /** Build the clues by easy forward-construction. Defaults to on for 'easy';
+   *  the easy generator turns it OFF for its generic fallback (see generateLevel). */
+  easyConstruct = options.difficulty === 'easy',
 ): { level: LevelJson; pins: number } | null {
   const { width, height, suspects } = options
   const baseTheme = THEMES.find((t) => t.id === options.themeId) ?? rng.pick(THEMES)
@@ -510,11 +580,22 @@ function tryGenerate(
   const candidates = new Map<PersonId, ClueJson[]>()
   for (const id of suspectIds) {
     const others = suspectIds.filter((o) => o !== id)
-    candidates.set(id, candidatesFor(id, solution, basePuzzle, others))
+    // Easy construction uses the editor's flat clue vocabulary (same as the editor fill).
+    candidates.set(id, candidatesFor(id, solution, basePuzzle, others, easyConstruct))
   }
 
-  const chosen = selectClues(base, suspectIds, candidates, rng)
+  // EASY is built by forward construction (place + pin each suspect in the shrinking
+  // board) — the SAME path the editor's fill uses, which yields cleaner, more
+  // easy-typical puzzles than rating-filtering generic attempts. MEDIUM / HARD (and
+  // the easy generic fallback) use natural clue selection.
+  const chosen = easyConstruct
+    ? constructEasyClues(base, suspectIds, solution, candidates, rng)
+    : selectClues(base, suspectIds, candidates, rng)
   if (!chosen) return null
+
+  // Easy: at most ONE suspect may be directly placeable from the start (the rest
+  // need a cross-out first), like the hand-made easy levels.
+  if (easyConstruct && countAnchors(chosen, suspectIds, basePuzzle.board) > 1) return null
 
   for (const meta of base.suspects) meta.clues = [chosen.get(meta.id)!]
   // Guard: the unique solution must leave the victim alone with exactly ONE
@@ -523,9 +604,20 @@ function tryGenerate(
   const finalPuzzle = loadLevel(base)
   const finalSolution = new SearchSolver(finalPuzzle).firstSolution()
   if (!finalSolution || findMurderer(finalPuzzle, finalSolution).suspectId === null) return null
+
+  // Easy: confirm it is genuinely unique AND solvable by short, simple steps
+  // (hidden singles / "only one on X" / row-column cross-out — rank ≤ 2, never a
+  // contradiction), exactly like the editor's easy fill.
+  if (easyConstruct) {
+    if (new SearchSolver(finalPuzzle).countSolutions(2) !== 1) return null
+    const ded = new DeductionEngine(finalPuzzle).solve()
+    if (!ded.solved || ded.maxRank > 2) return null
+  }
+
   // Now and then add a board-wide clue (consistent with the solution) as bonus
   // flavour. It is true for the unique solution, so uniqueness/murderer are kept.
-  if (rng.chance(0.35)) {
+  // Kept off forward-constructed easy levels to preserve their clean, minimal feel.
+  if (!easyConstruct && rng.chance(0.35)) {
     const bc = bonusBoardClue(finalPuzzle, solution, rng)
     if (bc) base.boardClues = [bc]
   }

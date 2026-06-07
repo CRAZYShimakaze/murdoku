@@ -1,5 +1,6 @@
 {
   "schema": 1,
+  "author": "Manuel Garand",
   "id": "24h-delivery",
   "difficulty": "easy",
   "size": { "width": 6, "height": 6 },
