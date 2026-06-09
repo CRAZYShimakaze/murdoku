@@ -33,6 +33,8 @@ import {
   type EditorSuspect,
 } from '../game/editorModel.ts'
 import { DeductionEngine, SearchSolver, findMurderer, loadLevel, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
+import { Renderer } from '../i18n/Renderer.ts'
+import { useDebugSolveKey } from '../game/debugSolve.ts'
 
 type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
 type CheckResult = {
@@ -107,7 +109,7 @@ function draftFromLevel(level: LevelJson): EditorDraft {
 }
 
 export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   // Open the passed level for editing; otherwise restore the saved draft, else fresh.
   const [draft] = useState<EditorDraft | null>(() =>
     initialLevel ? draftFromLevel(initialLevel) : loadEditorDraft<EditorDraft>(),
@@ -187,6 +189,19 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
 
   const build = (id: string) =>
     buildPlayableLevel(state, id, name.trim() || undefined, difficulty, themeOutdoor(theme))
+
+  // Ctrl+B → log the solved board + full deduction path for the level as drawn.
+  useDebugSolveKey(() => {
+    try {
+      const puzzle = loadLevel(build('editor-debug'))
+      const lang = i18n.resolvedLanguage ?? i18n.language
+      const renderer = new Renderer(i18n.getResourceBundle(lang, 'translation'), puzzle)
+      return { puzzle, renderer }
+    } catch {
+      console.warn('[Murdoku] Board lässt sich (noch) nicht bauen.')
+      return null
+    }
+  })
 
   /**
    * Keep the board (rooms, floor, objects, windows, doors, global clues) exactly as

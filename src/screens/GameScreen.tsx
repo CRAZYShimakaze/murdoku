@@ -12,6 +12,7 @@ import {
   type PersonId,
 } from '../engine/index.ts'
 import { Renderer } from '../i18n/Renderer.ts'
+import { useDebugSolveKey } from '../game/debugSolve.ts'
 import { useGameSession } from '../game/useGameSession.ts'
 import { useTutorialFlow } from '../game/useTutorialFlow.ts'
 import { CANDIDATE_BLUE, HINT_BLACK, suspectColor } from '../game/palette.ts'
@@ -89,6 +90,9 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
     () => new Renderer(i18n.getResourceBundle(lang, 'translation'), puzzle),
     [i18n, lang, puzzle],
   )
+
+  // Ctrl+B → log the solved board + full deduction path to the console.
+  useDebugSolveKey(() => ({ puzzle, renderer }))
 
   const session = useGameSession(puzzle, storageId, tutorial, !tutorial)
   const [selected, setSelected] = useState<PersonId | null>(null)

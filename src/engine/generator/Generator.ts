@@ -204,39 +204,38 @@ function rateTier(level: LevelJson): GenDifficulty {
   return tier === 'expert' ? 'hard' : tier
 }
 
-/** Tier + whether the level is solvable by a pure logical chain (no proof-by-
- *  contradiction). The generator strongly prefers forcing-free levels so the hint
- *  system is always a clean chain — never "assume X → contradiction". */
-function deductionRating(level: LevelJson): { tier: GenDifficulty; forcingFree: boolean } {
+/** Forward-deduction rating — the construction oracle. Forward-solvable ALREADY proves
+ *  uniqueness (the engine never guesses); `forcingFree` means no proof-by-contradiction
+ *  (so the hint system is always a clean chain); `maxRank` is the hardest technique the
+ *  solution needs. One cheap call gives both uniqueness and difficulty. */
+function logicRating(level: LevelJson): { solved: boolean; forcingFree: boolean; maxRank: number } {
   const result = new DeductionEngine(loadLevel(level)).solve()
   const forcingFree =
     result.solved && !result.techniqueCounts.forcing && !result.techniqueCounts.satForcing
-  const tier = result.solved ? difficultyOf(result.maxRank) : 'hard'
-  return { tier: tier === 'expert' ? 'hard' : tier, forcingFree }
+  return { solved: result.solved, forcingFree, maxRank: result.maxRank }
 }
 
-/** Search-tree nodes needed to prove uniqueness — our proxy for solving difficulty. */
-function searchDifficulty(level: LevelJson): number {
-  const searcher = new SearchSolver(loadLevel(level))
-  searcher.countSolutions(2)
-  return searcher.nodes
+/** The hardest forward-deduction rank that DEFINES each tier (see TECHNIQUE_RANK):
+ *  medium MUST need a rank-4 room/count deduction, hard the rank-5 murder rule — both
+ *  still solvable by pure logic (forcing/SAT are rank 6/7 and are never used). */
+const TARGET_RANK: Record<GenDifficulty, number> = { easy: 1, medium: 4, hard: 5 }
+const targetRankOf = (d?: GenDifficulty): number => (d ? TARGET_RANK[d] : TARGET_RANK.hard)
+
+/** Honest tier from the rank a level actually needs: rank ≥5 ⇒ hard (murder rule),
+ *  rank 4 ⇒ medium (room counting), below ⇒ easy. Lets a level that falls short of its
+ *  requested tier be labelled by what it truly is. */
+function rankToTier(maxRank: number): GenDifficulty {
+  if (maxRank >= TARGET_RANK.hard) return 'hard'
+  if (maxRank >= TARGET_RANK.medium) return 'medium'
+  return 'easy'
 }
 
-const HARD_MAX_ATTEMPTS = 500
-const HARD_ENOUGH_NODES = 400 // early-exit once a level this hard turns up
-const HARD_TIME_BUDGET_MS = 20000
-
-/** Cap on "was in row X / column Y" clues per level (rows + columns combined) for the
- *  random fill at medium/hard — they are coordinate-y and dull, so keep them scarce. */
+/** Cap on "was in row X / column Y" clues per level (rows + columns combined) — they are
+ *  coordinate-y and dull, so keep them scarce. */
 const MAX_LINE_CLUES = 2
 
 /** One generation attempt → a candidate level (with its pin count), or null. */
 type Attempt = (rng: Rng, seedIndex: number) => { level: LevelJson; pins: number } | null
-
-/** How far apart two difficulty tiers are (so a target prefers the nearest tier). */
-const TIER_RANK: Record<GenDifficulty, number> = { easy: 0, medium: 1, hard: 2 }
-const tierDistance = (a: string, b: GenDifficulty | undefined): number =>
-  b && a in TIER_RANK ? Math.abs(TIER_RANK[a as GenDifficulty] - TIER_RANK[b]) : 0
 
 interface PickOptions {
   /** Cap on attempts (default 80). */
@@ -249,10 +248,12 @@ interface PickOptions {
 }
 
 /**
- * Run many attempts and keep the best per the target difficulty:
- *  - 'hard': keep the HARDEST (most search nodes) until hard enough or out of budget;
- *  - else: prefer pin-free, then the NEAREST difficulty tier, then line-free.
- * Each attempt's `level.difficulty` is set to its rated tier. Returns null if none.
+ * Run many attempts and keep the best PURE-LOGIC candidate for the target tier. Every
+ * eligible level is solvable by forward deduction (⇒ unique) with NO proof-by-
+ * contradiction; among those the score prefers the exact target rank, then pin-free,
+ * then line-free. A board that can't reach the target rank still yields its loosest
+ * forcing-free level (rated honestly by `rankToTier`), so we always return a logical
+ * level — never a contradiction one. Returns null only if nothing forcing-free turns up.
  */
 function pickBestLevel(
   attempt: Attempt,
@@ -260,64 +261,34 @@ function pickBestLevel(
   target: GenDifficulty | undefined,
   opts: PickOptions = {},
 ): LevelJson | null {
-  if (target === 'hard') {
-    const maxAttempts = opts.maxAttempts ?? HARD_MAX_ATTEMPTS
-    const deadline = performance.now() + (opts.hardTimeBudgetMs ?? HARD_TIME_BUDGET_MS)
-    let hardest: LevelJson | null = null // hardest PIN-FREE, forcing-free level (preferred)
-    let bestNodes = -1
-    let anyForcingFree: LevelJson | null = null // first forcing-free level (next-best)
-    let anyValid: LevelJson | null = null // first valid level of any kind (last resort)
-    for (let a = 0; a < maxAttempts; a++) {
-      const result = attempt(new Rng(baseSeed + a * 7919), baseSeed + a)
-      if (result) {
-        const rating = deductionRating(result.level)
-        result.level.difficulty = rating.tier
-        if (!anyValid) anyValid = result.level
-        if (rating.forcingFree && !anyForcingFree) anyForcingFree = result.level
-        // "Hardest" only among forcing-free, pin-free levels — a hard but purely
-        // logical case (no proof-by-contradiction).
-        if (result.pins === 0 && rating.forcingFree) {
-          const nodes = searchDifficulty(result.level)
-          if (nodes > bestNodes) {
-            hardest = result.level
-            bestNodes = nodes
-          }
-          if (bestNodes >= HARD_ENOUGH_NODES) break
-        }
-      }
-      // Bounded: stop at the wall-clock deadline even if nothing pin-free turned up
-      // yet (the worker passes a long budget; the main-thread fallback a short one).
-      if (performance.now() > deadline) break
-    }
-    // Prefer the hardest pin-free forcing-free level; then any forcing-free level;
-    // only as a last resort a contradiction-needing one (so 'hard' always returns).
-    return hardest ?? anyForcingFree ?? anyValid
-  }
-
-  const maxAttempts = opts.maxAttempts ?? 80
-  const softDeadline = performance.now() + (opts.timeBudgetMs ?? 2800)
+  const maxAttempts = opts.maxAttempts ?? 120
+  const softDeadline = performance.now() + (opts.timeBudgetMs ?? 3000)
   const hardDeadline = performance.now() + (opts.hardTimeBudgetMs ?? Infinity)
+  const targetRank = targetRankOf(target)
   let best: LevelJson | null = null
   let bestScore = Infinity
   for (let a = 0; a < maxAttempts; a++) {
     const result = attempt(new Rng(baseSeed + a * 7919), baseSeed + a)
     if (result) {
-      const { tier, forcingFree } = deductionRating(result.level)
-      result.level.difficulty = tier
-      const mismatch = tierDistance(tier, target)
-      const lines = countLineClues(result.level)
-      // A level needing proof-by-contradiction is dominated by any forcing-free one.
-      const score = (forcingFree ? 0 : 1_000_000) + result.pins * 1000 + mismatch * 10 + lines
-      if (score < bestScore) {
-        best = result.level
-        bestScore = score
+      const rating = logicRating(result.level)
+      // Only pure-logic (forcing-free) levels are eligible — the player must be able to
+      // solve by a clean chain, never "assume X → contradiction".
+      if (rating.forcingFree) {
+        result.level.difficulty = rankToTier(rating.maxRank)
+        const rankMiss = Math.abs(rating.maxRank - targetRank)
+        const lines = countLineClues(result.level)
+        const score = rankMiss * 1000 + result.pins * 100 + lines
+        if (score < bestScore) {
+          best = result.level
+          bestScore = score
+        }
+        if (rankMiss === 0 && result.pins === 0 && lines === 0) break
       }
-      if (forcingFree && result.pins === 0 && mismatch === 0 && lines === 0) break
     }
-    // Stop at the soft deadline only once we hold a FORCING-FREE candidate (score
-    // < the contradiction penalty); otherwise keep hunting for a logical one until the
-    // attempt cap, so we don't settle for a contradiction level prematurely.
-    if (best && bestScore < 1_000_000 && performance.now() > softDeadline) break
+    // Once we hold a candidate, stop at the soft deadline; with nothing yet keep hunting
+    // to the attempt cap / hard deadline (the worker passes a long budget, the
+    // main-thread fallback a short one).
+    if (best && performance.now() > softDeadline) break
     if (performance.now() > hardDeadline) break
   }
   return best
@@ -452,7 +423,7 @@ function fillAttempt(
   const chosen =
     difficulty === 'easy'
       ? constructEasyClues(base, suspectIds, solution, candidates, rng)
-      : selectClues(base, suspectIds, candidates, rng, difficulty, MAX_LINE_CLUES)
+      : constructLogicClues(base, suspectIds, candidates, rng, targetRankOf(difficulty), MAX_LINE_CLUES)
   if (!chosen) return null
 
   // Limit how many suspects are obvious from the START (their own clue pins one cell):
@@ -610,7 +581,7 @@ function tryGenerate(
   // the easy generic fallback) use natural clue selection.
   const chosen = easyConstruct
     ? constructEasyClues(base, suspectIds, solution, candidates, rng)
-    : selectClues(base, suspectIds, candidates, rng)
+    : constructLogicClues(base, suspectIds, candidates, rng, targetRankOf(options.difficulty), MAX_LINE_CLUES)
   if (!chosen) return null
 
   // Easy: at most ONE suspect may be directly placeable from the start (the rest
@@ -1307,55 +1278,69 @@ function countAnchors(
   return anchors
 }
 
-function selectClues(
+/**
+ * Build each suspect's clue by FORWARD CONSTRUCTION toward a target difficulty, the
+ * same spirit as the easy constructor but aimed at the harder tiers. The DeductionEngine
+ * is the only oracle: a level it solves by pure forward logic is ALREADY unique, so we
+ * never run the old (expensive) prove-uniqueness-by-search loop.
+ *
+ *   1. TIGHTEN — start each suspect on their tightest natural clue and add more until the
+ *      case is forward-solvable and forcing-free (no proof-by-contradiction).
+ *   2. LOOSEN  — drop redundant ANDed parts, then widen each single clue toward looser
+ *      candidates, RAISING the technique rank the solution needs up to `target`
+ *      (medium ⇒ a rank-4 room/count deduction, hard ⇒ the rank-5 murder rule) while
+ *      staying forcing-free. Looser clues ⇒ harder deductions.
+ *
+ * Returns the loosest forcing-free clue set found — its rank may fall short of `target`
+ * on a constrained board, and the caller (`pickBestLevel`) rates it honestly and keeps
+ * hunting. Returns null only if the board admits no forcing-free forward solution.
+ */
+/** How many of a suspect's loosest candidate clues the widen pass (2b) tries — bounds
+ *  the per-attempt cost on big, clue-rich boards. */
+const WIDEN_SCAN = 8
+function constructLogicClues(
   base: LevelJson,
   suspectIds: PersonId[],
   candidates: Map<PersonId, ClueJson[]>,
   rng: Rng,
-  difficulty?: GenDifficulty,
-  maxLineClues = 1,
+  target: number,
+  maxLineClues: number,
 ): Map<PersonId, ClueJson> | null {
   for (const id of suspectIds) if (candidates.get(id)!.length === 0) return null
 
   // Each suspect's clue = the AND of their natural candidates at these indices.
   const used = new Map<PersonId, number[]>(suspectIds.map((id) => [id, [0]]))
-
-  const hasCoordPair = (id: PersonId): boolean => {
-    const list = candidates.get(id)!
-    const types = used.get(id)!.map((i) => list[i].type)
-    return types.includes('inRow') && types.includes('inCol')
-  }
+  const list = (id: PersonId): ClueJson[] => candidates.get(id)!
   const clueOf = (id: PersonId): ClueJson => {
-    const parts = used.get(id)!.map((i) => candidates.get(id)![i])
+    const parts = used.get(id)!.map((i) => list(id)[i])
     return parts.length === 1 ? parts[0] : { type: 'and', clues: parts }
   }
-  const unique = (): boolean =>
-    isUnique(base, new Map(suspectIds.map((id) => [id, clueOf(id)])))
+  const rate = () =>
+    logicRating({ ...base, suspects: base.suspects.map((s) => ({ ...s, clues: [clueOf(s.id)] })) })
 
-  const MAX_LINE = maxLineClues // how many suspects may use a row/column clue
   const isLine = (clue: ClueJson): boolean => clue.type === 'inRow' || clue.type === 'inCol'
-  const lineSuspects = (): number => {
-    let n = 0
-    for (const id of suspectIds) {
-      if (used.get(id)!.some((i) => isLine(candidates.get(id)![i]))) n++
-    }
-    return n
+  const hasCoordPair = (id: PersonId): boolean => {
+    const types = used.get(id)!.map((i) => list(id)[i].type)
+    return types.includes('inRow') && types.includes('inCol')
   }
+  const lineSuspects = (): number =>
+    suspectIds.filter((id) => used.get(id)!.some((i) => isLine(list(id)[i]))).length
 
-  // Tighten: add a natural clue (never inRow+inCol together, ≤1 line clue) until unique.
-  // (Easy never reaches here — it is built by forward construction in fillAttempt.)
-  for (let guard = 0; guard < 300 && !unique(); guard++) {
+  // 1) TIGHTEN until forward-solvable & forcing-free (add a clue to the suspect with the
+  //    fewest, never inRow+inCol together, ≤ maxLineClues line clues overall).
+  for (let guard = 0; guard < 400; guard++) {
+    const st = rate()
+    if (st.solved && st.forcingFree) break
     const order = rng
       .shuffle([...suspectIds])
       .sort((a, b) => used.get(a)!.length - used.get(b)!.length)
     let added = false
     for (const id of order) {
-      const list = candidates.get(id)!
       const u = used.get(id)!
-      for (let i = 0; i < list.length; i++) {
+      for (let i = 0; i < list(id).length; i++) {
         if (u.includes(i)) continue
         u.push(i)
-        if (hasCoordPair(id) || lineSuspects() > MAX_LINE) {
+        if (hasCoordPair(id) || lineSuspects() > maxLineClues) {
           u.pop()
           continue
         }
@@ -1364,29 +1349,39 @@ function selectClues(
       }
       if (added) break
     }
-    if (!added) return null // cannot reach uniqueness with natural clues
+    if (!added) return null
   }
-  if (!unique()) return null
+  if (!rate().forcingFree) return null // no forcing-free forward solution on this board
 
-  // MEDIUM / HARD / unspecified: start minimal-unique and loosen for difficulty — drop
-  // redundant ANDed clues (all), then (hard / free generator only) widen single clues to
-  // looser candidates. Medium stays minimal-unique, so it can need a little search.
+  // 2a) LOOSEN: drop redundant ANDed parts — minimal clues ⇒ the hardest forward path —
+  //     as long as it stays forcing-free and doesn't overshoot the target rank.
   for (const id of suspectIds) {
     const u = used.get(id)!
     for (let k = u.length - 1; k >= 0 && u.length > 1; k--) {
       const removed = u.splice(k, 1)[0]
-      if (!unique()) u.splice(k, 0, removed)
+      const st = rate()
+      if (!(st.solved && st.forcingFree && st.maxRank <= target)) u.splice(k, 0, removed)
     }
   }
-  if (difficulty !== 'medium') {
+
+  // 2b) LOOSEN: widen each single clue toward looser candidates (more open cells) to push
+  //     the needed rank up to the target — loosest-that-still-works wins, capped so it
+  //     never tips into a harder tier or a contradiction. Stop early once target is hit.
+  //     Only the WIDEN_SCAN loosest candidates are tried (they are the rank-raising ones),
+  //     so a big, clue-rich board can't blow up the attempt's cost.
+  if (rate().maxRank < target) {
     for (const id of rng.shuffle([...suspectIds])) {
+      if (rate().maxRank >= target) break
       const u = used.get(id)!
       if (u.length !== 1) continue
-      const list = candidates.get(id)!
       const current = u[0]
-      for (let j = list.length - 1; j > current; j--) {
+      const lo = Math.max(current + 1, list(id).length - WIDEN_SCAN)
+      for (let j = list(id).length - 1; j >= lo; j--) {
         u[0] = j
-        if (lineSuspects() <= MAX_LINE && unique()) break
+        const st = rate()
+        if (st.solved && st.forcingFree && st.maxRank <= target && !hasCoordPair(id) && lineSuspects() <= maxLineClues) {
+          break
+        }
         u[0] = current
       }
     }
@@ -1421,10 +1416,3 @@ function countPins(assignment: Map<PersonId, ClueJson>): number {
   return pins
 }
 
-function isUnique(base: LevelJson, assignment: Map<PersonId, ClueJson>): boolean {
-  const level: LevelJson = {
-    ...base,
-    suspects: base.suspects.map((s) => ({ ...s, clues: [assignment.get(s.id)!] })),
-  }
-  return new SearchSolver(loadLevel(level)).countSolutions(2) === 1
-}
