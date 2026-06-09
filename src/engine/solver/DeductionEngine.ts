@@ -25,9 +25,23 @@ import type { Technique } from './techniques/Technique.ts'
  */
 export class DeductionEngine {
   private readonly techniques: Technique[]
+  /** Technique order used for HINTS only (not difficulty rating): line-claims and naked
+   *  singles before hidden singles, so a hint follows the shortest human chain ("Carol
+   *  must be in row 2, so Grant is the only one left in column 1") instead of an
+   *  all-knowing hidden single ("only Bella fits row 4", which needs everyone else). */
+  private readonly hintTechniques: Technique[]
 
   constructor(private readonly puzzle: Puzzle) {
     this.techniques = createForwardTechniques(puzzle)
+    const rank = (t: Technique): number =>
+      t.name === 'nakedSingle' || t.name === 'uniqueConstraint'
+        ? 0
+        : t.name.startsWith('nakedGroup')
+          ? 1
+          : t.name.startsWith('hiddenSingle')
+            ? 2
+            : 3 // everything else keeps its original relative order (stable sort), after
+    this.hintTechniques = [...this.techniques].sort((a, b) => rank(a) - rank(b))
   }
 
   solve(): DeductionResult {
@@ -66,6 +80,7 @@ export class DeductionEngine {
     // contradiction proof with a readable chain ("if X here → … → impossible"), or
     // the opaque SAT fallback. Cheap intermediate eliminations are applied silently
     // (they were the "useless" hints), so the surfaced hint always carries weight.
+    const victimId = this.puzzle.victim.id
     let fallback: HintResult | null = null
     while (ctx.state.unplaced().length > 0) {
       // Snapshot BEFORE applying the step: a placement step removes the person's
@@ -73,11 +88,17 @@ export class DeductionEngine {
       // "why every other cell is ruled out" reasons with the placement itself.
       const before = ctx.clone()
       let step: DeductionStep | null = null
-      for (const technique of this.techniques) {
+      for (const technique of this.hintTechniques) {
         step = technique.apply(ctx)
         if (step) break
       }
       if (!step) break
+      // The player places SUSPECTS; the victim's position is the final reveal. So while
+      // any suspect is still open, a step about the victim is applied silently (it may
+      // unblock a suspect deduction) but never surfaced as the hint.
+      if (step.personId === victimId && [...ctx.state.unplaced()].some((id) => id !== victimId)) {
+        continue
+      }
       const result = { step, ...this.focusOf(ctx, step) }
       if (
         step.placedCell !== undefined ||
@@ -158,10 +179,19 @@ export class DeductionEngine {
         }
       }
     }
-    // `id` can only be in one row (or column), so any cell outside that line is out.
-    // WHY is `id` stuck there? Usually a hidden single — `id` is the ONLY person who
-    // can still be in that line — which the player can verify on the board, so say it
-    // outright. Otherwise just state the confinement.
+    // Another suspect is pinned to this cell's row/column (their options collapsed to
+    // that one line), so they take it and `id` can't. Prefer this CONCRETE reason over
+    // `id`'s own confinement below, which is often merely its consequence ("Grant only
+    // in row 7" really BECAUSE "Carol reserves row 2").
+    for (const z of ctx.state.unplaced()) {
+      if (z === id) continue
+      const rows = ctx.linesOf(z, 'row')
+      if (rows.size === 1 && rows.has(row)) return { key: 'why.rowReserved', params: { cell: d, name: z } }
+      const cols = ctx.linesOf(z, 'col')
+      if (cols.size === 1 && cols.has(col)) return { key: 'why.colReserved', params: { cell: d, name: z } }
+    }
+    // Otherwise `id` itself can only be in one row (or column), so any cell outside that
+    // line is out. If `id` is the ONLY one who can be in that line, say so outright.
     if (!ctx.state.placed.has(id)) {
       const onlyHere = (axis: 'row' | 'col', line: number): boolean =>
         ctx.state.unplaced().every((z) => z === id || !ctx.linesOf(z, axis).has(line))
@@ -181,13 +211,6 @@ export class DeductionEngine {
           return { key: 'why.onlyCol', params: { cell: d, name: id, line: line + 1, bound: `col|${bound}` } }
         return { key: 'why.confinedCol', params: { cell: d, name: id, line: line + 1 } }
       }
-    }
-    for (const z of ctx.state.unplaced()) {
-      if (z === id) continue
-      const rows = ctx.linesOf(z, 'row')
-      if (rows.size === 1 && rows.has(row)) return { key: 'why.rowReserved', params: { cell: d, name: z } }
-      const cols = ctx.linesOf(z, 'col')
-      if (cols.size === 1 && cols.has(col)) return { key: 'why.colReserved', params: { cell: d, name: z } }
     }
     return { key: 'why.eliminated', params: { cell: d } }
   }

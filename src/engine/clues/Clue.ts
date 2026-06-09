@@ -22,6 +22,17 @@ export abstract class Clue {
     return null
   }
 
+  /**
+   * Cells where this clue is GUARANTEED true no matter where anyone else stands —
+   * so its negation may safely exclude exactly these. `null` (the default) when no
+   * such guarantee exists (relational / social / uniqueness clues): there the
+   * negation prunes nothing and is decided by `test` instead. Only ever a SUBSET of
+   * "true" cells, so negating it never removes a legitimate placement.
+   */
+  definiteCells(_board: Board): Set<Cell> | null {
+    return null
+  }
+
   forbiddenForOthers(_board: Board): Set<Cell> | null {
     return null
   }
@@ -48,5 +59,12 @@ export abstract class UnaryClue extends Clue {
 
   override test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
     return this.candidateCells(puzzle.board).has(solution.cellOf(subjectId))
+  }
+
+  // A unary clue is true exactly on its candidate cells (independent of others), so
+  // those are also its definite cells. Subclasses that add an others-dependent check
+  // (e.g. occupancy) override this to null (hence the nullable return type).
+  override definiteCells(board: Board): Set<Cell> | null {
+    return this.candidateCells(board)
   }
 }

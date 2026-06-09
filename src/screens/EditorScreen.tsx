@@ -32,17 +32,22 @@ import {
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
-import { SearchSolver, findMurderer, loadLevel, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
+import { DeductionEngine, SearchSolver, findMurderer, loadLevel, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
 
 type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
 type CheckResult = {
   kind: 'ok' | 'multi' | 'none' | 'error' | 'saved' | 'exported' | 'genfail'
   murderer?: string
+  /** For a solvable level: did pure forward deduction crack it ('pure'), or were
+   *  proof-by-contradiction steps (forcing/SAT search) required ('contradiction')? */
+  logic?: 'pure' | 'contradiction'
 }
 type EditDifficulty = Exclude<Difficulty, 'tutorial' | 'original'>
 const DIFFS: EditDifficulty[] = ['easy', 'medium', 'hard']
 const MIN = 4
 const MAX = 16
+/** The result banner behaves like a toast — it self-dismisses after this long. */
+const RESULT_TOAST_MS = 4000
 
 /** Pick a random theme to seed the room names (changeable in the dropdown). */
 const pickTheme = (): string => THEME_IDS[Math.floor(Math.random() * THEME_IDS.length)]
@@ -82,13 +87,22 @@ interface EditorDraft {
 function draftFromLevel(level: LevelJson): EditorDraft {
   const diff = level.difficulty
   const state = editorStateFromLevel(level)
+  // Preselect the theme that matches the level's rooms; fall back to a random one for
+  // levels with only generic room slots (no theme to detect).
+  const theme = themeFromRoomKeys(state.roomNames) ?? pickTheme()
+  // Fill the room slots the level DIDN'T use (still generic "room.editorX") with the
+  // theme's rooms that AREN'T already used — so every slot is labelled, with no
+  // duplicates ("Room 6, 7 …" becomes the remaining theme rooms in order).
+  const generic = (i: number) => `room.editor${ROOM_IDS[i]}`
+  const used = new Set(state.roomNames.filter((n, i) => n !== generic(i)))
+  const remaining = themeRooms(theme).filter((name) => !used.has(name))
+  let next = 0
+  const roomNames = state.roomNames.map((n, i) => (n === generic(i) ? (remaining[next++] ?? n) : n))
   return {
-    state,
+    state: { ...state, roomNames },
     name: level.title ?? '',
     difficulty: diff === 'easy' || diff === 'medium' || diff === 'hard' ? diff : 'medium',
-    // Preselect the theme that matches the level's rooms; fall back to a random one
-    // for levels with only generic room slots (no theme to detect).
-    theme: themeFromRoomKeys(state.roomNames) ?? pickTheme(),
+    theme,
   }
 }
 
@@ -137,6 +151,13 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   useEffect(() => {
     saveEditorDraft({ state, name, difficulty, theme })
   }, [state, name, difficulty, theme])
+
+  // Auto-dismiss the result banner: a fresh result re-arms the 4 s timer.
+  useEffect(() => {
+    if (!result) return
+    const id = window.setTimeout(() => setResult(null), RESULT_TOAST_MS)
+    return () => window.clearTimeout(id)
+  }, [result])
 
   const cols = state.size
 
@@ -213,7 +234,17 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
       if (count >= 2) return setResult({ kind: 'multi' })
       const solution = solver.firstSolution()!
       const m = findMurderer(puzzle, solution)
-      setResult({ kind: 'ok', murderer: m.suspectId ? puzzle.nameOf(m.suspectId) : undefined })
+      // How "fair" is the case? Pure forward deduction only uses proof-by-
+      // contradiction (forcing/SAT) when every transparent technique is stuck, so
+      // their presence means the case can't be cracked by clean logic alone.
+      const { techniqueCounts } = new DeductionEngine(puzzle).solve()
+      const logic =
+        techniqueCounts.forcing || techniqueCounts.satForcing ? 'contradiction' : 'pure'
+      setResult({
+        kind: 'ok',
+        murderer: m.suspectId ? puzzle.nameOf(m.suspectId) : undefined,
+        logic,
+      })
     } catch {
       setResult({ kind: 'error' })
     }
@@ -222,9 +253,11 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   const play = () => {
     try {
       const level = build(levelId())
+      // Only a truly unsolvable board (no valid arrangement) can't be played; an
+      // ambiguous one (several solutions) is still playable — it just can't be saved.
       const count = new SearchSolver(loadLevel(level)).countSolutions(2)
-      if (count === 1) onPlay(levelMetaFromJson(level, true))
-      else setResult({ kind: count === 0 ? 'none' : 'multi' })
+      if (count === 0) return setResult({ kind: 'none' })
+      onPlay(levelMetaFromJson(level, true))
     } catch {
       setResult({ kind: 'error' })
     }
@@ -431,11 +464,20 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
 
       {result && (
         <div className="mk-editor__result" data-kind={result.kind}>
-          {result.kind === 'ok'
-            ? result.murderer
-              ? t('editor.resultOk', { name: result.murderer })
-              : t('editor.resultOkNoMurderer')
-            : t(`editor.result_${result.kind}`)}
+          {result.kind === 'ok' ? (
+            <>
+              {result.murderer
+                ? t('editor.resultOk', { name: result.murderer })
+                : t('editor.resultOkNoMurderer')}
+              {result.logic && (
+                <span className="mk-editor__logic" data-logic={result.logic}>
+                  {t(`editor.logic_${result.logic}`)}
+                </span>
+              )}
+            </>
+          ) : (
+            t(`editor.result_${result.kind}`)
+          )}
         </div>
       )}
 

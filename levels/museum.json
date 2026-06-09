@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "museum",
   "difficulty": "hard",
+  "author": "Manuel Garand",
   "size": { "width": 9, "height": 9 },
   "rooms": {
     "E": { "nameKey": "room.exposition", "color": "#e8d8b0" },

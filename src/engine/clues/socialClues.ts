@@ -118,9 +118,17 @@ export class AloneWithClue extends Clue {
   }
 
   describe(): Explanation {
+    // Reflect ALL parts (named person, how many extras, their trait, optional
+    // direction) so the editor preview updates when any is changed.
+    const token = this.value === true ? this.attribute : `${this.attribute}_${this.value}`
     return {
       key: this.dir ? 'clue.aloneWithDir' : 'clue.aloneWithPeople',
-      params: { target: this.people[0] ?? '', who: `${this.value}_dat`, direction: this.dir ?? '' },
+      params: {
+        target: this.people[0] ?? '',
+        count: this.extraCount,
+        attribute: token,
+        direction: this.dir ?? '',
+      },
     }
   }
 }
@@ -185,8 +193,13 @@ export class RoomAttributeClue extends Clue {
   }
 
   describe(): Explanation {
+    // Gender is categorical ("a man/woman"), not a "with <trait>" attribute, so it
+    // gets its own wording (none/some/all) via the nominative who-token.
+    if (this.attribute === 'gender') {
+      return { key: `clue.roomGender.${this.quantifier}`, params: { who: `${this.value}_nom` } }
+    }
     // Boolean traits read as the attribute itself ("a beard"); valued traits
-    // (hair colour, gender, …) fold the value into the token so the wording can
+    // (hair colour, …) fold the value into the token so the wording can
     // distinguish "blond hair" from "brown hair" via `attr.<attribute>_<value>`.
     const token = this.value === true ? this.attribute : `${this.attribute}_${this.value}`
     return {
@@ -240,7 +253,13 @@ export class RoomCompanionClue extends Clue {
   }
 
   describe(): Explanation {
-    return { key: 'clue.aloneWith', params: { who: `${this.value}_dat` } }
+    // Gender reads as "alone with a man/woman"; other traits as "alone with a person
+    // who had <trait>" (the trait token reuses the attr.* wordings).
+    if (this.attribute === 'gender') {
+      return { key: 'clue.aloneWith', params: { who: `${this.value}_dat` } }
+    }
+    const token = this.value === true ? this.attribute : `${this.attribute}_${this.value}`
+    return { key: 'clue.aloneWithTrait', params: { attribute: token } }
   }
 }
 

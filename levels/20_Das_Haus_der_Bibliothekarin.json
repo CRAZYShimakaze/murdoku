@@ -1,31 +1,87 @@
 {
   "schema": 1,
-  "id": "gen-crime-scene-12",
-  "difficulty": "hard",
+  "id": "editor-20-das-haus-der-bibliothekarin",
+  "title": "20. Das Haus der Bibliothekarin",
+  "author": "Manuel Garand",
   "size": {
-    "width": 10,
-    "height": 10
+    "width": 9,
+    "height": 9
   },
   "rooms": {
     "1": {
-      "nameKey": "room.kidsroom",
-      "color": "#e8d8b0"
+      "nameKey": "room.bathroom",
+      "color": "#e8d8b0",
+      "outside": false
     },
     "2": {
-      "nameKey": "room.garage",
-      "color": "#b9d0e6"
+      "nameKey": "room.kitchen",
+      "color": "#b9d0e6",
+      "outside": false
     },
     "3": {
       "nameKey": "room.living",
-      "color": "#cfe0cf"
+      "color": "#cfe0cf",
+      "outside": false
     },
     "4": {
-      "nameKey": "room.basement",
-      "color": "#d8c0c0"
+      "nameKey": "room.guestroom",
+      "color": "#d8c0c0",
+      "outside": false
     },
     "5": {
-      "nameKey": "room.bath",
-      "color": "#e6cda0"
+      "nameKey": "room.hallway",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.kids1",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.kids2",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.study",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.garage",
+      "color": "#e0c4a0",
+      "outside": true
+    },
+    "A": {
+      "nameKey": "room.bedroom",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.dining",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.balcony",
+      "color": "#e0b0a8",
+      "outside": true
+    },
+    "D": {
+      "nameKey": "room.storeroom",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.laundry",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.pantry",
+      "color": "#ded0e6",
+      "outside": false
     }
   },
   "objects": {
@@ -155,127 +211,87 @@
     }
   },
   "roomMap": [
-    "1111222222",
-    "1111222222",
-    "1111222222",
-    "1111222222",
-    "1111222222",
-    "1111222222",
-    "1111123322",
-    "4441523322",
-    "4444553333",
-    "4445553333"
+    "22BBB8888",
+    "22BBB8888",
+    "22BBB8888",
+    "33BBB8888",
+    "333338888",
+    "33333AA11",
+    "44AAAAA11",
+    "44AAAAA11",
+    "444AAAA11"
   ],
   "groundMap": [
-    "..........",
-    ".r........",
-    "........rr",
-    "..........",
-    "..........",
-    "..........",
-    "...r......",
-    "...r......",
-    "..r......r",
-    ".........."
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    "........."
   ],
   "topMap": [
-    "...p...tbf",
-    "x...p...b.",
-    "bbb...p...",
-    "b.....s..p",
-    "fbb..t.x.s",
-    "pf..px..bb",
-    ".p..f...b.",
-    "bb.....tb.",
-    ".......t..",
-    "..f..fs.s."
+    "..gs.gg.g",
+    ".tst....g",
+    "tgst.s..g",
+    "g.....pg.",
+    "..st...tg",
+    "gs.fpg...",
+    "b......pg",
+    "bs..bb..s",
+    "g.....g.."
   ],
-  "windows": [
-    {
-      "r": 1,
-      "c": 0,
-      "side": "W"
-    },
-    {
-      "r": 9,
-      "c": 1,
-      "side": "S"
-    },
-    {
-      "r": 6,
-      "c": 0,
-      "side": "W"
-    },
-    {
-      "r": 0,
-      "c": 3,
-      "side": "N"
-    },
-    {
-      "r": 0,
-      "c": 6,
-      "side": "N"
-    }
-  ],
+  "windows": [],
   "doors": [],
   "suspects": [
     {
       "id": "A",
-      "name": "Alex",
+      "name": "Armin",
       "attributes": {
         "gender": "m",
-        "glasses": false,
-        "hair": "black",
-        "beard": true,
-        "bald": true
+        "hairstyle": "curly"
       },
       "clues": [
         {
-          "type": "inCol",
-          "col": 6
+          "type": "inRoom",
+          "room": "2"
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bella",
+      "name": "Bastian",
       "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "hair": "white",
-        "beard": false,
-        "bald": false
+        "gender": "m",
+        "hairstyle": "combOver"
       },
       "clues": [
         {
-          "type": "uniqueNearObject",
+          "type": "onObject",
           "object": "bed"
         }
       ]
     },
     {
       "id": "C",
-      "name": "Carol",
+      "name": "Callie",
       "attributes": {
         "gender": "f",
-        "glasses": true,
-        "hair": "black",
-        "beard": false,
-        "bald": false
+        "hairstyle": "bun"
       },
       "clues": [
         {
           "type": "and",
           "clues": [
             {
-              "type": "sameLineAsObject",
-              "object": "table",
-              "line": "col",
-              "room": "any"
+              "type": "nearObject",
+              "object": "shelf"
             },
             {
-              "type": "nearObject",
-              "object": "plant"
+              "type": "inRoom",
+              "room": "8"
             }
           ]
         }
@@ -283,13 +299,13 @@
     },
     {
       "id": "D",
-      "name": "Dalia",
+      "name": "Daphne",
       "attributes": {
         "gender": "f",
-        "glasses": false,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "updo"
       },
       "clues": [
         {
@@ -297,11 +313,11 @@
           "clues": [
             {
               "type": "inRoom",
-              "room": "4"
+              "room": "B"
             },
             {
               "type": "onObject",
-              "object": "bed"
+              "object": "chair"
             }
           ]
         }
@@ -309,108 +325,72 @@
     },
     {
       "id": "E",
-      "name": "Elsa",
+      "name": "Enya",
       "attributes": {
         "gender": "f",
         "glasses": true,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "pixie"
       },
       "clues": [
         {
-          "type": "sameRoomAsObject",
-          "object": "tv",
-          "alone": true
+          "type": "nearObject",
+          "object": "tv"
         }
       ]
     },
     {
       "id": "F",
-      "name": "Freya",
+      "name": "Fritz",
       "attributes": {
-        "gender": "f",
-        "glasses": false,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "gender": "m",
+        "hairstyle": "mohawk"
       },
       "clues": [
         {
-          "type": "sameRoom",
-          "as": "H",
-          "alone": true
+          "type": "inRoom",
+          "room": "1"
         }
       ]
     },
     {
       "id": "G",
-      "name": "Grant",
+      "name": "Gerd",
       "attributes": {
         "gender": "m",
-        "glasses": true,
-        "hair": "brown",
-        "beard": false,
-        "bald": false
+        "hairstyle": "spiky"
       },
       "clues": [
         {
-          "type": "sameRoomAsObject",
-          "object": "carpet",
-          "alone": true
+          "type": "roomCompanion",
+          "count": 1,
+          "attribute": "gender",
+          "value": "f"
         }
       ]
     },
     {
       "id": "H",
-      "name": "Hugh",
+      "name": "Hudson",
       "attributes": {
         "gender": "m",
-        "glasses": true,
-        "hair": "blond",
-        "beard": true,
-        "bald": false
+        "hairstyle": "short"
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "plant"
-        }
-      ]
-    },
-    {
-      "id": "I",
-      "name": "Iris",
-      "attributes": {
-        "gender": "f",
-        "glasses": false,
-        "hair": "black",
-        "beard": false,
-        "bald": false
-      },
-      "clues": [
-        {
-          "type": "uniqueNearObject",
+          "type": "onObject",
           "object": "chair"
         }
       ]
     }
   ],
   "victim": {
-    "name": "Viola",
+    "name": "Opfer",
     "attributes": {
-      "gender": "f",
-      "glasses": true,
-      "hair": "black",
-      "beard": false,
-      "bald": false
+      "gender": "m"
     }
   },
-  "boardClues": [
-    {
-      "type": "countOnObject",
-      "object": "carpet",
-      "count": 1
-    }
-  ]
+  "boardClues": [],
+  "difficulty": "original"
 }

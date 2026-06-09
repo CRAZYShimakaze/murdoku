@@ -1,31 +1,86 @@
 {
   "schema": 1,
-  "id": "gen-hard-8x8",
-  "difficulty": "hard",
+  "id": "editor-der-fall-beim-autoh-ndler",
+  "title": "Der Fall beim Autohändler",
   "size": {
     "width": 8,
     "height": 8
   },
   "rooms": {
     "1": {
-      "nameKey": "room.kitchen",
-      "color": "#e8d8b0"
+      "nameKey": "room.testbay",
+      "color": "#e8d8b0",
+      "outside": true
     },
     "2": {
-      "nameKey": "room.storeroom",
-      "color": "#b9d0e6"
+      "nameKey": "room.office",
+      "color": "#b9d0e6",
+      "outside": false
     },
     "3": {
-      "nameKey": "room.dining",
-      "color": "#cfe0cf"
+      "nameKey": "room.partsstore",
+      "color": "#cfe0cf",
+      "outside": false
     },
     "4": {
-      "nameKey": "room.balcony",
-      "color": "#d8c0c0"
+      "nameKey": "room.assembly",
+      "color": "#d8c0c0",
+      "outside": true
     },
     "5": {
-      "nameKey": "room.bedroom",
-      "color": "#e6cda0"
+      "nameKey": "room.workshop",
+      "color": "#e6cda0",
+      "outside": true
+    },
+    "6": {
+      "nameKey": "room.storage",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.waiting",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.yard",
+      "color": "#c0e0c8",
+      "outside": true
+    },
+    "9": {
+      "nameKey": "room.washbay",
+      "color": "#e0c4a0",
+      "outside": true
+    },
+    "A": {
+      "nameKey": "room.tirestore",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.reception",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.paintshop",
+      "color": "#e0b0a8",
+      "outside": true
+    },
+    "D": {
+      "nameKey": "room.breakroom",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.checkout",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.gasstation",
+      "color": "#ded0e6",
+      "outside": true
     }
   },
   "objects": {
@@ -155,83 +210,65 @@
     }
   },
   "roomMap": [
-    "11233333",
-    "11223333",
-    "11222433",
-    "11124435",
-    "11122255",
-    "11111222",
-    "11111111",
-    "11111111"
+    "11112222",
+    "33333222",
+    "33333444",
+    "33334444",
+    "33444444",
+    "33444444",
+    "44444444",
+    "44444444"
   ],
   "groundMap": [
-    ".......r",
-    "....r...",
-    "........",
-    "r..r....",
     "........",
     "........",
     "........",
-    "..r....."
+    "........",
+    "........",
+    "........",
+    "........",
+    "........"
   ],
   "topMap": [
-    ".fxsbb..",
-    "..gb.sp.",
-    ".s.b..s.",
-    ".....sf.",
-    "fps.p...",
-    "...tt.px",
-    "...g..b.",
-    "....f.bp"
+    "ccj...xp",
+    "p.x.tl..",
+    "ngj..n.x",
+    ".f..fs.d",
+    "x.j.....",
+    "x..lt..g",
+    "cc.lj.fd",
+    "cc.lsl.."
   ],
-  "windows": [
-    {
-      "r": 3,
-      "c": 7,
-      "side": "E"
-    },
-    {
-      "r": 3,
-      "c": 0,
-      "side": "W"
-    },
-    {
-      "r": 0,
-      "c": 0,
-      "side": "N"
-    },
+  "windows": [],
+  "doors": [
     {
       "r": 1,
-      "c": 7,
-      "side": "E"
-    },
-    {
-      "r": 7,
-      "c": 2,
+      "c": 6,
       "side": "S"
     },
     {
-      "r": 2,
-      "c": 7,
+      "r": 4,
+      "c": 1,
       "side": "E"
     }
   ],
-  "doors": [],
   "suspects": [
     {
       "id": "A",
       "name": "Alex",
       "attributes": {
         "gender": "m",
-        "glasses": true,
-        "hair": "brown",
-        "beard": false,
-        "bald": true
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "curly",
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "uniqueNearObject",
-          "object": "shelf"
+          "type": "sameLineAsObject",
+          "object": "plant",
+          "line": "either",
+          "room": "any"
         }
       ]
     },
@@ -240,24 +277,13 @@
       "name": "Bernd",
       "attributes": {
         "gender": "m",
-        "glasses": false,
-        "hair": "brown",
-        "beard": false,
-        "bald": true
+        "hairstyle": "combOver",
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "nearObject",
-              "object": "tv"
-            },
-            {
-              "type": "nearObject",
-              "object": "bed"
-            }
-          ]
+          "type": "inCol",
+          "col": 5
         }
       ]
     },
@@ -266,27 +292,11 @@
       "name": "Cyrus",
       "attributes": {
         "gender": "m",
-        "glasses": false,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
-      },
-      "clues": [
-        {
-          "type": "inCol",
-          "col": 2
-        }
-      ]
-    },
-    {
-      "id": "D",
-      "name": "Dalia",
-      "attributes": {
-        "gender": "f",
-        "glasses": false,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "caesar",
+        "hair": "white"
       },
       "clues": [
         {
@@ -295,47 +305,60 @@
       ]
     },
     {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "afro",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "sameRoomAsObject",
+          "object": "oil",
+          "alone": true
+        }
+      ]
+    },
+    {
       "id": "E",
       "name": "Elsa",
       "attributes": {
         "gender": "f",
-        "glasses": true,
-        "hair": "black",
-        "beard": false,
-        "bald": false
+        "hairstyle": "pixie",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "direction",
+          "of": "A",
+          "dir": "south"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "curly",
+        "hair": "brown"
       },
       "clues": [
         {
           "type": "and",
           "clues": [
             {
-              "type": "onObject",
-              "object": "bed"
+              "type": "inRoom",
+              "room": "2"
             },
             {
-              "type": "directionFromObject",
+              "type": "sameLineAsObject",
               "object": "table",
-              "dir": "south",
+              "line": "col",
               "room": "any"
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": "F",
-      "name": "Floyd",
-      "attributes": {
-        "gender": "m",
-        "glasses": false,
-        "hair": "blond",
-        "beard": false,
-        "bald": true
-      },
-      "clues": [
-        {
-          "type": "uniqueOnObject",
-          "object": "carpet"
         }
       ]
     },
@@ -344,35 +367,29 @@
       "name": "Grant",
       "attributes": {
         "gender": "m",
-        "glasses": false,
-        "hair": "blond",
         "beard": true,
-        "bald": false
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "spiky",
+        "hair": "brown"
       },
       "clues": [
         {
           "type": "direction",
-          "of": "F",
-          "dir": "south"
+          "of": "D",
+          "dir": "north"
         }
       ]
     }
   ],
   "victim": {
-    "name": "Veit",
+    "name": "Viraj",
     "attributes": {
-      "gender": "m",
-      "glasses": true,
-      "hair": "blond",
-      "beard": false,
-      "bald": false
+      "gender": "m"
     }
   },
-  "boardClues": [
-    {
-      "type": "emptyRooms",
-      "count": 2
-    }
-  ],
-  "title": "Hard 8×8"
+  "boardClues": [],
+  "difficulty": "hard"
 }

@@ -2,11 +2,14 @@ import { NakedSingleTechnique } from './techniques/NakedSingleTechnique.ts'
 import { UniqueConstraintTechnique } from './techniques/UniqueConstraintTechnique.ts'
 import { HiddenSingleTechnique } from './techniques/HiddenSingleTechnique.ts'
 import { RelationalTechnique } from './techniques/RelationalTechnique.ts'
+import { SameObjectTechnique } from './techniques/SameObjectTechnique.ts'
 import { NakedGroupTechnique } from './techniques/NakedGroupTechnique.ts'
 import { RectangleTechnique } from './techniques/RectangleTechnique.ts'
 import { InsideXorTechnique } from './techniques/InsideXorTechnique.ts'
 import { BoardCountTechnique } from './techniques/BoardCountTechnique.ts'
 import { RoomReasoningTechnique } from './techniques/RoomReasoningTechnique.ts'
+import { RoomCoverageTechnique } from './techniques/RoomCoverageTechnique.ts'
+import { RoomCapacityTechnique } from './techniques/RoomCapacityTechnique.ts'
 import { MurderTechnique } from './techniques/MurderTechnique.ts'
 import { ForcingTechnique } from './techniques/ForcingTechnique.ts'
 import { SearchSolver } from './SearchSolver.ts'
@@ -28,12 +31,15 @@ export function createForwardTechniques(puzzle: Puzzle): Technique[] {
     new HiddenSingleTechnique('row'),
     new HiddenSingleTechnique('col'),
     new RelationalTechnique(),
+    new SameObjectTechnique(),
     new NakedGroupTechnique('row'),
     new NakedGroupTechnique('col'),
     new RectangleTechnique(),
     new InsideXorTechnique(),
     new BoardCountTechnique(),
     new RoomReasoningTechnique(),
+    new RoomCoverageTechnique(),
+    new RoomCapacityTechnique(),
     new MurderTechnique(),
   ].filter((technique) => technique.relevant(puzzle))
   // Forcing is the expensive, complete fallback: it focuses on the person with the

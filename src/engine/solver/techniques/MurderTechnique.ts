@@ -1,6 +1,6 @@
 import { Technique } from './Technique.ts'
-import { VICTIM_ID, type PersonId } from '../../model/types.ts'
-import type { SolveContext } from '../SolveContext.ts'
+import { VICTIM_ID, type Cell, type PersonId } from '../../model/types.ts'
+import type { Axis, SolveContext } from '../SolveContext.ts'
 import type { DeductionStep, Elimination } from '../DeductionStep.ts'
 
 /**
@@ -81,6 +81,60 @@ export class MurderTechnique extends Technique {
       }
     }
 
+    return this.applyRoomFill(ctx)
+  }
+
+  /**
+   * Occupancy from the murder rule in a TWO-room, full-permutation case: the victim's
+   * room holds exactly 2 (victim + murderer), so the other room holds the remaining
+   * N−2 — i.e. the rooms hold {2, N−2}. When that forces a room to exactly its capacity
+   * it is FULL: every row/column it spans is used, so a line with a single cell must be
+   * occupied. If only one person can sit there, they must. (E.g. the Lager spans columns
+   * 3 & 4 and rows 1 & 2 and must hold 2 people → its only column-3 cell is Anna's.)
+   */
+  private applyRoomFill(ctx: SolveContext): DeductionStep | null {
+    if (!ctx.fullPermutation || ctx.state.placed.has(VICTIM_ID)) return null
+    const cellsByRoom = new Map<string, Cell[]>()
+    for (const cell of ctx.board.occupiableCells()) {
+      const room = ctx.roomOf(cell)
+      const list = cellsByRoom.get(room) ?? cellsByRoom.set(room, []).get(room)!
+      list.push(cell)
+    }
+    if (cellsByRoom.size !== 2) return null
+    const n = ctx.puzzle.people().length
+    for (const [room, cells] of cellsByRoom) {
+      const cap = ctx.roomsCapacity([room])
+      const occ = [2, n - 2].filter((o, i, a) => o >= 0 && o <= cap && a.indexOf(o) === i)
+      if (occ.length !== 1 || occ[0] !== cap) continue // room's occupancy is uniquely its (full) capacity
+      for (const axis of ['row', 'col'] as Axis[]) {
+        const byLine = new Map<number, Cell[]>()
+        for (const cell of cells) {
+          const line = ctx.axisOf(cell, axis)
+          const list = byLine.get(line) ?? byLine.set(line, []).get(line)!
+          list.push(cell)
+        }
+        if (byLine.size !== cap) continue // not every line of this axis is forced in use
+        for (const lineCells of byLine.values()) {
+          if (lineCells.length !== 1) continue // a single-cell line in a full room → occupied
+          const cell = lineCells[0]
+          const occupants = ctx.puzzle
+            .people()
+            .map((p) => p.id)
+            .filter((id) => ctx.cellsOf(id).includes(cell))
+          if (occupants.length !== 1 || ctx.state.placed.has(occupants[0])) continue
+          const id = occupants[0]
+          const removed = ctx.removeWhere(id, (c) => c !== cell)
+          if (removed.length > 0) {
+            return {
+              technique: 'murderRule',
+              personId: id,
+              eliminated: [{ personId: id, cells: removed }],
+              explanation: { key: 'step.murderRoomFill', params: { name: id, room } },
+            }
+          }
+        }
+      }
+    }
     return null
   }
 }

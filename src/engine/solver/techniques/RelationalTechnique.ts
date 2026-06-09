@@ -1,6 +1,6 @@
 import { Technique } from './Technique.ts'
 import { DirectionClue, OffsetClue, SameRoomClue } from '../../clues/relationalClues.ts'
-import { AndClue } from '../../clues/compositeClues.ts'
+import { AndClue, NotClue } from '../../clues/compositeClues.ts'
 import type { Clue } from '../../clues/Clue.ts'
 import type { Axis, SolveContext } from '../SolveContext.ts'
 import type { DeductionStep, Elimination } from '../DeductionStep.ts'
@@ -14,6 +14,17 @@ function relationalClues(clue: Clue): Relational[] {
     return [clue]
   }
   if (clue instanceof AndClue) return clue.clues.flatMap(relationalClues)
+  return []
+}
+
+/** "NOT in the same room as X" — the people each suspect must be apart from. Only a
+ *  PLAIN sameRoom negation gives this; NOT(alone-with) is weaker (could be together
+ *  but not alone), so it's excluded. */
+function differentRoomTargets(clue: Clue): PersonId[] {
+  if (clue instanceof NotClue && clue.inner instanceof SameRoomClue && !clue.inner.alone) {
+    return [clue.inner.target]
+  }
+  if (clue instanceof AndClue) return clue.clues.flatMap(differentRoomTargets)
   return []
 }
 
@@ -38,16 +49,52 @@ export class RelationalTechnique extends Technique {
         if (step) return step
       }
     }
+    // "Different room" — a placed/confined side keeps the other out of that room.
+    // (Iterates all suspects: even a placed subject still constrains its target.)
+    for (const suspect of ctx.puzzle.suspects) {
+      for (const target of suspect.clues.flatMap(differentRoomTargets)) {
+        const step = this.applyDifferentRoom(ctx, suspect.id, target)
+        if (step) return step
+      }
+    }
     return null
   }
 
   override relevant(puzzle: Puzzle): boolean {
     for (const suspect of puzzle.suspects) {
       for (const clue of suspect.clues) {
-        if (relationalClues(clue).length > 0) return true
+        if (relationalClues(clue).length > 0 || differentRoomTargets(clue).length > 0) return true
       }
     }
     return false
+  }
+
+  /** The room a person is certainly in (placed cell, or whole domain in one room). */
+  private roomOf(ctx: SolveContext, id: PersonId): string | null {
+    const cell = ctx.state.placed.get(id)
+    if (cell !== undefined) return ctx.roomOf(cell)
+    return ctx.guaranteedRoomOf(id)
+  }
+
+  /** "{subject} not in the same room as {target}": if one is confined to a room, the
+   *  other can't be in it. `removeFrom` skips a placed side, so both directions are safe. */
+  private applyDifferentRoom(
+    ctx: SolveContext,
+    subjectId: PersonId,
+    target: PersonId,
+  ): DeductionStep | null {
+    const subjRoom = this.roomOf(ctx, subjectId)
+    const targetRoom = this.roomOf(ctx, target)
+    const eliminated: Elimination[] = []
+    if (subjRoom) this.removeFrom(ctx, target, (c) => ctx.roomOf(c) === subjRoom, eliminated)
+    if (targetRoom) this.removeFrom(ctx, subjectId, (c) => ctx.roomOf(c) === targetRoom, eliminated)
+    if (eliminated.length === 0) return null
+    return {
+      technique: 'relational',
+      personId: subjectId,
+      eliminated,
+      explanation: { key: 'step.differentRoom', params: { name: subjectId, target } },
+    }
   }
 
   private removeFrom(

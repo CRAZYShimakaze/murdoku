@@ -1,19 +1,86 @@
 {
   "schema": 1,
-  "id": "gen-apartment-278544714",
-  "difficulty": "medium",
+  "id": "editor-kleiner-mord-unter-freunden",
+  "title": "Kleiner Mord unter Freunden",
   "size": {
     "width": 4,
     "height": 4
   },
   "rooms": {
     "1": {
-      "nameKey": "room.pantry",
-      "color": "#e8d8b0"
+      "nameKey": "room.bathroom",
+      "color": "#e8d8b0",
+      "outside": false
     },
     "2": {
+      "nameKey": "room.kitchen",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.living",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.guestroom",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.hallway",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.kids1",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.kids2",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.study",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.garage",
+      "color": "#e0c4a0",
+      "outside": true
+    },
+    "A": {
+      "nameKey": "room.bedroom",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.dining",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.balcony",
+      "color": "#e0b0a8",
+      "outside": true
+    },
+    "D": {
       "nameKey": "room.storeroom",
-      "color": "#b9d0e6"
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.laundry",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.pantry",
+      "color": "#ded0e6",
+      "outside": false
     }
   },
   "objects": {
@@ -143,21 +210,21 @@
     }
   },
   "roomMap": [
-    "1122",
-    "1112",
-    "1111",
-    "1111"
+    "3311",
+    "3331",
+    "3333",
+    "3333"
   ],
   "groundMap": [
-    "....",
-    "....",
-    "....",
+    "r...",
+    "r...",
+    ".rr.",
     "...."
   ],
   "topMap": [
-    "b...",
-    "b...",
-    ".bb.",
+    "s..T",
+    "....",
+    ".s..",
     ".d.."
   ],
   "windows": [
@@ -200,10 +267,8 @@
       "name": "Anna",
       "attributes": {
         "gender": "f",
-        "glasses": false,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "hairstyle": "ponytailRight",
+        "hair": "blond"
       },
       "clues": [
         {
@@ -217,10 +282,8 @@
       "name": "Bella",
       "attributes": {
         "gender": "f",
-        "glasses": false,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "hairstyle": "braids",
+        "hair": "blond"
       },
       "clues": [
         {
@@ -235,9 +298,10 @@
       "attributes": {
         "gender": "f",
         "glasses": true,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "bun",
+        "hair": "blond"
       },
       "clues": [
         {
@@ -249,12 +313,9 @@
   "victim": {
     "name": "Victoria",
     "attributes": {
-      "gender": "f",
-      "glasses": false,
-      "hair": "brown",
-      "beard": false,
-      "bald": false
+      "gender": "f"
     }
   },
-  "title": "Kleiner Mord unter Freunden"
+  "boardClues": [],
+  "difficulty": "medium"
 }

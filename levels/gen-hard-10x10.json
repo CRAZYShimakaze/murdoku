@@ -8,96 +8,194 @@
   },
   "rooms": {
     "1": {
-      "nameKey": "room.workshop",
+      "nameKey": "room.computerroom",
       "color": "#e8d8b0"
     },
     "2": {
-      "nameKey": "room.storage",
+      "nameKey": "room.musichall",
       "color": "#b9d0e6"
     },
     "3": {
-      "nameKey": "room.office",
+      "nameKey": "room.schoolyard",
       "color": "#cfe0cf"
     },
     "4": {
-      "nameKey": "room.waiting",
+      "nameKey": "room.gymnasium",
       "color": "#d8c0c0"
     },
     "5": {
-      "nameKey": "room.yard",
+      "nameKey": "room.canteen",
       "color": "#e6cda0"
     },
     "6": {
-      "nameKey": "room.washbay",
+      "nameKey": "room.craftroom",
       "color": "#e6c0d2"
     }
   },
   "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
     "s": {
       "type": "chair",
       "occupiable": true
     },
-    "r": {
-      "type": "carpet",
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
       "occupiable": true
     },
     "t": {
       "type": "table",
       "occupiable": false
     },
-    "p": {
-      "type": "plant",
+    "f": {
+      "type": "tv",
       "occupiable": false
     },
     "g": {
       "type": "shelf",
       "occupiable": false
     },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
     "x": {
       "type": "box",
       "occupiable": false
     },
-    "f": {
-      "type": "tv",
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
       "occupiable": false
     }
   },
   "roomMap": [
-    "1111111144",
-    "1111111144",
-    "2226611155",
-    "2226661555",
-    "2223333555",
-    "2222233355",
-    "2222233355",
-    "2222223355",
-    "2222222355",
-    "2222222333"
+    "1111222223",
+    "1111222233",
+    "1112222333",
+    "1112222333",
+    "1122222333",
+    "1144225553",
+    "6664425555",
+    "6664555555",
+    "6666555555",
+    "6665555555"
   ],
   "groundMap": [
-    "....rr....",
+    "......r.r.",
+    "........r.",
     "..........",
-    "..r.r.....",
     "..........",
     "..........",
-    "..r.....r.",
     "..........",
-    "r....r....",
     "..........",
-    ".........."
+    "r........r",
+    "........r.",
+    ".r........"
   ],
   "topMap": [
-    ".s.x..tt..",
-    ".p...xsf..",
-    "g..p.t.p..",
-    "sxtts..x.p",
-    "s.spf.....",
-    "xg..f.gp..",
-    "s.sf...gxp",
-    ".px.p.x..s",
-    "..p....s.g",
-    ".xg....s.."
+    "ss...p....",
+    "bb....sp.x",
+    "..p.xs....",
+    ".gt.st.sfp",
+    ".s....p...",
+    ".......s.g",
+    "....p.....",
+    "..t..g.f..",
+    "tgp..tp...",
+    "..p.g....."
   ],
+  "windows": [],
+  "doors": [],
   "suspects": [
     {
       "id": "A",
@@ -111,51 +209,73 @@
       },
       "clues": [
         {
-          "type": "alone"
+          "type": "sameRoomAsObject",
+          "object": "plant",
+          "alone": true
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bernd",
+      "name": "Bella",
       "attributes": {
-        "gender": "m",
+        "gender": "f",
         "glasses": false,
-        "hair": "blond",
-        "beard": true,
-        "bald": true
+        "hair": "white",
+        "beard": false,
+        "bald": false
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "box"
+          "type": "inCol",
+          "col": 4
         }
       ]
     },
     {
       "id": "C",
-      "name": "Cyrus",
+      "name": "Carol",
       "attributes": {
-        "gender": "m",
-        "glasses": true,
+        "gender": "f",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
+        "bald": false
+      },
+      "clues": [
+        {
+          "type": "direction",
+          "of": "F",
+          "dir": "north"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "glasses": false,
         "hair": "blond",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "tv"
+          "type": "sameLineAsObject",
+          "object": "tv",
+          "line": "col",
+          "room": "any"
         }
       ]
     },
     {
-      "id": "D",
-      "name": "Dylan",
+      "id": "E",
+      "name": "Edison",
       "attributes": {
         "gender": "m",
-        "glasses": true,
-        "hair": "black",
+        "glasses": false,
+        "hair": "blond",
         "beard": true,
         "bald": false
       },
@@ -167,36 +287,30 @@
       ]
     },
     {
-      "id": "E",
-      "name": "Elsa",
-      "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "hair": "brown",
-        "beard": false,
-        "bald": false
-      },
-      "clues": [
-        {
-          "type": "nearObject",
-          "object": "tv"
-        }
-      ]
-    },
-    {
       "id": "F",
       "name": "Freya",
       "attributes": {
         "gender": "f",
         "glasses": false,
-        "hair": "brown",
+        "hair": "black",
         "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "onObject",
-          "object": "chair"
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "box"
+            },
+            {
+              "type": "sameLineAsObject",
+              "object": "box",
+              "line": "row",
+              "room": "any"
+            }
+          ]
         }
       ]
     },
@@ -206,7 +320,7 @@
       "attributes": {
         "gender": "m",
         "glasses": false,
-        "hair": "blond",
+        "hair": "brown",
         "beard": true,
         "bald": false
       },
@@ -215,14 +329,12 @@
           "type": "and",
           "clues": [
             {
-              "type": "roomCompanion",
-              "count": 1,
-              "attribute": "gender",
-              "value": "f"
+              "type": "onObject",
+              "object": "carpet"
             },
             {
               "type": "inRoom",
-              "room": "5"
+              "room": "6"
             }
           ]
         }
@@ -243,14 +355,11 @@
           "type": "and",
           "clues": [
             {
-              "type": "roomCompanion",
-              "count": 1,
-              "attribute": "gender",
-              "value": "f"
+              "type": "nearObject",
+              "object": "shelf"
             },
             {
-              "type": "inRoom",
-              "room": "3"
+              "type": "corner"
             }
           ]
         }
@@ -258,30 +367,47 @@
     },
     {
       "id": "I",
-      "name": "Ivan",
+      "name": "Iris",
       "attributes": {
-        "gender": "m",
-        "glasses": true,
-        "hair": "black",
-        "beard": true,
+        "gender": "f",
+        "glasses": false,
+        "hair": "white",
+        "beard": false,
         "bald": false
       },
       "clues": [
         {
-          "type": "inRow",
-          "row": 5
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "bed"
+            },
+            {
+              "type": "onObject",
+              "object": "chair"
+            }
+          ]
         }
       ]
     }
   ],
   "victim": {
-    "name": "Valentina",
+    "name": "Vincent",
     "attributes": {
-      "gender": "f",
-      "glasses": true,
-      "hair": "blond",
+      "gender": "m",
+      "glasses": false,
+      "hair": "black",
       "beard": false,
       "bald": false
     }
-  }
+  },
+  "boardClues": [
+    {
+      "type": "countOnObject",
+      "object": "chair",
+      "count": 5
+    }
+  ],
+  "title": "Hard 10×10"
 }

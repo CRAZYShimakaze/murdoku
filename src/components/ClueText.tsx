@@ -5,7 +5,7 @@ import type { Clue, Explanation, PersonId } from '../engine/index.ts'
 import InfoTip from './InfoTip.tsx'
 
 /** Params rendered bold (objects/rooms etc. — also shown on the board). */
-const BOLD_PARAMS = new Set(['object', 'objects', 'room', 'attribute', 'who', 'row', 'col', 'n', 'line', 'roomRel', 'target', 'people'])
+const BOLD_PARAMS = new Set(['object', 'objectNom', 'objects', 'room', 'attribute', 'who', 'row', 'col', 'n', 'line', 'roomRel', 'target', 'people'])
 
 interface Props {
   renderer: Renderer
@@ -91,7 +91,7 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
   const nodes: ReactNode[] = []
   clues.forEach((clue, i) => {
     if (i > 0) nodes.push(' · ')
-    nodes.push(...renderExp(clue.describe(), { name: subjectId, subject: subjectId, poss: subjectId }))
+    nodes.push(...renderExp(clue.describe(), { name: subjectId, subject: subjectId, poss: subjectId, subjectObj: subjectId }))
   })
 
   // Capitalize the first character if the clue starts with plain text (the pronoun).

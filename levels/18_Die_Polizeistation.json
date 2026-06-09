@@ -1,31 +1,87 @@
 {
   "schema": 1,
-  "id": "gen-game-night-2",
-  "difficulty": "hard",
+  "id": "editor-18-die-polizeistation",
+  "title": "18. Die Polizeistation",
+  "author": "Manuel Garand",
   "size": {
     "width": 9,
     "height": 9
   },
   "rooms": {
     "1": {
-      "nameKey": "room.pantry",
-      "color": "#e8d8b0"
+      "nameKey": "room.evidenceroom",
+      "color": "#e8d8b0",
+      "outside": false
     },
     "2": {
-      "nameKey": "room.dining",
-      "color": "#b9d0e6"
+      "nameKey": "room.openoffice",
+      "color": "#b9d0e6",
+      "outside": false
     },
     "3": {
-      "nameKey": "room.lounge",
-      "color": "#cfe0cf"
+      "nameKey": "room.receptionarea",
+      "color": "#cfe0cf",
+      "outside": false
     },
     "4": {
-      "nameKey": "room.hallway",
-      "color": "#d8c0c0"
+      "nameKey": "room.chiefoffice",
+      "color": "#d8c0c0",
+      "outside": false
     },
     "5": {
-      "nameKey": "room.living",
-      "color": "#e6cda0"
+      "nameKey": "room.interrogation",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.cell1",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.cell2",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.armory",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.forensics",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.dispatch",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.lockerroom",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.breakroom",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.archive",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.briefing",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.garage",
+      "color": "#ded0e6",
+      "outside": true
     }
   },
   "objects": {
@@ -155,156 +211,134 @@
     }
   },
   "roomMap": [
-    "122233344",
-    "111111144",
-    "111114444",
-    "155554444",
-    "555555444",
-    "555555544",
-    "555554444",
-    "555554444",
-    "555555444"
+    "111122666",
+    "112222666",
+    "222225666",
+    "222225555",
+    "222225555",
+    "333335555",
+    "333334444",
+    "333334444",
+    "333334444"
   ],
   "groundMap": [
-    "......r..",
     ".........",
     ".........",
     ".........",
     ".........",
-    ".....r...",
+    ".........",
+    ".........",
     ".........",
     ".........",
     "........."
   ],
   "topMap": [
-    "..x.bb.s.",
-    ".s...s...",
-    "t...f.fs.",
-    "..tp.t.bb",
-    "..sxs.pt.",
-    "...tp....",
-    "..p..g...",
-    "......t..",
-    "....sp..g"
+    "ggg.ts..t",
+    "..s.t.bb.",
+    "t.tf.....",
+    "fs....ts.",
+    "tt..ptt..",
+    ".........",
+    ".ts....tt",
+    ".ttp..sts",
+    ".....p.tf"
   ],
   "windows": [],
   "doors": [],
   "suspects": [
     {
       "id": "A",
-      "name": "Alex",
+      "name": "Annika",
       "attributes": {
-        "gender": "m",
-        "glasses": false,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "gender": "f",
+        "hairstyle": "ponytailRight"
       },
       "clues": [
         {
-          "type": "uniqueNearObject",
-          "object": "carpet"
+          "type": "inRoom",
+          "room": "1"
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bella",
+      "name": "Bertie",
       "attributes": {
         "gender": "f",
-        "glasses": false,
-        "hair": "brown",
-        "beard": false,
-        "bald": false
+        "hairstyle": "braids"
       },
       "clues": [
         {
-          "type": "directionFromObject",
-          "object": "table",
-          "dir": "north",
-          "room": "any"
+          "type": "inRoom",
+          "room": "3"
         }
       ]
     },
     {
       "id": "C",
-      "name": "Cyrus",
+      "name": "Charlie",
       "attributes": {
         "gender": "m",
-        "glasses": false,
-        "hair": "brown",
-        "beard": true,
-        "bald": false
+        "hairstyle": "caesar"
       },
       "clues": [
         {
-          "type": "direction",
-          "of": "G",
-          "dir": "north"
+          "type": "nearObject",
+          "object": "plant"
         }
       ]
     },
     {
       "id": "D",
-      "name": "Dalia",
+      "name": "Dieter",
       "attributes": {
-        "gender": "f",
-        "glasses": false,
-        "hair": "white",
-        "beard": false,
-        "bald": false
+        "gender": "m",
+        "hairstyle": "combOver",
+        "hair": "red"
       },
       "clues": [
         {
-          "type": "inRow",
-          "row": 2
+          "type": "nearObject",
+          "object": "tv"
         }
       ]
     },
     {
       "id": "E",
-      "name": "Edison",
+      "name": "Ernst",
       "attributes": {
         "gender": "m",
-        "glasses": true,
-        "hair": "brown",
-        "beard": true,
-        "bald": true
+        "hairstyle": "spiky",
+        "hair": "brown"
       },
       "clues": [
         {
-          "type": "direction",
-          "of": "B",
-          "dir": "north"
+          "type": "onObject",
+          "object": "bed"
         }
       ]
     },
     {
       "id": "F",
-      "name": "Freya",
+      "name": "Filipa",
       "attributes": {
         "gender": "f",
-        "glasses": true,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "hairstyle": "curly"
       },
       "clues": [
         {
-          "type": "uniqueNearObject",
-          "object": "table"
+          "type": "onObject",
+          "object": "chair"
         }
       ]
     },
     {
       "id": "G",
-      "name": "Greta",
+      "name": "Georg",
       "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "hair": "brown",
-        "beard": false,
-        "bald": false
+        "gender": "m",
+        "hairstyle": "short",
+        "hair": "grey"
       },
       "clues": [
         {
@@ -314,10 +348,8 @@
               "type": "alone"
             },
             {
-              "type": "sameLineAsObject",
-              "object": "box",
-              "line": "col",
-              "room": "any"
+              "type": "inRoom",
+              "room": "4"
             }
           ]
         }
@@ -325,55 +357,24 @@
     },
     {
       "id": "H",
-      "name": "Hana",
+      "name": "Harry",
       "attributes": {
-        "gender": "f",
-        "glasses": false,
-        "hair": "brown",
-        "beard": false,
-        "bald": false
+        "gender": "m",
+        "hairstyle": "short"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "sameLineAsObject",
-              "object": "box",
-              "line": "col",
-              "room": "any"
-            },
-            {
-              "type": "sameLineAsObject",
-              "object": "shelf",
-              "line": "row",
-              "room": "any"
-            },
-            {
-              "type": "directionFromObject",
-              "object": "box",
-              "dir": "west",
-              "room": "any"
-            }
-          ]
+          "type": "corner"
         }
       ]
     }
   ],
   "victim": {
-    "name": "Volker",
+    "name": "Opfer",
     "attributes": {
-      "gender": "m",
-      "glasses": false,
-      "hair": "black",
-      "beard": true,
-      "bald": false
+      "gender": "m"
     }
   },
-  "boardClues": [
-    {
-      "type": "emptyRooms",
-      "count": 1
-    }
-  ]
+  "boardClues": [],
+  "difficulty": "original"
 }

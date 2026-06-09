@@ -15,11 +15,14 @@ export class NotClue extends Clue {
   }
 
   override candidateCells(board: Board): Set<Cell> | null {
-    const inner = this.inner.candidateCells(board)
-    if (inner === null) return null
+    // Exclude only cells where the inner clue is DEFINITELY true (independent of
+    // others). For uniqueness / occupancy / relational clues that's null → the
+    // negation prunes nothing here and is enforced by `test`.
+    const definite = this.inner.definiteCells(board)
+    if (definite === null) return null
     const out = new Set<Cell>()
     for (const cell of board.occupiableCells()) {
-      if (!inner.has(cell)) out.add(cell)
+      if (!definite.has(cell)) out.add(cell)
     }
     return out
   }

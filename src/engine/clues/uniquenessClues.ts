@@ -5,29 +5,29 @@ import type { Puzzle } from '../model/Puzzle.ts'
 import type { Cell, Explanation, PersonId } from '../model/types.ts'
 
 /**
- * "{name} was the only person on a {object}." The subject stands on the object
- * and no other person does. `candidateCells` prunes the subject to the object's
- * cells; `forbiddenForOthers` keeps everyone else off those cells; `test`
- * verifies the "only" part across the whole solution.
+ * "{name} was the ONLY person in <some set of cells>." The subject is in the set
+ * and no other person is. `candidateCells` confines the subject to the set;
+ * `forbiddenForOthers` keeps everyone else out of it (so it's fully deducible);
+ * `test` verifies the "only" part across the whole solution. Subclasses supply the
+ * cell set and the wording.
  */
-export class UniqueOnObjectClue extends Clue {
-  constructor(readonly object: string) {
-    super()
-  }
+abstract class UniqueInCellsClue extends Clue {
+  protected abstract cells(board: Board): Set<Cell>
+  abstract describe(): Explanation
 
   override candidateCells(board: Board): Set<Cell> {
-    return board.cellsWithObject(this.object)
+    return this.cells(board)
   }
 
   override forbiddenForOthers(board: Board): Set<Cell> {
-    return board.cellsWithObject(this.object)
+    return this.cells(board)
   }
 
   test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
-    const onObject = puzzle.board.cellsWithObject(this.object)
-    if (!onObject.has(solution.cellOf(subjectId))) return false
+    const set = this.cells(puzzle.board)
+    if (!set.has(solution.cellOf(subjectId))) return false
     for (const [id, cell] of solution.entries()) {
-      if (id !== subjectId && onObject.has(cell)) return false
+      if (id !== subjectId && set.has(cell)) return false
     }
     return true
   }
@@ -37,57 +37,71 @@ export class UniqueOnObjectClue extends Clue {
     placement: ReadonlyMap<PersonId, Cell>,
     puzzle: Puzzle,
   ): boolean {
-    const onObject = puzzle.board.cellsWithObject(this.object)
+    const set = this.cells(puzzle.board)
     const subjectCell = placement.get(subjectId)
-    if (subjectCell !== undefined && !onObject.has(subjectCell)) return true
+    if (subjectCell !== undefined && !set.has(subjectCell)) return true
     for (const [id, c] of placement) {
-      if (id !== subjectId && onObject.has(c)) return true
+      if (id !== subjectId && set.has(c)) return true
     }
     return false
   }
+}
 
+/** "{name} was the only person on a {object}." */
+export class UniqueOnObjectClue extends UniqueInCellsClue {
+  constructor(readonly object: string) {
+    super()
+  }
+  protected cells(board: Board): Set<Cell> {
+    return board.cellsWithObject(this.object)
+  }
   describe(): Explanation {
     return { key: 'clue.uniqueOnObject', params: { object: this.object } }
   }
 }
 
-/**
- * "{name} was the only person beside a window." The subject is beside a window
- * and no other person is. Mirrors {@link UniqueOnObjectClue} over the window set.
- */
-export class UniqueNearWindowClue extends Clue {
-  override candidateCells(board: Board): Set<Cell> {
+/** "{name} was the only person beside a {object}." */
+export class UniqueNearObjectClue extends UniqueInCellsClue {
+  constructor(readonly object: string) {
+    super()
+  }
+  protected cells(board: Board): Set<Cell> {
+    return board.cellsNearObject(this.object)
+  }
+  describe(): Explanation {
+    return { key: 'clue.uniqueNearObject', params: { object: this.object } }
+  }
+}
+
+/** "{name} was the only person beside a window." */
+export class UniqueNearWindowClue extends UniqueInCellsClue {
+  protected cells(board: Board): Set<Cell> {
     return board.cellsNearWindow()
   }
-
-  override forbiddenForOthers(board: Board): Set<Cell> {
-    return board.cellsNearWindow()
-  }
-
-  test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
-    const nearWindow = puzzle.board.cellsNearWindow()
-    if (!nearWindow.has(solution.cellOf(subjectId))) return false
-    for (const [id, cell] of solution.entries()) {
-      if (id !== subjectId && nearWindow.has(cell)) return false
-    }
-    return true
-  }
-
-  override violatedBy(
-    subjectId: PersonId,
-    placement: ReadonlyMap<PersonId, Cell>,
-    puzzle: Puzzle,
-  ): boolean {
-    const nearWindow = puzzle.board.cellsNearWindow()
-    const subjectCell = placement.get(subjectId)
-    if (subjectCell !== undefined && !nearWindow.has(subjectCell)) return true
-    for (const [id, c] of placement) {
-      if (id !== subjectId && nearWindow.has(c)) return true
-    }
-    return false
-  }
-
   describe(): Explanation {
     return { key: 'clue.uniqueNearWindow' }
+  }
+}
+
+/** "{name} was the only person beside a door." */
+export class UniqueNearDoorClue extends UniqueInCellsClue {
+  protected cells(board: Board): Set<Cell> {
+    return board.cellsNearDoor()
+  }
+  describe(): Explanation {
+    return { key: 'clue.uniqueNearDoor' }
+  }
+}
+
+/** "{name} was the only person outside / inside." */
+export class UniqueOutsideClue extends UniqueInCellsClue {
+  constructor(readonly outside: boolean) {
+    super()
+  }
+  protected cells(board: Board): Set<Cell> {
+    return board.cellsOutside(this.outside)
+  }
+  describe(): Explanation {
+    return { key: this.outside ? 'clue.uniqueOutside' : 'clue.uniqueInside' }
   }
 }

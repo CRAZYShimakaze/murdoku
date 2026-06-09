@@ -111,6 +111,11 @@ const THEMES: Theme[] = [
     rooms: ['room.checkout', 'room.snacks', 'room.drinks', 'room.deli', 'room.fruit', 'room.chilled', 'room.toys', 'room.stockroom', 'room.bakery', 'room.produce', 'room.cheese', 'room.frozen', 'room.drugstore', 'room.staffroom', 'room.parking'],
     outdoor: ['room.parking'],
   },
+  {
+    id: 'police-station',
+    rooms: ['room.evidenceroom', 'room.openoffice', 'room.receptionarea', 'room.chiefoffice', 'room.interrogation', 'room.cell1', 'room.cell2', 'room.armory', 'room.forensics', 'room.dispatch', 'room.lockerroom', 'room.breakroom', 'room.archive', 'room.briefing', 'room.garage'],
+    outdoor: ['room.garage'],
+  },
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
 
@@ -199,6 +204,17 @@ function rateTier(level: LevelJson): GenDifficulty {
   return tier === 'expert' ? 'hard' : tier
 }
 
+/** Tier + whether the level is solvable by a pure logical chain (no proof-by-
+ *  contradiction). The generator strongly prefers forcing-free levels so the hint
+ *  system is always a clean chain — never "assume X → contradiction". */
+function deductionRating(level: LevelJson): { tier: GenDifficulty; forcingFree: boolean } {
+  const result = new DeductionEngine(loadLevel(level)).solve()
+  const forcingFree =
+    result.solved && !result.techniqueCounts.forcing && !result.techniqueCounts.satForcing
+  const tier = result.solved ? difficultyOf(result.maxRank) : 'hard'
+  return { tier: tier === 'expert' ? 'hard' : tier, forcingFree }
+}
+
 /** Search-tree nodes needed to prove uniqueness — our proxy for solving difficulty. */
 function searchDifficulty(level: LevelJson): number {
   const searcher = new SearchSolver(loadLevel(level))
@@ -247,20 +263,22 @@ function pickBestLevel(
   if (target === 'hard') {
     const maxAttempts = opts.maxAttempts ?? HARD_MAX_ATTEMPTS
     const deadline = performance.now() + (opts.hardTimeBudgetMs ?? HARD_TIME_BUDGET_MS)
-    let hardest: LevelJson | null = null // hardest PIN-FREE level (preferred)
+    let hardest: LevelJson | null = null // hardest PIN-FREE, forcing-free level (preferred)
     let bestNodes = -1
-    let anyValid: LevelJson | null = null // first valid level of any kind (last-resort fallback)
+    let anyForcingFree: LevelJson | null = null // first forcing-free level (next-best)
+    let anyValid: LevelJson | null = null // first valid level of any kind (last resort)
     for (let a = 0; a < maxAttempts; a++) {
       const result = attempt(new Rng(baseSeed + a * 7919), baseSeed + a)
       if (result) {
-        if (!anyValid) {
-          result.level.difficulty = rateTier(result.level)
-          anyValid = result.level
-        }
-        if (result.pins === 0) {
+        const rating = deductionRating(result.level)
+        result.level.difficulty = rating.tier
+        if (!anyValid) anyValid = result.level
+        if (rating.forcingFree && !anyForcingFree) anyForcingFree = result.level
+        // "Hardest" only among forcing-free, pin-free levels — a hard but purely
+        // logical case (no proof-by-contradiction).
+        if (result.pins === 0 && rating.forcingFree) {
           const nodes = searchDifficulty(result.level)
           if (nodes > bestNodes) {
-            result.level.difficulty = rateTier(result.level)
             hardest = result.level
             bestNodes = nodes
           }
@@ -271,9 +289,9 @@ function pickBestLevel(
       // yet (the worker passes a long budget; the main-thread fallback a short one).
       if (performance.now() > deadline) break
     }
-    // Prefer the hardest pin-free level; if a stubborn board never yielded one, return
-    // the hardest available (pins allowed) so a 'hard' request still gets a level.
-    return hardest ?? anyValid
+    // Prefer the hardest pin-free forcing-free level; then any forcing-free level;
+    // only as a last resort a contradiction-needing one (so 'hard' always returns).
+    return hardest ?? anyForcingFree ?? anyValid
   }
 
   const maxAttempts = opts.maxAttempts ?? 80
@@ -284,20 +302,22 @@ function pickBestLevel(
   for (let a = 0; a < maxAttempts; a++) {
     const result = attempt(new Rng(baseSeed + a * 7919), baseSeed + a)
     if (result) {
-      const tier = rateTier(result.level)
+      const { tier, forcingFree } = deductionRating(result.level)
       result.level.difficulty = tier
       const mismatch = tierDistance(tier, target)
       const lines = countLineClues(result.level)
-      const score = result.pins * 1000 + mismatch * 10 + lines
+      // A level needing proof-by-contradiction is dominated by any forcing-free one.
+      const score = (forcingFree ? 0 : 1_000_000) + result.pins * 1000 + mismatch * 10 + lines
       if (score < bestScore) {
         best = result.level
         bestScore = score
       }
-      if (result.pins === 0 && mismatch === 0 && lines === 0) break
+      if (forcingFree && result.pins === 0 && mismatch === 0 && lines === 0) break
     }
-    // Once we have a candidate, stop hunting at the soft deadline; with nothing yet,
-    // keep trying until the hard cap (so the fill reliably returns *something*).
-    if (best && performance.now() > softDeadline) break
+    // Stop at the soft deadline only once we hold a FORCING-FREE candidate (score
+    // < the contradiction penalty); otherwise keep hunting for a logical one until the
+    // attempt cap, so we don't settle for a contradiction level prematurely.
+    if (best && bestScore < 1_000_000 && performance.now() > softDeadline) break
     if (performance.now() > hardDeadline) break
   }
   return best
@@ -943,7 +963,10 @@ function candidatesFor(
       for (const obj of board.tileAt(nb).objects()) nearTypes.add(obj.type)
     }
   }
-  for (const type of nearTypes) out.push({ type: 'nearObject', object: type })
+  for (const type of nearTypes) {
+    out.push({ type: 'nearObject', object: type })
+    out.push({ type: 'uniqueNearObject', object: type }) // "only one beside it" (test-filtered)
+  }
 
   // --- object: same line / direction (objects are fixed → deducible) ---
   for (const def of ALL_OBJECTS) {
@@ -953,6 +976,22 @@ function candidatesFor(
     }
     for (const dir of ['north', 'south', 'east', 'west'] as const) {
       out.push({ type: 'directionFromObject', object: def.type, dir, room: 'any' })
+    }
+    // "beside the SAME object instance as …" — only when the subject is beside one.
+    if (board.cellsNearObject(def.type).has(cell)) {
+      out.push({ type: 'besideSameObject', object: def.type, mate: { kind: 'any' } })
+      for (const id of otherSuspects) {
+        out.push({ type: 'besideSameObject', object: def.type, mate: { kind: 'person', of: id } })
+      }
+      for (const av of [
+        { attribute: 'gender', value: 'm' as const },
+        { attribute: 'gender', value: 'f' as const },
+        { attribute: 'beard', value: true as const },
+        { attribute: 'glasses', value: true as const },
+        { attribute: 'bald', value: true as const },
+      ]) {
+        out.push({ type: 'besideSameObject', object: def.type, mate: { kind: 'attr', ...av } })
+      }
     }
   }
 
@@ -966,10 +1005,15 @@ function candidatesFor(
     out.push({ type: 'nearWindow' })
     out.push({ type: 'uniqueNearWindow' }) // "only person beside a window" (test-filtered)
   }
-  if (board.hasDoor(cell)) out.push({ type: 'nearDoor' })
+  if (board.hasDoor(cell)) {
+    out.push({ type: 'nearDoor' })
+    out.push({ type: 'uniqueNearDoor' }) // "only person beside a door" (test-filtered)
+  }
   // inside/outside only when the board actually mixes indoor and outdoor rooms.
   if (board.cellsOutside(true).size > 0 && board.cellsOutside(false).size > 0) {
-    out.push(board.isOutside(cell) ? { type: 'outside' } : { type: 'inside' })
+    const outside = board.isOutside(cell)
+    out.push(outside ? { type: 'outside' } : { type: 'inside' })
+    out.push(outside ? { type: 'uniqueOutside' } : { type: 'uniqueInside' }) // "only one out/inside"
     for (const id of otherSuspects) out.push({ type: 'insideXor', with: id })
   }
 
@@ -979,6 +1023,24 @@ function candidatesFor(
   const sameRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
   if (sameRoom.length === 0) out.push({ type: 'alone' })
   for (const id of sameRoom) out.push({ type: 'sameRoom', as: id })
+  // "alone (just the two) with that one suspect" — only when nobody else, victim
+  // included, shares the room (inRoomAll counts everyone present, the subject + 1).
+  if (sameRoom.length === 1 && inRoomAll.length === 2) {
+    out.push({ type: 'sameRoom', as: sameRoom[0], alone: true })
+  }
+
+  // --- "(alone) in the same room as an object" (objects are fixed → deducible) ---
+  const roomObjects = new Set<string>()
+  for (let c = 0; c < board.width * board.height; c++) {
+    if (board.roomIdOf(c) === room) for (const obj of board.tileAt(c).objects()) roomObjects.add(obj.type)
+  }
+  const aloneInRoom = inRoomAll.length === 1 // nobody else at all shares the room
+  for (const type of roomObjects) {
+    out.push({ type: 'sameRoomAsObject', object: type })
+    if (aloneInRoom) out.push({ type: 'sameRoomAsObject', object: type, alone: true })
+  }
+  // "(not) alone in room X" as one clue (mirrors the editor's "Im Raum" + allein).
+  out.push({ type: 'inRoom', room, occupancy: aloneInRoom ? 'alone' : 'notAlone' })
 
   for (const id of otherSuspects) {
     const o = board.rc(solution.cellOf(id))
@@ -989,31 +1051,40 @@ function candidatesFor(
   }
 
   // --- room-attribute clues: "no one / some / everyone else in the room had X" ---
-  // Boolean traits (beard/glasses/bald) round-trip to the editor, so they are offered
-  // in BOTH modes — with excludeSelf in editor-safe mode to match the editor's flat
-  // builder. Gender (valued) and the roomCompanion/roomExists clues have no editor
-  // equivalent, so they stay generator-only.
+  // Boolean traits AND gender now round-trip to the editor (gender via the "same room
+  // as a man/woman" target), so they're offered in BOTH modes — with excludeSelf in
+  // editor-safe mode to match the editor's flat builder. roomExists has no editor
+  // equivalent, so it stays generator-only.
   const attrPairs: { attribute: string; value: AttributeValue }[] = [
+    { attribute: 'gender', value: 'm' },
+    { attribute: 'gender', value: 'f' },
     { attribute: 'beard', value: true },
     { attribute: 'glasses', value: true },
     { attribute: 'bald', value: true },
   ]
-  if (!editorSafe) {
-    attrPairs.push({ attribute: 'gender', value: 'm' }, { attribute: 'gender', value: 'f' })
-  }
   for (const { attribute, value } of attrPairs) {
     for (const quantifier of ['none', 'some', 'all'] as const) {
       out.push({ type: 'roomAttribute', quantifier, attribute, value, excludeSelf: editorSafe })
     }
   }
-  if (!editorSafe) {
-    // "allein mit …" / "in seinem Raum saß …" are about OTHER SUSPECTS only — never the
-    // subject, never the victim (else they would reveal the murderer beside the body).
-    const othersInRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
-    if (othersInRoom.length === 1) {
-      const gender = puzzle.attributesOf(othersInRoom[0]).gender
-      out.push({ type: 'roomCompanion', count: 1, attribute: 'gender', value: gender })
+  // "alone with a <attribute>" — about the single OTHER suspect sharing the room (never
+  // the subject, never the victim). Editor-representable via "alone with" + a trait.
+  const othersInRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
+  if (othersInRoom.length === 1) {
+    const a = puzzle.attributesOf(othersInRoom[0])
+    const companion: { attribute: string; value: AttributeValue }[] = [
+      { attribute: 'gender', value: a.gender },
+    ]
+    if (a.beard === true) companion.push({ attribute: 'beard', value: true })
+    if (a.glasses === true) companion.push({ attribute: 'glasses', value: true })
+    if (a.bald === true) companion.push({ attribute: 'bald', value: true })
+    if (typeof a.hair === 'string') companion.push({ attribute: 'hair', value: a.hair })
+    for (const { attribute, value } of companion) {
+      out.push({ type: 'roomCompanion', count: 1, attribute, value })
     }
+  }
+  if (!editorSafe) {
+    // "in his room someone sat on …" — not representable by the flat editor builder.
     for (const id of othersInRoom) {
       const gender = puzzle.attributesOf(id).gender
       for (const obj of board.tileAt(solution.cellOf(id)).objects()) {

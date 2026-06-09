@@ -8,12 +8,15 @@ export type Technique =
   | 'hiddenSingleRow'
   | 'hiddenSingleCol'
   | 'relational'
+  | 'sameObject'
   | 'nakedGroupRows'
   | 'nakedGroupCols'
   | 'rectangle'
   | 'insideXor'
   | 'boardCount'
   | 'roomReasoning'
+  | 'roomCoverage'
+  | 'roomCapacity'
   | 'murderRule'
   | 'forcing'
   | 'satForcing'
@@ -78,12 +81,15 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   hiddenSingleRow: 2,
   hiddenSingleCol: 2,
   relational: 3,
+  sameObject: 3,
   nakedGroupRows: 3,
   nakedGroupCols: 3,
   rectangle: 3,
   insideXor: 3,
   boardCount: 4,
   roomReasoning: 4,
+  roomCoverage: 4,
+  roomCapacity: 4,
   murderRule: 5,
   forcing: 6,
   satForcing: 7,

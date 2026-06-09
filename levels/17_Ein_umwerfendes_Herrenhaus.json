@@ -1,31 +1,87 @@
 {
   "schema": 1,
-  "id": "gen-game-night-2",
-  "difficulty": "hard",
+  "id": "editor-17-ein-umwerfendes-herrenhaus",
+  "title": "17. Ein umwerfendes Herrenhaus",
+  "author": "Manuel Garand",
   "size": {
     "width": 9,
     "height": 9
   },
   "rooms": {
     "1": {
-      "nameKey": "room.pantry",
-      "color": "#e8d8b0"
+      "nameKey": "room.bathroom",
+      "color": "#e8d8b0",
+      "outside": false
     },
     "2": {
-      "nameKey": "room.dining",
-      "color": "#b9d0e6"
+      "nameKey": "room.kitchen",
+      "color": "#b9d0e6",
+      "outside": false
     },
     "3": {
-      "nameKey": "room.lounge",
-      "color": "#cfe0cf"
+      "nameKey": "room.living",
+      "color": "#cfe0cf",
+      "outside": false
     },
     "4": {
-      "nameKey": "room.hallway",
-      "color": "#d8c0c0"
+      "nameKey": "room.guestroom",
+      "color": "#d8c0c0",
+      "outside": false
     },
     "5": {
-      "nameKey": "room.living",
-      "color": "#e6cda0"
+      "nameKey": "room.hallway",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.kids1",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.kids2",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.study",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.garage",
+      "color": "#e0c4a0",
+      "outside": true
+    },
+    "A": {
+      "nameKey": "room.bedroom",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.dining",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.balcony",
+      "color": "#e0b0a8",
+      "outside": true
+    },
+    "D": {
+      "nameKey": "room.storeroom",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.laundry",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.pantry",
+      "color": "#ded0e6",
+      "outside": false
     }
   },
   "objects": {
@@ -155,225 +211,172 @@
     }
   },
   "roomMap": [
-    "122233344",
-    "111111144",
-    "111114444",
-    "155554444",
-    "555555444",
-    "555555544",
-    "555554444",
-    "555554444",
-    "555555444"
+    "AAAABBBBB",
+    "AAAABBBBB",
+    "AAAABBBBB",
+    "8888BBBBB",
+    "888822222",
+    "888822222",
+    "444555333",
+    "444555333",
+    "444555333"
   ],
   "groundMap": [
-    "......r..",
     ".........",
     ".........",
     ".........",
     ".........",
-    ".....r...",
+    ".........",
+    ".........",
     ".........",
     ".........",
     "........."
   ],
   "topMap": [
-    "..x.bb.s.",
-    ".s...s...",
-    "t...f.fs.",
-    "..tp.t.bb",
-    "..sxs.pt.",
-    "...tp....",
-    "..p..g...",
-    "......t..",
-    "....sp..g"
+    "f....ss.p",
+    ".bb.sttt.",
+    "s..p.ttts",
+    ".ts.ps...",
+    "g..gt...t",
+    "gg.gt.ttt",
+    "y....psf.",
+    "y.t...t.p",
+    "..yp...s."
   ],
   "windows": [],
   "doors": [],
   "suspects": [
     {
       "id": "A",
-      "name": "Alex",
+      "name": "Amara",
       "attributes": {
-        "gender": "m",
-        "glasses": false,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "gender": "f",
+        "hairstyle": "ponytailRight"
       },
       "clues": [
         {
-          "type": "uniqueNearObject",
-          "object": "carpet"
+          "type": "inRoom",
+          "room": "2"
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bella",
+      "name": "Barbara",
       "attributes": {
         "gender": "f",
-        "glasses": false,
-        "hair": "brown",
-        "beard": false,
-        "bald": false
+        "hairstyle": "braids"
       },
       "clues": [
         {
-          "type": "directionFromObject",
-          "object": "table",
-          "dir": "north",
-          "room": "any"
+          "type": "inRoom",
+          "room": "8"
         }
       ]
     },
     {
       "id": "C",
-      "name": "Cyrus",
+      "name": "Cindy",
       "attributes": {
         "gender": "m",
-        "glasses": false,
-        "hair": "brown",
-        "beard": true,
-        "bald": false
+        "hairstyle": "caesar"
       },
       "clues": [
         {
-          "type": "direction",
-          "of": "G",
-          "dir": "north"
+          "type": "inRoom",
+          "room": "4"
         }
       ]
     },
     {
       "id": "D",
-      "name": "Dalia",
+      "name": "Dennis",
       "attributes": {
-        "gender": "f",
-        "glasses": false,
-        "hair": "white",
-        "beard": false,
-        "bald": false
+        "gender": "m",
+        "hairstyle": "caesar",
+        "hair": "black"
       },
       "clues": [
         {
-          "type": "inRow",
-          "row": 2
+          "type": "onObject",
+          "object": "chair"
         }
       ]
     },
     {
       "id": "E",
-      "name": "Edison",
+      "name": "Emmett",
       "attributes": {
         "gender": "m",
-        "glasses": true,
-        "hair": "brown",
-        "beard": true,
-        "bald": true
+        "hairstyle": "mohawk"
       },
       "clues": [
         {
-          "type": "direction",
-          "of": "B",
-          "dir": "north"
+          "type": "onObject",
+          "object": "bed"
         }
       ]
     },
     {
       "id": "F",
-      "name": "Freya",
+      "name": "Fiona",
       "attributes": {
         "gender": "f",
-        "glasses": true,
-        "hair": "blond",
-        "beard": false,
-        "bald": false
+        "hairstyle": "curly"
       },
       "clues": [
         {
-          "type": "uniqueNearObject",
-          "object": "table"
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "chair"
+            },
+            {
+              "type": "nearObject",
+              "object": "plant"
+            }
+          ]
         }
       ]
     },
     {
       "id": "G",
-      "name": "Greta",
+      "name": "Griffin",
       "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "hair": "brown",
-        "beard": false,
-        "bald": false
+        "gender": "m",
+        "hairstyle": "spiky"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "alone"
-            },
-            {
-              "type": "sameLineAsObject",
-              "object": "box",
-              "line": "col",
-              "room": "any"
-            }
-          ]
+          "type": "nearObject",
+          "object": "plant"
         }
       ]
     },
     {
       "id": "H",
-      "name": "Hana",
+      "name": "Hermine",
       "attributes": {
         "gender": "f",
-        "glasses": false,
-        "hair": "brown",
-        "beard": false,
-        "bald": false
+        "hairstyle": "long"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "sameLineAsObject",
-              "object": "box",
-              "line": "col",
-              "room": "any"
-            },
-            {
-              "type": "sameLineAsObject",
-              "object": "shelf",
-              "line": "row",
-              "room": "any"
-            },
-            {
-              "type": "directionFromObject",
-              "object": "box",
-              "dir": "west",
-              "room": "any"
-            }
-          ]
+          "type": "sameLineAsObject",
+          "object": "tv",
+          "line": "col",
+          "room": "same"
         }
       ]
     }
   ],
   "victim": {
-    "name": "Volker",
+    "name": "Owen",
     "attributes": {
-      "gender": "m",
-      "glasses": false,
-      "hair": "black",
-      "beard": true,
-      "bald": false
+      "gender": "m"
     }
   },
-  "boardClues": [
-    {
-      "type": "emptyRooms",
-      "count": 1
-    }
-  ]
+  "boardClues": [],
+  "difficulty": "original"
 }

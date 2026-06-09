@@ -43,6 +43,9 @@ export class Renderer {
       case 'subject':
         if (nameSubject) return this.puzzle.nameOf(String(value))
         return this.lookup(`pron.${this.genderOf(String(value))}`) ?? this.puzzle.nameOf(String(value))
+      // Object pronoun of the subject ("ihm/ihr" / "him/her") — for "north of him".
+      case 'subjectObj':
+        return this.lookup(`pronObj.${this.genderOf(String(value))}`) ?? this.puzzle.nameOf(String(value))
       case 'poss':
         return this.lookup(`poss.${this.genderOf(String(value))}`) ?? this.puzzle.nameOf(String(value))
       case 'people':
@@ -53,6 +56,24 @@ export class Renderer {
           .join(' & ')
       case 'object':
         return this.lookup(`object.${value}`) ?? String(value)
+      // Nominative-with-article form ("ein Fernseher") for clues that compare to an
+      // object ("…im selben Raum wie ein Fernseher"). Falls back to the dative form
+      // (English has no case distinction, so it reuses `object.*`).
+      case 'objectNom':
+        return this.lookup(`objectNom.${value}`) ?? this.lookup(`object.${value}`) ?? String(value)
+      // Bare object noun ("Tisch" / "table") and the gender-correct "same X" form
+      // ("demselben Tisch" / "derselben Pflanze"); English reuses the bare noun.
+      case 'objName':
+        return this.lookup(`objName.${value}`) ?? String(value)
+      case 'objectSame': {
+        // German: explicit gender-correct phrase ("demselben Tisch"). English: build
+        // "the same " + the bare noun lower-cased (mid-sentence) from `sameThe`.
+        const explicit = this.lookup(`objectSame.${value}`)
+        if (explicit) return explicit
+        const noun = this.lookup(`objName.${value}`) ?? String(value)
+        const pre = this.lookup('sameThe')
+        return pre ? `${pre} ${noun.charAt(0).toLowerCase() + noun.slice(1)}` : noun
+      }
       case 'objects': {
         const parts = String(value)
           .split(',')
@@ -66,6 +87,24 @@ export class Renderer {
         return this.lookup(`attr.${value}`) ?? String(value)
       case 'who':
         return this.lookup(`who.${value}`) ?? String(value)
+      // The "mate" of a "beside the same object" clue: anyone / a named person / a
+      // trait-bearer. Encoded as "any" | "person:<id>" | "attr:<token>".
+      case 'mate': {
+        const s = String(value)
+        const phrase = s.startsWith('person:')
+          ? this.puzzle.nameOf(s.slice(7))
+          : s.startsWith('attr:')
+            ? (() => {
+                const token = s.slice(5)
+                if (token.startsWith('gender_')) return this.lookup(`who.${token.slice(7)}_nom`) ?? token
+                const pre = this.lookup('who.withTraitPre') ?? ''
+                const post = this.lookup('who.withTraitPost') ?? ''
+                return `${pre} ${this.lookup(`attr.${token}`) ?? token} ${post}`.replace(/\s+/g, ' ').trim()
+              })()
+            : (this.lookup('who.any') ?? s)
+        // Capitalised: the mate starts its own sentence ("Jemand war … / Eine Frau war …").
+        return phrase ? phrase.charAt(0).toUpperCase() + phrase.slice(1) : phrase
+      }
       case 'room': {
         const room = this.puzzle.board.rooms.get(String(value))
         return room ? (this.lookup(room.nameKey) ?? room.nameKey) : String(value)
@@ -121,7 +160,7 @@ export class Renderer {
 
   /** Render a suspect's own clue: gender pronouns for the subject, sentence-capitalised. */
   clue(exp: Explanation, subjectId: string): string {
-    const text = this.render(exp, { name: subjectId, subject: subjectId, poss: subjectId })
+    const text = this.render(exp, { name: subjectId, subject: subjectId, poss: subjectId, subjectObj: subjectId })
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
   }
 
@@ -131,7 +170,7 @@ export class Renderer {
    * clue a wrong solution fails to satisfy).
    */
   namedClue(exp: Explanation, subjectId: string): string {
-    const text = this.render(exp, { name: subjectId, subject: subjectId, poss: subjectId }, true)
+    const text = this.render(exp, { name: subjectId, subject: subjectId, poss: subjectId, subjectObj: subjectId }, true)
     return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
   }
 

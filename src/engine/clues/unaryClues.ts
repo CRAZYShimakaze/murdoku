@@ -1,6 +1,8 @@
 import { UnaryClue } from './Clue.ts'
 import type { Board } from '../model/Board.ts'
-import type { Cell, Explanation } from '../model/types.ts'
+import type { Solution } from '../model/Solution.ts'
+import type { Puzzle } from '../model/Puzzle.ts'
+import type { Cell, Explanation, PersonId } from '../model/types.ts'
 
 /** "{name} was on a {object}." */
 export class OnObjectClue extends UnaryClue {
@@ -76,15 +78,61 @@ export class OutsideClue extends UnaryClue {
   }
 }
 
-/** "{name} was in {room}." */
+/**
+ * "{name} was in {room}." With `occupancy`, it also constrains who else shares it:
+ * 'alone' = the subject is the room's only person (victim included), 'notAlone' =
+ * at least one other person is there too. Being in the room is still the fixed
+ * candidate set; the occupancy part (which depends on others) is checked in `test`.
+ */
 export class InRoomClue extends UnaryClue {
-  constructor(readonly room: string) {
+  constructor(
+    readonly room: string,
+    readonly occupancy: 'alone' | 'notAlone' | null = null,
+  ) {
     super()
   }
   candidateCells(board: Board): Set<Cell> {
     return board.cellsInRoom(this.room)
   }
+  override forbiddenForOthers(board: Board): Set<Cell> | null {
+    // "alone in room X" → nobody else may stand in room X.
+    return this.occupancy === 'alone' ? board.cellsInRoom(this.room) : null
+  }
+  override definiteCells(board: Board): Set<Cell> | null {
+    // With an occupancy requirement, being in the room isn't enough to be true, so
+    // it has no others-independent "definite" set (its negation prunes nothing).
+    return this.occupancy ? null : this.candidateCells(board)
+  }
+  override test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
+    const board = puzzle.board
+    if (board.roomIdOf(solution.cellOf(subjectId)) !== this.room) return false
+    if (!this.occupancy) return true
+    let others = 0
+    for (const id of puzzle.allIds()) {
+      if (id === subjectId) continue
+      if (board.roomIdOf(solution.cellOf(id)) === this.room) others++
+    }
+    return this.occupancy === 'alone' ? others === 0 : others >= 1
+  }
+  override violatedBy(
+    subjectId: PersonId,
+    placement: ReadonlyMap<PersonId, Cell>,
+    puzzle: Puzzle,
+  ): boolean {
+    const board = puzzle.board
+    const cell = placement.get(subjectId)
+    if (cell === undefined) return false
+    if (board.roomIdOf(cell) !== this.room) return true
+    if (this.occupancy === 'alone') {
+      for (const [id, c] of placement) {
+        if (id !== subjectId && board.roomIdOf(c) === this.room) return true
+      }
+    }
+    return false
+  }
   describe(): Explanation {
+    if (this.occupancy === 'alone') return { key: 'clue.inRoomAlone', params: { room: this.room } }
+    if (this.occupancy === 'notAlone') return { key: 'clue.inRoomNotAlone', params: { room: this.room } }
     return { key: 'clue.inRoom', params: { room: this.room } }
   }
 }

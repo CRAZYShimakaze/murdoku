@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import {
   ATTR_KINDS,
+  BOOL_ATTRS,
+  CARDINALS,
   COND_KINDS,
   DIRECTIONS_8,
   LINE_KINDS,
@@ -9,18 +11,30 @@ import {
   VALUED_ATTRS,
   defaultCondition,
   type AttrKind,
+  type AxisKind,
   type ClueGroup,
   type CondKind,
   type Condition,
+  type InOutKind,
+  type PortalKind,
   type Quantifier,
 } from '../game/editorClues.ts'
-import type { Direction8, LineKind, RoomRel } from '../engine/index.ts'
+import {
+  OCCUPIABLE_OBJECT_TYPES,
+  type Direction,
+  type Direction8,
+  type LineKind,
+  type RoomRel,
+} from '../engine/index.ts'
 
 export interface ClueCtx {
   rooms: string[]
   objects: string[]
   others: { id: string; name: string }[]
   size: number
+  /** Whether the board has any window / door — gates the "Fenster/Tür" condition. */
+  hasWindows: boolean
+  hasDoors: boolean
   roomLabel: (id: string) => string
 }
 
@@ -48,20 +62,45 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
 
   const objName = (type: string) => t(`objName.${type}`)
 
-  /** Object-type picker (shared by every object-based condition). */
-  const objectSelect = (c: Condition, i: number) => (
-    <select
-      className="mk-select-input mk-cond__val"
-      value={c.object ?? ''}
-      onChange={(e) => update(i, { object: e.target.value })}
+  /** A small on/off chip (NICHT-style) for a boolean flag on a condition. */
+  const flagChip = (active: boolean, onClick: () => void, label: string, title: string) => (
+    <button
+      type="button"
+      className="mk-chip mk-cond__flag"
+      data-active={active}
+      onClick={onClick}
+      title={title}
     >
-      {ctx.objects.map((o) => (
-        <option key={o} value={o}>
-          {objName(o)}
-        </option>
-      ))}
-    </select>
+      {label}
+    </button>
   )
+  /** "einzige" toggle — the ONLY person there (on/beside object, at window/door, in/out). */
+  const uniqueToggle = (c: Condition, i: number) =>
+    flagChip(!!c.unique, () => update(i, { unique: !c.unique }), t('cond.uniqueToggle'), t('cond.uniqueHint'))
+  /** "allein" toggle — also alone (no one else in the room). */
+  const aloneToggle = (c: Condition, i: number) =>
+    flagChip(!!c.alone, () => update(i, { alone: !c.alone }), t('cond.aloneToggle'), t('cond.aloneHint'))
+
+  /** Object-type picker. `occupiableOnly` restricts it to objects a person can stand
+   *  ON (for "on object") — nobody can sit on a table. */
+  const objectSelect = (c: Condition, i: number, occupiableOnly = false) => {
+    const options = occupiableOnly
+      ? ctx.objects.filter((o) => OCCUPIABLE_OBJECT_TYPES.includes(o))
+      : ctx.objects
+    return (
+      <select
+        className="mk-select-input mk-cond__val"
+        value={c.object ?? ''}
+        onChange={(e) => update(i, { object: e.target.value })}
+      >
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {objName(o)}
+          </option>
+        ))}
+      </select>
+    )
+  }
 
   /** Room qualifier (egal / same room / other room) for object clues. */
   const roomRelSelect = (c: Condition, i: number) => (
@@ -78,27 +117,192 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
     </select>
   )
 
+  /** Other-suspect picker writing `of`. */
+  const personSelect = (c: Condition, i: number) => (
+    <select
+      className="mk-select-input mk-cond__val"
+      value={c.of ?? ''}
+      onChange={(e) => update(i, { of: e.target.value })}
+    >
+      {ctx.others.map((o) => (
+        <option key={o.id} value={o.id}>
+          {o.name}
+        </option>
+      ))}
+    </select>
+  )
+
+  /** Attribute picker (gender / boolean / valued) + a value sub-picker for valued ones. */
+  const attrSelect = (c: Condition, i: number) => {
+    const spec = VALUED_ATTRS[c.attribute ?? 'beard']
+    return (
+      <>
+        <select
+          className="mk-select-input mk-cond__val"
+          value={c.attribute ?? 'beard'}
+          onChange={(e) => update(i, { attribute: e.target.value as AttrKind })}
+        >
+          {ATTR_KINDS.map((a) => (
+            <option key={a} value={a}>
+              {t(`attrKind.${a}`)}
+            </option>
+          ))}
+        </select>
+        {spec && (
+          <select
+            className="mk-select-input mk-cond__val"
+            value={c.value ?? c.hair ?? spec.values[0]}
+            onChange={(e) => update(i, { value: e.target.value })}
+          >
+            {spec.values.map((v) => (
+              <option key={v} value={v}>
+                {t(`${spec.labelKey}.${v}`)}
+              </option>
+            ))}
+          </select>
+        )}
+      </>
+    )
+  }
+
+  /** Cardinal-only direction picker (offset). */
+  const cardinalSelect = (value: Direction, onPick: (d: Direction) => void) => (
+    <select
+      className="mk-select-input mk-cond__val"
+      value={value}
+      onChange={(e) => onPick(e.target.value as Direction)}
+    >
+      {CARDINALS.map((d) => (
+        <option key={d} value={d}>
+          {t(`dir.${d}`)}
+        </option>
+      ))}
+    </select>
+  )
+
   /** The value control(s) for one condition's kind. */
   const valueControls = (c: Condition, i: number) => {
     switch (c.kind) {
       case 'inRoom':
         return (
-          <select
-            className="mk-select-input mk-cond__val"
-            value={c.room ?? ''}
-            onChange={(e) => update(i, { room: e.target.value })}
-          >
-            {ctx.rooms.map((r) => (
-              <option key={r} value={r}>
-                {ctx.roomLabel(r)}
-              </option>
-            ))}
-          </select>
+          <>
+            <select
+              className="mk-select-input mk-cond__val"
+              value={c.room ?? ''}
+              onChange={(e) => update(i, { room: e.target.value })}
+            >
+              {ctx.rooms.map((r) => (
+                <option key={r} value={r}>
+                  {ctx.roomLabel(r)}
+                </option>
+              ))}
+            </select>
+            {aloneToggle(c, i)}
+          </>
         )
       case 'onObject':
-      case 'uniqueOnObject':
-      case 'nearObject':
-        return objectSelect(c, i)
+        return (
+          <>
+            {objectSelect(c, i, true)}
+            {uniqueToggle(c, i)}
+          </>
+        )
+      case 'nearObject': {
+        // Multi-select: pick one object (with optional "einzige"), or several →
+        // "beside one of them". One control, no separate clue type.
+        const sel = new Set(c.objects ?? [])
+        return (
+          <>
+            <div className="mk-cond__multi">
+              {ctx.objects.map((o) => (
+                <button
+                  key={o}
+                  type="button"
+                  className="mk-chip mk-cond__flag"
+                  data-active={sel.has(o)}
+                  onClick={() => {
+                    const next = new Set(sel)
+                    if (next.has(o)) next.delete(o)
+                    else next.add(o)
+                    update(i, { objects: [...next] })
+                  }}
+                >
+                  {objName(o)}
+                </button>
+              ))}
+            </div>
+            {/* "einzige" only applies to a single object (no unique-of-several clue). */}
+            {sel.size === 1 && uniqueToggle(c, i)}
+          </>
+        )
+      }
+      case 'portal': {
+        // Only offer the kinds the board actually has (window preferred when both).
+        const types: PortalKind[] = [
+          ...(ctx.hasWindows ? (['window'] as const) : []),
+          ...(ctx.hasDoors ? (['door'] as const) : []),
+        ]
+        return (
+          <>
+            <select
+              className="mk-select-input mk-cond__val"
+              value={c.portal ?? types[0] ?? 'window'}
+              onChange={(e) => update(i, { portal: e.target.value as PortalKind })}
+            >
+              {types.map((p) => (
+                <option key={p} value={p}>
+                  {objName(p)}
+                </option>
+              ))}
+            </select>
+            {uniqueToggle(c, i)}
+          </>
+        )
+      }
+      case 'inout':
+        return (
+          <>
+            <select
+              className="mk-select-input mk-cond__val"
+              value={c.side ?? 'inside'}
+              onChange={(e) => update(i, { side: e.target.value as InOutKind })}
+            >
+              {(['inside', 'outside'] as InOutKind[]).map((s) => (
+                <option key={s} value={s}>
+                  {t(`side.${s}`)}
+                </option>
+              ))}
+            </select>
+            {uniqueToggle(c, i)}
+          </>
+        )
+      case 'line':
+        return (
+          <>
+            <select
+              className="mk-select-input mk-cond__val"
+              value={c.axis ?? 'row'}
+              onChange={(e) => update(i, { axis: e.target.value as AxisKind })}
+            >
+              {(['row', 'col'] as AxisKind[]).map((a) => (
+                <option key={a} value={a}>
+                  {t(`line.${a}`)}
+                </option>
+              ))}
+            </select>
+            <select
+              className="mk-select-input mk-cond__val"
+              value={c.index ?? 0}
+              onChange={(e) => update(i, { index: Number(e.target.value) })}
+            >
+              {Array.from({ length: ctx.size }, (_, n) => (
+                <option key={n} value={n}>
+                  {n + 1}
+                </option>
+              ))}
+            </select>
+          </>
+        )
       case 'sameLineAsObject':
         return (
           <>
@@ -135,22 +339,181 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
             {roomRelSelect(c, i)}
           </>
         )
-      case 'inRow':
-      case 'inCol':
+      case 'sameObject': {
+        // Object type + who else is beside the SAME instance (anyone / person / trait)
+        // + optional 8-way direction of that mate relative to the subject.
+        const mateValue =
+          c.objTarget === 'person'
+            ? `person:${c.of}`
+            : c.objTarget === 'attr'
+              ? c.attribute === 'gender'
+                ? `attr:gender:${c.value ?? 'f'}`
+                : `attr:${c.attribute}`
+              : 'any'
+        const valuedAttr =
+          c.objTarget === 'attr' && c.attribute && c.attribute !== 'gender'
+            ? VALUED_ATTRS[c.attribute]
+            : undefined
         return (
-          <select
-            className="mk-select-input mk-cond__val"
-            value={c.index ?? 0}
-            onChange={(e) => update(i, { index: Number(e.target.value) })}
-          >
-            {Array.from({ length: ctx.size }, (_, n) => (
-              <option key={n} value={n}>
-                {n + 1}
-              </option>
-            ))}
-          </select>
+          <>
+            {objectSelect(c, i)}
+            <select
+              className="mk-select-input mk-cond__val"
+              value={mateValue}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === 'any') update(i, { objTarget: 'any', of: undefined })
+                else if (v.startsWith('person:')) update(i, { objTarget: 'person', of: v.slice(7) })
+                else {
+                  const [attribute, value] = v.slice(5).split(':')
+                  const valued = VALUED_ATTRS[attribute]
+                  update(i, {
+                    objTarget: 'attr',
+                    attribute: attribute as AttrKind,
+                    value: value ?? (valued && attribute !== 'gender' ? valued.values[0] : undefined),
+                  })
+                }
+              }}
+            >
+              <option value="any">{t('cond.anyone')}</option>
+              <optgroup label={t('cond.grpPeople')}>
+                {ctx.others.map((o) => (
+                  <option key={o.id} value={`person:${o.id}`}>
+                    {o.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={t('cond.grpAttrs')}>
+                <option value="attr:gender:m">{t('genderVal.m')}</option>
+                <option value="attr:gender:f">{t('genderVal.f')}</option>
+                {BOOL_ATTRS.map((a) => (
+                  <option key={a} value={`attr:${a}`}>
+                    {`${t('cond.companionWith')} ${t(`attrKind.${a}`)}`}
+                  </option>
+                ))}
+                {ATTR_KINDS.filter((a) => a !== 'gender' && VALUED_ATTRS[a]).map((a) => (
+                  <option key={a} value={`attr:${a}`}>
+                    {`${t('cond.companionWith')} ${t(`attrKind.${a}`)} …`}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            {valuedAttr && (
+              <select
+                className="mk-select-input mk-cond__val"
+                value={c.value ?? valuedAttr.values[0]}
+                onChange={(e) => update(i, { value: e.target.value })}
+              >
+                {valuedAttr.values.map((val) => (
+                  <option key={val} value={val}>
+                    {t(`${valuedAttr.labelKey}.${val}`)}
+                  </option>
+                ))}
+              </select>
+            )}
+            <select
+              className="mk-select-input mk-cond__val"
+              value={c.objDir ?? 'none'}
+              onChange={(e) => update(i, { objDir: e.target.value as 'none' | Direction8 })}
+            >
+              <option value="none">{t('cond.dirNone')}</option>
+              {DIRECTIONS_8.map((d) => (
+                <option key={d} value={d}>
+                  {t(`dir.${d}`)}
+                </option>
+              ))}
+            </select>
+          </>
         )
-      case 'sameRoom':
+      }
+      case 'sameRoom': {
+        // One dropdown for "same room as …": people, objects AND attributes (a man /
+        // a woman / someone with glasses / …). The picked entry sets `roomTarget` and
+        // the matching field; "allein" then tightens it to "only the two of them".
+        const sameRoomValue =
+          c.roomTarget === 'attr'
+            ? c.attribute === 'gender'
+              ? `attr:gender:${c.value ?? 'f'}`
+              : `attr:${c.attribute}`
+            : c.of
+              ? `person:${c.of}`
+              : c.object
+                ? `object:${c.object}`
+                : ''
+        const valuedAttr =
+          c.roomTarget === 'attr' && c.attribute && c.attribute !== 'gender'
+            ? VALUED_ATTRS[c.attribute]
+            : undefined
+        return (
+          <>
+            <select
+              className="mk-select-input mk-cond__val"
+              value={sameRoomValue}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v.startsWith('person:')) {
+                  update(i, { roomTarget: 'person', of: v.slice(7), object: undefined })
+                } else if (v.startsWith('object:')) {
+                  update(i, { roomTarget: 'object', object: v.slice(7), of: undefined })
+                } else {
+                  const [attribute, value] = v.slice(5).split(':')
+                  const valued = VALUED_ATTRS[attribute]
+                  update(i, {
+                    roomTarget: 'attr',
+                    attribute: attribute as AttrKind,
+                    value: value ?? (valued && attribute !== 'gender' ? valued.values[0] : undefined),
+                    of: undefined,
+                    object: undefined,
+                  })
+                }
+              }}
+            >
+              <optgroup label={t('cond.grpPeople')}>
+                {ctx.others.map((o) => (
+                  <option key={o.id} value={`person:${o.id}`}>
+                    {o.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={t('cond.grpObjects')}>
+                {ctx.objects.map((o) => (
+                  <option key={o} value={`object:${o}`}>
+                    {objName(o)}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={t('cond.grpAttrs')}>
+                <option value="attr:gender:m">{t('genderVal.m')}</option>
+                <option value="attr:gender:f">{t('genderVal.f')}</option>
+                {BOOL_ATTRS.map((a) => (
+                  <option key={a} value={`attr:${a}`}>
+                    {`${t('cond.companionWith')} ${t(`attrKind.${a}`)}`}
+                  </option>
+                ))}
+                {ATTR_KINDS.filter((a) => a !== 'gender' && VALUED_ATTRS[a]).map((a) => (
+                  <option key={a} value={`attr:${a}`}>
+                    {`${t('cond.companionWith')} ${t(`attrKind.${a}`)} …`}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            {valuedAttr && (
+              <select
+                className="mk-select-input mk-cond__val"
+                value={c.value ?? valuedAttr.values[0]}
+                onChange={(e) => update(i, { value: e.target.value })}
+              >
+                {valuedAttr.values.map((val) => (
+                  <option key={val} value={val}>
+                    {t(`${valuedAttr.labelKey}.${val}`)}
+                  </option>
+                ))}
+              </select>
+            )}
+            {aloneToggle(c, i)}
+          </>
+        )
+      }
       case 'insideXor':
         return (
           <select
@@ -190,6 +553,21 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
                 </option>
               ))}
             </select>
+          </>
+        )
+      case 'offset':
+        // "exactly N cells {cardinal} of {person}": distance + cardinal direction + person.
+        return (
+          <>
+            <input
+              className="mk-input mk-cond__val mk-cond__num"
+              type="number"
+              min={1}
+              value={c.dist ?? 1}
+              onChange={(e) => update(i, { dist: Math.max(1, Number(e.target.value)) })}
+            />
+            {cardinalSelect((c.dir as Direction) ?? 'east', (d) => update(i, { dir: d }))}
+            {personSelect(c, i)}
           </>
         )
       case 'roomAttribute':
@@ -236,10 +614,49 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
             })()}
           </>
         )
+      case 'roomExists':
+        // "someone with {trait} sat on {object} in the room": attribute + occupiable object.
+        return (
+          <>
+            {attrSelect(c, i)}
+            {objectSelect(c, i, true)}
+          </>
+        )
+      case 'aloneWith':
+        // "alone with {person} + N others matching {trait}, one of them {direction}".
+        return (
+          <>
+            {personSelect(c, i)}
+            <input
+              className="mk-input mk-cond__val mk-cond__num"
+              type="number"
+              min={0}
+              value={c.extraCount ?? 1}
+              onChange={(e) => update(i, { extraCount: Math.max(0, Number(e.target.value)) })}
+            />
+            {attrSelect(c, i)}
+            <select
+              className="mk-select-input mk-cond__val"
+              value={c.aloneDir ?? 'none'}
+              onChange={(e) => update(i, { aloneDir: e.target.value as 'none' | Direction })}
+            >
+              <option value="none">{t('cond.dirNone')}</option>
+              {CARDINALS.map((d) => (
+                <option key={d} value={d}>
+                  {t(`dir.${d}`)}
+                </option>
+              ))}
+            </select>
+          </>
+        )
       default:
+        // 'alone' / 'notAlone' (round-trip only) and flag-less kinds need no control.
         return null
     }
   }
+
+  // The pickable kinds: drop "Fenster/Tür" when the board has neither.
+  const availableKinds = COND_KINDS.filter((k) => k !== 'portal' || ctx.hasWindows || ctx.hasDoors)
 
   return (
     <div className="mk-cb">
@@ -259,44 +676,51 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
         </div>
       )}
 
-      {group.conditions.map((c, i) => (
-        <div key={i} className="mk-cond">
-          <button
-            type="button"
-            className="mk-chip mk-cond__not"
-            data-active={c.not}
-            onClick={() => update(i, { not: !c.not })}
-            title={t('cond.not')}
-          >
-            {t('cond.not')}
-          </button>
-          <select
-            className="mk-select-input mk-cond__kind"
-            value={c.kind}
-            onChange={(e) => onChange({
-              ...group,
-              conditions: group.conditions.map((cc, j) =>
-                j === i ? { ...defaultCondition(e.target.value as CondKind, ctx), not: cc.not } : cc,
-              ),
-            })}
-          >
-            {COND_KINDS.map((k) => (
-              <option key={k} value={k}>
-                {t(`cond.${k}`)}
-              </option>
-            ))}
-          </select>
-          {valueControls(c, i)}
-          <button
-            type="button"
-            className="mk-cond__del"
-            onClick={() => remove(i)}
-            aria-label={t('cond.remove')}
-          >
-            ✕
-          </button>
-        </div>
-      ))}
+      {group.conditions.map((c, i) => {
+        // Keep a round-trip-only kind (alone/notAlone from an existing level) selectable
+        // so editing such a level doesn't silently change the clue.
+        const kinds = availableKinds.includes(c.kind) ? availableKinds : [c.kind, ...availableKinds]
+        return (
+          <div key={i} className="mk-cond">
+            <button
+              type="button"
+              className="mk-chip mk-cond__not"
+              data-active={c.not}
+              onClick={() => update(i, { not: !c.not })}
+              title={t('cond.not')}
+            >
+              {t('cond.not')}
+            </button>
+            <select
+              className="mk-select-input mk-cond__kind"
+              value={c.kind}
+              onChange={(e) =>
+                onChange({
+                  ...group,
+                  conditions: group.conditions.map((cc, j) =>
+                    j === i ? { ...defaultCondition(e.target.value as CondKind, ctx), not: cc.not } : cc,
+                  ),
+                })
+              }
+            >
+              {kinds.map((k) => (
+                <option key={k} value={k}>
+                  {t(`cond.${k}`)}
+                </option>
+              ))}
+            </select>
+            {valueControls(c, i)}
+            <button
+              type="button"
+              className="mk-cond__del"
+              onClick={() => remove(i)}
+              aria-label={t('cond.remove')}
+            >
+              ✕
+            </button>
+          </div>
+        )
+      })}
 
       <button type="button" className="mk-btn mk-btn--ghost mk-cb__add" onClick={add}>
         {t('cond.add')}

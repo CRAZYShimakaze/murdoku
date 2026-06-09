@@ -177,6 +177,8 @@ function SuspectEditor({ state, index, onChange, onClose }: EditorProps) {
       objects: presentObjectTypes(state),
       others: state.suspects.filter((o) => o.id !== s.id).map((o) => ({ id: o.id, name: o.name || o.id })),
       size: state.size,
+      hasWindows: state.windows.length > 0,
+      hasDoors: state.doors.length > 0,
       roomLabel: (id) => {
         const i = ROOM_IDS.indexOf(id)
         return t(state.roomNames[i] ?? `room.editor${id}`)

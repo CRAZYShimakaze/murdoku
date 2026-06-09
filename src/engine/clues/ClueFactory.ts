@@ -13,9 +13,20 @@ import {
   OutsideClue,
 } from './unaryClues.ts'
 import { DirectionClue, InsideXorClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
-import { DirectionFromObjectClue, SameLineAsObjectClue } from './objectClues.ts'
-import type { LineKind, RoomRel } from './objectClues.ts'
-import { UniqueOnObjectClue, UniqueNearWindowClue } from './uniquenessClues.ts'
+import {
+  BesideSameObjectClue,
+  DirectionFromObjectClue,
+  SameLineAsObjectClue,
+  SameRoomAsObjectClue,
+} from './objectClues.ts'
+import type { LineKind, ObjectMate, RoomRel } from './objectClues.ts'
+import {
+  UniqueOnObjectClue,
+  UniqueNearObjectClue,
+  UniqueNearWindowClue,
+  UniqueNearDoorClue,
+  UniqueOutsideClue,
+} from './uniquenessClues.ts'
 import {
   AloneClue,
   AloneWithClue,
@@ -37,13 +48,17 @@ export type ClueJson =
   | { type: 'nearDoor' }
   | { type: 'inside' }
   | { type: 'outside' }
-  | { type: 'inRoom'; room: string }
+  | { type: 'inRoom'; room: string; occupancy?: 'alone' | 'notAlone' }
   | { type: 'inRow'; row: number }
   | { type: 'inCol'; col: number }
   | { type: 'corner' }
   | { type: 'atWall' }
   | { type: 'uniqueOnObject'; object: string }
+  | { type: 'uniqueNearObject'; object: string }
   | { type: 'uniqueNearWindow' }
+  | { type: 'uniqueNearDoor' }
+  | { type: 'uniqueInside' }
+  | { type: 'uniqueOutside' }
   | { type: 'alone' }
   | { type: 'notAlone' }
   | {
@@ -64,9 +79,11 @@ export type ClueJson =
   | { type: 'direction'; of: PersonId; dir: Direction8 }
   | { type: 'insideXor'; with: PersonId }
   | { type: 'offset'; of: PersonId; dir: Direction; distance: number }
-  | { type: 'sameRoom'; as: PersonId }
+  | { type: 'sameRoom'; as: PersonId; alone?: boolean }
   | { type: 'sameLineAsObject'; object: string; line: LineKind; room: RoomRel }
   | { type: 'directionFromObject'; object: string; dir: Direction8; room: RoomRel }
+  | { type: 'sameRoomAsObject'; object: string; alone?: boolean }
+  | { type: 'besideSameObject'; object: string; mate: ObjectMate; dir?: Direction8 }
   | { type: 'roomCompanion'; count: number; attribute: string; value: AttributeValue }
   | { type: 'roomExists'; attribute: string; value: AttributeValue; object: string }
   | { type: 'not'; clue: ClueJson }
@@ -91,7 +108,7 @@ export function createClue(json: ClueJson): Clue {
     case 'outside':
       return new OutsideClue(true)
     case 'inRoom':
-      return new InRoomClue(json.room)
+      return new InRoomClue(json.room, json.occupancy ?? null)
     case 'inRow':
       return new InRowClue(json.row)
     case 'inCol':
@@ -102,8 +119,16 @@ export function createClue(json: ClueJson): Clue {
       return new AtWallClue()
     case 'uniqueOnObject':
       return new UniqueOnObjectClue(json.object)
+    case 'uniqueNearObject':
+      return new UniqueNearObjectClue(json.object)
     case 'uniqueNearWindow':
       return new UniqueNearWindowClue()
+    case 'uniqueNearDoor':
+      return new UniqueNearDoorClue()
+    case 'uniqueInside':
+      return new UniqueOutsideClue(false)
+    case 'uniqueOutside':
+      return new UniqueOutsideClue(true)
     case 'alone':
       return new AloneClue()
     case 'notAlone':
@@ -130,11 +155,15 @@ export function createClue(json: ClueJson): Clue {
     case 'offset':
       return new OffsetClue(json.of, json.dir, json.distance)
     case 'sameRoom':
-      return new SameRoomClue(json.as)
+      return new SameRoomClue(json.as, json.alone ?? false)
     case 'sameLineAsObject':
       return new SameLineAsObjectClue(json.object, json.line, json.room)
     case 'directionFromObject':
       return new DirectionFromObjectClue(json.object, json.dir, json.room)
+    case 'sameRoomAsObject':
+      return new SameRoomAsObjectClue(json.object, json.alone ?? false)
+    case 'besideSameObject':
+      return new BesideSameObjectClue(json.object, json.mate, json.dir ?? null)
     case 'roomCompanion':
       return new RoomCompanionClue(json.count, json.attribute, json.value)
     case 'roomExists':

@@ -1,4 +1,4 @@
-import { OBJECT_CATALOG, VOID_ROOM, type AttributeValue, type BoardClueJson, type LevelJson, type ObjectDef, type Side, type SuspectJson } from '../engine/index.ts'
+import { OBJECT_CATALOG, VOID_ROOM, type AttributeValue, type BoardClueJson, type ClueJson, type LevelJson, type ObjectDef, type Side, type SuspectJson } from '../engine/index.ts'
 import { cluesToGroup, emptyClueGroup, groupToClues, type ClueGroup } from './editorClues.ts'
 import { resolveHairstyle } from './avatar.ts'
 
@@ -303,26 +303,73 @@ export function editorPeopleFromLevel(level: LevelJson): {
 }
 
 /**
+ * Map a level's room chars onto the editor's fixed slots (ROOM_IDS). Chars that are
+ * already valid slots stay put; foreign ones (e.g. theme-authored "W"/"S"/… that no
+ * editor uses) are reassigned to the first free slots. Identity for editor-made levels.
+ */
+function roomCharMap(roomMap: readonly string[]): Map<string, string> {
+  const distinct: string[] = []
+  for (const row of roomMap) {
+    for (const ch of row) if (ch !== VOID_ROOM && !distinct.includes(ch)) distinct.push(ch)
+  }
+  const free = ROOM_IDS.filter((id) => !distinct.includes(id))
+  const valid = new Set<string>(ROOM_IDS)
+  const map = new Map<string, string>()
+  let f = 0
+  for (const ch of distinct) {
+    if (valid.has(ch)) map.set(ch, ch)
+    else if (f < free.length) map.set(ch, free[f++])
+  }
+  return map
+}
+
+/**
  * Reconstruct a full editor state from a finished level — for "open in the editor".
- * The level stores the very same room/object/window/door maps the editor uses, so the
- * board is a direct copy; the people and room names are reverse-mapped. Assumes a square
- * board (the editor's model); non-square levels fall back to the width.
+ * Room chars are remapped onto the editor's slots (so theme-/hand-authored levels with
+ * chars like "W" open too — their references in clues are remapped along); the people
+ * and room names are reverse-mapped. Assumes a square board; non-square falls back to width.
  */
 export function editorStateFromLevel(level: LevelJson): EditorState {
-  const { suspects, victim } = editorPeopleFromLevel(level)
+  const map = roomCharMap(level.roomMap)
+  const rm = (ch: string): string => map.get(ch) ?? ch
+  const remapClue = (c: ClueJson): ClueJson => {
+    if (c.type === 'inRoom') return { ...c, room: rm(c.room) }
+    if (c.type === 'and' || c.type === 'or') return { ...c, clues: c.clues.map(remapClue) }
+    if (c.type === 'not') return { ...c, clue: remapClue(c.clue) }
+    return c
+  }
+  const origOf = new Map<string, string>() // editor slot → original room char
+  for (const [orig, slot] of map) origOf.set(slot, orig)
+
+  // Object chars: remap the level's own chars (by TYPE) onto the editor catalog's
+  // chars, so theme-/hand-authored maps (e.g. "S" for chair) paint correctly.
+  const editorCharByType = new Map(EDITOR_OBJECTS.map((o) => [o.type, o.char]))
+  const objMap = new Map<string, string>()
+  for (const [ch, def] of Object.entries(level.objects ?? {})) {
+    const editorCh = editorCharByType.get(def.type)
+    if (editorCh) objMap.set(ch, editorCh)
+  }
+  const ro = (ch: string): string => objMap.get(ch) ?? ch
+  const remapLayer = (rows?: string[]): string[] | undefined =>
+    rows?.map((row) => [...row].map(ro).join(''))
+
   const size = level.size.width
   const blank = Array.from({ length: level.size.height }, () => '.'.repeat(size))
+  const va = level.victim.attributes ?? {}
   return {
     size,
-    roomMap: [...level.roomMap],
-    groundMap: level.groundMap ? [...level.groundMap] : blank,
-    topMap: level.topMap ? [...level.topMap] : blank,
+    roomMap: level.roomMap.map((row) => [...row].map(rm).join('')),
+    groundMap: remapLayer(level.groundMap) ?? blank,
+    topMap: remapLayer(level.topMap) ?? blank,
     windows: [...(level.windows ?? [])],
     doors: [...(level.doors ?? [])],
     boardClues: [...(level.boardClues ?? [])],
-    suspects,
-    victim,
-    roomNames: ROOM_IDS.map((id, i) => level.rooms[id]?.nameKey ?? DEFAULT_ROOM_NAMES[i]),
+    suspects: level.suspects.map((s) => suspectFromJson({ ...s, clues: s.clues?.map(remapClue) })),
+    victim: { name: level.victim.name, gender: va.gender === 'f' ? 'f' : 'm' },
+    roomNames: ROOM_IDS.map((id, i) => {
+      const orig = origOf.get(id)
+      return (orig ? level.rooms[orig]?.nameKey : undefined) ?? DEFAULT_ROOM_NAMES[i]
+    }),
   }
 }
 

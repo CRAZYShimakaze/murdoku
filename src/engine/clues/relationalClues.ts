@@ -70,18 +70,28 @@ export class DirectionClue extends Clue {
   }
 }
 
-/** "{name} was in the same room as {target}." */
+/**
+ * "{name} was in the same room as {target}." With `alone`, the two share the room
+ * AND nobody else is there (no other suspect, not even the victim) — "alone with X".
+ */
 export class SameRoomClue extends Clue {
-  constructor(readonly target: PersonId) {
+  constructor(
+    readonly target: PersonId,
+    readonly alone = false,
+  ) {
     super()
   }
 
   test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
     const board = puzzle.board
-    return (
-      board.roomIdOf(solution.cellOf(subjectId)) ===
-      board.roomIdOf(solution.cellOf(this.target))
-    )
+    const room = board.roomIdOf(solution.cellOf(subjectId))
+    if (board.roomIdOf(solution.cellOf(this.target)) !== room) return false
+    if (!this.alone) return true
+    for (const id of puzzle.allIds()) {
+      if (id === subjectId || id === this.target) continue
+      if (board.roomIdOf(solution.cellOf(id)) === room) return false
+    }
+    return true
   }
 
   override violatedBy(
@@ -89,14 +99,22 @@ export class SameRoomClue extends Clue {
     placement: ReadonlyMap<PersonId, Cell>,
     puzzle: Puzzle,
   ): boolean {
+    const board = puzzle.board
     const s = placement.get(subjectId)
     const t = placement.get(this.target)
-    if (s === undefined || t === undefined) return false
-    return puzzle.board.roomIdOf(s) !== puzzle.board.roomIdOf(t)
+    if (s !== undefined && t !== undefined && board.roomIdOf(s) !== board.roomIdOf(t)) return true
+    if (this.alone && s !== undefined) {
+      const room = board.roomIdOf(s)
+      for (const [id, c] of placement) {
+        if (id === subjectId || id === this.target) continue
+        if (board.roomIdOf(c) === room) return true
+      }
+    }
+    return false
   }
 
   describe(): Explanation {
-    return { key: 'clue.sameRoom', params: { target: this.target } }
+    return { key: this.alone ? 'clue.aloneSameRoom' : 'clue.sameRoom', params: { target: this.target } }
   }
 }
 
