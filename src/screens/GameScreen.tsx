@@ -66,6 +66,19 @@ interface Result {
   next?: LevelMeta | null
 }
 
+/** Render the title with its first non-space letter blood-smeared — a noir flourish. */
+function bloodTitle(title: string) {
+  const i = title.search(/\S/)
+  if (i < 0) return title
+  return (
+    <>
+      {title.slice(0, i)}
+      <span className="mk-game__bloodletter">{title[i]}</span>
+      {title.slice(i + 1)}
+    </>
+  )
+}
+
 function formatTime(total: number): string {
   const h = Math.floor(total / 3600)
   const m = Math.floor((total % 3600) / 60)
@@ -259,12 +272,15 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
             </button>
           )}
         </div>
-        <h2 className="mk-game__title">
-          {meta.title} <span className="mk-game__sz">{meta.width}×{meta.height}</span>
-          {meta.author && (
-            <span className="mk-game__author"> · {t('game.author', { name: meta.author })}</span>
-          )}
-        </h2>
+        <div className="mk-game__heading">
+          <div className="mk-game__titlewrap">
+            <h2 className="mk-game__title">{bloodTitle(meta.title)}</h2>
+            {meta.author && (
+              <span className="mk-game__author">{t('game.author', { name: meta.author })}</span>
+            )}
+          </div>
+          <span className="mk-game__sz">{meta.width}×{meta.height}</span>
+        </div>
         <span className="mk-timer">{formatTime(elapsed)}</span>
       </header>
 

@@ -51,7 +51,7 @@ export interface BoardView {
   avatars?: Map<PersonId, HTMLImageElement>
   /** Cell under the cursor/finger → outlined yellow (occupiable) or red (blocked). */
   hover?: Cell | null
-  /** Suspect whose pencil notes should be emphasized (animated bigger) on the board. */
+  /** Suspect whose pencil notes gently pulse in size on the board (others stay visible). */
   emphasizeMarks?: PersonId | null
   /** 0..1 pulse value for the emphasized notes. */
   emphasizePulse?: number
@@ -386,49 +386,41 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.stroke()
   }
 
-  // --- pencil marks (each id in ITS OWN suspect colour; hovered suspect bigger).
-  //     A black outline (stroke under the fill) keeps light marks legible even on
-  //     similar-coloured rooms, where the bare colour would vanish. ---
+  // --- pencil marks (each id in ITS OWN suspect colour) laid out in a grid (max 3 per
+  //     row, wrapping down) so a busy cell never spills into its neighbour. The hovered
+  //     suspect's letter only PULSES GENTLY in size around its normal size — it stays in
+  //     its slot and the other letters in the cell remain fully visible. A black outline
+  //     (stroke under the fill) keeps light marks legible on similar-coloured rooms. ---
   const occupied = new Set(view.placements.values())
   ctx.strokeStyle = BOARD.markOutline
   ctx.lineJoin = 'round'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'top'
   // The victim's id is the literal 'victim'; on the board show its initial
   // (first letter of the name, uppercased) just like a suspect's letter.
   const victimLetter = view.puzzle.victim.name.charAt(0).toUpperCase()
   const markLabel = (id: PersonId) => (id === VICTIM_ID ? victimLetter : id)
+  const pulse = view.emphasizePulse ?? 0
   for (const [c, set] of view.marks) {
     if (occupied.has(c) || set.size === 0) continue
     const { x, y } = xy(c)
-    if (view.emphasizeMarks && set.has(view.emphasizeMarks)) {
-      const scale = 1 + 0.4 * (view.emphasizePulse ?? 0)
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.font = `800 ${S * 0.44 * scale}px 'Spline Sans', sans-serif`
-      ctx.lineWidth = Math.max(1.5, S * 0.06 * scale)
-      ctx.fillStyle = suspectColor(view.suspectIndex.get(view.emphasizeMarks) ?? 0)
-      const label = markLabel(view.emphasizeMarks)
-      ctx.strokeText(label, x + S / 2, y + S / 2)
-      ctx.fillText(label, x + S / 2, y + S / 2)
-    } else {
-      ctx.textAlign = 'left'
-      ctx.textBaseline = 'top'
-      ctx.font = `700 ${S * 0.27}px 'Spline Sans', sans-serif`
-      ctx.lineWidth = Math.max(1.2, S * 0.04)
-      // Lay the letters out in a grid: max 3 per row, then wrap to the next row
-      // below — so a cell with many candidates never spills into the neighbour.
-      // Nudged down & right so they sit clear of the top-left corner.
-      let i = 0
-      for (const id of set) {
-        const col = i % 3
-        const row = Math.floor(i / 3)
-        const tx = x + S * 0.13 + col * S * 0.25
-        const ty = y + S * 0.12 + row * S * 0.3
-        ctx.fillStyle = suspectColor(view.suspectIndex.get(id) ?? 0)
-        const label = markLabel(id)
-        ctx.strokeText(label, tx, ty)
-        ctx.fillText(label, tx, ty)
-        i++
-      }
+    // Nudged down & right so they sit clear of the top-left corner.
+    let i = 0
+    for (const id of set) {
+      const col = i % 3
+      const row = Math.floor(i / 3)
+      const tx = x + S * 0.13 + col * S * 0.25
+      const ty = y + S * 0.12 + row * S * 0.3
+      // Hovered suspect's letter: same base size as always, with a noticeable size pulse.
+      const emph = view.emphasizeMarks === id
+      const scale = emph ? 1 + 0.35 * pulse : 1
+      ctx.font = `${emph ? 800 : 700} ${S * 0.27 * scale}px 'Spline Sans', sans-serif`
+      ctx.lineWidth = Math.max(1.2, S * 0.04 * scale)
+      ctx.fillStyle = suspectColor(view.suspectIndex.get(id) ?? 0)
+      const label = markLabel(id)
+      ctx.strokeText(label, tx, ty)
+      ctx.fillText(label, tx, ty)
+      i++
     }
   }
 

@@ -236,6 +236,10 @@ button {
   inset: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  /* Reserve the scrollbar's width on BOTH sides so the content box stays centred in
+     the viewport whether or not a scrollbar is showing — otherwise the scrollbar (on
+     the right) shifts the centred content off-axis from the viewport-centred footer. */
+  scrollbar-gutter: stable both-edges;
 }
 
 .mk-start {
@@ -251,6 +255,11 @@ button {
   width: 100%;
   max-width: 36rem;
   display: grid;
+  /* Pin the column to the container width. Without this the implicit grid column
+     auto-sizes to its WIDEST child (the wordmark, which is far wider than 36rem at
+     desktop sizes); that oversized column overflows to the right and `justify-items`
+     then centres everything inside IT, pushing the whole screen off to the right. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.6rem;
   justify-items: center;
 }
@@ -268,7 +277,14 @@ button {
   font-weight: 900;
   font-size: clamp(2.8rem, 15vw, 9.5rem);
   line-height: 0.86;
-  max-width: 100%;
+  /* Let the title take its natural text width so the grid's `justify-self: center`
+     centres the whole word symmetrically. With `max-width: 100%` the box was capped at
+     the 36rem column while the (wider) text overflowed only to the right — pushing the
+     title off-centre. The font scales with the viewport (15vw) and the screen clips
+     overflow, so it never causes horizontal scrolling on narrow screens. */
+  max-width: none;
+  width: max-content;
+  justify-self: center;
   letter-spacing: -0.02em;
   margin: 0;
   color: var(--bone);
@@ -424,6 +440,10 @@ button {
   animation: fade-up 0.8s ease 0.6s forwards;
 }
 .mk-start__credit {
+  /* Fixed to the viewport centre; `.mk-screen`'s symmetric scrollbar-gutter keeps the
+     page content centred on the SAME axis, so footer and content line up. The
+     padding-left offsets the trailing letter-spacing (added after the last glyph) so
+     the text itself is truly centred. */
   position: fixed;
   bottom: 1rem;
   left: 0;
@@ -433,6 +453,7 @@ button {
   font-size: 0.72rem;
   color: var(--bone-faint);
   letter-spacing: 0.1em;
+  padding-left: 0.1em;
 }
 
 /* a faint connecting "red thread" decoration behind the wordmark */
@@ -679,22 +700,57 @@ button {
   border-bottom: 1px solid var(--line);
   background: var(--ink-850);
 }
-.mk-game__head h2 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.15rem;
-  margin: 0;
-  flex: 1;
+/* Case-file headline: the level title as a noir dossier header — a big serif title
+   with a blood-smeared initial, a typewriter byline, and a stamped evidence tag for
+   the board size, stacked and centred. */
+.mk-game__heading {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.1rem;
   min-width: 0;
+  max-width: 100%;
+}
+.mk-game__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.3rem, 1.1rem + 0.85vw, 1.75rem);
+  line-height: 1.04;
+  letter-spacing: 0.01em;
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--bone);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
 }
-.mk-game__head h2 .mk-game__sz {
-  color: var(--bone-faint);
-  font-family: var(--font-type);
-  font-size: 0.8rem;
-  font-weight: 400;
+/* The blood-smeared initial: crimson with a smudged shadow and a thin drip below. */
+.mk-game__bloodletter {
+  position: relative;
+  color: var(--crimson);
+  text-shadow:
+    0 0 1px rgba(207, 70, 60, 0.7),
+    1px 1px 0 rgba(147, 39, 31, 0.6),
+    3px 4px 5px rgba(147, 39, 31, 0.45);
+}
+.mk-game__bloodletter::after {
+  content: '';
+  position: absolute;
+  left: 52%;
+  top: 0.82em;
+  width: 0.08em;
+  height: 0.46em;
+  transform: translateX(-50%);
+  border-radius: 0 0 50% 50% / 0 0 42% 42%;
+  background: linear-gradient(
+    to bottom,
+    var(--crimson) 0%,
+    var(--crimson-deep) 65%,
+    rgba(147, 39, 31, 0) 100%
+  );
+  pointer-events: none;
 }
 .mk-timer {
   flex: 1;
@@ -760,19 +816,53 @@ button {
   min-width: 0;
   justify-self: start;
 }
-.mk-game > .mk-game__head h2 {
+.mk-game > .mk-game__head .mk-game__heading {
   justify-self: center;
   text-align: center;
-  max-width: 100%;
+}
+/* Title + author stacked; the size stamp sits to the RIGHT of this block. */
+.mk-game__titlewrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.16rem;
+  min-width: 0;
 }
 /* The author reads like a case-file signature: typewriter face, italic, brass. */
 .mk-game__author {
   color: var(--brass-dim);
   font-family: var(--font-type);
-  font-size: 0.8rem;
+  font-size: 0.92rem;
   font-weight: 400;
   font-style: italic;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+/* Board size as a stamped evidence tag — boxed typewriter caps, faintly rotated,
+   prefixed with a floor-plan glyph. */
+.mk-game__sz {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 0.32em;
+  font-family: var(--font-type);
+  font-size: 0.74rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  padding: 0.18rem 0.6rem 0.16rem;
+  border: 1px solid var(--brass-dim);
+  border-radius: 3px;
+  background: rgba(226, 183, 94, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(226, 183, 94, 0.07);
+  transform: rotate(-2deg);
+}
+.mk-game__sz::before {
+  content: '▦';
+  font-size: 0.9em;
+  letter-spacing: 0;
+  color: var(--brass-dim);
 }
 .mk-game > .mk-game__head .mk-timer {
   justify-self: end;
@@ -2096,6 +2186,25 @@ button {
   }
   .mk-game .mk-game__edit-label {
     display: none;
+  }
+  /* Compact the dossier headline on phones: title + tag (and byline on roomier
+     phones) flow on one row and wrap only if there's no room, so the header stays
+     short. The size tag sits upright here to save width. */
+  .mk-game__heading {
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem 0.6rem;
+  }
+  .mk-game__title {
+    font-size: 1.15rem;
+  }
+  .mk-game__author {
+    font-size: 0.8rem;
+  }
+  .mk-game__sz {
+    transform: none;
+    font-size: 0.6rem;
   }
   .mk-board {
     height: min(48dvh, 92vw);
