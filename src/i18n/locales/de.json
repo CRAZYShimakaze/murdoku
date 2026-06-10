@@ -979,6 +979,7 @@
     "confinedRow": "{{cell}}: {{name}} ist nur in Zeile {{line}} möglich.",
     "confinedCol": "{{cell}}: {{name}} ist nur in Spalte {{line}} möglich.",
     "eliminated": "{{cell}}: durch die Hinweise ausgeschlossen.",
-    "only": "→ also muss {{name}} auf {{cell}}."
+    "only": "→ also muss {{name}} auf {{cell}}.",
+    "crossThis": "→ hier kann niemand stehen: kreuze {{cells}} aus."
   }
 }

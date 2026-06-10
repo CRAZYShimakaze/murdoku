@@ -114,12 +114,6 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   const tut = useTutorialFlow({ enabled: !!tutorial, puzzle, solution, session, selected, setSelected })
   const [hint, setHint] = useState<HintResult | null>(null)
   const [hintShown, setHintShown] = useState(false) // hint requested (even if none was found)
-  // Hints shown this round (until the board changes), so pressing "hint" again
-  // advances to the next deduction instead of repeating the same one.
-  const [hintProgress, setHintProgress] = useState<{
-    placed: Map<PersonId, Cell>
-    eliminated: Map<PersonId, Set<Cell>>
-  }>(() => ({ placed: new Map(), eliminated: new Map() }))
   const [result, setResult] = useState<Result | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
@@ -162,16 +156,31 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
     }
   }, [meta.title, meta.author, meta.width, meta.height])
 
-  // A board change makes any shown hint stale — drop it and restart the hint walk.
-  // Done during render against the previous board (not in an effect) so the reset
-  // lands before paint; showing a hint doesn't touch session.state, so it survives.
-  const [hintBoard, setHintBoard] = useState(session.state)
-  if (hintBoard !== session.state) {
-    setHintBoard(session.state)
-    setHint(null)
-    setHintShown(false)
-    setHintProgress({ placed: new Map(), eliminated: new Map() })
-  }
+  // The hint stays on screen (with its highlight) until it's DONE or invalidated:
+  //  - PLACING or removing a figure clears it (a different suspect set, or the hinted
+  //    one set = done) — tracked by a content signature, since every board action
+  //    hands back a fresh placements Map.
+  //  - a CROSS hint clears once every highlighted cell is crossed (all done).
+  // Crossing cells partway, or selecting a suspect, leaves it up. (Reset & undo clear
+  // it too — wired on those buttons.)
+  const placementSig = [...session.state.placements]
+    .map(([id, c]) => `${id}@${c}`)
+    .sort()
+    .join('|')
+  const placementSigRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (placementSigRef.current !== null && placementSigRef.current !== placementSig) {
+      setHint(null)
+      setHintShown(false)
+    }
+    placementSigRef.current = placementSig
+  }, [placementSig])
+  useEffect(() => {
+    if (hint?.kind === 'exclude' && hint.focus.every((c) => session.state.crosses.has(c))) {
+      setHint(null)
+      setHintShown(false)
+    }
+  }, [hint, session.state.crosses])
 
   const highlight = useMemo<Set<Cell> | null>(() => {
     if (!selected) return null
@@ -195,51 +204,56 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   const clearHint = () => {
     setHint(null)
     setHintShown(false)
-    setHintProgress({ placed: new Map(), eliminated: new Map() })
   }
+  // Selecting a suspect or arming the X-tool must NOT drop the hint (the player is
+  // about to act ON it) — so these no longer clear it.
   const selectFromCard = (id: PersonId) => {
     setSelected((prev) => (prev === id ? null : id))
     setXTool(false)
-    clearHint()
   }
   const selectFromBoard = (id: PersonId | null) => {
     setSelected(id)
     setXTool(false)
-    clearHint()
   }
   const toggleX = () => {
-    clearHint()
     setXTool((v) => {
       if (!v) setSelected(null)
       return !v
     })
   }
+  // Undo and reset are structural — they discard the active hint.
+  const onUndoClick = () => {
+    session.undo()
+    clearHint()
+  }
+  const onResetClick = () => {
+    session.resetAll()
+    clearHint()
+  }
 
+  // The next un-done action from the full solution: cross a now-empty cell, or place
+  // a person. It stays on screen until done (see the effects above); pressing again
+  // before acting just recomputes the same next action.
   const showHint = () => {
     setSelected(null) // the black hint highlight replaces the blue selection
     setXTool(false)
-    const h = engine.nextHint(session.state.placements, session.state.crosses, hintProgress)
-    setHint(h)
+    setHint(engine.nextHint(session.state.placements, session.state.crosses))
     setHintShown(true)
-    if (!h) return
-    // Record this hint so the next press moves on to the following deduction.
-    const placedNext = new Map(hintProgress.placed)
-    const elimNext = new Map([...hintProgress.eliminated].map(([k, v]) => [k, new Set(v)]))
-    if (h.step.placedCell !== undefined && h.step.personId) {
-      placedNext.set(h.step.personId, h.step.placedCell)
-    }
-    for (const e of h.step.eliminated ?? []) {
-      const set = elimNext.get(e.personId) ?? new Set<Cell>()
-      for (const c of e.cells) set.add(c)
-      elimNext.set(e.personId, set)
-    }
-    setHintProgress({ placed: placedNext, eliminated: elimNext })
   }
 
-  // Hint (black) wins the board highlight; otherwise the tutorial / selected suspect (blue).
-  const boardHighlight =
-    !tut.active && hint ? new Set(hint.focus) : tut.active ? tut.highlight : highlight
-  const boardHighlightColor = !tut.active && hint ? HINT_BLACK : CANDIDATE_BLUE
+  // Two highlight layers so a selected suspect's possible cells (blue) stay visible
+  // UNDER an active hint (black) — both at once when both apply. A cross hint only
+  // highlights the cells STILL to cross, so it shrinks as the player works through it
+  // (and vanishes — via the effect above — once they're all done).
+  const hintHL =
+    !tut.active && hint
+      ? new Set(hint.kind === 'exclude' ? hint.focus.filter((c) => !session.state.crosses.has(c)) : hint.focus)
+      : null
+  const selectHL = tut.active ? tut.highlight : highlight
+  const boardHighlight = hintHL ?? selectHL
+  const boardHighlightColor = hintHL ? HINT_BLACK : CANDIDATE_BLUE
+  // The selection (blue) as the second layer, only when a hint already owns the first.
+  const boardHighlight2 = hintHL && selectHL ? selectHL : null
   const hintText = hint
     ? renderer.render(hint.step.explanation)
     : hintShown
@@ -337,6 +351,8 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
           selectedSuspect={selected}
           highlight={boardHighlight}
           highlightColor={boardHighlightColor}
+          highlight2={boardHighlight2}
+          highlightColor2={CANDIDATE_BLUE}
           emphasize={hoveredSuspect}
           xTool={tut.active ? false : xTool}
           reveal={reveal}
@@ -353,9 +369,9 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
       <Toolbar
         xTool={tut.active ? false : xTool}
         onToggleX={tut.active ? NOOP : toggleX}
-        onUndo={tut.active ? NOOP : session.undo}
+        onUndo={tut.active ? NOOP : onUndoClick}
         canUndo={tut.active ? false : session.canUndo}
-        onReset={tut.active ? NOOP : session.resetAll}
+        onReset={tut.active ? NOOP : onResetClick}
         onHint={tut.active ? NOOP : showHint}
         onSubmit={submit}
         allPlaced={session.allPlaced}

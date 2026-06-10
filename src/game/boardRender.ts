@@ -57,6 +57,10 @@ export interface BoardView {
   emphasizePulse?: number
   /** Override the candidate-highlight colours (default brass; tutorial uses blue). */
   highlightColor?: { wash: string; ring: string }
+  /** A SECOND highlight layer, drawn under the primary one — used to show the selected
+   *  suspect's candidate cells (blue) at the same time as an active hint (black). */
+  highlight2?: Set<Cell> | null
+  highlightColor2?: { wash: string; ring: string }
   /** Thumbnail mode: rooms + walls + object dots only. */
   preview?: boolean
 }
@@ -161,6 +165,11 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     const room = board.rooms.get(board.roomIdOf(c))
     ctx.fillStyle = room?.color ?? '#cfcfcf'
     ctx.fillRect(x, y, S, S)
+    // Secondary layer (selection) under the primary (hint), so the hint wins on overlap.
+    if (view.highlight2?.has(c)) {
+      ctx.fillStyle = view.highlightColor2?.wash ?? BOARD.highlight
+      ctx.fillRect(x, y, S, S)
+    }
     if (view.highlight?.has(c)) {
       ctx.fillStyle = view.highlightColor?.wash ?? BOARD.highlight
       ctx.fillRect(x, y, S, S)
@@ -358,18 +367,21 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.fillText(label, cx, pillY + pillH / 2)
   }
 
-  // --- highlight ring on candidate cells --------------------------------
-  if (view.highlight) {
-    ctx.strokeStyle = view.highlightColor?.ring ?? BOARD.highlightRing
+  // --- highlight rings on candidate cells (secondary under primary) ------
+  const drawRings = (cells: Set<Cell>, color: string, pad: number) => {
+    ctx.strokeStyle = color
     ctx.lineWidth = Math.max(2, S * 0.05)
-    for (const c of view.highlight) {
+    for (const c of cells) {
       const { x, y } = xy(c)
-      const pad = S * 0.07
       ctx.beginPath()
       ctx.roundRect(x + pad, y + pad, S - 2 * pad, S - 2 * pad, S * 0.12)
       ctx.stroke()
     }
   }
+  // The selection ring sits a touch further in, so where a hint cell IS also a
+  // candidate both rings stay visible (blue inside, black outside).
+  if (view.highlight2) drawRings(view.highlight2, view.highlightColor2?.ring ?? BOARD.highlightRing, S * 0.13)
+  if (view.highlight) drawRings(view.highlight, view.highlightColor?.ring ?? BOARD.highlightRing, S * 0.07)
 
   // --- crosses -----------------------------------------------------------
   ctx.strokeStyle = BOARD.cross

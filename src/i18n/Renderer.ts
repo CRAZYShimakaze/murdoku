@@ -120,6 +120,13 @@ export class Renderer {
         return this.lookup(`side.${value}`) ?? String(value)
       case 'cell':
         return this.cell(Number(value))
+      // A comma-separated list of cell indices → "Z2/S1, Z5/S1" (for a grouped hint).
+      case 'cells':
+        return String(value)
+          .split(',')
+          .filter(Boolean)
+          .map((c) => this.cell(Number(c)))
+          .join(', ')
       case 'bound': {
         // "row|id:line,id:line" → "Name→Z3, Name→Z6" (S for columns), names resolved.
         const bar = String(value).indexOf('|')

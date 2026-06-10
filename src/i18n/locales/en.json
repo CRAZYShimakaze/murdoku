@@ -912,6 +912,7 @@
     "confinedRow": "{{cell}}: {{name}} can only be in row {{line}}.",
     "confinedCol": "{{cell}}: {{name}} can only be in column {{line}}.",
     "eliminated": "{{cell}}: excluded by the clues.",
-    "only": "→ so {{name}} must be on {{cell}}."
+    "only": "→ so {{name}} must be on {{cell}}.",
+    "crossThis": "→ no one can be here: cross out {{cells}}."
   }
 }

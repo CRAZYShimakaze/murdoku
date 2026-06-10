@@ -21,6 +21,9 @@ interface Props {
   selectedSuspect: PersonId | null
   highlight: Set<Cell> | null
   highlightColor?: { wash: string; ring: string }
+  /** A second highlight layer (selected suspect's candidates) shown beneath the hint. */
+  highlight2?: Set<Cell> | null
+  highlightColor2?: { wash: string; ring: string }
   /** Suspect whose notes pulse bigger (when hovering their clue card). */
   emphasize?: PersonId | null
   xTool: boolean
@@ -97,6 +100,8 @@ export default function BoardCanvas(props: Props) {
       crosses: p.state.crosses,
       highlight: p.highlight,
       highlightColor: p.highlightColor,
+      highlight2: p.highlight2,
+      highlightColor2: p.highlightColor2,
       press,
       reveal: p.reveal,
       avatars: avatarsRef.current,
