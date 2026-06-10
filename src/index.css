@@ -2458,7 +2458,9 @@ button {
      Fenster/Tür entries in the 'Platzieren' dropdown — so here we undo the desktop
      header chrome and restore the old compact, label-less single row: no field
      captions, no Akte-stamp, controls flowing inline. */
-  .mk-editor__layerfield {
+  /* The element is `.mk-field.mk-editor__layerfield`; the compound selector beats the
+     `.mk-field { display: flex }` rule below it (same specificity, but later source). */
+  .mk-field.mk-editor__layerfield {
     display: none;
   }
   .mk-editor__head {
