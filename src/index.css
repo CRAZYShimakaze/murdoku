@@ -236,10 +236,6 @@ button {
   inset: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  /* Reserve the scrollbar's width on BOTH sides so the content box stays centred in
-     the viewport whether or not a scrollbar is showing — otherwise the scrollbar (on
-     the right) shifts the centred content off-axis from the viewport-centred footer. */
-  scrollbar-gutter: stable both-edges;
 }
 
 .mk-start {
@@ -440,10 +436,6 @@ button {
   animation: fade-up 0.8s ease 0.6s forwards;
 }
 .mk-start__credit {
-  /* Fixed to the viewport centre; `.mk-screen`'s symmetric scrollbar-gutter keeps the
-     page content centred on the SAME axis, so footer and content line up. The
-     padding-left offsets the trailing letter-spacing (added after the last glyph) so
-     the text itself is truly centred. */
   position: fixed;
   bottom: 1rem;
   left: 0;
@@ -453,7 +445,6 @@ button {
   font-size: 0.72rem;
   color: var(--bone-faint);
   letter-spacing: 0.1em;
-  padding-left: 0.1em;
 }
 
 /* a faint connecting "red thread" decoration behind the wordmark */
@@ -1256,55 +1247,189 @@ button {
 }
 
 /* ================================================================ EDITOR */
+/* ============ EDITOR HEADER — case-file dossier bar ====================== */
+/* A stamped manila strip: ink gradient, a brass rule and a thin blood underline.
+   Children carry their own padding so each group can sit between full-height
+   dividers. Left → right: identity, the labelled case fields, the layer tabs, the
+   language toggle. Fields stay packed on the left; the toggle is pushed to the end. */
 .mk-editor__head {
+  /* The shared control height = the native dropdown's own natural height (font
+     0.92rem × the global line-height 1.5 + its padding), so giving the dropdowns
+     this height leaves them unchanged while every other control matches them. */
+  --mk-ctl-h: 2.7rem;
   flex-wrap: wrap;
-  gap: 0.55rem 0.9rem;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border-bottom: 1px solid var(--brass-dim);
+  box-shadow: inset 0 -3px 0 -1px rgba(207, 70, 60, 0.32);
+}
+/* Identity: back arrow, wordmark, stamped case-file tag. */
+.mk-editor__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0.95rem;
+  border-right: 1px solid var(--line-strong);
+}
+.mk-editor__ident {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  line-height: 1;
 }
 .mk-editor__title {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-}
-.mk-editor__size {
   display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.22rem;
+  letter-spacing: 0.01em;
+  color: var(--bone);
+}
+.mk-editor__mark {
+  color: var(--crimson);
+  font-size: 0.95em;
+  text-shadow: 0 0 6px rgba(207, 70, 60, 0.4);
+}
+/* Stamped evidence tag for the case number — typewriter caps, boxed, askew. */
+.mk-editor__casetag {
+  align-self: flex-start;
   font-family: var(--font-type);
-  font-size: 0.78rem;
-  color: var(--bone-dim);
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass-dim);
+  padding: 0.08rem 0.4rem;
+  border: 1px solid var(--brass-dim);
+  border-radius: 2px;
+  background: rgba(226, 183, 94, 0.05);
+  transform: rotate(-3deg);
 }
-.mk-editor__size strong {
+/* The grouped, labelled case fields fill the middle of the bar. */
+.mk-editor__fields {
+  display: flex;
+  align-items: stretch;
+  flex: 0 1 auto; /* stay packed on the left — don't grow into the tabs/toggle */
+  min-width: 0;
+  flex-wrap: wrap;
+}
+/* A fixed 2-row grid: caption row + a control row of the shared height. Because the
+   rows are fixed, the control sits at the exact same Y in every group (fields AND
+   the layer tabs), so they line up regardless of caption length. */
+.mk-field {
+  display: grid;
+  grid-template-rows: 1rem var(--mk-ctl-h);
+  align-content: start;
+  justify-items: center; /* caption + control horizontally centred in each field */
+  gap: 0.3rem;
+  padding: 0.5rem 0.95rem;
+  min-width: 0;
+  border-right: 1px solid var(--line);
+}
+.mk-editor__fields .mk-field:last-child {
+  border-right: 0;
+}
+/* Typewriter field captions — the "police form" labels the user asked for. */
+.mk-field__label {
+  font-family: var(--font-type);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-dim);
+  white-space: nowrap;
+}
+.mk-field__label strong {
   color: var(--brass);
+  letter-spacing: 0.04em;
 }
-.mk-editor__size input[type='range'] {
-  width: 110px;
+.mk-field--title {
+  flex: 0 1 13rem;
+}
+.mk-field--size input[type='range'] {
+  width: 100%;
+  min-width: 8rem;
+  align-self: center; /* sit at its natural height, vertically centred in the row */
   accent-color: var(--brass);
 }
 /* Two classes (mk-input + mk-editor__name); raise specificity so this beats
    `.mk-input { flex: 1 }` regardless of source order. */
 .mk-input.mk-editor__name {
-  flex: 0 1 11rem;
-  min-width: 6rem;
-  font-size: 0.85rem;
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  font-size: 0.9rem;
   padding: 0.4rem 0.6rem;
 }
-/* Only the language toggle is pushed to the far right of the editor header. */
+/* The language toggle sits at the far right behind its own divider. */
 .mk-editor__lang {
+  display: flex;
+  align-items: center;
   margin-left: auto;
-}
-.mk-editor__modes {
-  display: inline-flex;
-  gap: 0.4rem;
+  padding: 0.5rem 0.95rem;
+  border-left: 1px solid var(--line-strong);
 }
 /* The editor's right column holds the object palette, whose labels are far longer
    than the game's icon-only tools (e.g. "Waschmaschine", "Eingangshalle"). Give it
    more width than the game's tool column so those names never force a horizontal
    scrollbar. Scoped to .mk-editor so the game screen layout is untouched. */
 .mk-editor {
-  grid-template-columns: minmax(240px, 22vw) 1fr minmax(184px, 13vw);
+  grid-template-columns: minmax(240px, 22vw) 1fr minmax(216px, 14vw);
 }
 .mk-editor__palette {
-  gap: 0.5rem;
+  gap: 0.7rem;
   overflow: hidden; /* inner region scrolls; actions stay pinned at the bottom */
+}
+/* The layer tabs sit in their own labelled group ("EBENE"), styled like the case
+   fields beside them — caption on top, divider on the left. */
+/* EBENE is a plain .mk-field now (same grid as the other case fields); the tabs row
+   sits in its control row and stretches to the shared control height. */
+.mk-editor__layerfield .mk-editor__layers {
+  align-self: stretch;
+}
+/* The four board layers as case-file tabs, laid out in a row. */
+.mk-editor__layers {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.35rem;
+}
+/* Every header control is locked to the dropdown's own height (--mk-ctl-h) so the
+   selects stay exactly as they are and the name field, slider and tabs match them —
+   flush top and bottom. */
+.mk-editor__head .mk-select-input,
+.mk-editor__head .mk-input.mk-editor__name,
+.mk-layertab {
+  height: var(--mk-ctl-h);
+}
+/* Styled to match the dropdowns beside them: same readable UI font and chrome,
+   same height (above). Active = brass fill with a thin blood underline. */
+.mk-layertab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.85rem;
+  font-family: var(--font-ui);
+  font-size: 0.92rem;
+  color: var(--bone);
+  background: var(--ink-700);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+}
+.mk-layertab:hover {
+  border-color: var(--brass-dim);
+}
+.mk-layertab[data-active='true'] {
+  color: var(--ink-900);
+  font-weight: 700;
+  background: var(--brass);
+  border-color: var(--brass);
+  box-shadow: 0 2px 0 0 var(--crimson);
 }
 .mk-editor__palettescroll {
   flex: 1 1 auto;
@@ -1313,6 +1438,74 @@ button {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+}
+/* Palette subgroups (Begehbar / Blockierend / Wände) with a typewriter caption. */
+.mk-pal__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.mk-pal__group + .mk-pal__group,
+.mk-pal + .mk-pal__group {
+  margin-top: 0.5rem;
+}
+.mk-pal__grouplabel {
+  font-family: var(--font-type);
+  font-size: 0.64rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass-dim);
+  border-bottom: 1px dashed var(--line-strong);
+  padding-bottom: 0.25rem;
+}
+/* Compact edge-placement note shown when Fenster/Tür is armed (was a big block). */
+.mk-pal__hint {
+  margin: 0;
+  font-family: var(--font-type);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--bone-dim);
+  background: rgba(226, 183, 94, 0.05);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--brass-dim);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  padding: 0.5rem 0.65rem;
+}
+/* A small "an der Wand" tag pushed to the right of the Fenster/Tür buttons. */
+.mk-pal__tag {
+  margin-left: auto;
+  flex: none;
+  font-family: var(--font-type);
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brass-dim);
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  padding: 0.05rem 0.32rem;
+}
+.mk-pal[data-active='true'] .mk-pal__tag {
+  color: var(--ink-700);
+  border-color: rgba(20, 18, 26, 0.3);
+}
+/* Fenster & Tür carry the legend's blue 'an der Wand' frame so the editor and the
+   in-game legend read the same. Active = filled blue (like the legend swatch). */
+.mk-pal--wall,
+.mk-pal--wall:hover {
+  border-color: var(--diff-tutorial);
+}
+.mk-pal--wall .mk-pal__tag {
+  color: var(--diff-tutorial);
+  border-color: var(--diff-tutorial);
+}
+.mk-pal--wall[data-active='true'] {
+  background: var(--diff-tutorial);
+  border-color: var(--diff-tutorial);
+  color: var(--ink-900);
+}
+.mk-pal--wall[data-active='true'] .mk-pal__tag {
+  color: var(--ink-900);
+  border-color: rgba(20, 18, 26, 0.35);
 }
 .mk-editor__actions .mk-btn {
   width: 100%;
@@ -2181,18 +2374,36 @@ button {
     gap: 0.5rem;
     padding: 0.5rem 0.7rem;
   }
+  /* Bounded single row on phones: the lead (back/edit) and the timer keep their
+     natural width on the flanks; the title slot takes the space left between them
+     and can shrink so it never spills over the buttons (left) or the timer (right).
+     Replaces the desktop 3-column grid, whose auto centre column grew to the full
+     title width and let a long title overlap the flanks. */
+  .mk-game:not(.mk-editor) > .mk-game__head {
+    display: flex;
+    grid-template-columns: none;
+  }
+  .mk-game:not(.mk-editor) > .mk-game__head .mk-game__lead,
+  .mk-game:not(.mk-editor) > .mk-game__head .mk-timer {
+    flex: none;
+  }
+  .mk-game:not(.mk-editor) > .mk-game__head .mk-game__heading {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-wrap: nowrap;
+    justify-content: center;
+  }
   .mk-game .mk-game__edit {
     padding: 0.4rem 0.55rem;
   }
   .mk-game .mk-game__edit-label {
     display: none;
   }
-  /* Compact the dossier headline on phones: title + tag (and byline on roomier
-     phones) flow on one row and wrap only if there's no room, so the header stays
-     short. The size tag sits upright here to save width. */
+  /* Compact the dossier headline on phones: title and size tag share one row.
+     When they don't both fit, GameScreen drops the tag first (JS measure); if the
+     title alone is still too wide it's clipped with an ellipsis. The size tag sits
+     upright here to save width. */
   .mk-game__heading {
-    flex-wrap: wrap;
-    justify-content: center;
     align-items: center;
     gap: 0.25rem 0.6rem;
   }
@@ -2243,22 +2454,74 @@ button {
   .mk-editor > .mk-editor__actionsbar {
     order: 5;
   }
-  /* The 6 mode tabs don't fit a phone header — the consolidated dropdowns in the
-     tools area replace them on mobile. */
-  .mk-editor__modes {
+  /* The dossier header is DESKTOP-ONLY. On phones nothing changed except the
+     Fenster/Tür entries in the 'Platzieren' dropdown — so here we undo the desktop
+     header chrome and restore the old compact, label-less single row: no field
+     captions, no Akte-stamp, controls flowing inline. */
+  .mk-editor__layerfield {
     display: none;
   }
-  /* Keep the header strictly inside the screen: let every control shrink and wrap
-     instead of overflowing off the right edge. */
+  .mk-editor__head {
+    align-items: center;
+    gap: 0.5rem 0.7rem;
+    padding: 0.5rem 0.7rem;
+    background: var(--ink-850);
+    border-bottom: 1px solid var(--line);
+    box-shadow: none;
+  }
   .mk-editor__head > * {
     min-width: 0;
+  }
+  .mk-editor__brand {
+    gap: 0.5rem;
+    padding: 0;
+    border-right: 0;
+  }
+  .mk-editor__mark,
+  .mk-editor__casetag {
+    display: none;
+  }
+  .mk-editor__title {
+    font-size: 1.05rem;
+  }
+  /* Let the case fields flow as inline header items, like the old controls. */
+  .mk-editor__fields {
+    display: contents;
+  }
+  .mk-field {
+    display: flex; /* desktop uses a 2-row grid; phones keep the inline row */
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0;
+    border-right: 0;
+  }
+  .mk-field__label {
+    display: none;
+  }
+  .mk-field--size .mk-field__label {
+    display: inline; /* keep "Größe 8×8" — its value lives in the caption */
+  }
+  .mk-field--size input[type='range'] {
+    width: 110px;
+    min-width: 0;
+    height: auto; /* the desktop fixed control height doesn't apply on the phone row */
+  }
+  .mk-input.mk-editor__name {
+    width: auto;
+    flex: 0 1 11rem;
+    min-width: 6rem;
+    height: auto;
   }
   .mk-editor__head .mk-select-input {
     flex: 0 1 auto;
     min-width: 0;
+    height: auto;
   }
+  /* Language toggle dropped from the editor header on phones — it only cost height
+     (the language can still be switched on the start screen). */
   .mk-editor__lang {
-    margin-left: 0;
+    display: none;
   }
   .mk-editor .mk-board {
     /* a bit shorter than the game board so the tool picker below stays on-screen */
@@ -2280,10 +2543,11 @@ button {
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: stretch;
+    gap: 0.4rem; /* tighter so all five buttons share one row */
     border-left: 0;
     border-top: 1px solid var(--line);
-    padding: 0.6rem 0.7rem;
-    overflow-x: auto;
+    padding: 0.6rem 0.6rem;
+    overflow-x: hidden; /* the five buttons must fit — never scroll sideways */
   }
   .mk-tools__label {
     display: none;
@@ -2291,14 +2555,18 @@ button {
   .mk-legend {
     display: none;
   }
+  /* All five share the width and shrink to fit; none keeps a fixed width (the old
+     120px Solve + no-shrink buttons overflowed narrow phones and forced a scroll). */
   .mk-tool {
-    flex: 1 0 auto;
-    min-width: 64px;
-    flex-direction: row;
-    gap: 0.4rem;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.55rem 0.25rem;
+    gap: 0.15rem;
   }
   .mk-tool--submit {
-    min-width: 120px;
+    flex-grow: 1.35; /* "Lösen" gets a little more room, but still shrinks to fit */
+    min-width: 0;
+    padding: 0.55rem 0.25rem;
   }
   .mk-editor__palette .mk-pal {
     width: auto;

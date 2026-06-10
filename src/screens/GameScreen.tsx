@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DeductionEngine,
@@ -124,11 +124,43 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   const [elapsed, setElapsed] = useState(0)
   const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
 
+  // Header title fit (mostly mobile): the title slot sits between the back/edit
+  // buttons and the timer. If the title + size tag overflow it, drop the tag first;
+  // if the title alone still doesn't fit, CSS clips it with an ellipsis.
+  const headingRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+  const badgeRef = useRef<HTMLSpanElement>(null)
+  const badgeWidthRef = useRef(0)
+  const [hideBadge, setHideBadge] = useState(false)
+
   useEffect(() => {
     if (result?.win) return
     const id = setInterval(() => setElapsed((e) => e + 1), 1000)
     return () => clearInterval(id)
   }, [result?.win])
+
+  useEffect(() => {
+    const heading = headingRef.current
+    const title = titleRef.current
+    if (!heading || !title) return
+    let alive = true
+    const measure = () => {
+      if (!alive) return
+      const badge = badgeRef.current
+      if (badge) badgeWidthRef.current = badge.offsetWidth // remember it while shown
+      const gap = parseFloat(getComputedStyle(heading).columnGap) || 0
+      const needed = title.scrollWidth + (badgeWidthRef.current ? badgeWidthRef.current + gap : 0)
+      setHideBadge(needed > heading.clientWidth + 1)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(heading)
+    document.fonts?.ready.then(measure)
+    return () => {
+      alive = false
+      ro.disconnect()
+    }
+  }, [meta.title, meta.author, meta.width, meta.height])
 
   // A board change makes any shown hint stale — drop it and restart the hint walk.
   // Done during render against the previous board (not in an effect) so the reset
@@ -272,14 +304,16 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
             </button>
           )}
         </div>
-        <div className="mk-game__heading">
+        <div className="mk-game__heading" ref={headingRef}>
           <div className="mk-game__titlewrap">
-            <h2 className="mk-game__title">{bloodTitle(meta.title)}</h2>
+            <h2 className="mk-game__title" ref={titleRef}>{bloodTitle(meta.title)}</h2>
             {meta.author && (
               <span className="mk-game__author">{t('game.author', { name: meta.author })}</span>
             )}
           </div>
-          <span className="mk-game__sz">{meta.width}×{meta.height}</span>
+          {!hideBadge && (
+            <span className="mk-game__sz" ref={badgeRef}>{meta.width}×{meta.height}</span>
+          )}
         </div>
         <span className="mk-timer">{formatTime(elapsed)}</span>
       </header>

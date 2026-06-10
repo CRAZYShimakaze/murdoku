@@ -29,6 +29,7 @@ import {
   pruneWallEdges,
   setCell,
   toggleWallEdgeAt,
+  type EditorObject,
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
@@ -37,6 +38,8 @@ import { Renderer } from '../i18n/Renderer.ts'
 import { useDebugSolveKey } from '../game/debugSolve.ts'
 
 type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
+/** The four board layers shown as tabs; windows & doors live inside 'top' (Objekte). */
+const LAYERS: Mode[] = ['rooms', 'ground', 'top', 'global']
 type CheckResult = {
   kind: 'ok' | 'multi' | 'none' | 'error' | 'saved' | 'exported' | 'genfail'
   murderer?: string
@@ -53,6 +56,13 @@ const RESULT_TOAST_MS = 4000
 
 /** Pick a random theme to seed the room names (changeable in the dropdown). */
 const pickTheme = (): string => THEME_IDS[Math.floor(Math.random() * THEME_IDS.length)]
+
+/** A decorative dossier case number, stable per case name (pure flavour). */
+function caseNumber(name: string): string {
+  let h = 2166136261
+  for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619)
+  return String(((h >>> 0) % 9000) + 1000)
+}
 
 /** True on the narrow/portrait layout (same breakpoint the editor CSS uses to
  *  switch the tools into a horizontal bar) — drives the mobile object dropdown. */
@@ -349,12 +359,21 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
       ],
     }))
 
-  // Keep the paint selection valid for the active mode.
+  // Windows & doors are placed from INSIDE the Objekte (top) layer — its 'Wände'
+  // group — so they share the 'top' tab instead of being their own layers.
+  const activeLayer: Mode = mode === 'window' || mode === 'door' ? 'top' : mode
+  const selectLayer = (layer: Mode) => {
+    setMode(layer)
+    if (layer === 'ground') setPaintObj('r')
+    else if (layer === 'top') setPaintObj('s')
+  }
+
+  // Keep the paint selection valid for the active layer.
   const palette = useMemo(() => {
-    const base = mode === 'ground' ? GROUND_OBJECTS : mode === 'top' ? TOP_OBJECTS : []
+    const base = activeLayer === 'ground' ? GROUND_OBJECTS : activeLayer === 'top' ? TOP_OBJECTS : []
     // Walkable objects on top, blocking ones below (stable within each group).
     return [...base].sort((a, b) => Number(b.occupiable) - Number(a.occupiable))
-  }, [mode])
+  }, [activeLayer])
 
   // On mobile the whole palette collapses to compact dropdowns (the button grid
   // wrapped too tall and covered the action buttons). Desktop keeps the grid.
@@ -370,7 +389,11 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
         ? `ground:${paintObj}`
         : mode === 'top'
           ? `top:${paintObj}`
-          : '' // window / door / global → nothing to paint
+          : mode === 'window'
+            ? 'wall:window'
+            : mode === 'door'
+              ? 'wall:door'
+              : '' // global → nothing to paint
   const changePlace = (value: string) => {
     const i = value.indexOf(':')
     const kind = value.slice(0, i)
@@ -384,12 +407,22 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
     } else if (kind === 'top') {
       setMode('top')
       setPaintObj(token)
+    } else if (kind === 'wall') {
+      setMode(token === 'door' ? 'door' : 'window')
     }
   }
   const roomSwatchStyle =
     paintRoom === VOID_ROOM
       ? { background: '#191722', border: '1px dashed #6f6a78' }
       : { background: ROOM_COLORS[ROOM_IDS.indexOf(paintRoom)] }
+
+  /** One object paint button — shared by the Boden and Objekte palettes. */
+  const objButton = (o: EditorObject, active: boolean, onPick: () => void) => (
+    <button key={o.char} type="button" className="mk-pal" data-active={active} onClick={onPick}>
+      <ObjectIcon type={o.type} occupiable={o.occupiable} size={26} className="mk-pal__canvas" />
+      {t(`objName.${o.type}`)}
+    </button>
+  )
 
   // Check / Play / Save — pinned in the right column on desktop, in a sticky
   // bottom bar on mobile, so the same three buttons live in exactly one place.
@@ -410,68 +443,98 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   return (
     <div className="mk-game mk-editor">
       <header className="mk-game__head mk-editor__head">
-        <button type="button" className="mk-back" onClick={onBack} aria-label="back">
-          ←
-        </button>
-        <strong className="mk-editor__title">{t('editor.title')}</strong>
-        <input
-          className="mk-input mk-editor__name"
-          value={name}
-          placeholder={t('editor.name')}
-          maxLength={40}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <label className="mk-editor__size">
-          {t('editor.size')} <strong>{state.size}×{state.size}</strong>
-          <input
-            type="range"
-            min={MIN}
-            max={MAX}
-            value={state.size}
-            onChange={(e) => resize(Number(e.target.value))}
-          />
-        </label>
-        <select
-          className="mk-select-input"
-          value={theme}
-          onChange={(e) => changeTheme(e.target.value)}
-          aria-label={t('editor.theme')}
-        >
-          {THEME_IDS.map((id) => (
-            <option key={id} value={id}>
-              {t(`theme.${id}`)}
-            </option>
-          ))}
-        </select>
-        <select
-          className="mk-select-input"
-          value={difficulty}
-          onChange={(e) => setDifficulty(e.target.value as EditDifficulty)}
-          aria-label={t('generate.difficulty')}
-        >
-          {DIFFS.map((d) => (
-            <option key={d} value={d}>
-              {t(`difficulty.${d}`)}
-            </option>
-          ))}
-        </select>
-        <div className="mk-editor__modes">
-          {(['rooms', 'ground', 'top', 'window', 'door', 'global'] as Mode[]).map((m) => (
-            <button
-              key={m}
-              type="button"
-              className="mk-chip"
-              data-active={mode === m}
-              onClick={() => {
-                setMode(m)
-                if (m === 'ground') setPaintObj('r')
-                else if (m === 'top') setPaintObj('s')
-              }}
-            >
-              {t(`editor.mode_${m}`)}
-            </button>
-          ))}
+        {/* Identity: back, the wordmark, and a stamped case-file tag. */}
+        <div className="mk-editor__brand">
+          <button type="button" className="mk-back" onClick={onBack} aria-label="back">
+            ←
+          </button>
+          <div className="mk-editor__ident">
+            <strong className="mk-editor__title">
+              <span className="mk-editor__mark" aria-hidden="true">☠</span>
+              {t('editor.title')}
+            </strong>
+            <span className="mk-editor__casetag" aria-hidden="true">
+              {t('editor.caseTag')} №{caseNumber(name)}
+            </span>
+          </div>
         </div>
+
+        {/* Grouped, labelled case fields: title · theme · difficulty · size. */}
+        <div className="mk-editor__fields">
+          <label className="mk-field mk-field--title">
+            <span className="mk-field__label">{t('editor.fieldTitle')}</span>
+            <input
+              className="mk-input mk-editor__name"
+              value={name}
+              placeholder={t('editor.name')}
+              maxLength={40}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </label>
+          <label className="mk-field">
+            <span className="mk-field__label">{t('editor.theme')}</span>
+            <select
+              className="mk-select-input"
+              value={theme}
+              onChange={(e) => changeTheme(e.target.value)}
+            >
+              {THEME_IDS.map((id) => (
+                <option key={id} value={id}>
+                  {t(`theme.${id}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="mk-field">
+            <span className="mk-field__label">{t('generate.difficulty')}</span>
+            <select
+              className="mk-select-input"
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value as EditDifficulty)}
+            >
+              {DIFFS.map((d) => (
+                <option key={d} value={d}>
+                  {t(`difficulty.${d}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="mk-field mk-field--size">
+            <span className="mk-field__label">
+              {t('editor.size')} <strong>{state.size}×{state.size}</strong>
+            </span>
+            <input
+              type="range"
+              min={MIN}
+              max={MAX}
+              value={state.size}
+              onChange={(e) => resize(Number(e.target.value))}
+            />
+          </label>
+
+          {/* EBENE is a normal field in the SAME container as Titel/Thema/… so it
+              lines up identically. Windows & doors live inside the Objekte layer.
+              Hidden on phones (which use the consolidated dropdown instead). */}
+          <div className="mk-field mk-editor__layerfield">
+            <span className="mk-field__label">{t('editor.layer')}</span>
+            <div className="mk-editor__layers" role="tablist" aria-label={t('editor.layer')}>
+              {LAYERS.map((layer) => (
+                <button
+                  key={layer}
+                  type="button"
+                  role="tab"
+                  className="mk-layertab"
+                  data-active={activeLayer === layer}
+                  aria-selected={activeLayer === layer}
+                  onClick={() => selectLayer(layer)}
+                >
+                  {t(`editor.mode_${layer}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="mk-editor__lang">
           <LanguageToggle />
         </div>
@@ -517,22 +580,8 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
 
       <aside className="mk-tools mk-editor__palette">
         <div className="mk-editor__palettescroll">
-          <span className="mk-tools__label">
-            {t(
-              mode === 'rooms'
-                ? 'editor.rooms'
-                : mode === 'window'
-                  ? 'editor.windows'
-                  : mode === 'door'
-                    ? 'editor.doors'
-                    : mode === 'global'
-                      ? 'editor.globalClues'
-                      : 'editor.objects',
-            )}
-          </span>
-
-          {/* MOBILE: the mode lives here (the header tabs don't fit). One dropdown
-              merges rooms + floor + objects; one for walls; a button for global. */}
+          {/* MOBILE: the layer lives here (no room for the reiter). One dropdown
+              merges rooms + floor + objects + walls; a button for global. */}
           {narrow && (
             <div className="mk-mobtools">
               <label className="mk-mobtools__row">
@@ -573,13 +622,19 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
                     ))}
                     <option value="top:">{`✕ ${t('editor.erase')}`}</option>
                   </optgroup>
-                  {(mode === 'window' || mode === 'door' || mode === 'global') && (
+                  <optgroup label={t('editor.wallsLabel')}>
+                    <option value="wall:window">{`▭ ${t('objName.window')}`}</option>
+                    <option value="wall:door">{`▯ ${t('objName.door')}`}</option>
+                  </optgroup>
+                  {mode === 'global' && (
                     <option value="" disabled>{`— ${t('editor.placeLabel')} —`}</option>
                   )}
                 </select>
                 <div className="mk-objsel__preview" aria-hidden="true">
                   {mode === 'rooms' ? (
                     <span className="mk-objsel__swatch" style={roomSwatchStyle} />
+                  ) : mode === 'window' || mode === 'door' ? (
+                    <ObjectIcon type={mode} occupiable={false} size={34} className="mk-pal__canvas" />
                   ) : mode === 'ground' || mode === 'top' ? (
                     selectedObj ? (
                       <ObjectIcon
@@ -598,34 +653,23 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
               </label>
 
               <div className="mk-mobtools__row">
-                <span className="mk-mobtools__lbl">{t('editor.wallsLabel')}</span>
-                <select
-                  className="mk-select-input mk-objsel__select"
-                  value={mode === 'window' ? 'window' : mode === 'door' ? 'door' : ''}
-                  onChange={(e) => {
-                    if (e.target.value) setMode(e.target.value as Mode)
-                  }}
-                >
-                  <option value="">{`— ${t('editor.wallsLabel')} —`}</option>
-                  <option value="window">{t('editor.mode_window')}</option>
-                  <option value="door">{t('editor.mode_door')}</option>
-                </select>
+                <span className="mk-mobtools__lbl">{t('editor.mode_global')}</span>
                 <button
                   type="button"
                   className="mk-chip mk-mobtools__global"
                   data-active={mode === 'global'}
-                  onClick={() => setMode('global')}
+                  onClick={() => setMode(mode === 'global' ? 'top' : 'global')}
                 >
-                  {t('editor.mode_global')}
+                  {t('editor.globalClues')}
                 </button>
               </div>
             </div>
           )}
 
-          {mode === 'window' && <p className="mk-empty">{t('editor.windowHint')}</p>}
-          {mode === 'door' && <p className="mk-empty">{t('editor.doorHint')}</p>}
+          {mode === 'window' && <p className="mk-pal__hint">{t('editor.windowHint')}</p>}
+          {mode === 'door' && <p className="mk-pal__hint">{t('editor.doorHint')}</p>}
 
-          {mode === 'global' && (
+          {activeLayer === 'global' && (
             <div className="mk-boardclue-edit">
               {state.boardClues.map((bc, i) => (
                 <div key={i} className="mk-bce">
@@ -689,8 +733,8 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
             </div>
           )}
 
-          {/* DESKTOP: per-mode item buttons (mobile uses the dropdowns above). */}
-          {!narrow && mode === 'rooms' && (
+          {/* DESKTOP: per-layer item buttons (mobile uses the dropdowns above). */}
+          {!narrow && activeLayer === 'rooms' && (
             <>
               <button
                 type="button"
@@ -719,20 +763,10 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
             </>
           )}
 
-          {!narrow && (mode === 'ground' || mode === 'top') && (
+          {/* Boden: a single flat list of floor objects. */}
+          {!narrow && activeLayer === 'ground' && (
             <>
-              {palette.map((o) => (
-                <button
-                  key={o.char}
-                  type="button"
-                  className="mk-pal"
-                  data-active={paintObj === o.char}
-                  onClick={() => setPaintObj(o.char)}
-                >
-                  <ObjectIcon type={o.type} occupiable={o.occupiable} size={26} className="mk-pal__canvas" />
-                  {t(`objName.${o.type}`)}
-                </button>
-              ))}
+              {palette.map((o) => objButton(o, paintObj === o.char, () => setPaintObj(o.char)))}
               <button
                 type="button"
                 className="mk-pal"
@@ -742,6 +776,66 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
                 <span className="mk-pal__icon">✕</span>
                 {t('editor.erase')}
               </button>
+            </>
+          )}
+
+          {/* Objekte: grouped walkable / blocking, plus the 'Wände' subgroup that
+              merges the former Fenster & Türen tools (selecting one arms edge mode). */}
+          {!narrow && activeLayer === 'top' && (
+            <>
+              <div className="mk-pal__group">
+                <span className="mk-pal__grouplabel">{t('editor.groupWalkable')}</span>
+                {TOP_OBJECTS.filter((o) => o.occupiable).map((o) =>
+                  objButton(o, mode === 'top' && paintObj === o.char, () => {
+                    setMode('top')
+                    setPaintObj(o.char)
+                  }),
+                )}
+              </div>
+              <div className="mk-pal__group">
+                <span className="mk-pal__grouplabel">{t('editor.groupBlocking')}</span>
+                {TOP_OBJECTS.filter((o) => !o.occupiable).map((o) =>
+                  objButton(o, mode === 'top' && paintObj === o.char, () => {
+                    setMode('top')
+                    setPaintObj(o.char)
+                  }),
+                )}
+              </div>
+              <button
+                type="button"
+                className="mk-pal"
+                data-active={mode === 'top' && paintObj === ''}
+                onClick={() => {
+                  setMode('top')
+                  setPaintObj('')
+                }}
+              >
+                <span className="mk-pal__icon">✕</span>
+                {t('editor.erase')}
+              </button>
+              <div className="mk-pal__group">
+                <span className="mk-pal__grouplabel">{t('editor.wallsLabel')}</span>
+                <button
+                  type="button"
+                  className="mk-pal mk-pal--wall"
+                  data-active={mode === 'window'}
+                  onClick={() => setMode('window')}
+                >
+                  <ObjectIcon type="window" occupiable={false} size={26} className="mk-pal__canvas" />
+                  {t('objName.window')}
+                  <span className="mk-pal__tag">{t('legend.wall')}</span>
+                </button>
+                <button
+                  type="button"
+                  className="mk-pal mk-pal--wall"
+                  data-active={mode === 'door'}
+                  onClick={() => setMode('door')}
+                >
+                  <ObjectIcon type="door" occupiable={false} size={26} className="mk-pal__canvas" />
+                  {t('objName.door')}
+                  <span className="mk-pal__tag">{t('legend.wall')}</span>
+                </button>
+              </div>
             </>
           )}
         </div>
