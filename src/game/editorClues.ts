@@ -135,7 +135,9 @@ export interface Condition {
   of?: string // sameRoom(person variant) / direction / insideXor — other suspect id
   dir?: Direction8 // direction / directionFromObject — 8 compass directions
   quantifier?: Quantifier // roomAttribute
-  attribute?: AttrKind // roomAttribute / sameRoom(attr variant)
+  /** roomAttribute / sameRoom(attr variant); 'any' = roomExists "irgendjemand",
+   *  'object' = roomAttribute about an OBJECT in the room ("im Raum war keine Kiste"). */
+  attribute?: AttrKind | 'any' | 'object'
   value?: string // valued attribute (gender, hair, hairstyle, …)
   hair?: string // legacy roomAttribute value (read for old drafts; new ones use `value`)
   line?: LineKind // sameLineAsObject — column / row / either
@@ -152,6 +154,7 @@ export interface Condition {
   aloneDir?: 'none' | Direction // aloneWith — one extra is in this cardinal direction
   objTarget?: 'any' | 'person' | 'attr' // sameObject — who else is beside the same object
   objDir?: 'none' | Direction8 // sameObject — optional direction of the mate from subject
+  objRel?: 'on' | 'near' // roomExists — the companion is ON or BESIDE the object
 }
 
 export interface ClueGroup {
@@ -163,9 +166,10 @@ export function emptyClueGroup(): ClueGroup {
   return { connector: 'and', conditions: [] }
 }
 
-/** The (attribute, value) a room-attribute / companion condition encodes. */
+/** The (attribute, value) a room-attribute / companion condition encodes.
+ *  ('any'/'object' never reach this — their builders handle them before.) */
 function attrValue(c: Condition): { attribute: string; value: AttributeValue } {
-  const attribute = c.attribute ?? 'beard'
+  const attribute = c.attribute === 'any' || c.attribute === 'object' || !c.attribute ? 'beard' : c.attribute
   const spec = VALUED_ATTRS[attribute]
   if (spec) return { attribute, value: c.value ?? c.hair ?? spec.values[0] }
   return { attribute, value: true } // boolean traits: beard / glasses / bald
@@ -275,6 +279,11 @@ function baseJson(c: Condition): ClueJson | null {
     case 'insideXor':
       return c.of ? { type: 'insideXor', with: c.of } : null
     case 'roomAttribute': {
+      // "Im Raum …" with "Objekt" in the first dropdown: "there was a crate in his
+      // room" — the NICHT chip turns it into "his room had NO crate".
+      if (c.attribute === 'object') {
+        return c.object ? { type: 'sameRoomAsObject', object: c.object } : null
+      }
       const { attribute, value } = attrValue(c)
       return {
         type: 'roomAttribute',
@@ -285,8 +294,12 @@ function baseJson(c: Condition): ClueJson | null {
       }
     }
     case 'roomExists': {
+      if (!c.object) return null
+      const relation = c.objRel ?? 'on'
+      // "irgendjemand": no attribute filter — any other suspect counts.
+      if (c.attribute === 'any') return { type: 'roomExists', object: c.object, relation }
       const { attribute, value } = attrValue(c)
-      return c.object ? { type: 'roomExists', attribute, value, object: c.object } : null
+      return { type: 'roomExists', attribute, value, object: c.object, relation }
     }
     case 'aloneWith': {
       if (!c.of) return null
@@ -350,6 +363,7 @@ function jsonToCondition(json: ClueJson): Condition | null {
     aloneDir: 'none',
     objTarget: 'any',
     objDir: 'none',
+    objRel: 'on',
     ...extra,
   })
   switch (c.type) {
@@ -434,9 +448,10 @@ function jsonToCondition(json: ClueJson): Condition | null {
       })
     case 'roomExists':
       return make('roomExists', {
-        attribute: c.attribute as AttrKind,
+        attribute: (c.attribute ?? 'any') as AttrKind | 'any',
         value: typeof c.value === 'string' ? c.value : undefined,
         object: c.object,
+        objRel: c.relation ?? 'on',
       })
     case 'aloneWith':
       return make('aloneWith', {
@@ -491,7 +506,8 @@ export function defaultCondition(
     of: ctx.others[0]?.id,
     dir: 'north',
     quantifier: 'some',
-    attribute: 'beard',
+    // roomExists starts as "irgendjemand" (its simplest reading); attribute clues as a trait.
+    attribute: kind === 'roomExists' ? 'any' : 'beard',
     value: 'blond',
     line: 'col',
     roomRel: 'any',
@@ -507,5 +523,6 @@ export function defaultCondition(
     aloneDir: 'none',
     objTarget: 'any',
     objDir: 'none',
+    objRel: 'on',
   }
 }

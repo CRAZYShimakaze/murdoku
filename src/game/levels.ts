@@ -94,6 +94,55 @@ export function availableSizes(levels: LevelMeta[]): string[] {
     .map(([label]) => label)
 }
 
+/** Per filter key: the option values that still match at least one level. Drives
+ *  the picker's chip pruning and the stale-selection fallback below. */
+export interface FilterOptions {
+  difficulty: Set<string>
+  size: Set<string>
+  status: Set<string>
+}
+
+export function availableFilterOptions(
+  levels: LevelMeta[],
+  solved: ReadonlySet<string>,
+): FilterOptions {
+  return {
+    difficulty: new Set(DIFFICULTIES.filter((d) => levels.some((l) => l.difficulty === d))),
+    size: new Set(availableSizes(levels)),
+    status: new Set([
+      ...(levels.some((l) => solved.has(l.id)) ? ['solved'] : []),
+      ...(levels.some((l) => !solved.has(l.id)) ? ['unsolved'] : []),
+    ]),
+  }
+}
+
+/** A stored filter selection whose option no longer exists (e.g. "Original" after
+ *  re-hiding the author) falls back to "all". Derived rather than written back,
+ *  so the player's pick returns if the option reappears. */
+export function effectiveFilter(filter: LevelFilter, available: FilterOptions): LevelFilter {
+  const keep = (k: keyof LevelFilter) =>
+    filter[k] === 'all' || available[k].has(filter[k]) ? filter[k] : 'all'
+  return {
+    difficulty: keep('difficulty'),
+    size: keep('size'),
+    status: keep('status'),
+  } as LevelFilter
+}
+
+/** Exactly the list the picker would show for this state: hidden author applied,
+ *  stale selections dropped, filter applied. "Next level" after a win uses this
+ *  too, so winning never leads to a level the picker wouldn't offer. */
+export function pickerLevels(
+  custom: LevelMeta[],
+  filter: LevelFilter,
+  solved: ReadonlySet<string>,
+  showHidden: boolean,
+): LevelMeta[] {
+  const universe = authorVisibleLevels(allLevels(custom), showHidden)
+  const effective = effectiveFilter(filter, availableFilterOptions(universe, solved))
+  return filterLevels(universe, effective, solved)
+}
+
 /** The level to play after `current` within a (sorted) filtered list. Wraps
  *  around at the end; null when no other level matches the filter. */
 export function nextLevel(current: LevelMeta, filtered: LevelMeta[]): LevelMeta | null {

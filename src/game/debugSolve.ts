@@ -89,7 +89,9 @@ export function useDebugSolveKey(
   provide: () => { puzzle: Puzzle; renderer: Renderer } | null,
 ): void {
   const ref = useRef(provide)
-  ref.current = provide
+  useEffect(() => {
+    ref.current = provide
+  }, [provide])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'b') return

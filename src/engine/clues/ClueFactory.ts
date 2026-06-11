@@ -35,7 +35,7 @@ import {
   RoomCompanionClue,
   RoomExistsClue,
 } from './socialClues.ts'
-import type { Quantifier } from './socialClues.ts'
+import type { Quantifier, RoomExistsRelation } from './socialClues.ts'
 import { AndClue, NotClue, OrClue } from './compositeClues.ts'
 import type { AttributeValue, Direction, Direction8, PersonId } from '../model/types.ts'
 
@@ -85,7 +85,15 @@ export type ClueJson =
   | { type: 'sameRoomAsObject'; object: string; alone?: boolean }
   | { type: 'besideSameObject'; object: string; mate: ObjectMate; dir?: Direction8 }
   | { type: 'roomCompanion'; count: number; attribute: string; value: AttributeValue }
-  | { type: 'roomExists'; attribute: string; value: AttributeValue; object: string }
+  | {
+      type: 'roomExists'
+      /** Omitted/null = anyone ("someone else was on/beside the object"). */
+      attribute?: string | null
+      value?: AttributeValue
+      object: string
+      /** Companion on the object (default) or beside it. */
+      relation?: RoomExistsRelation
+    }
   | { type: 'not'; clue: ClueJson }
   | { type: 'and'; clues: ClueJson[] }
   | { type: 'or'; clues: ClueJson[] }
@@ -167,7 +175,12 @@ export function createClue(json: ClueJson): Clue {
     case 'roomCompanion':
       return new RoomCompanionClue(json.count, json.attribute, json.value)
     case 'roomExists':
-      return new RoomExistsClue(json.attribute, json.value, json.object)
+      return new RoomExistsClue(
+        json.attribute ?? null,
+        json.value ?? true,
+        json.object,
+        json.relation ?? 'on',
+      )
     case 'not':
       return new NotClue(createClue(json.clue))
     case 'and':

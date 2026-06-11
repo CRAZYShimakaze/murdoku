@@ -132,16 +132,19 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
     </select>
   )
 
-  /** Attribute picker (gender / boolean / valued) + a value sub-picker for valued ones. */
-  const attrSelect = (c: Condition, i: number) => {
-    const spec = VALUED_ATTRS[c.attribute ?? 'beard']
+  /** Attribute picker (gender / boolean / valued) + a value sub-picker for valued
+   *  ones. `allowAny` prepends "irgendjemand" (no trait filter — roomExists). */
+  const attrSelect = (c: Condition, i: number, allowAny = false) => {
+    const attr = c.attribute ?? (allowAny ? 'any' : 'beard')
+    const spec = attr === 'any' ? undefined : VALUED_ATTRS[attr]
     return (
       <>
         <select
           className="mk-select-input mk-cond__val"
-          value={c.attribute ?? 'beard'}
-          onChange={(e) => update(i, { attribute: e.target.value as AttrKind })}
+          value={attr}
+          onChange={(e) => update(i, { attribute: e.target.value as AttrKind | 'any' })}
         >
+          {allowAny && <option value="any">{t('cond.anyone')}</option>}
           {ATTR_KINDS.map((a) => (
             <option key={a} value={a}>
               {t(`attrKind.${a}`)}
@@ -570,58 +573,68 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
             {personSelect(c, i)}
           </>
         )
-      case 'roomAttribute':
+      case 'roomAttribute': {
+        // "Im Raum …": the FIRST dropdown picks [Niemand mit | Jemand mit | Alle mit
+        // | Objekt]. With "Objekt" the second dropdown lists every object type ("im
+        // Raum war eine Kiste"; the NICHT chip makes it "keine Kiste"). Otherwise the
+        // usual trait + value pickers appear.
+        const isObject = c.attribute === 'object'
         return (
           <>
             <select
               className="mk-select-input mk-cond__val"
-              value={c.quantifier ?? 'some'}
-              onChange={(e) => update(i, { quantifier: e.target.value as Quantifier })}
+              value={isObject ? 'object' : (c.quantifier ?? 'some')}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === 'object') {
+                  update(i, { attribute: 'object', object: c.object ?? ctx.objects[0] })
+                } else {
+                  update(i, {
+                    quantifier: v as Quantifier,
+                    ...(isObject ? { attribute: 'beard' as const } : {}),
+                  })
+                }
+              }}
             >
               {QUANTIFIERS.map((q) => (
                 <option key={q} value={q}>
                   {t(`cond.qty.${q}`)}
                 </option>
               ))}
+              <option value="object">{t('attrKind.object')}</option>
             </select>
-            <select
-              className="mk-select-input mk-cond__val"
-              value={c.attribute ?? 'beard'}
-              onChange={(e) => update(i, { attribute: e.target.value as AttrKind })}
-            >
-              {ATTR_KINDS.map((a) => (
-                <option key={a} value={a}>
-                  {t(`attrKind.${a}`)}
-                </option>
-              ))}
-            </select>
-            {(() => {
-              const spec = VALUED_ATTRS[c.attribute ?? 'beard']
-              if (!spec) return null
-              return (
-                <select
-                  className="mk-select-input mk-cond__val"
-                  value={c.value ?? c.hair ?? spec.values[0]}
-                  onChange={(e) => update(i, { value: e.target.value })}
-                >
-                  {spec.values.map((v) => (
-                    <option key={v} value={v}>
-                      {t(`${spec.labelKey}.${v}`)}
-                    </option>
-                  ))}
-                </select>
-              )
-            })()}
+            {isObject ? objectSelect(c, i) : attrSelect(c, i)}
           </>
         )
-      case 'roomExists':
-        // "someone with {trait} sat on {object} in the room": attribute + occupiable object.
+      }
+      case 'roomExists': {
+        // "with someone in the room": ON/BESIDE the object first, then who (anyone or
+        // a trait), then the object — only occupiable types are offered for ON.
+        const rel = c.objRel ?? 'on'
         return (
           <>
-            {attrSelect(c, i)}
-            {objectSelect(c, i, true)}
+            <select
+              className="mk-select-input mk-cond__val"
+              value={rel}
+              onChange={(e) => {
+                const objRel = e.target.value as 'on' | 'near'
+                const patch: Partial<Condition> = { objRel }
+                // Switching to ON with a non-occupiable object picked → fall back to
+                // the first occupiable one (nobody can sit on a table).
+                if (objRel === 'on' && c.object && !OCCUPIABLE_OBJECT_TYPES.includes(c.object)) {
+                  patch.object = ctx.objects.find((o) => OCCUPIABLE_OBJECT_TYPES.includes(o))
+                }
+                update(i, patch)
+              }}
+            >
+              <option value="on">{t('cond.relOn')}</option>
+              <option value="near">{t('cond.relNear')}</option>
+            </select>
+            {attrSelect(c, i, true)}
+            {objectSelect(c, i, rel === 'on')}
           </>
         )
+      }
       case 'aloneWith':
         // "alone with {person} + N others matching {trait}, one of them {direction}".
         return (

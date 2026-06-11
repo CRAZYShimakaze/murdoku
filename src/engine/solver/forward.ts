@@ -10,7 +10,9 @@ import { BoardCountTechnique } from './techniques/BoardCountTechnique.ts'
 import { RoomReasoningTechnique } from './techniques/RoomReasoningTechnique.ts'
 import { RoomCoverageTechnique } from './techniques/RoomCoverageTechnique.ts'
 import { RoomCapacityTechnique } from './techniques/RoomCapacityTechnique.ts'
+import { GroupRoomTechnique } from './techniques/GroupRoomTechnique.ts'
 import { MurderTechnique } from './techniques/MurderTechnique.ts'
+import { CaseSplitTechnique } from './techniques/CaseSplitTechnique.ts'
 import { ForcingTechnique } from './techniques/ForcingTechnique.ts'
 import { SearchSolver } from './SearchSolver.ts'
 import type { Technique } from './techniques/Technique.ts'
@@ -40,12 +42,21 @@ export function createForwardTechniques(puzzle: Puzzle): Technique[] {
     new RoomReasoningTechnique(),
     new RoomCoverageTechnique(),
     new RoomCapacityTechnique(),
+    new GroupRoomTechnique(),
     new MurderTechnique(),
   ].filter((technique) => technique.relevant(puzzle))
-  // Forcing is the expensive, complete fallback: it focuses on the person with the
-  // fewest options, proves impossible cells WITH a readable consequence chain
-  // (transparent where possible, exhaustive search for the deep cases), and so goes last.
-  return [...base, new ForcingTechnique(base, new SearchSolver(puzzle))]
+  // Case splits propagate the transparent base rules a bounded number of steps per
+  // case. The shallow split argues with the base rules only; the deep split may nest
+  // ONE depth-1 split inside a case (the rulebook's "but then either … or …" — rated
+  // harder), so it only runs when the shallow one stalls. Forcing is the expensive,
+  // complete fallback: it proves impossible cells WITH a readable consequence chain
+  // (exhaustive search for the deep cases), and so goes last — ideally never needed.
+  return [
+    ...base,
+    new CaseSplitTechnique(base, 1),
+    new CaseSplitTechnique(base, 2),
+    new ForcingTechnique(base, new SearchSolver(puzzle)),
+  ]
 }
 
 /** Apply the techniques to a fixpoint, returning the steps taken (in order). */

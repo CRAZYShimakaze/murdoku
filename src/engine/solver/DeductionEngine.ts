@@ -18,12 +18,10 @@ interface HintAction {
   step: DeductionStep
 }
 
-/** The readable "if X here → … → impossible" trace of a proof-by-contradiction step,
- *  or null for a transparent step (which needs no chain). */
+/** The readable "if X here → … → impossible" trace of a hypothetical step (case
+ *  split / forcing), or null for a transparent step (which needs no chain). */
 function contradictionChain(step: DeductionStep): Explanation[] | undefined {
-  return (step.technique === 'forcing' || step.technique === 'satForcing') && step.chain
-    ? step.chain
-    : undefined
+  return step.chain && step.chain.length > 0 ? step.chain : undefined
 }
 
 /**

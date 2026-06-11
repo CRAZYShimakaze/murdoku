@@ -23,14 +23,14 @@ import {
   isCustomSaved,
   loadCustomLevels,
   loadFilter,
+  loadShowHiddenAuthor,
   loadSolved,
 } from '../game/storage.ts'
 import {
   DEFAULT_FILTER,
-  allLevels,
-  filterLevels,
   levelMetaFromJson,
   nextLevel,
+  pickerLevels,
   type LevelMeta,
 } from '../game/levels.ts'
 import BoardCanvas from '../components/BoardCanvas.tsx'
@@ -175,12 +175,12 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
     }
     placementSigRef.current = placementSig
   }, [placementSig])
-  useEffect(() => {
-    if (hint?.kind === 'exclude' && hint.focus.every((c) => session.state.crosses.has(c))) {
-      setHint(null)
-      setHintShown(false)
-    }
-  }, [hint, session.state.crosses])
+  // A CROSS hint is DONE once every highlighted cell is crossed — derived rather
+  // than cleared via state, so no effect is needed; the stale state resets with
+  // the next hint request or placement change anyway.
+  const hintDone =
+    hint?.kind === 'exclude' && hint.focus.every((c) => session.state.crosses.has(c))
+  const activeHint = hintDone ? null : hint
 
   const highlight = useMemo<Set<Cell> | null>(() => {
     if (!selected) return null
@@ -246,21 +246,25 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   // highlights the cells STILL to cross, so it shrinks as the player works through it
   // (and vanishes — via the effect above — once they're all done).
   const hintHL =
-    !tut.active && hint
-      ? new Set(hint.kind === 'exclude' ? hint.focus.filter((c) => !session.state.crosses.has(c)) : hint.focus)
+    !tut.active && activeHint
+      ? new Set(
+          activeHint.kind === 'exclude'
+            ? activeHint.focus.filter((c) => !session.state.crosses.has(c))
+            : activeHint.focus,
+        )
       : null
   const selectHL = tut.active ? tut.highlight : highlight
   const boardHighlight = hintHL ?? selectHL
   const boardHighlightColor = hintHL ? HINT_BLACK : CANDIDATE_BLUE
   // The selection (blue) as the second layer, only when a hint already owns the first.
   const boardHighlight2 = hintHL && selectHL ? selectHL : null
-  const hintText = hint
-    ? renderer.render(hint.step.explanation)
-    : hintShown
+  const hintText = activeHint
+    ? renderer.render(activeHint.step.explanation)
+    : hintShown && !hintDone
       ? t('tool.hintNone')
       : null
   // Readable contradiction chain ("if X here → … → impossible"), when the hint has one.
-  const hintChain = hint?.step.chain?.map((e) => renderer.render(e)) ?? null
+  const hintChain = activeHint?.step.chain?.map((e) => renderer.render(e)) ?? null
 
   const submit = () => {
     if (!session.allPlaced || !solution) return
@@ -280,11 +284,17 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
     session.clearSaved()
     const m = findMurderer(puzzle, solution)
     const room = puzzle.board.rooms.get(m.roomId)
-    // Next level honours the saved filter and the (now updated) solved set.
+    // Next level honours the saved filter, the hidden-author toggle and the
+    // (now updated) solved set — exactly what the picker would show.
     let next: LevelMeta | null = null
     if (onNext) {
       const custom = loadCustomLevels().map((j) => levelMetaFromJson(j, true))
-      const filtered = filterLevels(allLevels(custom), loadFilter(DEFAULT_FILTER), loadSolved())
+      const filtered = pickerLevels(
+        custom,
+        loadFilter(DEFAULT_FILTER),
+        loadSolved(),
+        loadShowHiddenAuthor(),
+      )
       next = nextLevel(meta, filtered)
     }
     setResult({

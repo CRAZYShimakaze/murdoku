@@ -1,0 +1,383 @@
+{
+  "schema": 1,
+  "id": "editor-24-elektroladen",
+  "title": "24. Elektroladen",
+  "author": "Manuel Garand",
+  "size": {
+    "width": 8,
+    "height": 8
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.checkout",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "room.snacks",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.drinks",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.deli",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.fruit",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.chilled",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.toys",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.stockroom",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.bakery",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.produce",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.cheese",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.frozen",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.drugstore",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.staffroom",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.parking",
+      "color": "#ded0e6",
+      "outside": true
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "8888EEEE",
+    "8888EEEE",
+    "8888EEEE",
+    "77111199",
+    "77111199",
+    "77799999",
+    "77799999",
+    "77799999"
+  ],
+  "groundMap": [
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........"
+  ],
+  "topMap": [
+    "ffx....f",
+    "f....fsg",
+    "x.......",
+    ".gf....x",
+    ".ftKK..f",
+    "....g...",
+    ".f.ttf.f",
+    "........"
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Adam",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "caesar"
+      },
+      "clues": [
+        {
+          "type": "not",
+          "clue": {
+            "type": "nearObjectAny",
+            "objects": [
+              "tv",
+              "shelf",
+              "cash"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bobby",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "combOver"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "tv"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Caroline",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "bun"
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 7
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Daniel",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "mustache",
+        "bald": true,
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "table"
+            },
+            {
+              "type": "direction",
+              "of": "B",
+              "dir": "north"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Emir",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "short"
+      },
+      "clues": [
+        {
+          "type": "not",
+          "clue": {
+            "type": "sameRoomAsObject",
+            "object": "box"
+          }
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Franco",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "slick",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "roomExists",
+          "object": "chair",
+          "relation": "on"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Gustav",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "spiky"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "box"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Olaf",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "original"
+}

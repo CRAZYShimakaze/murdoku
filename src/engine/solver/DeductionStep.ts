@@ -17,7 +17,10 @@ export type Technique =
   | 'roomReasoning'
   | 'roomCoverage'
   | 'roomCapacity'
+  | 'groupRoom'
   | 'murderRule'
+  | 'caseSplit'
+  | 'caseSplitDeep'
   | 'forcing'
   | 'satForcing'
   | 'victim'
@@ -90,7 +93,10 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   roomReasoning: 4,
   roomCoverage: 4,
   roomCapacity: 4,
+  groupRoom: 5,
   murderRule: 5,
+  caseSplit: 5,
+  caseSplitDeep: 6,
   forcing: 6,
   satForcing: 7,
 }

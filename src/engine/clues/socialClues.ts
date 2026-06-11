@@ -263,30 +263,56 @@ export class RoomCompanionClue extends Clue {
   }
 }
 
+/** How the companion of a roomExists clue relates to the object: standing ON it,
+ *  or BESIDE it (orthogonally adjacent, object in the same room — like "neben"). */
+export type RoomExistsRelation = 'on' | 'near'
+
 /**
- * "There was a {value} on a {object} in {name}'s area." — some OTHER person in the
- * subject's room (not the subject, never the victim) matches attribute == value
- * and stands on the given object.
+ * "Someone (else) was on/beside a {object} in {name}'s area." — some OTHER person
+ * in the subject's room (never the subject, never the victim) stands on the given
+ * object (`relation` 'on') or beside one lying in the same room ('near'), and —
+ * when `attribute` is set — matches attribute == value. `attribute: null` means
+ * anyone qualifies ("jemand anders saß auf einem Stuhl in seinem Raum").
  */
 export class RoomExistsClue extends Clue {
   constructor(
-    readonly attribute: string,
+    readonly attribute: string | null,
     readonly value: AttributeValue,
     readonly object: string,
+    readonly relation: RoomExistsRelation = 'on',
   ) {
     super()
   }
 
-  /** The subject's room must at least contain the object — else it's impossible. */
-  override candidateCells(board: Board): Set<Cell> {
-    const roomsWithObject = new Set<string>()
-    const total = board.width * board.height
-    for (let cell = 0; cell < total; cell++) {
-      if (board.tileAt(cell).hasObjectType(this.object)) roomsWithObject.add(board.roomIdOf(cell))
+  /** Whether `id` can play the "someone" role (anyone when no attribute is set). */
+  matchesPerson(puzzle: Puzzle, id: PersonId): boolean {
+    return this.attribute === null || puzzle.attributesOf(id)[this.attribute] === this.value
+  }
+
+  /** Whether a person standing on `cell` satisfies the object part within `room`:
+   *  ON an object of the type, or BESIDE one in the same room (mirrors the game's
+   *  "neben": orthogonal neighbour, same room, not standing on the object itself). */
+  qualifies(board: Board, cell: Cell, room: string): boolean {
+    if (board.roomIdOf(cell) !== room) return false
+    if (this.relation === 'on') return board.tileAt(cell).hasObjectType(this.object)
+    if (board.tileAt(cell).hasObjectType(this.object)) return false
+    for (const nb of board.neighbors4(cell)) {
+      if (board.roomIdOf(nb) === room && board.tileAt(nb).hasObjectType(this.object)) return true
     }
+    return false
+  }
+
+  /** The subject's room must at least offer a spot for the companion — an
+   *  occupiable object cell ('on') or a cell beside an in-room object ('near'). */
+  override candidateCells(board: Board): Set<Cell> {
+    const spots =
+      this.relation === 'on'
+        ? [...board.objectCells(this.object)].filter((c) => board.isOccupiable(c))
+        : [...board.cellsNearObject(this.object)]
+    const rooms = new Set(spots.map((c) => board.roomIdOf(c)))
     const out = new Set<Cell>()
     for (const cell of board.occupiableCells()) {
-      if (roomsWithObject.has(board.roomIdOf(cell))) out.add(cell)
+      if (rooms.has(board.roomIdOf(cell))) out.add(cell)
     }
     return out
   }
@@ -296,12 +322,7 @@ export class RoomExistsClue extends Clue {
     const room = board.roomIdOf(solution.cellOf(subjectId))
     for (const id of puzzle.allIds()) {
       if (id === VICTIM_ID || id === subjectId) continue
-      const cell = solution.cellOf(id)
-      if (board.roomIdOf(cell) !== room) continue
-      if (
-        puzzle.attributesOf(id)[this.attribute] === this.value &&
-        board.tileAt(cell).hasObjectType(this.object)
-      ) {
+      if (this.matchesPerson(puzzle, id) && this.qualifies(board, solution.cellOf(id), room)) {
         return true
       }
     }
@@ -309,9 +330,17 @@ export class RoomExistsClue extends Clue {
   }
 
   describe(): Explanation {
-    return {
-      key: 'clue.roomExistsOnObject',
-      params: { who: `${this.value}_nom`, object: this.object },
+    const rel = this.relation === 'on' ? 'On' : 'Near'
+    if (this.attribute === null) {
+      return { key: `clue.roomExistsAny${rel}`, params: { object: this.object } }
     }
+    if (this.attribute === 'gender') {
+      return {
+        key: this.relation === 'on' ? 'clue.roomExistsOnObject' : 'clue.roomExistsNearObject',
+        params: { who: `${this.value}_nom`, object: this.object },
+      }
+    }
+    const token = this.value === true ? this.attribute : `${this.attribute}_${this.value}`
+    return { key: `clue.roomExistsTrait${rel}`, params: { attribute: token, object: this.object } }
   }
 }

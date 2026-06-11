@@ -27,6 +27,18 @@ export class NotClue extends Clue {
     return out
   }
 
+  override definiteCells(board: Board): Set<Cell> | null {
+    // "not X" is GUARANTEED exactly where X is impossible — outside X's candidate
+    // cells. Keeps a double negation (not(not(X))) fully deducible.
+    const candidates = this.inner.candidateCells(board)
+    if (candidates === null) return null
+    const out = new Set<Cell>()
+    for (const cell of board.occupiableCells()) {
+      if (!candidates.has(cell)) out.add(cell)
+    }
+    return out
+  }
+
   describe(): Explanation {
     return { key: 'clue.not', children: [this.inner.describe()] }
   }

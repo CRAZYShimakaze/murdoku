@@ -92,7 +92,7 @@ export class ForcingTechnique extends Technique {
   } {
     const steps: DeductionStep[] = []
     for (;;) {
-      const dead = this.deadReason(trial)
+      const dead = trial.deadReason()
       if (dead) return { steps, dead }
       let progressed = false
       for (const technique of this.base) {
@@ -105,15 +105,5 @@ export class ForcingTechnique extends Technique {
       }
       if (!progressed) return { steps, dead: null }
     }
-  }
-
-  /** A readable contradiction in the current state, or null if none is visible. */
-  private deadReason(ctx: SolveContext): Explanation | null {
-    for (const id of ctx.state.unplaced()) {
-      if (ctx.state.domain(id).size === 0) return { key: 'contra.empty', params: { name: id } }
-    }
-    if (!ctx.murderPossible()) return { key: 'contra.murder' }
-    if (ctx.hasContradiction()) return { key: 'contra.general' }
-    return null
   }
 }

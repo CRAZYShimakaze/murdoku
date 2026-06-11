@@ -216,8 +216,9 @@ function logicRating(level: LevelJson): { solved: boolean; forcingFree: boolean;
 }
 
 /** The hardest forward-deduction rank that DEFINES each tier (see TECHNIQUE_RANK):
- *  medium MUST need a rank-4 room/count deduction, hard the rank-5 murder rule — both
- *  still solvable by pure logic (forcing/SAT are rank 6/7 and are never used). */
+ *  medium MUST need a rank-4 room/count deduction, hard a rank-5 one (murder rule,
+ *  group-room reasoning, short case split; the rank-6 nested case split also rates
+ *  hard) — all still pure logic (forcing/SAT searches are never used). */
 const TARGET_RANK: Record<GenDifficulty, number> = { easy: 1, medium: 4, hard: 5 }
 const targetRankOf = (d?: GenDifficulty): number => (d ? TARGET_RANK[d] : TARGET_RANK.hard)
 
@@ -904,8 +905,8 @@ function buildLevel(
 /**
  * Build the pool of clues that are TRUE for `suspectId` in this solution, tightest
  * first. Covers the full clue vocabulary; the test-filter keeps only true ones.
- * `editorSafe` drops the room-attribute family (roomAttribute / roomCompanion /
- * roomExists), which the editor's flat clue builder cannot round-trip.
+ * `editorSafe` restricts the pool to shapes the editor's flat clue builder can
+ * round-trip (e.g. roomAttribute with excludeSelf).
  */
 function candidatesFor(
   suspectId: PersonId,
@@ -1010,6 +1011,18 @@ function candidatesFor(
     out.push({ type: 'sameRoomAsObject', object: type })
     if (aloneInRoom) out.push({ type: 'sameRoomAsObject', object: type, alone: true })
   }
+  // Negation: "his room had NO crate" — offered for every object type the room
+  // lacks (editor: "Im selben Raum wie" + Objekt + NICHT; fully deducible via
+  // the not-clue's definite cells).
+  const boardObjTypes = new Set<string>()
+  for (let c = 0; c < board.width * board.height; c++) {
+    for (const obj of board.tileAt(c).objects()) boardObjTypes.add(obj.type)
+  }
+  for (const type of boardObjTypes) {
+    if (!roomObjects.has(type)) {
+      out.push({ type: 'not', clue: { type: 'sameRoomAsObject', object: type } })
+    }
+  }
   // "(not) alone in room X" as one clue (mirrors the editor's "Im Raum" + allein).
   out.push({ type: 'inRoom', room, occupancy: aloneInRoom ? 'alone' : 'notAlone' })
 
@@ -1024,8 +1037,7 @@ function candidatesFor(
   // --- room-attribute clues: "no one / some / everyone else in the room had X" ---
   // Boolean traits AND gender now round-trip to the editor (gender via the "same room
   // as a man/woman" target), so they're offered in BOTH modes — with excludeSelf in
-  // editor-safe mode to match the editor's flat builder. roomExists has no editor
-  // equivalent, so it stays generator-only.
+  // editor-safe mode to match the editor's flat builder.
   const attrPairs: { attribute: string; value: AttributeValue }[] = [
     { attribute: 'gender', value: 'm' },
     { attribute: 'gender', value: 'f' },
@@ -1054,12 +1066,39 @@ function candidatesFor(
       out.push({ type: 'roomCompanion', count: 1, attribute, value })
     }
   }
-  if (!editorSafe) {
-    // "in his room someone sat on …" — not representable by the flat editor builder.
-    for (const id of othersInRoom) {
-      const gender = puzzle.attributesOf(id).gender
-      for (const obj of board.tileAt(solution.cellOf(id)).objects()) {
-        if (obj.occupiable) out.push({ type: 'roomExists', attribute: 'gender', value: gender, object: obj.type })
+  // "in his room someone (anyone / a man / someone with a beard …) was ON or BESIDE
+  // an object" — round-trips to the editor's "Im Raum mit jemandem" builder.
+  for (const id of othersInRoom) {
+    const a = puzzle.attributesOf(id)
+    const whoVariants: ({ attribute: string; value: AttributeValue } | null)[] = [
+      null, // anyone
+      { attribute: 'gender', value: a.gender },
+    ]
+    if (a.beard === true) whoVariants.push({ attribute: 'beard', value: true })
+    if (a.glasses === true) whoVariants.push({ attribute: 'glasses', value: true })
+    if (a.bald === true) whoVariants.push({ attribute: 'bald', value: true })
+    if (typeof a.hair === 'string') whoVariants.push({ attribute: 'hair', value: a.hair })
+
+    const idCell = solution.cellOf(id)
+    const idRoom = board.roomIdOf(idCell)
+    const onTypes = [...board.tileAt(idCell).objects()]
+      .filter((o) => o.occupiable)
+      .map((o) => o.type)
+    // "beside": orthogonal neighbour in the same room — never the object stood on.
+    const nearTypes = new Set<string>()
+    for (const nb of board.neighbors4(idCell)) {
+      if (board.roomIdOf(nb) !== idRoom) continue
+      for (const obj of board.tileAt(nb).objects()) {
+        if (!board.tileAt(idCell).hasObjectType(obj.type)) nearTypes.add(obj.type)
+      }
+    }
+    for (const who of whoVariants) {
+      const attr = who ? { attribute: who.attribute, value: who.value } : {}
+      for (const type of onTypes) {
+        out.push({ type: 'roomExists', ...attr, object: type, relation: 'on' })
+      }
+      for (const type of nearTypes) {
+        out.push({ type: 'roomExists', ...attr, object: type, relation: 'near' })
       }
     }
   }

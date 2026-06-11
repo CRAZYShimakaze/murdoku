@@ -2,6 +2,7 @@ import { Technique } from './Technique.ts'
 import {
   AloneClue,
   AloneWithClue,
+  NotAloneClue,
   RoomAttributeClue,
   RoomCompanionClue,
   RoomExistsClue,
@@ -47,9 +48,17 @@ function roomExistsList(clue: Clue): RoomExistsClue[] {
   return []
 }
 
-function aloneWithList(clue: Clue): AloneWithClue[] {
+/** Certain "alone with [people] and N matching extras" clues (top-level or in an
+ *  AND — an OR branch isn't certain). Shared with the group-room technique. */
+export function aloneWithList(clue: Clue): AloneWithClue[] {
   if (clue instanceof AloneWithClue) return [clue]
   if (clue instanceof AndClue) return clue.clues.flatMap(aloneWithList)
+  return []
+}
+
+function notAloneList(clue: Clue): NotAloneClue[] {
+  if (clue instanceof NotAloneClue) return [clue]
+  if (clue instanceof AndClue) return clue.clues.flatMap(notAloneList)
   return []
 }
 
@@ -70,9 +79,14 @@ export class RoomReasoningTechnique extends Technique {
 
     for (const suspect of ctx.puzzle.suspects) {
       // Room exclusivity of an "alone" suspect holds even after they're PLACED — their
-      // room admits no one else — so this runs regardless of placement.
+      // room admits no one else — so this runs regardless of placement. The same goes
+      // for the roomExists occupied-spot rule (the companion's spot stays reserved).
       for (const { companion } of suspect.clues.flatMap(aloneClues)) {
         const step = this.applyAlone(ctx, suspect.id, guaranteed, companion)
+        if (step) return step
+      }
+      for (const re of suspect.clues.flatMap(roomExistsList)) {
+        const step = this.applyRoomExists(ctx, suspect.id, re)
         if (step) return step
       }
       if (ctx.state.placed.has(suspect.id)) continue
@@ -114,34 +128,63 @@ export class RoomReasoningTechnique extends Technique {
         })
         if (step) return step
       }
-      for (const re of suspect.clues.flatMap(roomExistsList)) {
-        const step = this.applyRoomExists(ctx, suspect.id, re)
-        if (step) return step
-      }
       for (const aw of suspect.clues.flatMap(aloneWithList)) {
         const step = this.applyAloneWith(ctx, suspect.id, aw)
+        if (step) return step
+      }
+      if (suspect.clues.flatMap(notAloneList).length > 0) {
+        const step = this.applyNotAlone(ctx, suspect.id)
         if (step) return step
       }
     }
     return null
   }
 
+  /** "{subject} was NOT alone": a cell is impossible when no one else could share
+   *  its room — every other person's cells there are gone or clash (same row or
+   *  column as the subject's cell). E.g. Eli can't take the cowshed cell whose
+   *  only possible roommate sits in the same row. */
+  private applyNotAlone(ctx: SolveContext, id: PersonId): DeductionStep | null {
+    const removed = ctx.removeWhere(id, (cell) => {
+      const room = ctx.roomOf(cell)
+      const me = ctx.board.rc(cell)
+      for (const person of ctx.puzzle.people()) {
+        if (person.id === id) continue
+        for (const d of ctx.cellsOf(person.id)) {
+          if (ctx.roomOf(d) !== room || d === cell) continue
+          const p = ctx.board.rc(d)
+          if (p.row !== me.row && p.col !== me.col) return false
+        }
+      }
+      return true
+    })
+    if (removed.length === 0) return null
+    return {
+      technique: 'roomReasoning',
+      personId: id,
+      eliminated: [{ personId: id, cells: removed }],
+      explanation: { key: 'step.notAloneRoom', params: { name: id } },
+    }
+  }
+
   /**
-   * "In {subject}'s room someone with X sat on {object}": the subject can't be in a
-   * room where no matching OTHER suspect (never the victim) could be on such an object.
+   * "In {subject}'s room someone (matching X) was on/beside {object}":
+   *  - the subject can't be in a room where no fitting OTHER suspect (never the
+   *    victim) could take such a spot;
+   *  - once the subject's room is certain and only ONE spot remains for the
+   *    companion, that cell is provably OCCUPIED: the rest of its row and column
+   *    is dead for everyone, only fitting companions may take the cell itself,
+   *    and a sole remaining candidate is pinned onto it.
    */
   private applyRoomExists(ctx: SolveContext, id: PersonId, clue: RoomExistsClue): DeductionStep | null {
-    const board = ctx.board
     const victim = ctx.puzzle.victim.id
-    const objectCells = board.cellsWithObject(clue.object)
     const matchers = ctx.puzzle.suspects
       .map((s) => s.id)
-      .filter(
-        (p) => p !== id && p !== victim && ctx.puzzle.attributesOf(p)[clue.attribute] === clue.value,
-      )
+      .filter((p) => p !== id && p !== victim && clue.matchesPerson(ctx.puzzle, p))
     for (const room of [...ctx.roomsOf(id)]) {
+      if (ctx.state.placed.has(id)) break // placed: only the spot rule below applies
       const canHold = matchers.some((m) =>
-        ctx.cellsOf(m).some((c) => objectCells.has(c) && ctx.roomOf(c) === room),
+        ctx.cellsOf(m).some((c) => clue.qualifies(ctx.board, c, room)),
       )
       if (canHold) continue
       const removed = ctx.removeWhere(id, (c) => ctx.roomOf(c) === room)
@@ -150,7 +193,83 @@ export class RoomReasoningTechnique extends Technique {
           technique: 'roomReasoning',
           personId: id,
           eliminated: [{ personId: id, cells: removed }],
-          explanation: { key: 'step.roomExistsRoom', params: { name: id, room, object: clue.object } },
+          explanation: {
+            key: clue.relation === 'on' ? 'step.roomExistsRoom' : 'step.roomExistsRoomNear',
+            params: { name: id, room, object: clue.object },
+          },
+        }
+      }
+    }
+    return this.applyRoomExistsSpot(ctx, id, clue, matchers)
+  }
+
+  /** The occupied-spot rule: subject's room certain + a single possible companion
+   *  spot ⇒ the spot IS taken (e.g. the room's only chair must hold someone). */
+  private applyRoomExistsSpot(
+    ctx: SolveContext,
+    id: PersonId,
+    clue: RoomExistsClue,
+    matchers: PersonId[],
+  ): DeductionStep | null {
+    const placed = ctx.state.placed.get(id)
+    const room = placed !== undefined ? ctx.roomOf(placed) : ctx.guaranteedRoomOf(id)
+    if (!room) return null
+
+    // All cells a fitting companion could still satisfy the clue on.
+    const spots = new Set<Cell>()
+    const takers = new Set<PersonId>()
+    for (const m of matchers) {
+      for (const c of ctx.cellsOf(m)) {
+        if (clue.qualifies(ctx.board, c, room)) {
+          spots.add(c)
+          takers.add(m)
+        }
+      }
+    }
+    if (spots.size !== 1) return null
+    const spot = [...spots][0]
+    const { row, col } = ctx.board.rc(spot)
+    const onOrNear = clue.relation === 'on' ? 'On' : 'Near'
+
+    // (a) the spot is occupied → the rest of its row/column is dead for everyone,
+    //     and the cell itself only fits the possible companions.
+    const eliminated: Elimination[] = []
+    for (const p of ctx.state.unplaced()) {
+      const removed = ctx.removeWhere(p, (d) => {
+        if (d === spot) return p === id || !takers.has(p)
+        const rc = ctx.board.rc(d)
+        return rc.row === row || rc.col === col
+      })
+      if (removed.length > 0) eliminated.push({ personId: p, cells: removed })
+    }
+    if (eliminated.length > 0) {
+      return {
+        technique: 'roomReasoning',
+        personId: id,
+        eliminated,
+        explanation: {
+          key: `step.roomExistsSpot${onOrNear}`,
+          params: { name: id, room, object: clue.object, cell: spot },
+        },
+      }
+    }
+
+    // (b) only one candidate left for the occupied spot → they sit there.
+    const candidates = [...takers].filter(
+      (m) => !ctx.state.placed.has(m) && ctx.state.domain(m).has(spot),
+    )
+    if (candidates.length === 1) {
+      const m = candidates[0]
+      const removed = ctx.removeWhere(m, (d) => d !== spot)
+      if (removed.length > 0) {
+        return {
+          technique: 'roomReasoning',
+          personId: id,
+          eliminated: [{ personId: m, cells: removed }],
+          explanation: {
+            key: `step.roomExistsOccupant${onOrNear}`,
+            params: { name: id, target: m, room, object: clue.object, cell: spot },
+          },
         }
       }
     }
@@ -231,7 +350,8 @@ export class RoomReasoningTechnique extends Technique {
           roomAttributes(clue).length > 0 ||
           roomCompanions(clue).length > 0 ||
           roomExistsList(clue).length > 0 ||
-          aloneWithList(clue).length > 0
+          aloneWithList(clue).length > 0 ||
+          notAloneList(clue).length > 0
         ) {
           return true
         }

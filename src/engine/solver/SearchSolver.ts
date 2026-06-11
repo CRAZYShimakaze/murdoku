@@ -475,22 +475,16 @@ export class SearchSolver {
       let possible = false
       for (const id of this.puzzle.allIds()) {
         if (id === VICTIM_ID || id === subjectId) continue
-        if (this.puzzle.attributesOf(id)[clue.attribute] !== clue.value) continue
+        if (!clue.matchesPerson(this.puzzle, id)) continue
         const placed = placement.get(id)
         if (placed !== undefined) {
-          if (board.roomIdOf(placed) === room && board.tileAt(placed).hasObjectType(clue.object)) {
+          if (clue.qualifies(board, placed, room)) {
             possible = true
             break
           }
         } else {
           domains.get(id)!.forEach((candidate) => {
-            if (
-              !possible &&
-              board.roomIdOf(candidate) === room &&
-              board.tileAt(candidate).hasObjectType(clue.object)
-            ) {
-              possible = true
-            }
+            if (!possible && clue.qualifies(board, candidate, room)) possible = true
           })
           if (possible) break
         }

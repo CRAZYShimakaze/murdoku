@@ -1,6 +1,6 @@
 import { CandidateState } from './CandidateState.ts'
 import type { Board } from '../model/Board.ts'
-import type { Cell, PersonId } from '../model/types.ts'
+import type { Cell, Explanation, PersonId } from '../model/types.ts'
 import type { Person, Puzzle } from '../model/Puzzle.ts'
 import type { Elimination } from './DeductionStep.ts'
 
@@ -163,6 +163,17 @@ export class SolveContext {
       else if (room !== r) return null
     }
     return room
+  }
+
+  /** A readable contradiction in the current state, or null if none is visible.
+   *  Shared by the hypothetical techniques (case split, forcing). */
+  deadReason(): Explanation | null {
+    for (const id of this.state.unplaced()) {
+      if (this.state.domain(id).size === 0) return { key: 'contra.empty', params: { name: id } }
+    }
+    if (!this.murderPossible()) return { key: 'contra.murder' }
+    if (this.hasContradiction()) return { key: 'contra.general' }
+    return null
   }
 
   /** True if the state can no longer be completed (empty domain, or — in a

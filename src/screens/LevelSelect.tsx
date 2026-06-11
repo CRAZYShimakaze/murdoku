@@ -7,7 +7,9 @@ import {
   DIFFICULTIES,
   allLevels,
   authorVisibleLevels,
+  availableFilterOptions,
   availableSizes,
+  effectiveFilter,
   filterLevels,
   levelMetaFromJson,
   type LevelFilter,
@@ -65,34 +67,14 @@ export default function LevelSelect({ onPick, onBack }: Props) {
   )
 
   // Which option values still have at least one level — used to prune empty chips.
-  const available = useMemo(
-    () => ({
-      difficulty: new Set<string>(DIFFICULTIES.filter((d) => universe.some((l) => l.difficulty === d))),
-      size: new Set<string>(availableSizes(universe)),
-      status: new Set<string>([
-        ...(universe.some((l) => solved.has(l.id)) ? ['solved'] : []),
-        ...(universe.some((l) => !solved.has(l.id)) ? ['unsolved'] : []),
-      ]),
-    }),
-    [universe, solved],
-  )
+  const available = useMemo(() => availableFilterOptions(universe, solved), [universe, solved])
 
-  // The filter actually applied: a stored selection whose option no longer exists
-  // (e.g. "Original" after re-hiding the author) falls back to "all". Derived in
-  // render rather than written back, so the player's pick returns if they unlock again.
-  const effectiveFilter = useMemo<LevelFilter>(() => {
-    const keep = (k: keyof LevelFilter) =>
-      filter[k] === 'all' || available[k].has(filter[k]) ? filter[k] : 'all'
-    return {
-      difficulty: keep('difficulty'),
-      size: keep('size'),
-      status: keep('status'),
-    } as LevelFilter
-  }, [filter, available])
+  // The filter actually applied: stale stored selections fall back to "all".
+  const effective = useMemo(() => effectiveFilter(filter, available), [filter, available])
 
   const levels = useMemo(
-    () => filterLevels(universe, effectiveFilter, solved),
-    [universe, effectiveFilter, solved],
+    () => filterLevels(universe, effective, solved),
+    [universe, effective, solved],
   )
 
   const update = (key: keyof LevelFilter, value: string) =>
@@ -125,7 +107,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
     {
       key: 'difficulty',
       label: t('select.filterDifficulty'),
-      value: effectiveFilter.difficulty,
+      value: effective.difficulty,
       options: [
         { value: 'all', label: t('select.all') },
         ...DIFFICULTIES.filter((d) => available.difficulty.has(d)).map((d) => ({
@@ -137,7 +119,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
     {
       key: 'size',
       label: t('select.filterSize'),
-      value: effectiveFilter.size,
+      value: effective.size,
       options: [
         { value: 'all', label: t('select.all') },
         ...availableSizes(universe).map((s) => ({ value: s, label: s })),
@@ -146,7 +128,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
     {
       key: 'status',
       label: t('select.filterStatus'),
-      value: effectiveFilter.status,
+      value: effective.status,
       options: [
         { value: 'all', label: t('select.all') },
         ...(available.status.has('solved') ? [{ value: 'solved', label: t('select.solved') }] : []),
