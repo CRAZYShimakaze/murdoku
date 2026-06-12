@@ -32,6 +32,9 @@ export interface ClueCtx {
   objects: string[]
   others: { id: string; name: string }[]
   size: number
+  /** Cell indices (row*size+col) holding an object of the type — for anchoring a
+   *  direction clue to one specific tile when several exist. */
+  objectCells: (type: string) => number[]
   /** Whether the board has any window / door — gates the "Fenster/Tür" condition. */
   hasWindows: boolean
   hasDoors: boolean
@@ -91,11 +94,37 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
       <select
         className="mk-select-input mk-cond__val"
         value={c.object ?? ''}
-        onChange={(e) => update(i, { object: e.target.value })}
+        // A tile anchor belongs to the previous object type — drop it on change.
+        onChange={(e) => update(i, { object: e.target.value, at: undefined })}
       >
         {options.map((o) => (
           <option key={o} value={o}>
             {objName(o)}
+          </option>
+        ))}
+      </select>
+    )
+  }
+
+  /** Anchor picker for "direction from object": which tile of the type is meant.
+   *  Only shown when several exist — with one, the clue is unambiguous anyway. */
+  const objectAtSelect = (c: Condition, i: number) => {
+    const cells = c.object ? ctx.objectCells(c.object) : []
+    // Keep a stale anchor (object repainted since) visible instead of lying about it.
+    if (c.at !== undefined && !cells.includes(c.at)) cells.push(c.at)
+    if (cells.length < 2) return null
+    const label = (cell: number) =>
+      `${t('coord.row')}${Math.floor(cell / ctx.size) + 1}/${t('coord.col')}${(cell % ctx.size) + 1}`
+    return (
+      <select
+        className="mk-select-input mk-cond__val"
+        value={c.at ?? ''}
+        onChange={(e) => update(i, { at: e.target.value === '' ? undefined : Number(e.target.value) })}
+      >
+        <option value="">{t('cond.atAny')}</option>
+        {cells.map((cell) => (
+          <option key={cell} value={cell}>
+            {label(cell)}
           </option>
         ))}
       </select>
@@ -328,6 +357,7 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
         return (
           <>
             {objectSelect(c, i)}
+            {objectAtSelect(c, i)}
             <select
               className="mk-select-input mk-cond__val"
               value={c.dir ?? 'north'}

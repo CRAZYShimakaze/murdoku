@@ -65,6 +65,7 @@
     "resultOkNoMurderer": "Lösbar & eindeutig, aber kein eindeutiger Mörder.",
     "logic_pure": "Rein logisch lösbar",
     "logic_contradiction": "Nur mit Widersprüchen lösbar",
+    "coverage": "Feld-Abdeckung: {{percent}} % · Ø-Breite: {{avg}} %",
     "result_multi": "Mehrdeutig — es gibt mehrere Lösungen.",
     "result_none": "Nicht lösbar — kein gültiges Arrangement.",
     "result_error": "Fehler — bitte Feld & Hinweise prüfen.",
@@ -233,6 +234,24 @@
     "garandOn": "Manuel Garand: sichtbar",
     "garandOff": "Manuel Garand: versteckt"
   },
+  "settings": {
+    "open": "Einstellungen",
+    "stamp": "Dienstakte",
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "help": "Ermittlungshilfe",
+    "helpFull": "Assistent",
+    "helpFullSub": "Markiert alle Felder, die nach den Aussagen noch möglich sind.",
+    "helpReduced": "Kommissar",
+    "helpReducedSub": "Zeigt nur Anhaltspunkte: erwähnte Objekte, Räume und Spuren.",
+    "helpNone": "Meisterdetektiv",
+    "helpNoneSub": "Keine Markierungen – du kombinierst ganz allein.",
+    "timer": "Stoppuhr",
+    "timerSub": "Die Ermittlungszeit läuft oben sichtbar mit.",
+    "genderColors": "Akten nach Geschlecht",
+    "genderColorsSub": "Karten der Verdächtigen dezent in Rosé (♀) und Blau (♂).",
+    "close": "Akte schließen"
+  },
   "difficulty": {
     "tutorial": "Tutorial",
     "easy": "Leicht",
@@ -312,6 +331,7 @@
     "crate": "einer Holzkiste",
     "toilet": "einer Toilette",
     "washingmachine": "einer Waschmaschine",
+    "fridge": "einem Kühlschrank",
     "chicken": "einem Huhn",
     "lamp": "einer Lampe"
   },
@@ -346,6 +366,7 @@
     "crate": "eine Holzkiste",
     "toilet": "eine Toilette",
     "washingmachine": "eine Waschmaschine",
+    "fridge": "ein Kühlschrank",
     "chicken": "ein Huhn",
     "lamp": "eine Lampe"
   },
@@ -380,6 +401,7 @@
     "crate": "derselben Holzkiste",
     "toilet": "derselben Toilette",
     "washingmachine": "derselben Waschmaschine",
+    "fridge": "demselben Kühlschrank",
     "chicken": "demselben Huhn",
     "lamp": "derselben Lampe"
   },
@@ -416,6 +438,7 @@
     "crate": "Holzkiste",
     "toilet": "Toilette",
     "washingmachine": "Waschmaschine",
+    "fridge": "Kühlschrank",
     "chicken": "Huhn",
     "lamp": "Lampe"
   },
@@ -439,6 +462,10 @@
     "col": "Spalte",
     "row": "Zeile",
     "either": "Spalte oder Zeile"
+  },
+  "coord": {
+    "row": "Z",
+    "col": "S"
   },
   "roomRel": {
     "any": "",
@@ -744,7 +771,7 @@
     "aloneSameRoom": "{{subject}} war {{neg}}[[allein in einem Raum mit:aloneSameRoom]] {{target}}",
     "aloneSameRoomAsObject": "{{subject}} war {{neg}}[[allein in einem Raum mit:aloneSameRoomAsObject]] {{objectNom}}",
     "sameLineAsObject": "{{subject}} war {{neg}}in derselben {{line}} mit {{object}}{{roomRel}}",
-    "directionFromObject": "{{subject}} war {{neg}}{{direction}} von {{object}}{{roomRel}}",
+    "directionFromObject": "{{subject}} war {{neg}}{{direction}} von {{object}}{{atCell}}{{roomRel}}",
     "besideSameObject": "{{subject}} war neben {{object}}. {{mate}} war neben {{objectSame}}.",
     "besideSameObjectDir": "{{subject}} war neben {{object}}. {{mate}} war {{direction}} neben {{objectSame}}.",
     "nearDoor": "{{subject}} war {{neg}}[[neben einer Tür:nearDoor]]",
@@ -825,6 +852,7 @@
     "sameLineAsObject": "In gleicher Linie wie Objekt",
     "directionFromObject": "Richtung zu Objekt",
     "sameObject": "Neben gleichem Objekt wie",
+    "atAny": "Welches: egal",
     "anyone": "Irgendjemand",
     "offset": "Genau N Felder von Person",
     "roomExists": "Im Raum mit jemandem (auf/neben Objekt)",

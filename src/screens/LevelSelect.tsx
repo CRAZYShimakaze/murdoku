@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import LanguageToggle from '../components/LanguageToggle.tsx'
+import SettingsButton from '../components/SettingsButton.tsx'
 import BoardPreview from '../components/BoardPreview.tsx'
 import {
   DEFAULT_FILTER,
@@ -154,7 +154,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
             </span>
             <small>{t('select.subtitle')}</small>
           </h1>
-          <LanguageToggle />
+          <SettingsButton />
         </header>
 
         <div className="mk-filters">

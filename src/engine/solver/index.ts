@@ -5,6 +5,8 @@ export { findMurderer } from './murderer.ts'
 export type { MurdererResult } from './murderer.ts'
 export { unsatisfiedClues } from './diagnose.ts'
 export type { ClueFailure } from './diagnose.ts'
+export { startCoverage } from './coverage.ts'
+export type { CoverageReport } from './coverage.ts'
 export type {
   DeductionResult,
   DeductionStep,

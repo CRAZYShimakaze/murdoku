@@ -38,6 +38,8 @@ export function suspectColor(index: number): string {
 
 /** Candidate-cell highlight (used everywhere now — selecting a suspect, tutorial). */
 export const CANDIDATE_BLUE = { wash: 'rgba(58, 99, 217, 0.26)', ring: '#3a63d9' }
+/** Reduced-help reference marks of NEGATED clues ("not here") — crimson. */
+export const REF_RED = { wash: 'rgba(207, 70, 60, 0.26)', ring: '#cf463c' }
 /** Hint highlight — a black ring, clearly distinct from the blue selection. */
 export const HINT_BLACK = { wash: 'rgba(0, 0, 0, 0.16)', ring: '#000' }
 /** Room outline drawn inside the walls of the hovered cell's room. */

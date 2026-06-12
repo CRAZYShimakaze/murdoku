@@ -134,6 +134,7 @@ export interface Condition {
   index?: number // line — 0-based row/column index
   of?: string // sameRoom(person variant) / direction / insideXor — other suspect id
   dir?: Direction8 // direction / directionFromObject — 8 compass directions
+  at?: number // directionFromObject — cell index of ONE object tile (undefined = any)
   quantifier?: Quantifier // roomAttribute
   /** roomAttribute / sameRoom(attr variant); 'any' = roomExists "irgendjemand",
    *  'object' = roomAttribute about an OBJECT in the room ("im Raum war keine Kiste"). */
@@ -253,7 +254,13 @@ function baseJson(c: Condition): ClueJson | null {
         : null
     case 'directionFromObject':
       return c.object
-        ? { type: 'directionFromObject', object: c.object, dir: c.dir ?? 'north', room: c.roomRel ?? 'any' }
+        ? {
+            type: 'directionFromObject',
+            object: c.object,
+            dir: c.dir ?? 'north',
+            room: c.roomRel ?? 'any',
+            ...(c.at !== undefined ? { at: c.at } : {}),
+          }
         : null
     case 'sameObject': {
       if (!c.object) return null
@@ -381,7 +388,7 @@ function jsonToCondition(json: ClueJson): Condition | null {
     case 'sameLineAsObject':
       return make('sameLineAsObject', { object: c.object, line: c.line, roomRel: c.room })
     case 'directionFromObject':
-      return make('directionFromObject', { object: c.object, dir: c.dir, roomRel: c.room })
+      return make('directionFromObject', { object: c.object, dir: c.dir, roomRel: c.room, at: c.at })
     case 'besideSameObject': {
       const m = c.mate
       return make('sameObject', {

@@ -394,7 +394,8 @@
           "type": "directionFromObject",
           "object": "shelf",
           "dir": "east",
-          "room": "any"
+          "room": "any",
+          "at": 77
         }
       ]
     },
@@ -446,7 +447,8 @@
               "type": "directionFromObject",
               "object": "shelf",
               "dir": "south",
-              "room": "any"
+              "room": "any",
+              "at": 77
             },
             {
               "type": "onObject",

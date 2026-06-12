@@ -20,13 +20,21 @@ import type { SolveContext } from './SolveContext.ts'
 import type { DeductionStep } from './DeductionStep.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
 
+/** Options for the technique pipeline. `deepSplit: false` drops the nested case
+ *  split — used by the generator's candidate RATING, where its exhaustive failure
+ *  mode dominates runtime; anything rated forcing-free without it stays
+ *  forcing-free with it, so accepted levels are unaffected. */
+export interface TechniqueOptions {
+  deepSplit?: boolean
+}
+
 /**
  * The pure forward-deduction techniques relevant to this puzzle, easiest first.
  * Each only ever forces a placement or eliminates a provably-impossible cell —
  * no guessing. Irrelevant techniques are dropped so they add no per-node cost
  * inside the search. Shared by the hint engine and the search solver.
  */
-export function createForwardTechniques(puzzle: Puzzle): Technique[] {
+export function createForwardTechniques(puzzle: Puzzle, opts: TechniqueOptions = {}): Technique[] {
   const base: Technique[] = [
     new NakedSingleTechnique(),
     new UniqueConstraintTechnique(),
@@ -54,7 +62,7 @@ export function createForwardTechniques(puzzle: Puzzle): Technique[] {
   return [
     ...base,
     new CaseSplitTechnique(base, 1),
-    new CaseSplitTechnique(base, 2),
+    ...(opts.deepSplit === false ? [] : [new CaseSplitTechnique(base, 2)]),
     new ForcingTechnique(base, new SearchSolver(puzzle)),
   ]
 }

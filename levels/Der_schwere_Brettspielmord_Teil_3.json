@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "id": "editor-der-schwere-brettspielmord-teil-2",
-  "title": "Der schwere Brettspielmord Teil 2",
+  "id": "editor-der-schwere-brettspielmord-teil-3",
+  "title": "Der schwere Brettspielmord Teil 3",
   "size": {
     "width": 9,
     "height": 9
@@ -324,18 +324,24 @@
   "suspects": [
     {
       "id": "A",
-      "name": "Alex",
+      "name": "Anna",
       "attributes": {
-        "gender": "m",
-        "hairstyle": "curly",
-        "hair": "brown"
+        "gender": "f",
+        "hairstyle": "ponytailRight",
+        "hair": "black"
       },
       "clues": [
         {
-          "type": "not",
-          "clue": {
-            "type": "atWall"
-          }
+          "type": "and",
+          "clues": [
+            {
+              "type": "alone"
+            },
+            {
+              "type": "nearObject",
+              "object": "chair"
+            }
+          ]
         }
       ]
     },
@@ -346,62 +352,33 @@
         "gender": "m",
         "beard": true,
         "beardStyle": "full",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "bald": true,
-        "hair": "white"
+        "hairstyle": "combOver",
+        "hair": "brown"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "sameLineAsObject",
-              "object": "plant",
-              "line": "col",
-              "room": "any"
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "atWall"
-              }
-            }
-          ]
+          "type": "not",
+          "clue": {
+            "type": "nearObject",
+            "object": "plant"
+          }
         }
       ]
     },
     {
       "id": "C",
-      "name": "Cyrus",
+      "name": "Carol",
       "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "bald": true,
-        "hair": "white"
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "black"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "roomCompanion",
-              "count": 1,
-              "attribute": "beard",
-              "value": true
-            },
-            {
-              "type": "sameLineAsObject",
-              "object": "plant",
-              "line": "row",
-              "room": "any"
-            }
-          ]
+          "type": "sameLineAsObject",
+          "object": "trash",
+          "line": "col",
+          "room": "any"
         }
       ]
     },
@@ -415,81 +392,31 @@
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "tree"
-        }
-      ]
-    },
-    {
-      "id": "E",
-      "name": "Elsa",
-      "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "pixie",
-        "hair": "white"
-      },
-      "clues": [
-        {
-          "type": "sameLineAsObject",
-          "object": "shelf",
-          "line": "row",
-          "room": "any"
-        }
-      ]
-    },
-    {
-      "id": "F",
-      "name": "Floyd",
-      "attributes": {
-        "gender": "m",
-        "bald": true,
-        "hair": "black"
-      },
-      "clues": [
-        {
           "type": "and",
           "clues": [
             {
-              "type": "nearObject",
-              "object": "shelf"
+              "type": "not",
+              "clue": {
+                "type": "atWall"
+              }
             },
             {
-              "type": "roomCompanion",
-              "count": 1,
-              "attribute": "gender",
-              "value": "m"
+              "type": "roomExists",
+              "object": "tree",
+              "relation": "near"
             }
           ]
         }
       ]
     },
     {
-      "id": "G",
-      "name": "Grant",
+      "id": "E",
+      "name": "Edison",
       "attributes": {
         "gender": "m",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "bald": true,
-        "hair": "brown"
-      },
-      "clues": [
-        {
-          "type": "onObject",
-          "object": "carpet"
-        }
-      ]
-    },
-    {
-      "id": "H",
-      "name": "Hana",
-      "attributes": {
-        "gender": "f",
-        "hairstyle": "long",
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "manbun",
         "hair": "brown"
       },
       "clues": [
@@ -497,15 +424,9 @@
           "type": "and",
           "clues": [
             {
-              "type": "roomCompanion",
-              "count": 1,
-              "attribute": "gender",
-              "value": "f"
-            },
-            {
               "type": "sameLineAsObject",
-              "object": "tree",
-              "line": "col",
+              "object": "trash",
+              "line": "row",
               "room": "any"
             },
             {
@@ -518,10 +439,74 @@
           ]
         }
       ]
+    },
+    {
+      "id": "F",
+      "name": "Floyd",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "mohawk",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "lamp"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Greta",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "hime",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "3"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Hugh",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "short",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "roomExists",
+              "object": "carpet",
+              "relation": "near"
+            },
+            {
+              "type": "directionFromObject",
+              "object": "plant",
+              "dir": "north",
+              "room": "any"
+            }
+          ]
+        }
+      ]
     }
   ],
   "victim": {
-    "name": "Vasiliy",
+    "name": "Volker",
     "attributes": {
       "gender": "m"
     }

@@ -6,6 +6,7 @@ import { SearchSolver } from '../solver/SearchSolver.ts'
 import { findMurderer } from '../solver/murderer.ts'
 import { DeductionEngine } from '../solver/DeductionEngine.ts'
 import { difficultyOf } from '../solver/DeductionStep.ts'
+import { startCoverage } from '../solver/coverage.ts'
 import { createClue } from '../clues/ClueFactory.ts'
 import { createBoardClue } from '../clues/boardClues.ts'
 import { MULTI_CELL_TYPES, VICTIM_ID } from '../model/types.ts'
@@ -209,7 +210,10 @@ function rateTier(level: LevelJson): GenDifficulty {
  *  (so the hint system is always a clean chain); `maxRank` is the hardest technique the
  *  solution needs. One cheap call gives both uniqueness and difficulty. */
 function logicRating(level: LevelJson): { solved: boolean; forcingFree: boolean; maxRank: number } {
-  const result = new DeductionEngine(loadLevel(level)).solve()
+  // Rate WITHOUT the deep case split: its exhaustive failure mode dominates the
+  // runtime on the many rejected candidates, and anything forcing-free without it
+  // is forcing-free with it — accepted levels lose nothing.
+  const result = new DeductionEngine(loadLevel(level), { deepSplit: false }).solve()
   const forcingFree =
     result.solved && !result.techniqueCounts.forcing && !result.techniqueCounts.satForcing
   return { solved: result.solved, forcingFree, maxRank: result.maxRank }
@@ -229,6 +233,22 @@ function rankToTier(maxRank: number): GenDifficulty {
   if (maxRank >= TARGET_RANK.hard) return 'hard'
   if (maxRank >= TARGET_RANK.medium) return 'medium'
   return 'easy'
+}
+
+/**
+ * Start-coverage bar per tier (easy is exempt). Two complementary checks so the
+ * board feels FULL without demanding that every clue is broad:
+ *  - `constrainedRatio`: union over suspects whose clue actually pins cells —
+ *    "allein"/"im selben Raum wie X" can't game the union (hard ≥85%, medium ≥75%);
+ *  - `avgBreadth`: a few broad clues ("nicht neben einer Pflanze", "nicht in einer
+ *    Ecke") must lift the mean domain size (hard ≥25%, medium ≥18%) — tight 2-cell
+ *    anchors stay legitimate, reference levels sit at 27–39%.
+ */
+/** Gentle breadth preference (NO fixed bars, per the user): among comparable
+ *  candidates, the level whose clues keep more of the board open wins — measured as
+ *  the union over restricted suspects ("allein" etc. can't game it). */
+function breadthPenalty(level: LevelJson): number {
+  return Math.round((1 - startCoverage(loadLevel(level)).constrainedRatio) * 60)
 }
 
 /** Cap on "was in row X / column Y" clues per level (rows + columns combined) — they are
@@ -264,7 +284,8 @@ function pickBestLevel(
 ): LevelJson | null {
   const maxAttempts = opts.maxAttempts ?? 120
   const softDeadline = performance.now() + (opts.timeBudgetMs ?? 3000)
-  const hardDeadline = performance.now() + (opts.hardTimeBudgetMs ?? Infinity)
+  // Generation must ALWAYS finish well under a minute (user requirement).
+  const hardDeadline = performance.now() + (opts.hardTimeBudgetMs ?? 45000)
   const targetRank = targetRankOf(target)
   let best: LevelJson | null = null
   let bestScore = Infinity
@@ -273,12 +294,13 @@ function pickBestLevel(
     if (result) {
       const rating = logicRating(result.level)
       // Only pure-logic (forcing-free) levels are eligible — the player must be able to
-      // solve by a clean chain, never "assume X → contradiction".
+      // solve by a clean chain, never "assume X → contradiction". Breadth is a gentle
+      // tie-breaker, never a bar.
       if (rating.forcingFree) {
         result.level.difficulty = rankToTier(rating.maxRank)
         const rankMiss = Math.abs(rating.maxRank - targetRank)
         const lines = countLineClues(result.level)
-        const score = rankMiss * 1000 + result.pins * 100 + lines
+        const score = rankMiss * 1000 + result.pins * 100 + breadthPenalty(result.level) + lines
         if (score < bestScore) {
           best = result.level
           bestScore = score
@@ -942,12 +964,21 @@ function candidatesFor(
 
   // --- object: same line / direction (objects are fixed → deducible) ---
   for (const def of ALL_OBJECTS) {
-    if (board.objectCells(def.type).length === 0) continue
+    const objCells = board.objectCells(def.type)
+    if (objCells.length === 0) continue
     for (const line of ['col', 'row', 'either'] as const) {
       out.push({ type: 'sameLineAsObject', object: def.type, line, room: 'any' })
     }
+    // Several tiles of the type → anchor each direction clue to ONE tile ("east of
+    // the tree at Z7/S6"); the existential "east of SOME tree" is ambiguous to read.
     for (const dir of ['north', 'south', 'east', 'west'] as const) {
-      out.push({ type: 'directionFromObject', object: def.type, dir, room: 'any' })
+      if (objCells.length === 1) {
+        out.push({ type: 'directionFromObject', object: def.type, dir, room: 'any' })
+      } else {
+        for (const at of objCells) {
+          out.push({ type: 'directionFromObject', object: def.type, dir, room: 'any', at })
+        }
+      }
     }
     // "beside the SAME object instance as …" — only when the subject is beside one.
     if (board.cellsNearObject(def.type).has(cell)) {
@@ -1103,21 +1134,25 @@ function candidatesFor(
     }
   }
 
-  // --- negations ("NICHT neben einem Regal / an der Wand …") — the hand-made easy
-  // levels use these for elimination. Only the editor-representable fill needs them. ---
-  if (editorSafe) {
-    const roomObjTypes = new Set<string>()
-    for (let c = 0; c < board.width * board.height; c++) {
-      if (board.roomIdOf(c) === room) for (const obj of board.tileAt(c).objects()) roomObjTypes.add(obj.type)
-    }
-    for (const t of roomObjTypes) {
-      out.push({ type: 'not', clue: { type: 'nearObject', object: t } })
-      out.push({ type: 'not', clue: { type: 'onObject', object: t } })
-    }
-    out.push({ type: 'not', clue: { type: 'atWall' } })
-    out.push({ type: 'not', clue: { type: 'corner' } })
-    out.push({ type: 'not', clue: { type: 'nearWindow' } })
+  // --- negations ("NICHT neben einem Regal / an der Wand / im Garten …") — broad,
+  // information-light clues that keep the start board open. The hand-made easy levels
+  // use them for elimination, and the broad-first construction starts suspects on
+  // them. All of these round-trip into the editor. ---
+  const allObjTypes = new Set<string>()
+  for (let c = 0; c < board.width * board.height; c++) {
+    for (const obj of board.tileAt(c).objects()) allObjTypes.add(obj.type)
   }
+  for (const t of allObjTypes) {
+    out.push({ type: 'not', clue: { type: 'nearObject', object: t } })
+    out.push({ type: 'not', clue: { type: 'onObject', object: t } })
+  }
+  for (const r of puzzle.board.rooms.keys()) {
+    if (r !== room) out.push({ type: 'not', clue: { type: 'inRoom', room: r } })
+  }
+  out.push({ type: 'not', clue: { type: 'atWall' } })
+  out.push({ type: 'not', clue: { type: 'corner' } })
+  if (board.cellsNearWindow().size > 0) out.push({ type: 'not', clue: { type: 'nearWindow' } })
+  if (board.cellsNearDoor().size > 0) out.push({ type: 'not', clue: { type: 'nearDoor' } })
 
   // Keep only clues TRUE for this solution; sort tightest-first (tightness once each).
   const scored = out
@@ -1347,9 +1382,41 @@ function constructLogicClues(
 ): Map<PersonId, ClueJson> | null {
   for (const id of suspectIds) if (candidates.get(id)!.length === 0) return null
 
+  const board = loadLevel(base).board
+  const totalCells = board.occupiableCells().length
   // Each suspect's clue = the AND of their natural candidates at these indices.
-  const used = new Map<PersonId, number[]>(suspectIds.map((id) => [id, [0]]))
   const list = (id: PersonId): ClueJson[] => candidates.get(id)!
+
+  // Memoised candidate breadth (cells the clue leaves open).
+  const breadthCache = new Map<string, number>()
+  const breadthAt = (id: PersonId, i: number): number => {
+    const key = `${id}:${i}`
+    let size = breadthCache.get(key)
+    if (size === undefined) {
+      size = createClue(list(id)[i]).candidateCells(board)?.size ?? totalCells
+      breadthCache.set(key, size)
+    }
+    return size
+  }
+  // The loosest candidate that still says SOMETHING (an uninformative clue covering
+  // every cell would make the suspect count as unrestricted) and isn't a dull line.
+  const broadestIdx = (id: PersonId): number => {
+    for (let i = list(id).length - 1; i >= 0; i--) {
+      if (isLine(list(id)[i])) continue
+      const size = breadthAt(id, i)
+      if (size < totalCells && size > 1) return i
+    }
+    return 0
+  }
+
+  const isLine = (clue: ClueJson): boolean => clue.type === 'inRow' || clue.type === 'inCol'
+  // Most suspects start on their TIGHTEST clue (fast, reliably solvable); about a
+  // third start on a BROAD one ("nicht neben einer Pflanze", "nicht im Garten") so
+  // levels keep using clues that leave much of the board open — a deliberate
+  // preference WITHOUT any fixed quota (the user's call).
+  const used = new Map<PersonId, number[]>(
+    suspectIds.map((id) => [id, [rng.chance(0.35) ? broadestIdx(id) : 0]]),
+  )
   const clueOf = (id: PersonId): ClueJson => {
     const parts = used.get(id)!.map((i) => list(id)[i])
     return parts.length === 1 ? parts[0] : { type: 'and', clues: parts }
@@ -1357,7 +1424,6 @@ function constructLogicClues(
   const rate = () =>
     logicRating({ ...base, suspects: base.suspects.map((s) => ({ ...s, clues: [clueOf(s.id)] })) })
 
-  const isLine = (clue: ClueJson): boolean => clue.type === 'inRow' || clue.type === 'inCol'
   const hasCoordPair = (id: PersonId): boolean => {
     const types = used.get(id)!.map((i) => list(id)[i].type)
     return types.includes('inRow') && types.includes('inCol')
@@ -1365,15 +1431,12 @@ function constructLogicClues(
   const lineSuspects = (): number =>
     suspectIds.filter((id) => used.get(id)!.some((i) => isLine(list(id)[i]))).length
 
-  // 1) TIGHTEN until forward-solvable & forcing-free (add a clue to the suspect with the
-  //    fewest, never inRow+inCol together, ≤ maxLineClues line clues overall).
-  for (let guard = 0; guard < 400; guard++) {
-    const st = rate()
-    if (st.solved && st.forcingFree) break
+  // Fallback tightener: AND another part onto the suspect with the fewest (the old
+  // construction) — used once single-clue tightening alone doesn't get there.
+  const addPart = (): boolean => {
     const order = rng
       .shuffle([...suspectIds])
       .sort((a, b) => used.get(a)!.length - used.get(b)!.length)
-    let added = false
     for (const id of order) {
       const u = used.get(id)!
       for (let i = 0; i < list(id).length; i++) {
@@ -1383,12 +1446,18 @@ function constructLogicClues(
           u.pop()
           continue
         }
-        added = true
-        break
+        return true
       }
-      if (added) break
     }
-    if (!added) return null
+    return false
+  }
+
+  // 1) TIGHTEN until forward-solvable & forcing-free (add a clue to the suspect with
+  //    the fewest, never inRow+inCol together, ≤ maxLineClues line clues overall).
+  for (let guard = 0; guard < 400; guard++) {
+    const st = rate()
+    if (st.solved && st.forcingFree) break
+    if (!addPart()) return null
   }
   if (!rate().forcingFree) return null // no forcing-free forward solution on this board
 

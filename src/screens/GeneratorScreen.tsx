@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import LanguageToggle from '../components/LanguageToggle.tsx'
+import SettingsButton from '../components/SettingsButton.tsx'
 import { generateLevelAsync, type GenHandle } from '../game/generatorClient.ts'
 import { levelMetaFromJson, type LevelMeta } from '../game/levels.ts'
 import { loadGenSettings, saveGenSettings } from '../game/storage.ts'
@@ -123,7 +123,7 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
             {t('generate.title')}
             <small>{t('generate.subtitle')}</small>
           </h1>
-          <LanguageToggle />
+          <SettingsButton />
         </header>
 
         <div className="mk-genform">

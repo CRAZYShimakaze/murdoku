@@ -6,11 +6,13 @@ import InfoTip from './InfoTip.tsx'
 import ClueBuilder, { type ClueCtx } from './ClueBuilder.tsx'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
+import { useSettings } from '../game/settings.ts'
 import { HAIR_COLORS, type ClueGroup } from '../game/editorClues.ts'
 import { BEARD_STYLES, GLASSES_COLORS, GLASSES_SHAPES, hairstylesFor } from '../game/avatar.ts'
 import {
   ROOM_IDS,
   buildPlayableLevel,
+  objectCellsOf,
   presentObjectTypes,
   suspectAttributes,
   usedRooms,
@@ -54,6 +56,7 @@ export default function SuspectsPanel({
   randomizing,
 }: Props) {
   const { t } = useTranslation()
+  const { genderColors } = useSettings()
   const [editing, setEditing] = useState<number | 'victim' | null>(null)
   const preview = useCluePreview(state)
 
@@ -69,6 +72,7 @@ export default function SuspectsPanel({
             type="button"
             className="mk-clue"
             data-suspect={s.id}
+            data-gender={genderColors ? s.gender : undefined}
             onClick={() => setEditing(i)}
           >
             <InfoTip
@@ -117,7 +121,12 @@ export default function SuspectsPanel({
         </InfoTip>
         <span className="mk-clue__main">
           <span className="mk-clue__name">
-            {state.victim.name || t('game.victim')}
+            <span
+              className="mk-victimname"
+              data-gender={genderColors ? state.victim.gender : undefined}
+            >
+              {state.victim.name || t('game.victim')}
+            </span>
             <span className="mk-attr">{state.victim.gender === 'm' ? '♂' : '♀'}</span>
           </span>
           <span className="mk-clue__text">{t('game.victim')}</span>
@@ -177,6 +186,7 @@ function SuspectEditor({ state, index, onChange, onClose }: EditorProps) {
       objects: presentObjectTypes(state),
       others: state.suspects.filter((o) => o.id !== s.id).map((o) => ({ id: o.id, name: o.name || o.id })),
       size: state.size,
+      objectCells: (type) => objectCellsOf(state, type),
       hasWindows: state.windows.length > 0,
       hasDoors: state.doors.length > 0,
       roomLabel: (id) => {

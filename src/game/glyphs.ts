@@ -38,6 +38,7 @@ export const OBJECT_GLYPHS: Record<string, string> = {
   chicken: '🐓', // full-body bird (🐔 is only a head) to match the cow/pig/horse glyphs
   lamp: '💡', // generator/dropdown chip only — the board draws a hand-painted floor lamp
   washingmachine: '🧺', // generator/dropdown chip only — the board draws a hand-painted washer
+  fridge: '🧊', // generator/dropdown chip only — the board draws a hand-painted fridge
 }
 
 /** Small chips shown on suspect cards so attribute clues are playable. */

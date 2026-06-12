@@ -348,7 +348,8 @@
           "type": "directionFromObject",
           "object": "carpet",
           "dir": "west",
-          "room": "any"
+          "room": "any",
+          "at": 39
         }
       ]
     }

@@ -574,6 +574,61 @@ export function drawWashingMachine(ctx: Ctx, x: number, y: number, S: number): v
 }
 
 /**
+ * A fridge (blocking): tall steel body with a freezer seam in the upper third
+ * and two door handles on the left. Same appliance idiom (palette, card,
+ * 80% shrink) as the washing machine so the kitchen props read as one family.
+ */
+export function drawFridge(ctx: Ctx, x: number, y: number, S: number): void {
+  ctx.save()
+  ctx.translate(x + S / 2, y + S / 2)
+  ctx.scale(0.8, 0.8)
+  ctx.translate(-(x + S / 2), -(y + S / 2))
+  // taller than wide — pinch the sides so it reads as an upright appliance
+  const left = x + S * 0.18
+  const top = y + S * 0.07
+  const w = S - 2 * (S * 0.18)
+  const h = S - 2 * (S * 0.07)
+  const body = '#e9edf1'
+  const dark = '#4b535c'
+
+  // body with the shared appliance outline
+  ctx.fillStyle = body
+  ctx.strokeStyle = dark
+  ctx.lineWidth = Math.max(1.4, S * 0.05)
+  ctx.beginPath()
+  ctx.roundRect(left, top, w, h, S * 0.07)
+  ctx.fill()
+  ctx.stroke()
+
+  // freezer compartment seam (upper third)
+  const seamY = top + h * 0.34
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  ctx.beginPath()
+  ctx.moveTo(left, seamY)
+  ctx.lineTo(left + w, seamY)
+  ctx.stroke()
+
+  // door handles on the left edge: short bar (freezer) + long bar (fridge)
+  ctx.fillStyle = '#5a6068'
+  const handleW = Math.max(1.6, w * 0.09)
+  const handleX = left + w * 0.12
+  ctx.beginPath()
+  ctx.roundRect(handleX, top + h * 0.1, handleW, h * 0.16, handleW / 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.roundRect(handleX, seamY + h * 0.08, handleW, h * 0.3, handleW / 2)
+  ctx.fill()
+
+  // soft vertical sheen on the right, like light off brushed steel
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+  ctx.beginPath()
+  ctx.roundRect(left + w * 0.68, top + h * 0.07, w * 0.13, h * 0.86, w * 0.07)
+  ctx.fill()
+
+  ctx.restore() // 80% scale
+}
+
+/**
  * A standing floor lamp (blocking): a weighted base, a slim pole and a glowing
  * trapezoid shade. Drawn front-on like the other blocking props; sits on the card.
  */

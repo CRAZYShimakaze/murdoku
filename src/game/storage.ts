@@ -9,6 +9,7 @@ const EDITOR_DRAFT_KEY = 'murdoku.editordraft.v1'
 const FILTER_KEY = 'murdoku.filter.v1'
 const SHOW_HIDDEN_AUTHOR_KEY = 'murdoku.showhiddenauthor.v1'
 const GEN_SETTINGS_KEY = 'murdoku.gensettings.v1'
+const APP_SETTINGS_KEY = 'murdoku.settings.v1'
 
 /** A board state flattened to JSON-friendly arrays (Maps/Sets don't serialize). */
 export interface SavedState {
@@ -76,6 +77,16 @@ export function loadGenSettings(fallback: GenSettings): GenSettings {
 
 export function saveGenSettings(settings: GenSettings): void {
   write(GEN_SETTINGS_KEY, settings)
+}
+
+/** Global app settings (gear menu). Spread over the defaults so new options
+ *  added later fall back gracefully for returning players. */
+export function loadAppSettings<T extends object>(fallback: T): T {
+  return { ...fallback, ...read<Partial<T>>(APP_SETTINGS_KEY, {}) }
+}
+
+export function saveAppSettings(settings: unknown): void {
+  write(APP_SETTINGS_KEY, settings)
 }
 
 export function markSolved(id: string): void {

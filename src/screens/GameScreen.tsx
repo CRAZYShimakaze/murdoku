@@ -38,7 +38,10 @@ import CluePanel from '../components/CluePanel.tsx'
 import Toolbar from '../components/Toolbar.tsx'
 import Legend from '../components/Legend.tsx'
 import ResultDialog from '../components/ResultDialog.tsx'
+import SettingsButton from '../components/SettingsButton.tsx'
 import Coach from '../components/Coach.tsx'
+import { useSettings } from '../game/settings.ts'
+import { hasMarks, helpMarks, type HelpMarks } from '../game/helpMarks.ts'
 
 const NOOP = () => {}
 
@@ -107,6 +110,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   // Ctrl+B → log the solved board + full deduction path to the console.
   useDebugSolveKey(() => ({ puzzle, renderer }))
 
+  const settings = useSettings()
   const session = useGameSession(puzzle, storageId, tutorial, !tutorial)
   const [selected, setSelected] = useState<PersonId | null>(null)
   const [hoveredSuspect, setHoveredSuspect] = useState<PersonId | null>(null)
@@ -183,7 +187,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   const activeHint = hintDone ? null : hint
 
   const highlight = useMemo<Set<Cell> | null>(() => {
-    if (!selected) return null
+    if (!selected || settings.helpMode !== 'full') return null
     const suspect = puzzle.suspects.find((s) => s.id === selected)
     if (!suspect) return null
     let acc: Set<Cell> | null = null
@@ -194,7 +198,16 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
       else for (const c of [...acc]) if (!set.has(c)) acc.delete(c)
     }
     return acc
-  }, [selected, puzzle])
+  }, [selected, puzzle, settings.helpMode])
+
+  // Reduced help ("Kommissar"): each clue marks only its reference on the board.
+  const refMarks = useMemo<HelpMarks | null>(() => {
+    if (!selected || settings.helpMode !== 'reduced') return null
+    const suspect = puzzle.suspects.find((s) => s.id === selected)
+    if (!suspect) return null
+    const marks = helpMarks(suspect.clues, puzzle.board)
+    return hasMarks(marks) ? marks : null
+  }, [selected, puzzle, settings.helpMode])
 
   const reveal =
     result?.win && result.victimCell !== null
@@ -339,7 +352,10 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
             <span className="mk-game__sz" ref={badgeRef}>{meta.width}×{meta.height}</span>
           )}
         </div>
-        <span className="mk-timer">{formatTime(elapsed)}</span>
+        <div className="mk-game__corner">
+          {settings.timer && <span className="mk-timer">{formatTime(elapsed)}</span>}
+          <SettingsButton />
+        </div>
       </header>
 
       <CluePanel
@@ -363,6 +379,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
           highlightColor={boardHighlightColor}
           highlight2={boardHighlight2}
           highlightColor2={CANDIDATE_BLUE}
+          helpMarks={tut.active ? null : refMarks}
           emphasize={hoveredSuspect}
           xTool={tut.active ? false : xTool}
           reveal={reveal}

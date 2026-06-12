@@ -132,18 +132,24 @@ export class SameRoomAsObjectClue extends UnaryClue {
   }
 }
 
-/** "{name} was {dir} of a {object}" (optionally same/other room). */
+/** "{name} was {dir} of a {object}" (optionally same/other room). With `at`, the
+ *  clue is anchored to the object TILE at that cell ("east of the tree at Z7/S6") —
+ *  unambiguous when several objects of the type exist. Without it, ANY object of
+ *  the type counts (legacy/existential reading, kept for older levels). */
 export class DirectionFromObjectClue extends UnaryClue {
   constructor(
     readonly object: string,
     readonly direction: Direction8,
     readonly room: RoomRel,
+    readonly at: Cell | null = null,
   ) {
     super()
   }
 
   candidateCells(board: Board): Set<Cell> {
-    const objs = objectsOf(board, this.object)
+    const objs = objectsOf(board, this.object).filter(
+      (o) => this.at === null || board.idx(o.row, o.col) === this.at,
+    )
     const out = new Set<Cell>()
     for (const cell of board.occupiableCells()) {
       const s = board.rc(cell)
@@ -161,7 +167,14 @@ export class DirectionFromObjectClue extends UnaryClue {
   describe(): Explanation {
     return {
       key: 'clue.directionFromObject',
-      params: { object: this.object, direction: this.direction, roomRel: this.room },
+      // atCell: "<type>:<cell>" — the Renderer shows the coordinate only when the
+      // board holds several objects of the type (otherwise it adds nothing).
+      params: {
+        object: this.object,
+        direction: this.direction,
+        roomRel: this.room,
+        atCell: this.at !== null ? `${this.object}:${this.at}` : '',
+      },
     }
   }
 }

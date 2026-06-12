@@ -349,7 +349,8 @@
           "type": "directionFromObject",
           "object": "bed",
           "dir": "north",
-          "room": "any"
+          "room": "any",
+          "at": 10
         }
       ]
     },

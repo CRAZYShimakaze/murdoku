@@ -316,7 +316,8 @@
               "type": "directionFromObject",
               "object": "table",
               "dir": "south",
-              "room": "any"
+              "room": "any",
+              "at": 43
             }
           ]
         }

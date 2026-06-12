@@ -81,7 +81,8 @@ export type ClueJson =
   | { type: 'offset'; of: PersonId; dir: Direction; distance: number }
   | { type: 'sameRoom'; as: PersonId; alone?: boolean }
   | { type: 'sameLineAsObject'; object: string; line: LineKind; room: RoomRel }
-  | { type: 'directionFromObject'; object: string; dir: Direction8; room: RoomRel }
+  /** `at` (cell index) anchors the clue to ONE object tile; omitted = any of the type. */
+  | { type: 'directionFromObject'; object: string; dir: Direction8; room: RoomRel; at?: number }
   | { type: 'sameRoomAsObject'; object: string; alone?: boolean }
   | { type: 'besideSameObject'; object: string; mate: ObjectMate; dir?: Direction8 }
   | { type: 'roomCompanion'; count: number; attribute: string; value: AttributeValue }
@@ -167,7 +168,7 @@ export function createClue(json: ClueJson): Clue {
     case 'sameLineAsObject':
       return new SameLineAsObjectClue(json.object, json.line, json.room)
     case 'directionFromObject':
-      return new DirectionFromObjectClue(json.object, json.dir, json.room)
+      return new DirectionFromObjectClue(json.object, json.dir, json.room, json.at ?? null)
     case 'sameRoomAsObject':
       return new SameRoomAsObjectClue(json.object, json.alone ?? false)
     case 'besideSameObject':

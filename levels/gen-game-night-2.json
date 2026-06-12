@@ -222,7 +222,8 @@
           "type": "directionFromObject",
           "object": "table",
           "dir": "north",
-          "room": "any"
+          "room": "any",
+          "at": 69
         }
       ]
     },
@@ -353,7 +354,8 @@
               "type": "directionFromObject",
               "object": "box",
               "dir": "west",
-              "room": "any"
+              "room": "any",
+              "at": 39
             }
           ]
         }

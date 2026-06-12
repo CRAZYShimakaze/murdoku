@@ -7,8 +7,9 @@ import {
   type Puzzle,
   type Side,
 } from '../engine/index.ts'
-import { BOARD, ROOM_HL, suspectColor } from './palette.ts'
+import { BOARD, CANDIDATE_BLUE, REF_RED, ROOM_HL, suspectColor } from './palette.ts'
 import { OBJECT_GLYPHS } from './glyphs.ts'
+import type { HelpMarks } from './helpMarks.ts'
 import { drawBigObject, drawSingleObject } from './bigObjects.ts'
 import {
   drawArmchair,
@@ -17,6 +18,7 @@ import {
   drawCashRegister,
   drawCrate,
   drawFloorLamp,
+  drawFridge,
   drawLocker,
   drawMud,
   drawOil,
@@ -61,6 +63,8 @@ export interface BoardView {
    *  suspect's candidate cells (blue) at the same time as an active hint (black). */
   highlight2?: Set<Cell> | null
   highlightColor2?: { wash: string; ring: string }
+  /** Reduced-help reference marks (object rings, room outlines, window/door glow). */
+  helpMarks?: HelpMarks | null
   /** Thumbnail mode: rooms + walls + object dots only. */
   preview?: boolean
 }
@@ -172,6 +176,15 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     }
     if (view.highlight?.has(c)) {
       ctx.fillStyle = view.highlightColor?.wash ?? BOARD.highlight
+      ctx.fillRect(x, y, S, S)
+    }
+    // Reduced-help area marks: filled like candidates (blue), negated in red.
+    if (view.helpMarks?.fill.has(c)) {
+      ctx.fillStyle = CANDIDATE_BLUE.wash
+      ctx.fillRect(x, y, S, S)
+    }
+    if (view.helpMarks?.redFill.has(c)) {
+      ctx.fillStyle = REF_RED.wash
       ctx.fillRect(x, y, S, S)
     }
   }
@@ -383,6 +396,75 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   if (view.highlight2) drawRings(view.highlight2, view.highlightColor2?.ring ?? BOARD.highlightRing, S * 0.13)
   if (view.highlight) drawRings(view.highlight, view.highlightColor?.ring ?? BOARD.highlightRing, S * 0.07)
 
+  // Trace a room's outline just inside its walls (hover + reduced-help marks).
+  const traceRoom = (room: string, color: string, inset: number, width: number) => {
+    const wall = (r: number, c: number) =>
+      !board.inBounds(r, c) || board.roomIdOf(board.idx(r, c)) !== room
+    ctx.strokeStyle = color
+    ctx.lineWidth = width
+    ctx.lineCap = 'round'
+    ctx.beginPath()
+    for (let c = 0; c < W * H; c++) {
+      if (board.roomIdOf(c) !== room) continue
+      const { row, col } = board.rc(c)
+      const { x, y } = xy(c)
+      if (wall(row - 1, col)) {
+        ctx.moveTo(x + inset, y + inset)
+        ctx.lineTo(x + S - inset, y + inset)
+      }
+      if (wall(row + 1, col)) {
+        ctx.moveTo(x + inset, y + S - inset)
+        ctx.lineTo(x + S - inset, y + S - inset)
+      }
+      if (wall(row, col - 1)) {
+        ctx.moveTo(x + inset, y + inset)
+        ctx.lineTo(x + inset, y + S - inset)
+      }
+      if (wall(row, col + 1)) {
+        ctx.moveTo(x + S - inset, y + inset)
+        ctx.lineTo(x + S - inset, y + S - inset)
+      }
+    }
+    ctx.stroke()
+  }
+
+  // --- reduced-help marks: per-clue references instead of candidate sets ---
+  if (view.helpMarks) {
+    const m = view.helpMarks
+    // Area cells (row/col, on-object, …) carry the normal candidate ring.
+    drawRings(m.fill, CANDIDATE_BLUE.ring, S * 0.07)
+    drawRings(m.redFill, REF_RED.ring, S * 0.07)
+    // Referenced objects get a dashed "chalk circle" — evidence, not a candidate.
+    ctx.setLineDash([S * 0.14, S * 0.1])
+    drawRings(m.ring, CANDIDATE_BLUE.ring, S * 0.1)
+    drawRings(m.redRing, REF_RED.ring, S * 0.1)
+    ctx.setLineDash([])
+    const roomWidth = Math.max(2, S * 0.055)
+    for (const room of m.rooms) traceRoom(room, CANDIDATE_BLUE.ring, S * 0.06, roomWidth)
+    for (const room of m.redRooms) traceRoom(room, REF_RED.ring, S * 0.06, roomWidth)
+    // Window/door symbols light up via a glow ring around their wall rectangle.
+    const glowWalls = (sidesOf: (c: Cell) => Side[], t: number, inset: number, color: string) => {
+      const g = S * 0.055
+      ctx.strokeStyle = color
+      ctx.lineWidth = Math.max(2, S * 0.045)
+      for (let c = 0; c < W * H; c++) {
+        for (const side of sidesOf(c)) {
+          const { x, y } = xy(c)
+          const r = sideRect(x, y, S, side, t, inset)
+          ctx.beginPath()
+          ctx.roundRect(r.x - g, r.y - g, r.w + 2 * g, r.h + 2 * g, (t + 2 * g) * 0.35)
+          ctx.stroke()
+        }
+      }
+    }
+    const windowSides = (c: Cell) => board.windowSides(c)
+    const doorSides = (c: Cell) => board.doorSides(c)
+    if (m.windows) glowWalls(windowSides, S * 0.16, S * 0.16, CANDIDATE_BLUE.ring)
+    if (m.redWindows) glowWalls(windowSides, S * 0.16, S * 0.16, REF_RED.ring)
+    if (m.doors) glowWalls(doorSides, S * 0.2, S * 0.13, CANDIDATE_BLUE.ring)
+    if (m.redDoors) glowWalls(doorSides, S * 0.2, S * 0.13, REF_RED.ring)
+  }
+
   // --- crosses -----------------------------------------------------------
   ctx.strokeStyle = BOARD.cross
   ctx.lineWidth = Math.max(2, S * 0.09)
@@ -461,36 +543,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
 
   // --- hover: outline the whole room (blue, inside the walls) -----------
   if (view.hover != null && !board.isVoid(view.hover)) {
-    const room = board.roomIdOf(view.hover)
-    const wall = (r: number, c: number) =>
-      !board.inBounds(r, c) || board.roomIdOf(board.idx(r, c)) !== room
-    const ri = S * 0.11
-    ctx.strokeStyle = ROOM_HL
-    ctx.lineWidth = Math.max(1.5, S * 0.04)
-    ctx.lineCap = 'round'
-    ctx.beginPath()
-    for (let c = 0; c < W * H; c++) {
-      if (board.roomIdOf(c) !== room) continue
-      const { row, col } = board.rc(c)
-      const { x, y } = xy(c)
-      if (wall(row - 1, col)) {
-        ctx.moveTo(x + ri, y + ri)
-        ctx.lineTo(x + S - ri, y + ri)
-      }
-      if (wall(row + 1, col)) {
-        ctx.moveTo(x + ri, y + S - ri)
-        ctx.lineTo(x + S - ri, y + S - ri)
-      }
-      if (wall(row, col - 1)) {
-        ctx.moveTo(x + ri, y + ri)
-        ctx.lineTo(x + ri, y + S - ri)
-      }
-      if (wall(row, col + 1)) {
-        ctx.moveTo(x + S - ri, y + ri)
-        ctx.lineTo(x + S - ri, y + S - ri)
-      }
-    }
-    ctx.stroke()
+    traceRoom(board.roomIdOf(view.hover), ROOM_HL, S * 0.11, Math.max(1.5, S * 0.04))
   }
 
   // --- hover/press outline: yellow on occupiable, red on blocked --------
@@ -576,6 +629,10 @@ export function drawObjectIcon(
     if (!preview) drawBlockedCard(ctx, x, y, S)
     return drawWashingMachine(ctx, x, y, S)
   }
+  if (type === 'fridge') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawFridge(ctx, x, y, S)
+  }
   if (type === 'lamp') {
     if (!preview) drawBlockedCard(ctx, x, y, S)
     return drawFloorLamp(ctx, x, y, S)
@@ -590,25 +647,33 @@ export function drawObjectIcon(
   ctx.fillText(glyph, x + S / 2, y + S * 0.56)
 }
 
+/** The rectangle a wall fixture (window/door) of thickness `t`, inset `inset`
+ *  from the cell corners, occupies on the given side — shared by the fixture
+ *  art and the reduced-help glow so the two never disagree. */
+function sideRect(
+  x: number,
+  y: number,
+  S: number,
+  side: Side,
+  t: number,
+  inset: number,
+): { x: number; y: number; w: number; h: number; vertical: boolean } {
+  switch (side) {
+    case 'N':
+      return { x: x + inset, y: y - t / 2, w: S - 2 * inset, h: t, vertical: false }
+    case 'S':
+      return { x: x + inset, y: y + S - t / 2, w: S - 2 * inset, h: t, vertical: false }
+    case 'W':
+      return { x: x - t / 2, y: y + inset, w: t, h: S - 2 * inset, vertical: true }
+    case 'E':
+      return { x: x + S - t / 2, y: y + inset, w: t, h: S - 2 * inset, vertical: true }
+  }
+}
+
 /** A light-blue window straddling one wall of a cell. */
 export function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, side: Side): void {
   const t = S * 0.16
-  const inset = S * 0.16
-  let rx: number, ry: number, rw: number, rh: number, vertical: boolean
-  switch (side) {
-    case 'N':
-      rx = x + inset; ry = y - t / 2; rw = S - 2 * inset; rh = t; vertical = false
-      break
-    case 'S':
-      rx = x + inset; ry = y + S - t / 2; rw = S - 2 * inset; rh = t; vertical = false
-      break
-    case 'W':
-      rx = x - t / 2; ry = y + inset; rw = t; rh = S - 2 * inset; vertical = true
-      break
-    case 'E':
-      rx = x + S - t / 2; ry = y + inset; rw = t; rh = S - 2 * inset; vertical = true
-      break
-  }
+  const { x: rx, y: ry, w: rw, h: rh, vertical } = sideRect(x, y, S, side, t, S * 0.16)
   ctx.fillStyle = BOARD.window
   ctx.strokeStyle = '#3f6378'
   ctx.lineWidth = Math.max(1.2, S * 0.025)
@@ -631,22 +696,7 @@ export function drawWindow(ctx: CanvasRenderingContext2D, x: number, y: number, 
 /** A brown door straddling one wall of a cell (two-sided; drawn from both cells). */
 export function drawDoor(ctx: CanvasRenderingContext2D, x: number, y: number, S: number, side: Side): void {
   const t = S * 0.2
-  const inset = S * 0.13
-  let rx: number, ry: number, rw: number, rh: number, vertical: boolean
-  switch (side) {
-    case 'N':
-      rx = x + inset; ry = y - t / 2; rw = S - 2 * inset; rh = t; vertical = false
-      break
-    case 'S':
-      rx = x + inset; ry = y + S - t / 2; rw = S - 2 * inset; rh = t; vertical = false
-      break
-    case 'W':
-      rx = x - t / 2; ry = y + inset; rw = t; rh = S - 2 * inset; vertical = true
-      break
-    case 'E':
-      rx = x + S - t / 2; ry = y + inset; rw = t; rh = S - 2 * inset; vertical = true
-      break
-  }
+  const { x: rx, y: ry, w: rw, h: rh, vertical } = sideRect(x, y, S, side, t, S * 0.13)
   ctx.fillStyle = '#8a5a2b'
   ctx.strokeStyle = '#4a2f15'
   ctx.lineWidth = Math.max(1.2, S * 0.028)

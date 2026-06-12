@@ -23,24 +23,45 @@ export class CaseSplitTechnique extends Technique {
 
   /** Intersect cases only for people with this many candidates or fewer. */
   private static readonly MAX_DOMAIN = 4
-  /** Propagation budget per case — keeps the chains short and followable. */
-  private static readonly MAX_STEPS = 32
-  /** Total hypothetical placements per apply() — bounds the scan, smallest
-   *  domains first (the cells a human would actually probe). */
-  private static readonly MAX_TRIALS = 96
 
   private readonly inner: Technique[]
+  /** Total hypothetical placements per apply() — bounds the scan, smallest
+   *  domains first (the cells a human would actually probe). */
+  private readonly maxTrials: number
+  /** Propagation budget per case — keeps the chains short and followable. */
+  private readonly maxSteps: number
+  /** Probe only people with this many candidates or fewer (null = everyone). */
+  private readonly scanMaxDomain: number | null
 
-  constructor(base: Technique[], depth: 1 | 2 = 1) {
+  /**
+   * `depth` 2 nests ONE depth-1 split inside each case. The deep split and the
+   * split nested inside it run on tight budgets and only on few-candidate people,
+   * so the hypothetical tree stays small — otherwise generation/rating pays an
+   * exhaustive three-level search on every stuck candidate.
+   */
+  constructor(base: Technique[], depth: 1 | 2 = 1, nested = false) {
     super()
     this.name = depth === 1 ? 'caseSplit' : 'caseSplitDeep'
     this.difficulty = depth === 1 ? 5 : 6
-    this.inner = depth === 1 ? base : [...base, new CaseSplitTechnique(base, 1)]
+    if (depth === 2) {
+      this.inner = [...base, new CaseSplitTechnique(base, 1, true)]
+      this.maxTrials = 16
+      this.maxSteps = 24
+      this.scanMaxDomain = CaseSplitTechnique.MAX_DOMAIN
+    } else {
+      this.inner = base
+      this.maxTrials = nested ? 32 : 96
+      this.maxSteps = nested ? 16 : 32
+      this.scanMaxDomain = null
+    }
   }
 
   apply(ctx: SolveContext): DeductionStep | null {
     const byConstraint = [...ctx.state.unplaced()]
-      .filter((id) => ctx.state.domain(id).size >= 2)
+      .filter((id) => {
+        const size = ctx.state.domain(id).size
+        return size >= 2 && (this.scanMaxDomain === null || size <= this.scanMaxDomain)
+      })
       .sort((a, b) => ctx.state.domain(a).size - ctx.state.domain(b).size)
 
     // Phase 1: probe candidates (most-constrained people first, budgeted) for a
@@ -49,7 +70,7 @@ export class CaseSplitTechnique extends Technique {
     let trials = 0
     for (const id of byConstraint) {
       const cells = [...ctx.state.domain(id)]
-      if (trials + cells.length > CaseSplitTechnique.MAX_TRIALS) break
+      if (trials + cells.length > this.maxTrials) break
       trials += cells.length
       const cases: { cell: Cell; trial: SolveContext }[] = []
       for (const cell of cells) {
@@ -123,7 +144,7 @@ export class CaseSplitTechnique extends Technique {
     for (;;) {
       const dead = trial.deadReason()
       if (dead) return { steps, dead }
-      if (steps.length >= CaseSplitTechnique.MAX_STEPS) return { steps, dead: null }
+      if (steps.length >= this.maxSteps) return { steps, dead: null }
       let progressed = false
       for (const technique of this.inner) {
         const step = technique.apply(trial)

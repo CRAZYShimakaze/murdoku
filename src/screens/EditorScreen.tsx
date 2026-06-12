@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import LanguageToggle from '../components/LanguageToggle.tsx'
+import SettingsButton from '../components/SettingsButton.tsx'
 import EditorBoard from '../components/EditorBoard.tsx'
 import SuspectsPanel from '../components/SuspectsPanel.tsx'
 import ObjectIcon from '../components/ObjectIcon.tsx'
@@ -33,7 +33,7 @@ import {
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
-import { DeductionEngine, SearchSolver, findMurderer, loadLevel, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
+import { DeductionEngine, SearchSolver, findMurderer, loadLevel, startCoverage, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
 import { Renderer } from '../i18n/Renderer.ts'
 import { useDebugSolveKey } from '../game/debugSolve.ts'
 
@@ -46,6 +46,10 @@ type CheckResult = {
   /** For a solvable level: did pure forward deduction crack it ('pure'), or were
    *  proof-by-contradiction steps (forcing/SAT search) required ('contradiction')? */
   logic?: 'pure' | 'contradiction'
+  /** Start coverage in percent (union over restricted suspects). */
+  coverage?: number
+  /** Mean per-suspect domain breadth in percent. */
+  breadth?: number
 }
 type EditDifficulty = Exclude<Difficulty, 'tutorial' | 'original'>
 const DIFFS: EditDifficulty[] = ['easy', 'medium', 'hard']
@@ -265,10 +269,13 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
       const { techniqueCounts } = new DeductionEngine(puzzle).solve()
       const logic =
         techniqueCounts.forcing || techniqueCounts.satForcing ? 'contradiction' : 'pure'
+      const cov = startCoverage(puzzle)
       setResult({
         kind: 'ok',
         murderer: m.suspectId ? puzzle.nameOf(m.suspectId) : undefined,
         logic,
+        coverage: Math.round(cov.constrainedRatio * 100),
+        breadth: Math.round(cov.avgBreadth * 100),
       })
     } catch {
       setResult({ kind: 'error' })
@@ -536,7 +543,7 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
         </div>
 
         <div className="mk-editor__lang">
-          <LanguageToggle />
+          <SettingsButton />
         </div>
       </header>
 
@@ -550,6 +557,11 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
               {result.logic && (
                 <span className="mk-editor__logic" data-logic={result.logic}>
                   {t(`editor.logic_${result.logic}`)}
+                </span>
+              )}
+              {result.coverage !== undefined && (
+                <span className="mk-editor__logic">
+                  {t('editor.coverage', { percent: result.coverage, avg: result.breadth ?? 0 })}
                 </span>
               )}
             </>

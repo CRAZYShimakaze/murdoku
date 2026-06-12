@@ -415,3 +415,18 @@ export function presentObjectTypes(state: EditorState): string[] {
   }
   return out
 }
+
+/** Cell indices (row*size+col) holding an object of `type`, on either layer — for
+ *  anchoring a direction clue to one specific object tile. */
+export function objectCellsOf(state: EditorState, type: string): number[] {
+  const byChar = new Map(EDITOR_OBJECTS.map((o) => [o.char, o.type]))
+  const out: number[] = []
+  for (let r = 0; r < state.size; r++) {
+    for (let c = 0; c < state.size; c++) {
+      const ground = byChar.get(state.groundMap[r]?.[c] ?? '')
+      const top = byChar.get(state.topMap[r]?.[c] ?? '')
+      if (ground === type || top === type) out.push(r * state.size + c)
+    }
+  }
+  return out
+}

@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Cell, PersonId, Puzzle } from '../engine/index.ts'
+import BoardAxes, { AXES_H, AXES_W } from './BoardAxes.tsx'
 import { drawBoard, type RevealInfo } from '../game/boardRender.ts'
+import type { HelpMarks } from '../game/helpMarks.ts'
 import { onArtReady } from '../game/objectArt.ts'
 import { avatarDataUri } from '../game/avatar.ts'
 import { suspectColor } from '../game/palette.ts'
@@ -24,6 +26,8 @@ interface Props {
   /** A second highlight layer (selected suspect's candidates) shown beneath the hint. */
   highlight2?: Set<Cell> | null
   highlightColor2?: { wash: string; ring: string }
+  /** Reduced-help reference marks (object rings, room outlines, window/door glow). */
+  helpMarks?: HelpMarks | null
   /** Suspect whose notes pulse bigger (when hovering their clue card). */
   emphasize?: PersonId | null
   xTool: boolean
@@ -52,6 +56,9 @@ export default function BoardCanvas(props: Props) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [layout, setLayout] = useState<Layout | null>(null)
+  // Hovered cell mirrored into state so the coordinate margins can light up the
+  // matching row/col label (the canvas itself keeps reading hoverRef).
+  const [hoverRC, setHoverRC] = useState<{ row: number; col: number } | null>(null)
   // Tooltip naming the placed person (if any) + object(s) under the cursor.
   const [objTip, setObjTip] = useState<{
     person?: string
@@ -102,6 +109,7 @@ export default function BoardCanvas(props: Props) {
       highlightColor: p.highlightColor,
       highlight2: p.highlight2,
       highlightColor2: p.highlightColor2,
+      helpMarks: p.helpMarks,
       press,
       reveal: p.reveal,
       avatars: avatarsRef.current,
@@ -130,8 +138,9 @@ export default function BoardCanvas(props: Props) {
     const wrap = wrapRef.current
     if (!wrap) return
     const measure = () => {
-      const aw = wrap.clientWidth
-      const ah = wrap.clientHeight
+      // Leave room for the coordinate margins (top + left strips).
+      const aw = wrap.clientWidth - AXES_W
+      const ah = wrap.clientHeight - AXES_H
       if (aw <= 0 || ah <= 0) return
       const cell = Math.max(14, Math.floor(Math.min(aw / W, ah / H)))
       setLayout({ cell, w: cell * W, h: cell * H })
@@ -153,7 +162,7 @@ export default function BoardCanvas(props: Props) {
     cv.style.height = `${layout.h}px`
     redraw(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout, props.state, props.selectedSuspect, props.highlight, props.reveal])
+  }, [layout, props.state, props.selectedSuspect, props.highlight, props.helpMarks, props.reveal])
 
   useEffect(() => () => cancelPress(), [])
 
@@ -182,6 +191,12 @@ export default function BoardCanvas(props: Props) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.emphasize])
+
+  /** Update the hovered cell: ref for the canvas, state for the axis labels. */
+  function setHover(cell: Cell | null) {
+    hoverRef.current = cell
+    setHoverRC(cell === null ? null : puzzle.board.rc(cell))
+  }
 
   function cancelPress() {
     pressRef.current = null
@@ -248,7 +263,7 @@ export default function BoardCanvas(props: Props) {
     if (cell === null) return
     e.currentTarget.setPointerCapture(e.pointerId)
     setObjTip(null) // hide while interacting
-    hoverRef.current = cell // show blocked outline on touch/press too
+    setHover(cell) // show blocked outline on touch/press too
 
     if (props.xTool) {
       const value = !props.state.crosses.has(cell)
@@ -292,7 +307,7 @@ export default function BoardCanvas(props: Props) {
     // hover (desktop): outline cells + name the object under the cursor
     const cell = cellAt(e)
     if (cell !== hoverRef.current) {
-      hoverRef.current = cell
+      setHover(cell)
       redraw(null)
       updateObjTip(cell)
     }
@@ -314,14 +329,14 @@ export default function BoardCanvas(props: Props) {
       }
     }
     if (e.pointerType === 'touch') {
-      hoverRef.current = null
+      setHover(null)
       setObjTip(null)
     }
     redraw(null)
   }
 
   function onPointerLeave() {
-    hoverRef.current = null
+    setHover(null)
     setObjTip(null)
     redraw(null)
   }
@@ -331,14 +346,17 @@ export default function BoardCanvas(props: Props) {
       ref={wrapRef}
       style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', minWidth: 0, minHeight: 0 }}
     >
-      <canvas
-        ref={canvasRef}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endPointer}
-        onPointerCancel={endPointer}
-        onPointerLeave={onPointerLeave}
-      />
+      <div className="mk-axes">
+        {layout && <BoardAxes cols={W} rows={H} cell={layout.cell} active={hoverRC} />}
+        <canvas
+          ref={canvasRef}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endPointer}
+          onPointerCancel={endPointer}
+          onPointerLeave={onPointerLeave}
+        />
+      </div>
       {objTip &&
         createPortal(
           <span

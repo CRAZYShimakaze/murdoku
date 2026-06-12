@@ -671,6 +671,70 @@ button {
   padding: 3rem 1rem;
 }
 
+/* Mobile: the level grid becomes a case-file REGISTER — one slim row per level
+   with a small floor-plan thumb. ~10 cases per phone screen instead of 1–2,
+   so 50 levels no longer mean endless scrolling. Desktop keeps the big cards. */
+@media (max-width: 640px) {
+  .mk-level-grid {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+  .mk-card {
+    display: flex;
+    align-items: center;
+  }
+  .mk-card:hover {
+    transform: none; /* no hover lift on touch — rows just press */
+  }
+  .mk-card__preview {
+    width: 52px;
+    height: 52px;
+    flex: none;
+    margin: 0.4rem 0.15rem 0.4rem 0.4rem;
+    border-bottom: none;
+    border-radius: 8px;
+  }
+  .mk-card__body {
+    flex: 1;
+    min-width: 0;
+    padding: 0.5rem 0.65rem 0.5rem 0.45rem;
+    gap: 0.28rem;
+  }
+  .mk-card__title {
+    font-size: 0.98rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mk-card__author {
+    display: none;
+  }
+  .mk-card__meta {
+    justify-content: flex-start;
+    gap: 0.6rem;
+  }
+  /* Status chips move into a right-hand gutter, vertically centred in the row;
+     the body reserves that gutter only when a chip is actually present. */
+  .mk-solved,
+  .mk-custom {
+    top: 50%;
+    right: 0.55rem;
+    left: auto;
+    transform: translateY(-50%);
+  }
+  .mk-card:has(.mk-solved) .mk-card__body,
+  .mk-card:has(.mk-custom) .mk-card__body {
+    padding-right: 4.8rem;
+  }
+  /* A solved custom level shows both chips — stack them. */
+  .mk-card:has(.mk-solved):has(.mk-custom) .mk-custom {
+    top: calc(50% - 0.95rem);
+  }
+  .mk-card:has(.mk-solved):has(.mk-custom) .mk-solved {
+    top: calc(50% + 0.95rem);
+  }
+}
+
 /* ==================================================================== GAME */
 .mk-game {
   height: 100dvh;
@@ -1026,6 +1090,78 @@ button {
   box-shadow: var(--shadow-pop);
   max-width: 100%;
   max-height: 100%;
+}
+
+/* Coordinate margins around the board — quiet ledger numerals matching the
+   Z/S (de) / R/C (en) coordinates used by clues. Sized in BoardAxes.tsx
+   (AXES_W/AXES_H); deliberately tiny so the board keeps the stage, also on
+   phones. Readable without hover; hover (desktop) lifts them a little. */
+.mk-axes {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+}
+.mk-axes > canvas {
+  grid-area: 2 / 2;
+}
+.mk-axes__cols,
+.mk-axes__rows {
+  display: flex;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  /* dim via color alpha (not opacity) so an active label can reach pure white.
+     Clearly readable at rest — important on phones, where there is no hover. */
+  color: rgba(236, 230, 218, 0.72);
+  transition: color 0.35s ease;
+  user-select: none;
+  pointer-events: none;
+}
+.mk-axes:hover .mk-axes__cols,
+.mk-axes:hover .mk-axes__rows {
+  color: rgba(236, 230, 218, 0.88);
+}
+.mk-axes__cols {
+  grid-area: 1 / 2;
+  height: 12px;
+  margin-bottom: 3px;
+}
+.mk-axes__cols span {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.mk-axes__rows {
+  grid-area: 2 / 1;
+  flex-direction: column;
+  width: 18px;
+  margin-right: 3px;
+}
+.mk-axes__rows span {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 2px;
+}
+/* The hovered cell's two labels: white and a touch bigger. transform doesn't
+   affect layout, so nothing around them shifts. */
+.mk-axes__cols span,
+.mk-axes__rows span {
+  transition: color 0.12s ease, transform 0.12s ease;
+}
+.mk-axes__cols span[data-active],
+.mk-axes__rows span[data-active] {
+  color: #fff;
+  transform: scale(1.3);
+}
+.mk-axes__cols span[data-active] {
+  transform-origin: center bottom;
+}
+.mk-axes__rows span[data-active] {
+  transform-origin: right center;
 }
 
 /* tools ------------------------------------------------------------------ */
@@ -2662,4 +2798,176 @@ button {
     opacity: 1 !important;
     transform: none !important;
   }
+}
+
+/* ============================================================== SETTINGS */
+/* The gear button sitting top-right of most screens. */
+.mk-gear {
+  border: 1px solid var(--line-strong);
+  background: var(--ink-700);
+  color: var(--brass);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-md);
+  display: grid;
+  place-items: center;
+  flex: none;
+  cursor: pointer;
+}
+.mk-gear:hover {
+  border-color: var(--brass-dim);
+}
+.mk-gear svg {
+  transition: transform 0.35s ease;
+}
+.mk-gear:hover svg {
+  transform: rotate(60deg);
+}
+/* Game-header corner: the (optional) stopwatch beside the gear. */
+.mk-game__corner {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+/* The settings dialog reuses the case-file dialog chrome, left-aligned. */
+.mk-settings {
+  text-align: left;
+  justify-items: stretch;
+  gap: 0.8rem;
+  width: min(26rem, 100%);
+  max-height: calc(100dvh - 3rem);
+  overflow-y: auto;
+}
+.mk-settings__stamp {
+  color: var(--brass);
+  justify-self: center;
+  font-size: 1.05rem;
+}
+.mk-settings h3 {
+  text-align: center;
+  margin-top: -0.5rem;
+}
+.mk-settings__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--ink-900);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+}
+.mk-settings__row--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+.mk-settings__label {
+  font-family: var(--font-type);
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.mk-settings__sub {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  color: var(--bone-dim);
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.mk-settings__modes {
+  display: grid;
+  gap: 0.45rem;
+}
+.mk-settings__mode {
+  text-align: left;
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--ink-800);
+  color: var(--bone);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.mk-settings__mode[data-active='true'] {
+  border-color: var(--brass);
+  box-shadow: 0 0 0 2px rgba(226, 183, 94, 0.22);
+}
+.mk-settings__modename {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.mk-settings__mode[data-active='true'] .mk-settings__modename {
+  color: var(--brass);
+}
+.mk-settings__modesub {
+  font-size: 0.78rem;
+  color: var(--bone-dim);
+  line-height: 1.35;
+}
+.mk-settings__toggle {
+  width: 100%;
+  font: inherit;
+  color: var(--bone);
+  cursor: pointer;
+}
+.mk-settings__toggletext {
+  display: grid;
+  gap: 0.2rem;
+  text-align: left;
+  min-width: 0;
+}
+.mk-switch {
+  flex: none;
+  width: 44px;
+  height: 24px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--line-strong);
+  position: relative;
+  transition: background 0.18s ease;
+}
+.mk-switch[data-on='true'] {
+  background: var(--brass);
+  border-color: var(--brass);
+}
+.mk-switch__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bone);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.18s ease;
+}
+.mk-switch[data-on='true'] .mk-switch__knob {
+  transform: translateX(20px);
+  background: #2a2010;
+}
+.mk-settings__close {
+  justify-self: center;
+}
+
+/* Gender-tinted dossier cards (settings option): soft pastel rose / blue. */
+.mk-clue[data-gender='f'] {
+  background: linear-gradient(180deg, #f0dade, #e6c6cd);
+}
+.mk-clue[data-gender='m'] {
+  background: linear-gradient(180deg, #d9e2ee, #c6d4e4);
+}
+/* The victim's name picks up the tint — the dark card itself stays untouched. */
+.mk-victimname[data-gender='f'] {
+  color: #eaa9bc;
+}
+.mk-victimname[data-gender='m'] {
+  color: #9fc3ea;
 }

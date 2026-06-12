@@ -1,7 +1,7 @@
 import { Solution } from '../model/Solution.ts'
 import { SolveContext } from './SolveContext.ts'
 import { findMurderer } from './murderer.ts'
-import { createForwardTechniques, propagate } from './forward.ts'
+import { createForwardTechniques, propagate, type TechniqueOptions } from './forward.ts'
 import { TECHNIQUE_RANK, difficultyOf } from './DeductionStep.ts'
 import type { Cell, Explanation, PersonId } from '../model/types.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
@@ -38,8 +38,11 @@ export class DeductionEngine {
   /** The full solution replayed as ordered player actions — built once, on demand. */
   private hintActionsCache?: HintAction[]
 
-  constructor(private readonly puzzle: Puzzle) {
-    this.techniques = createForwardTechniques(puzzle)
+  constructor(
+    private readonly puzzle: Puzzle,
+    opts: TechniqueOptions = {},
+  ) {
+    this.techniques = createForwardTechniques(puzzle, opts)
   }
 
   solve(): DeductionResult {

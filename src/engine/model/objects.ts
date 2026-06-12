@@ -35,6 +35,7 @@ export const OBJECT_CATALOG: ObjectDef[] = [
   { char: 'd', type: 'pc', occupiable: false, layer: 'top' },
   { char: 'l', type: 'locker', occupiable: false, layer: 'top' },
   { char: 'W', type: 'washingmachine', occupiable: false, layer: 'top' },
+  { char: 'F', type: 'fridge', occupiable: false, layer: 'top' },
   { char: 'L', type: 'lamp', occupiable: false, layer: 'top' },
   // --- blocking: containers ---
   { char: 'x', type: 'box', occupiable: false, layer: 'top' },

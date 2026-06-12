@@ -317,7 +317,8 @@
           "type": "directionFromObject",
           "object": "carpet",
           "dir": "east",
-          "room": "any"
+          "room": "any",
+          "at": 6
         }
       ]
     }

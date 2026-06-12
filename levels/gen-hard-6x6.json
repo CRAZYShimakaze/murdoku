@@ -201,7 +201,8 @@
           "type": "directionFromObject",
           "object": "box",
           "dir": "east",
-          "room": "any"
+          "room": "any",
+          "at": 12
         }
       ]
     },

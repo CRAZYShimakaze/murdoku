@@ -28,7 +28,7 @@ export class Renderer {
 
   cell(cell: number): string {
     const { row, col } = this.puzzle.board.rc(cell)
-    return `Z${row + 1}/S${col + 1}`
+    return `${this.lookup('coord.row') ?? 'Z'}${row + 1}/${this.lookup('coord.col') ?? 'S'}${col + 1}`
   }
 
   private genderOf(id: string): string {
@@ -120,6 +120,17 @@ export class Renderer {
         return this.lookup(`side.${value}`) ?? String(value)
       case 'cell':
         return this.cell(Number(value))
+      // Anchor of an object clue, encoded "<type>:<cell>". Shows " (Z7/S6)" only when
+      // the board holds SEVERAL object tiles of the type — with a single one, the
+      // plain "east of a tree" is already unambiguous.
+      case 'atCell': {
+        const s = String(value)
+        if (!s) return ''
+        const sep = s.indexOf(':')
+        const type = s.slice(0, sep)
+        if (this.puzzle.board.objectCells(type).length <= 1) return ''
+        return ` (${this.cell(Number(s.slice(sep + 1)))})`
+      }
       // A comma-separated list of cell indices → "Z2/S1, Z5/S1" (for a grouped hint).
       case 'cells':
         return String(value)
@@ -128,9 +139,12 @@ export class Renderer {
           .map((c) => this.cell(Number(c)))
           .join(', ')
       case 'bound': {
-        // "row|id:line,id:line" → "Name→Z3, Name→Z6" (S for columns), names resolved.
+        // "row|id:line,id:line" → "Name→Z3, Name→Z6" (S/C for columns), names resolved.
         const bar = String(value).indexOf('|')
-        const prefix = String(value).slice(0, bar) === 'row' ? 'Z' : 'S'
+        const prefix =
+          String(value).slice(0, bar) === 'row'
+            ? (this.lookup('coord.row') ?? 'Z')
+            : (this.lookup('coord.col') ?? 'S')
         return String(value)
           .slice(bar + 1)
           .split(',')

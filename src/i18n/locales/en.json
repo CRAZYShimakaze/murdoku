@@ -65,6 +65,7 @@
     "resultOkNoMurderer": "Solvable & unique, but no single murderer.",
     "logic_pure": "Solvable by pure logic",
     "logic_contradiction": "Needs contradictions",
+    "coverage": "Cell coverage: {{percent}}% · avg breadth: {{avg}}%",
     "result_multi": "Ambiguous — more than one solution.",
     "result_none": "Not solvable — no valid arrangement.",
     "result_error": "Error — check the board & clues.",
@@ -233,6 +234,24 @@
     "garandOn": "Manuel Garand: visible",
     "garandOff": "Manuel Garand: hidden"
   },
+  "settings": {
+    "open": "Settings",
+    "stamp": "Case file",
+    "title": "Settings",
+    "language": "Language",
+    "help": "Investigation aid",
+    "helpFull": "Assistant",
+    "helpFullSub": "Marks every cell the statements still allow.",
+    "helpReduced": "Inspector",
+    "helpReducedSub": "Shows leads only: mentioned objects, rooms and traces.",
+    "helpNone": "Master detective",
+    "helpNoneSub": "No markings — you deduce entirely on your own.",
+    "timer": "Stopwatch",
+    "timerSub": "The investigation time ticks along in the header.",
+    "genderColors": "Files by gender",
+    "genderColorsSub": "Tints suspect cards softly rosé (♀) and blue (♂).",
+    "close": "Close the file"
+  },
   "difficulty": {
     "tutorial": "Tutorial",
     "easy": "Easy",
@@ -312,6 +331,7 @@
     "crate": "a wooden crate",
     "toilet": "a toilet",
     "washingmachine": "a washing machine",
+    "fridge": "a fridge",
     "chicken": "a chicken",
     "lamp": "a lamp"
   },
@@ -348,6 +368,7 @@
     "crate": "Wooden crate",
     "toilet": "Toilet",
     "washingmachine": "Washing machine",
+    "fridge": "Fridge",
     "chicken": "Chicken",
     "lamp": "Lamp"
   },
@@ -371,6 +392,10 @@
     "col": "column",
     "row": "row",
     "either": "column or row"
+  },
+  "coord": {
+    "row": "R",
+    "col": "C"
   },
   "roomRel": {
     "any": "",
@@ -677,7 +702,7 @@
     "aloneSameRoom": "{{subject}} was {{neg}}[[alone in a room with:aloneSameRoom]] {{target}}",
     "aloneSameRoomAsObject": "{{subject}} was {{neg}}[[alone in a room with:aloneSameRoomAsObject]] {{objectNom}}",
     "sameLineAsObject": "{{subject}} was {{neg}}in the same {{line}} as {{object}}{{roomRel}}",
-    "directionFromObject": "{{subject}} was {{neg}}{{direction}} of {{object}}{{roomRel}}",
+    "directionFromObject": "{{subject}} was {{neg}}{{direction}} of {{object}}{{atCell}}{{roomRel}}",
     "besideSameObject": "{{subject}} was beside {{object}}. {{mate}} was beside {{objectSame}}.",
     "besideSameObjectDir": "{{subject}} was beside {{object}}. {{mate}} was {{direction}} of {{subjectObj}}, beside {{objectSame}}.",
     "nearDoor": "{{subject}} was {{neg}}[[beside a door:nearDoor]]",
@@ -758,6 +783,7 @@
     "sameLineAsObject": "Same line as object",
     "directionFromObject": "Direction from object",
     "sameObject": "Beside same object as",
+    "atAny": "Which: any",
     "anyone": "Anyone",
     "offset": "Exactly N cells from person",
     "roomExists": "With someone in the room (on/near object)",

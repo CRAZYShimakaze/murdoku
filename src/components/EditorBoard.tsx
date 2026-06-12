@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { loadLevel, type Cell } from '../engine/index.ts'
+import BoardAxes, { AXES_H, AXES_W } from './BoardAxes.tsx'
 import { drawBoard } from '../game/boardRender.ts'
 import { onArtReady } from '../game/objectArt.ts'
 import { buildEditorLevel, type EditorState } from '../game/editorModel.ts'
@@ -32,6 +33,7 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow,
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [layout, setLayout] = useState<Layout | null>(null)
   const [artTick, setArtTick] = useState(0)
+  const [hoverRC, setHoverRC] = useState<{ row: number; col: number } | null>(null)
   const painting = useRef(false)
   const lastCell = useRef<Cell | null>(null)
 
@@ -47,8 +49,9 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow,
     const wrap = wrapRef.current
     if (!wrap) return
     const measure = () => {
-      const aw = wrap.clientWidth
-      const ah = wrap.clientHeight
+      // Leave room for the coordinate margins (top + left strips).
+      const aw = wrap.clientWidth - AXES_W
+      const ah = wrap.clientHeight - AXES_H
       if (aw <= 0 || ah <= 0) return
       const cell = Math.max(14, Math.floor(Math.min(aw / W, ah / H)))
       setLayout({ cell, w: cell * W, h: cell * H })
@@ -98,8 +101,13 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow,
     return row * W + col
   }
 
+  /** Hovered cell for the axis labels (the canvas has no hover visuals here). */
+  const hover = (cell: Cell | null) =>
+    setHoverRC(cell === null ? null : { row: Math.floor(cell / W), col: cell % W })
+
   const down = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     const cell = cellAt(e)
+    hover(cell) // light the labels on touch/press too
     if (cell === null || !layout) return
     e.currentTarget.setPointerCapture(e.pointerId)
     if (windowMode || doorMode) {
@@ -115,15 +123,17 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow,
     onPaint(cell)
   }
   const move = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!painting.current) return
     const cell = cellAt(e)
+    hover(cell)
+    if (!painting.current) return
     if (cell === null || cell === lastCell.current) return
     lastCell.current = cell
     onPaint(cell)
   }
-  const up = () => {
+  const up = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     painting.current = false
     lastCell.current = null
+    if (e.pointerType === 'touch') hover(null) // no resting cursor on touch
   }
 
   return (
@@ -131,13 +141,17 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow,
       ref={wrapRef}
       style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', minWidth: 0, minHeight: 0 }}
     >
-      <canvas
-        ref={canvasRef}
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={up}
-      />
+      <div className="mk-axes">
+        {layout && <BoardAxes cols={W} rows={H} cell={layout.cell} active={hoverRC} />}
+        <canvas
+          ref={canvasRef}
+          onPointerDown={down}
+          onPointerMove={move}
+          onPointerUp={up}
+          onPointerCancel={up}
+          onPointerLeave={() => hover(null)}
+        />
+      </div>
     </div>
   )
 }

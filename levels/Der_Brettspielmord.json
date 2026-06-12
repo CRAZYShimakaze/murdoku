@@ -428,7 +428,8 @@
               "type": "directionFromObject",
               "object": "tree",
               "dir": "east",
-              "room": "any"
+              "room": "any",
+              "at": 24
             }
           ]
         }

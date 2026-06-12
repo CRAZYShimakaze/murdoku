@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
+import { useSettings } from '../game/settings.ts'
 import { ATTR_CHIPS } from '../game/glyphs.ts'
 import Avatar from './Avatar.tsx'
 import AppearanceInfo from './AppearanceInfo.tsx'
@@ -60,6 +61,7 @@ export default function CluePanel({
   hintChain,
 }: Props) {
   const { t, i18n } = useTranslation()
+  const { genderColors } = useSettings()
 
   const lang = i18n.resolvedLanguage ?? i18n.language
   const renderer = useMemo(
@@ -126,6 +128,7 @@ export default function CluePanel({
             type="button"
             className="mk-clue"
             data-suspect={s.id}
+            data-gender={genderColors ? (s.attributes.gender === 'f' ? 'f' : 'm') : undefined}
             data-selected={selectedSuspect === s.id}
             data-placed={placed}
             onClick={() => onSelect(s.id)}
@@ -186,7 +189,9 @@ export default function CluePanel({
         </InfoTip>
         <span className="mk-clue__main">
           <span className="mk-clue__name">
-            {puzzle.victim.name}
+            <span className="mk-victimname" data-gender={genderColors ? victimGender : undefined}>
+              {puzzle.victim.name}
+            </span>
             {placements.has(VICTIM_ID) && <span className="mk-clue__check">✓</span>}
             <span className="mk-attr">{victimGender === 'm' ? '♂' : '♀'}</span>
           </span>
