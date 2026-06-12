@@ -33,6 +33,7 @@ import {
   pickerLevels,
   type LevelMeta,
 } from '../game/levels.ts'
+import BloodText from '../components/BloodText.tsx'
 import BoardCanvas from '../components/BoardCanvas.tsx'
 import CluePanel from '../components/CluePanel.tsx'
 import Toolbar from '../components/Toolbar.tsx'
@@ -67,19 +68,6 @@ interface Result {
   failures?: string[]
   /** On a win: the next level matching the saved filter (null if none). */
   next?: LevelMeta | null
-}
-
-/** Render the title with its first non-space letter blood-smeared — a noir flourish. */
-function bloodTitle(title: string) {
-  const i = title.search(/\S/)
-  if (i < 0) return title
-  return (
-    <>
-      {title.slice(0, i)}
-      <span className="mk-game__bloodletter">{title[i]}</span>
-      {title.slice(i + 1)}
-    </>
-  )
 }
 
 function formatTime(total: number): string {
@@ -343,7 +331,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
         </div>
         <div className="mk-game__heading" ref={headingRef}>
           <div className="mk-game__titlewrap">
-            <h2 className="mk-game__title" ref={titleRef}>{bloodTitle(meta.title)}</h2>
+            <h2 className="mk-game__title" ref={titleRef}><BloodText text={meta.title} /></h2>
             {meta.author && (
               <span className="mk-game__author">{t('game.author', { name: meta.author })}</span>
             )}

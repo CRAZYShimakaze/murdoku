@@ -229,6 +229,8 @@
     "unsolved": "Ungelöst",
     "empty": "Keine Fälle mit diesen Filtern.",
     "solved": "Gelöst",
+    "cases_one": "{{count}} Fall",
+    "cases_other": "{{count}} Fälle",
     "custom": "Eigen",
     "garandTag": "Geheimakte",
     "garandOn": "Manuel Garand: sichtbar",

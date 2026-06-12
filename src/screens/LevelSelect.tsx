@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import SettingsButton from '../components/SettingsButton.tsx'
+import BloodText from '../components/BloodText.tsx'
 import BoardPreview from '../components/BoardPreview.tsx'
 import {
   DEFAULT_FILTER,
@@ -35,6 +36,9 @@ interface Props {
 const TAP_COUNT = 5
 const TAP_WINDOW_MS = 2000
 const TOAST_MS = 1800
+
+/** Group order for the difficulty dividers (unknown difficulties sort last). */
+const DIFF_ORDER = new Map<string, number>(DIFFICULTIES.map((d, i) => [d, i]))
 
 export default function LevelSelect({ onPick, onBack }: Props) {
   const { t } = useTranslation()
@@ -76,6 +80,21 @@ export default function LevelSelect({ onPick, onBack }: Props) {
     () => filterLevels(universe, effective, solved),
     [universe, effective, solved],
   )
+
+  // With the difficulty filter on "all", the grid splits into case-drawer groups
+  // (easy/medium/…), each behind a divider tab. A specific filter needs none.
+  const groups = useMemo(() => {
+    if (effective.difficulty !== 'all') return [{ difficulty: null, levels }]
+    const byDiff = new Map<string, LevelMeta[]>()
+    for (const l of levels) {
+      const list = byDiff.get(l.difficulty)
+      if (list) list.push(l)
+      else byDiff.set(l.difficulty, [l])
+    }
+    return [...byDiff.entries()]
+      .sort(([a], [b]) => (DIFF_ORDER.get(a) ?? 99) - (DIFF_ORDER.get(b) ?? 99))
+      .map(([difficulty, list]) => ({ difficulty, levels: list }))
+  }, [levels, effective.difficulty])
 
   const update = (key: keyof LevelFilter, value: string) =>
     setFilter((f) => ({ ...f, [key]: value }) as LevelFilter)
@@ -191,34 +210,57 @@ export default function LevelSelect({ onPick, onBack }: Props) {
 
         <div className="mk-level-grid">
           {levels.length === 0 && <p className="mk-empty">{t('select.empty')}</p>}
-          {levels.map((l, i) => (
-            <button
-              key={l.id}
-              type="button"
-              className="mk-card"
-              data-solved={solved.has(l.id)}
-              style={{ animationDelay: `${Math.min(i, 12) * 0.04}s` }}
-              onClick={() => onPick(l)}
-            >
-              {l.custom && <span className="mk-custom">{t('select.custom')}</span>}
-              {solved.has(l.id) && <span className="mk-solved">✓ {t('select.solved')}</span>}
-              <BoardPreview json={l.json} />
-              <div className="mk-card__body">
-                <span className="mk-card__title">{l.title}</span>
-                {l.author && (
-                  <span className="mk-card__author">{t('game.author', { name: l.author })}</span>
+          {(() => {
+            let cardIndex = 0
+            return groups.map((g) => (
+              <Fragment key={g.difficulty ?? 'all'}>
+                {g.difficulty && (
+                  <div className="mk-divider">
+                    <span className="mk-divider__label">{t(`difficulty.${g.difficulty}`)}</span>
+                    <span className="mk-divider__count">
+                      {t('select.cases', { count: g.levels.length })}
+                    </span>
+                  </div>
                 )}
-                <div className="mk-card__meta">
-                  <span className="mk-pill" data-d={l.difficulty}>
-                    {t(`difficulty.${l.difficulty}`)}
-                  </span>
-                  <span className="mk-card__size">
-                    {l.width}×{l.height}
-                  </span>
-                </div>
-              </div>
-            </button>
-          ))}
+                {g.levels.map((l) => {
+                  const i = cardIndex++
+                  return (
+                    <button
+                      key={l.id}
+                      type="button"
+                      className="mk-card"
+                      data-solved={solved.has(l.id)}
+                      style={{ animationDelay: `${Math.min(i, 12) * 0.04}s` }}
+                      onClick={() => onPick(l)}
+                    >
+                      <span className="mk-card__photo">
+                        <span className="mk-card__tape" />
+                        <BoardPreview json={l.json} />
+                      </span>
+                      {solved.has(l.id) && (
+                        <span className="mk-stamp">{t('select.solved')}</span>
+                      )}
+                      {l.custom && <span className="mk-custom">{t('select.custom')}</span>}
+                      <span className="mk-card__body">
+                        <span className="mk-card__title">
+                          <BloodText text={l.title} />
+                        </span>
+                        {l.author && <span className="mk-card__author">— {l.author}</span>}
+                        <span className="mk-card__meta">
+                          <span className="mk-pill" data-d={l.difficulty}>
+                            {t(`difficulty.${l.difficulty}`)}
+                          </span>
+                          <span className="mk-card__size">
+                            {l.width}×{l.height}
+                          </span>
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </Fragment>
+            ))
+          })()}
         </div>
       </div>
 

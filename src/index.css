@@ -458,9 +458,9 @@ button {
 
 /* ============================================================ LEVEL SELECT */
 .mk-select {
-  max-width: 1100px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: clamp(1.2rem, 4vw, 2.6rem);
+  padding: clamp(1.2rem, 4vw, 2.2rem);
 }
 .mk-topbar {
   display: flex;
@@ -580,78 +580,172 @@ button {
 
 .mk-level-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1.1rem;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 0.85rem 0.95rem;
 }
+/* Difficulty divider: a case-drawer tab between the groups. */
+.mk-divider {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.55rem 0 0.05rem;
+}
+.mk-divider:first-child {
+  margin-top: 0;
+}
+.mk-divider__label {
+  font-family: var(--font-type);
+  font-size: 0.76rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.mk-divider__count {
+  font-family: var(--font-type);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+}
+.mk-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px dashed var(--line-strong);
+}
+
+/* Dossier card: crime-scene polaroid on the left, case facts on the right.
+   FIXED height, so every card lines up whether or not an author byline exists. */
 .mk-card {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  height: 138px;
   text-align: left;
   border: 1px solid var(--line-strong);
   background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
   border-radius: var(--r-lg);
-  padding: 0;
+  padding: 0 0.9rem 0 0.8rem;
   overflow: hidden;
   box-shadow: var(--shadow-card);
   transition:
     transform 0.16s ease,
     border-color 0.16s ease,
-    box-shadow 0.16s ease;
+    box-shadow 0.16s ease,
+    opacity 0.16s ease;
   animation: fade-up 0.5s ease backwards;
 }
 .mk-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   border-color: var(--brass-dim);
   box-shadow: var(--shadow-pop);
+}
+/* The floor plan as a taped-on crime-scene polaroid, slightly askew (it
+   straightens up on hover). Alternating tilt keeps the wall looking pinned. */
+.mk-card__photo {
+  position: relative;
+  flex: none;
+  width: 104px;
+  padding: 5px 5px 13px;
+  background: linear-gradient(180deg, #f4efe3, #e9e2cf);
+  border-radius: 2px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  transform: rotate(-2.4deg);
+  transition: transform 0.18s ease;
+}
+.mk-card:nth-child(even) .mk-card__photo {
+  transform: rotate(1.8deg);
+}
+.mk-card:hover .mk-card__photo {
+  transform: rotate(0deg);
+}
+.mk-card__tape {
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 46px;
+  height: 15px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(226, 214, 180, 0.45);
+  border-left: 1px dashed rgba(0, 0, 0, 0.18);
+  border-right: 1px dashed rgba(0, 0, 0, 0.18);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  z-index: 1;
 }
 .mk-card__preview {
   display: block;
   width: 100%;
   aspect-ratio: 1 / 1;
   background: #0d0c11;
-  border-bottom: 1px solid var(--line);
+  border-radius: 1px;
+}
+/* Solved: a crimson rubber stamp pressed across the photo — thick double
+   border, dark ink pad behind it, crisp solid ink. */
+.mk-stamp {
+  position: absolute;
+  left: 8px;
+  top: auto;
+  bottom: 12px;
+  z-index: 2;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.92rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  border: 3px solid currentColor;
+  border-radius: 5px;
+  padding: 0.12rem 0.45rem;
+  transform: rotate(-14deg);
+  background: rgba(16, 7, 7, 0.72);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1.5px rgba(207, 70, 60, 0.5);
+  pointer-events: none;
 }
 .mk-card[data-solved='true'] {
-  border-color: var(--evergreen);
-}
-.mk-solved {
-  position: absolute;
-  top: 0.6rem;
-  right: 0.6rem;
-  z-index: 1;
-  font-family: var(--font-type);
-  font-size: 0.66rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #14241c;
-  background: var(--evergreen);
-  border-radius: 99px;
-  padding: 0.2rem 0.6rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  border-color: rgba(207, 70, 60, 0.45);
 }
 .mk-card__body {
-  padding: 0.85rem 1rem 1rem;
-  display: grid;
-  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+  padding: 0.85rem 0 0.8rem;
 }
 .mk-card__title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.12rem;
-  line-height: 1.15;
-}
-/* Author byline on the card — a quiet, typewritten credit under the title. */
-.mk-card__author {
-  margin-top: -0.15rem;
-  font-family: var(--font-type);
-  font-size: 0.76rem;
-  font-style: italic;
-  color: var(--brass-dim);
-  letter-spacing: 0.01em;
-  white-space: nowrap;
+  font-size: 1.04rem;
+  line-height: 1.18;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+}
+/* keep long titles clear of the "custom" badge in the top-right corner */
+.mk-card:has(.mk-custom) .mk-card__title {
+  padding-right: 3.4rem;
+}
+/* Author on the card: the NAME is the point — a brass typewriter signature
+   ("— Mika Abendroth") that may wrap onto a second line. */
+.mk-card__author {
+  font-family: var(--font-type);
+  font-size: 0.84rem;
+  font-style: italic;
+  color: var(--brass);
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .mk-card__meta {
+  margin-top: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -671,40 +765,39 @@ button {
   padding: 3rem 1rem;
 }
 
-/* Mobile: the level grid becomes a case-file REGISTER — one slim row per level
-   with a small floor-plan thumb. ~10 cases per phone screen instead of 1–2,
-   so 50 levels no longer mean endless scrolling. Desktop keeps the big cards. */
+/* Mobile: the dossiers shrink to a slim case-file REGISTER — one row per level
+   with a small polaroid thumb. ~10 cases per phone screen. */
 @media (max-width: 640px) {
   .mk-level-grid {
     grid-template-columns: 1fr;
     gap: 0.55rem;
   }
+  .mk-divider {
+    margin: 0.45rem 0 0;
+  }
   .mk-card {
-    display: flex;
-    align-items: center;
+    height: auto;
+    gap: 0.55rem;
+    padding: 0.4rem 0.55rem 0.4rem 0.5rem;
   }
   .mk-card:hover {
     transform: none; /* no hover lift on touch — rows just press */
   }
-  .mk-card__preview {
-    width: 52px;
-    height: 52px;
-    flex: none;
-    margin: 0.4rem 0.15rem 0.4rem 0.4rem;
-    border-bottom: none;
-    border-radius: 8px;
+  .mk-card__photo {
+    width: 56px;
+    padding: 3px 3px 7px;
+    transform: rotate(-2deg);
+  }
+  .mk-card__tape {
+    display: none;
   }
   .mk-card__body {
-    flex: 1;
-    min-width: 0;
-    padding: 0.5rem 0.65rem 0.5rem 0.45rem;
-    gap: 0.28rem;
+    padding: 0.45rem 0;
+    gap: 0.24rem;
   }
   .mk-card__title {
-    font-size: 0.98rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.96rem;
+    -webkit-line-clamp: 1;
   }
   .mk-card__author {
     display: none;
@@ -713,24 +806,35 @@ button {
     justify-content: flex-start;
     gap: 0.6rem;
   }
-  /* Status chips move into a right-hand gutter, vertically centred in the row;
-     the body reserves that gutter only when a chip is actually present. */
-  .mk-solved,
+  /* The stamp moves into a right-hand gutter, vertically centred in the row;
+     the body reserves that gutter only when it is actually present. */
+  .mk-stamp {
+    left: auto;
+    right: 0.6rem;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%) rotate(-9deg);
+    font-size: 0.74rem;
+    border-width: 2px;
+    padding: 0.08rem 0.35rem;
+  }
+  .mk-card:has(.mk-stamp) .mk-card__body,
+  .mk-card:has(.mk-custom) .mk-card__body {
+    padding-right: 4.6rem;
+  }
   .mk-custom {
     top: 50%;
     right: 0.55rem;
-    left: auto;
     transform: translateY(-50%);
   }
-  .mk-card:has(.mk-solved) .mk-card__body,
-  .mk-card:has(.mk-custom) .mk-card__body {
-    padding-right: 4.8rem;
+  .mk-card:has(.mk-custom) .mk-card__title {
+    padding-right: 0;
   }
-  /* A solved custom level shows both chips — stack them. */
-  .mk-card:has(.mk-solved):has(.mk-custom) .mk-custom {
+  /* A solved custom level shows both — stack them in the gutter. */
+  .mk-card:has(.mk-stamp):has(.mk-custom) .mk-custom {
     top: calc(50% - 0.95rem);
   }
-  .mk-card:has(.mk-solved):has(.mk-custom) .mk-solved {
+  .mk-card:has(.mk-stamp):has(.mk-custom) .mk-stamp {
     top: calc(50% + 0.95rem);
   }
 }
@@ -781,8 +885,9 @@ button {
   color: var(--bone);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
 }
-/* The blood-smeared initial: crimson with a smudged shadow and a thin drip below. */
-.mk-game__bloodletter {
+/* The blood-smeared initial: crimson with a smudged shadow and a thin drip below.
+   Shared by the game header and the level-select card titles (BloodText). */
+.mk-bloodletter {
   position: relative;
   color: var(--crimson);
   text-shadow:
@@ -790,7 +895,7 @@ button {
     1px 1px 0 rgba(147, 39, 31, 0.6),
     3px 4px 5px rgba(147, 39, 31, 0.45);
 }
-.mk-game__bloodletter::after {
+.mk-bloodletter::after {
   content: '';
   position: absolute;
   left: 52%;
@@ -2171,8 +2276,8 @@ button {
 }
 .mk-custom {
   position: absolute;
-  top: 0.6rem;
-  left: 0.6rem;
+  top: 0.55rem;
+  right: 0.6rem;
   z-index: 1;
   font-family: var(--font-type);
   font-size: 0.62rem;

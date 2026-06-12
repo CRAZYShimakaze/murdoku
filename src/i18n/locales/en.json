@@ -229,6 +229,8 @@
     "unsolved": "Unsolved",
     "empty": "No cases match these filters.",
     "solved": "Solved",
+    "cases_one": "{{count}} case",
+    "cases_other": "{{count}} cases",
     "custom": "Custom",
     "garandTag": "Classified",
     "garandOn": "Manuel Garand: visible",
