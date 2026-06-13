@@ -2215,18 +2215,94 @@ button {
 
 /* ============================================================== GENERATE */
 .mk-generate {
-  max-width: 760px;
+  max-width: 1100px; /* match LevelSelect/topbar; the old 760px looked narrower */
   margin: 0 auto;
-  padding: clamp(1.2rem, 4vw, 2.6rem);
+  padding: clamp(1rem, 3vw, 1.6rem);
+}
+/* Tighter than the shared topbar default so the form fits without scrolling on desktop. */
+.mk-generate .mk-topbar {
+  margin-bottom: 1rem;
 }
 .mk-genform {
   display: grid;
-  gap: 1.4rem;
+  gap: 0.95rem;
   background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
   border: 1px solid var(--line-strong);
   border-radius: var(--r-lg);
-  padding: 1.6rem;
+  padding: 1.3rem;
   box-shadow: var(--shadow-card);
+}
+/* Dossier header band — the case-file label, a live case ref, and a CONFIDENTIAL stamp. */
+.mk-genform__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--line-strong);
+}
+.mk-genform__akte {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  font-family: var(--font-type);
+  font-size: 0.76rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.mk-genform__no {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--bone-faint);
+}
+/* Inked CONFIDENTIAL stamp — bordered and askew, subdued so it never fights the form. */
+.mk-genform__stamp {
+  flex: none;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--crimson);
+  border: 2px solid currentColor;
+  border-radius: var(--r-sm);
+  padding: 0.14rem 0.6rem;
+  transform: rotate(-5deg);
+  opacity: 0.82;
+}
+/* Two sections, each opened by the app's standard .mk-divider header (see LevelSelect)
+   and set on a recessed darker "case-file page" — a hairline border + soft inset shadow
+   (the panel idiom from the editor's condition cards) clearly delineates the two areas. */
+.mk-genset {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.85rem 1.05rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.22);
+}
+.mk-genset .mk-divider {
+  margin-top: 0; /* the page's own padding gives the headroom */
+}
+.mk-genset .mk-field {
+  gap: 0.5rem;
+}
+/* Desktop: size · difficulty · theme share one row so the form stays short (no scroll).
+   Fields stretch to equal height and their controls centre, so the thin range slider
+   lines up with the chips and the theme dropdown (one shared baseline). */
+.mk-genrow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.1rem;
+  align-items: stretch;
+}
+.mk-genrow .mk-field {
+  grid-template-rows: auto 1fr;
+}
+.mk-genrow .mk-field > :last-child {
+  align-self: center;
 }
 .mk-field {
   display: grid;
@@ -2731,7 +2807,10 @@ button {
   .mk-editor__fields {
     display: contents;
   }
-  .mk-field {
+  /* Scoped to .mk-editor — these compact inline-row/hidden-label rules are ONLY for
+     the editor header. Unscoped they leaked into the generator form and hid its field
+     labels (incl. the size caption "6×6 / 7×7"). */
+  .mk-editor .mk-field {
     display: flex; /* desktop uses a 2-row grid; phones keep the inline row */
     flex-direction: row;
     align-items: center;
@@ -2739,16 +2818,24 @@ button {
     padding: 0;
     border-right: 0;
   }
-  .mk-field__label {
+  .mk-editor .mk-field__label {
     display: none;
   }
-  .mk-field--size .mk-field__label {
+  .mk-editor .mk-field--size .mk-field__label {
     display: inline; /* keep "Größe 8×8" — its value lives in the caption */
   }
-  .mk-field--size input[type='range'] {
+  .mk-editor .mk-field--size input[type='range'] {
     width: 110px;
     min-width: 0;
     height: auto; /* the desktop fixed control height doesn't apply on the phone row */
+  }
+  /* Generator: undo the desktop two-up pairing so each field stacks full-width again. */
+  .mk-genrow {
+    display: contents;
+  }
+  /* The "(people can stand on)" suffix is desktop-only — it overflows the narrow row. */
+  .mk-fieldhint {
+    display: none;
   }
   .mk-input.mk-editor__name {
     width: auto;

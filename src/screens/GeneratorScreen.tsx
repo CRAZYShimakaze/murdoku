@@ -14,6 +14,8 @@ import {
 } from '../engine/generator/index.ts'
 
 const GEN_DIFFS: GenDifficulty[] = ['easy', 'medium', 'hard']
+/** Short codes for the faux case reference shown on the dossier (pure flavour). */
+const DIFF_CODE: Record<GenDifficulty, string> = { easy: 'E', medium: 'M', hard: 'H' }
 const MIN = 4
 const MAX = 16
 
@@ -59,10 +61,14 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
       return next
     })
 
-  /** One toggle group of object chips (walkable vs blocking). */
-  const objectGroup = (label: string, types: readonly string[]) => (
+  /** One toggle group of object chips (walkable vs blocking). The optional hint is an
+      explanatory suffix shown only on desktop — it would overflow the narrow mobile row. */
+  const objectGroup = (label: string, types: readonly string[], hint?: string) => (
     <div className="mk-field">
-      <span className="mk-field__label">{label}</span>
+      <span className="mk-field__label">
+        {label}
+        {hint && <span className="mk-fieldhint">{hint}</span>}
+      </span>
       <div className="mk-chips">
         {types.map((type) => (
           <button
@@ -112,6 +118,9 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
     setBusy(false)
   }
 
+  // A faux case reference that updates live as the form changes — dossier flavour only.
+  const caseRef = `MD-${String(size).padStart(2, '0')}-${DIFF_CODE[difficulty]}`
+
   return (
     <div className="mk-screen">
       <div className="mk-generate">
@@ -127,86 +136,118 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
         </header>
 
         <div className="mk-genform">
-          <div className="mk-field">
-            <label className="mk-field__label" htmlFor="mk-size">
-              {t('generate.size')}: <strong>{size}×{size}</strong> ·{' '}
-              {t('generate.suspects', { n: size - 1 })}
-            </label>
-            <input
-              id="mk-size"
-              type="range"
-              min={MIN}
-              max={MAX}
-              value={size}
-              disabled={busy}
-              onChange={(e) => setSize(Number(e.target.value))}
-            />
+          {/* Dossier header band: the case-file label + a live (faux) case number and a
+              stamped CONFIDENTIAL mark — frames the whole form as a real case file. */}
+          <div className="mk-genform__head">
+            <span className="mk-genform__akte">
+              {t('generate.akte')}
+              <span className="mk-genform__no">№ {caseRef}</span>
+            </span>
+            <span className="mk-genform__stamp" aria-hidden="true">
+              {t('generate.confidential')}
+            </span>
           </div>
 
-          <div className="mk-field">
-            <span className="mk-field__label">{t('generate.difficulty')}</span>
-            <div className="mk-chips">
-              {GEN_DIFFS.map((d) => (
+          {/* Two sections, each opened by the app's standard .mk-divider (brass label +
+              dashed rule) — the same case-drawer dividers used in the level select. */}
+          <section className="mk-genset">
+            <div className="mk-divider">
+              <span className="mk-divider__label">{t('generate.sectionCase')}</span>
+            </div>
+            {/* size · difficulty · theme side by side on desktop; on phones .mk-genrow
+                collapses to display:contents so each field stacks full-width. */}
+            <div className="mk-genrow">
+              <div className="mk-field">
+                <label className="mk-field__label" htmlFor="mk-size">
+                  {t('generate.size')}: <strong>{size}×{size}</strong> ·{' '}
+                  {t('generate.suspects', { n: size - 1 })}
+                </label>
+                <input
+                  id="mk-size"
+                  type="range"
+                  min={MIN}
+                  max={MAX}
+                  value={size}
+                  disabled={busy}
+                  onChange={(e) => setSize(Number(e.target.value))}
+                />
+              </div>
+
+              <div className="mk-field">
+                <span className="mk-field__label">{t('generate.difficulty')}</span>
+                <div className="mk-chips">
+                  {GEN_DIFFS.map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      className="mk-chip"
+                      data-active={difficulty === d}
+                      disabled={busy}
+                      onClick={() => setDifficulty(d)}
+                    >
+                      {t(`difficulty.${d}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mk-field">
+                <label className="mk-field__label" htmlFor="mk-theme">
+                  {t('generate.theme')}
+                </label>
+                <select
+                  id="mk-theme"
+                  className="mk-select-input"
+                  value={theme}
+                  disabled={busy}
+                  onChange={(e) => setTheme(e.target.value)}
+                >
+                  <option value="random">{t('theme.random')}</option>
+                  {THEME_IDS.map((id) => (
+                    <option key={id} value={id}>
+                      {t(`theme.${id}`)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section className="mk-genset">
+            <div className="mk-divider">
+              <span className="mk-divider__label">{t('generate.sectionScene')}</span>
+            </div>
+            {objectGroup(
+              t('generate.objectsOccupiable'),
+              OCCUPIABLE_OBJECT_TYPES,
+              t('generate.objectsOccupiableHint'),
+            )}
+            {objectGroup(t('generate.objectsBlocking'), BLOCKING_OBJECT_TYPES)}
+
+            <div className="mk-field">
+              <span className="mk-field__label">{t('generate.openings')}</span>
+              <div className="mk-chips">
                 <button
-                  key={d}
                   type="button"
                   className="mk-chip"
-                  data-active={difficulty === d}
+                  data-active={windows}
                   disabled={busy}
-                  onClick={() => setDifficulty(d)}
+                  onClick={() => setWindows((w) => !w)}
                 >
-                  {t(`difficulty.${d}`)}
+                  {OBJECT_GLYPHS.window} {t('generate.windows')}
                 </button>
-              ))}
+                <button
+                  type="button"
+                  className="mk-chip"
+                  data-active={doors}
+                  disabled={busy}
+                  onClick={() => setDoors((d) => !d)}
+                >
+                  {OBJECT_GLYPHS.door} {t('generate.doors')}
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div className="mk-field">
-            <label className="mk-field__label" htmlFor="mk-theme">
-              {t('generate.theme')}
-            </label>
-            <select
-              id="mk-theme"
-              className="mk-select-input"
-              value={theme}
-              disabled={busy}
-              onChange={(e) => setTheme(e.target.value)}
-            >
-              <option value="random">{t('theme.random')}</option>
-              {THEME_IDS.map((id) => (
-                <option key={id} value={id}>
-                  {t(`theme.${id}`)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {objectGroup(t('generate.objectsOccupiable'), OCCUPIABLE_OBJECT_TYPES)}
-          {objectGroup(t('generate.objectsBlocking'), BLOCKING_OBJECT_TYPES)}
-
-          <div className="mk-field">
-            <span className="mk-field__label">{t('generate.openings')}</span>
-            <div className="mk-chips">
-              <button
-                type="button"
-                className="mk-chip"
-                data-active={windows}
-                disabled={busy}
-                onClick={() => setWindows((w) => !w)}
-              >
-                {OBJECT_GLYPHS.window} {t('generate.windows')}
-              </button>
-              <button
-                type="button"
-                className="mk-chip"
-                data-active={doors}
-                disabled={busy}
-                onClick={() => setDoors((d) => !d)}
-              >
-                {OBJECT_GLYPHS.door} {t('generate.doors')}
-              </button>
-            </div>
-          </div>
+          </section>
 
           {error && <p className="mk-generr">{error}</p>}
 

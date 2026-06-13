@@ -1,0 +1,475 @@
+{
+  "schema": 1,
+  "id": "editor-villa-kunterbunt",
+  "title": "Villa Kunterbunt",
+  "author": "Mika Aporius",
+  "size": {
+    "width": 10,
+    "height": 10
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.entrancehall",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "room.salon",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.dininghall",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.library",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.musicroom",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.conservatory",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.gallery",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.boudoir",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.smokingroom",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.ballroom",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.greenhouse",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.winecellar",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.servantsroom",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.dressingroom",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.firesideroom",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "6666633333",
+    "6666633333",
+    "6666633333",
+    "6666677777",
+    "5555577777",
+    "5555577777",
+    "5555577777",
+    "1111111CCC",
+    "1111111CCC",
+    "1111111CCC"
+  ],
+  "groundMap": [
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "..........",
+    "rrrrrrr...",
+    ".........."
+  ],
+  "topMap": [
+    "p..ss.sss.",
+    "..ttssttts",
+    "..tts.sss.",
+    "p..ss....l",
+    ".s.s..ee.l",
+    ".t.t.....l",
+    "p.p.p.llll",
+    ".p.p.p...g",
+    ".......g.g",
+    "p.p.p.pggg"
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alex",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "curly",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "sameLineAsObject",
+          "object": "gift",
+          "line": "col",
+          "room": "any"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bernd",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "combOver",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "directionFromObject",
+              "object": "carpet",
+              "dir": "south",
+              "room": "any",
+              "at": 80
+            },
+            {
+              "type": "alone"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "bun",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "directionFromObject",
+              "object": "chair",
+              "dir": "north",
+              "room": "any",
+              "at": 14
+            },
+            {
+              "type": "sameLineAsObject",
+              "object": "gift",
+              "line": "col",
+              "room": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "updo",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "inRow",
+          "row": 4
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "bald": true,
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "corner"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "curly",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 1
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "spiky",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "direction",
+          "of": "I",
+          "dir": "north"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Hana",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "long",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "directionFromObject",
+              "object": "chair",
+              "dir": "east",
+              "room": "any",
+              "at": 8
+            },
+            {
+              "type": "nearObject",
+              "object": "chair"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "I",
+      "name": "Ivan",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "sidePart",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "7"
+            },
+            {
+              "type": "sameLineAsObject",
+              "object": "table",
+              "line": "row",
+              "room": "any"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Viola",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "hard"
+}

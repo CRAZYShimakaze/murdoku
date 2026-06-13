@@ -1,0 +1,459 @@
+{
+  "schema": 1,
+  "id": "editor-klinik-m-rdschen",
+  "title": "Klinik Mördschen",
+  "author": "Mika Aporius",
+  "size": {
+    "width": 7,
+    "height": 7
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.reception",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "room.waitingroom",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.operating",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.ward",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.lab",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.pharmacy",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.xray",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.icu",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.commonroom",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.emergency",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.deliveryroom",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.sterilization",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.office",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.cafeteria",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.hallway",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "3336666",
+    "3336666",
+    "AAA2222",
+    "AAA2222",
+    "AAA2222",
+    "111EEEE",
+    "111EEEE"
+  ],
+  "groundMap": [
+    ".......",
+    ".......",
+    "..r.rrr",
+    "..r.rrr",
+    "..r.rrr",
+    "..rrrrr",
+    "..r...."
+  ],
+  "topMap": [
+    "Ls.y..s",
+    "bb...Kt",
+    "...p..s",
+    ".t.f..s",
+    "st.T..s",
+    ".......",
+    "st..p.w"
+  ],
+  "windows": [
+    {
+      "r": 2,
+      "c": 6,
+      "side": "E"
+    },
+    {
+      "r": 4,
+      "c": 6,
+      "side": "E"
+    },
+    {
+      "r": 0,
+      "c": 3,
+      "side": "N"
+    },
+    {
+      "r": 5,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 6,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 5,
+      "c": 6,
+      "side": "E"
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 4,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 0,
+      "c": 6,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 2,
+      "side": "N"
+    }
+  ],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Augustin",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "rimless",
+        "glassesColor": "red",
+        "hairstyle": "spiky",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRow",
+              "row": 0
+            },
+            {
+              "type": "nearWindow"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Berta",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "curly",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 3
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Cosmo",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "chinstrap",
+        "hairstyle": "quiff",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "carpet"
+            },
+            {
+              "type": "nearObjectAny",
+              "objects": [
+                "carpet",
+                "table"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dimana",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "blue",
+        "hairstyle": "updo"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "carpet"
+            },
+            {
+              "type": "inRoom",
+              "room": "E",
+              "occupancy": "alone"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Egbert",
+      "attributes": {
+        "gender": "m",
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "A"
+            },
+            {
+              "type": "nearObjectAny",
+              "objects": [
+                "carpet",
+                "chair"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Fludiduda",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "curly",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "1"
+            },
+            {
+              "type": "onObject",
+              "object": "carpet"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Olegme",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [
+    {
+      "type": "emptyRooms",
+      "count": 1
+    }
+  ],
+  "difficulty": "easy"
+}

@@ -1,0 +1,416 @@
+{
+  "schema": 1,
+  "id": "editor-mikromakro-2-0",
+  "title": "MikroMakro 2.0",
+  "size": {
+    "width": 5,
+    "height": 5
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.living",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "room.dining",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.kitchen",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.hallway",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.balcony",
+      "color": "#e6cda0",
+      "outside": true
+    },
+    "6": {
+      "nameKey": "room.gameroom",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.bar",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.lounge",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.terrace",
+      "color": "#e0c4a0",
+      "outside": true
+    },
+    "A": {
+      "nameKey": "room.library",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.conservatory",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.vestibule",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.pantry",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.guestbath",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.study",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "66FFF",
+    "66FFF",
+    "11133",
+    "11133",
+    "11133"
+  ],
+  "groundMap": [
+    "rr...",
+    "rr...",
+    ".rr..",
+    "rrr..",
+    "....."
+  ],
+  "topMap": [
+    "s...s",
+    "t..tt",
+    "g....",
+    ".....",
+    ".sstt"
+  ],
+  "windows": [
+    {
+      "r": 2,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 0,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 0,
+      "c": 2,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 3,
+      "side": "N"
+    },
+    {
+      "r": 2,
+      "c": 4,
+      "side": "E"
+    },
+    {
+      "r": 3,
+      "c": 4,
+      "side": "E"
+    },
+    {
+      "r": 4,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 0,
+      "c": 0,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 4,
+      "side": "E"
+    }
+  ],
+  "doors": [
+    {
+      "r": 3,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 3,
+      "c": 2,
+      "side": "E"
+    },
+    {
+      "r": 1,
+      "c": 1,
+      "side": "S"
+    },
+    {
+      "r": 1,
+      "c": 2,
+      "side": "S"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Apo",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "stubble",
+        "hairstyle": "short"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "1"
+            },
+            {
+              "type": "nearObject",
+              "object": "chair"
+            },
+            {
+              "type": "onObject",
+              "object": "carpet"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "cat",
+        "glassesColor": "black",
+        "hairstyle": "longCenter"
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Caroline",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearDoor"
+            },
+            {
+              "type": "onObject",
+              "object": "carpet"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dittbert",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "square",
+        "glassesColor": "black",
+        "hairstyle": "slick",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "direction",
+          "of": "B",
+          "dir": "south"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Oppi",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [
+    {
+      "type": "emptyRooms",
+      "count": 0
+    }
+  ],
+  "difficulty": "medium"
+}
