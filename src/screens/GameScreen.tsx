@@ -106,6 +106,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   const tut = useTutorialFlow({ enabled: !!tutorial, puzzle, solution, session, selected, setSelected })
   const [hint, setHint] = useState<HintResult | null>(null)
   const [hintShown, setHintShown] = useState(false) // hint requested (even if none was found)
+  const [hintRequestId, setHintRequestId] = useState(0) // bumped per request → scrolls the hint into view
   const [result, setResult] = useState<Result | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
@@ -240,6 +241,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
     setXTool(false)
     setHint(engine.nextHint(session.state.placements, session.state.crosses))
     setHintShown(true)
+    setHintRequestId((n) => n + 1) // re-scroll even when the same hint is requested again
   }
 
   // Two highlight layers so a selected suspect's possible cells (blue) stay visible
@@ -355,6 +357,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
         onHoverSuspect={setHoveredSuspect}
         hint={hintText}
         hintChain={hintChain}
+        hintRequestId={hintRequestId}
       />
 
       <div className="mk-board">

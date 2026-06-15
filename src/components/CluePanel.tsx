@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
@@ -39,6 +39,8 @@ interface Props {
   hint: string | null
   /** Optional step-by-step reasoning chain shown under the hint. */
   hintChain?: string[] | null
+  /** Bumped each time the player requests a hint — scrolls it into view. */
+  hintRequestId?: number
 }
 
 function attrChips(attributes: Readonly<Record<string, unknown>>): string[] {
@@ -59,9 +61,20 @@ export default function CluePanel({
   onHoverSuspect,
   hint,
   hintChain,
+  hintRequestId,
 }: Props) {
   const { t, i18n } = useTranslation()
   const { genderColors } = useSettings()
+
+  // The hint bar sits above the suspects, so on a scrolled-down or mobile panel
+  // it's off-screen when requested. Each hint request smoothly brings it into
+  // view: `nearest` aligns it to the top edge when scrolled past it, and skips
+  // the scroll entirely when it's already visible.
+  const hintBarRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!hintRequestId) return
+    hintBarRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [hintRequestId])
 
   const lang = i18n.resolvedLanguage ?? i18n.language
   const renderer = useMemo(
@@ -106,7 +119,7 @@ export default function CluePanel({
       )}
 
       {hint && (
-        <div className="mk-hintbar">
+        <div className="mk-hintbar" ref={hintBarRef}>
           <strong>{t('tool.hint')}</strong>
           {hint}
           {hintChain && hintChain.length > 0 && (
