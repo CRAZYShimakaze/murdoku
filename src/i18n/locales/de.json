@@ -962,14 +962,20 @@
     "clueCandidates": "{{name}}: durch die Hinweise bleiben {{count}} mögliche Felder.",
     "nakedSingle": "{{name}} muss auf {{cell}} stehen – einziges mögliches Feld.",
     "uniqueConstraint": "Nur {{name}} darf dort stehen – andere von diesen Feldern ausgeschlossen.",
-    "hiddenSingleRow": "Nur {{name}} kann in Zeile {{line}} sein – also dort.",
-    "hiddenSingleCol": "Nur {{name}} kann in Spalte {{line}} sein – also dort.",
+    "hiddenSingleRow": "In Zeile {{line}} ist alles ausgekreuzt bis auf {{cells}} – dort passt nur {{name}}, kein anderer Verdächtiger und nicht das Opfer.",
+    "hiddenSingleCol": "In Spalte {{line}} ist alles ausgekreuzt bis auf {{cells}} – dort passt nur {{name}}, kein anderer Verdächtiger und nicht das Opfer.",
+    "forcedCellRow": "In Zeile {{line}} ist nur {{cell}} frei – dort muss jemand stehen, also ist Spalte {{perpLine}} belegt: die anderen Felder der Spalte sind gestrichen.",
+    "forcedCellCol": "In Spalte {{line}} ist nur {{cell}} frei – dort muss jemand stehen, also ist Zeile {{perpLine}} belegt: die anderen Felder der Zeile sind gestrichen.",
+    "hiddenSingleRowVictim": "In Zeile {{line}} ist alles ausgekreuzt bis auf {{cells}} – dort kann nur das Opfer ({{name}}) stehen, kein Verdächtiger.",
+    "hiddenSingleColVictim": "In Spalte {{line}} ist alles ausgekreuzt bis auf {{cells}} – dort kann nur das Opfer ({{name}}) stehen, kein Verdächtiger.",
     "nakedGroupRows": "{{people}}: nur Zeilen {{lines}} möglich – für andere gesperrt.",
     "nakedGroupCols": "{{people}}: nur Spalten {{lines}} möglich – für andere gesperrt.",
     "rectangle": "Egal wo {{name}} steht, {{cell}} bleibt blockiert – dort kann niemand stehen.",
     "insideXor": "{{other}} ist {{otherSide}}, also ist {{name}} nicht {{otherSide}} – Felder ausgeschlossen.",
     "boardCountFull": "Schon {{count}} Person auf {{object}} – für alle anderen ausgeschlossen.",
     "boardCountConfine": "Nur {{name}} kann auf {{object}} sein – muss also dorthin.",
+    "emptyRoomsAllOccupied": "So viele Räume sind schon belegt, dass die übrigen leer bleiben müssen (genau {{count}} leer) – hier kann niemand mehr stehen.",
+    "emptyRoomsConfine": "Die erlaubten leeren Räume stehen schon fest ({{count}}) – {{room}} muss also besetzt sein, und nur {{name}} kann dort stehen.",
     "relationalDirection": "{{name}} ist {{direction}} von {{target}} – unmögliche Felder gestrichen.",
     "relationalSameRoom": "{{name}} ist im selben Raum wie {{target}} – andere Räume gestrichen.",
     "sameObject": "{{name}} muss neben demselben Objekt ({{objectNom}}) wie die genannte Person/jemand stehen – unmögliche Felder gestrichen.",
@@ -981,6 +987,10 @@
     "roomCoverageReserve": "Jeder Raum hat genau einen Verdächtigen; {{name}} gehört in den {{room}} – andere dort ausgeschlossen.",
     "roomCoverageConfine": "Den {{room}} kann nur {{name}} besetzen, und kein Raum bleibt leer – {{name}} muss dorthin.",
     "companionRoom": "{{name}} war allein mit genau einer passenden Person – im {{room}} passt das nicht, also nicht dort.",
+    "companionForce": "{{name}} ist in {{room}} allein mit genau einer passenden Person – dafür kommt nur {{target}} infrage, also muss {{target}} dorthin.",
+    "companionReserve": "{{name}} ist in {{room}} allein mit nur passender Begleitung – alle anderen (und das Opfer) müssen den {{room}} verlassen.",
+    "companionPairing": "{{count}} Personen brauchen je eine passende Begleitung in getrennten Räumen – nur {{people}} können das abdecken, also sind sie auf diese Räume festgelegt.",
+    "companionFit": "{{name}} kann dort nicht stehen – die nötige Begleitung passt nicht mit in den Raum (Zeile/Spalte, Stuhl oder reservierte Felder).",
     "roomExistsRoom": "In {{name}}s Raum saß jemand Passendes auf {{object}}; im {{room}} geht das nicht – also nicht dort.",
     "roomExistsRoomNear": "In {{name}}s Raum stand jemand Passendes neben {{object}}; im {{room}} geht das nicht – also nicht dort.",
     "roomExistsSpotOn": "In {{name}}s Raum ({{room}}) muss jemand auf {{object}} sein – dafür bleibt nur {{cell}}. Das Feld ist sicher besetzt: Rest von Zeile und Spalte gesperrt, das Feld selbst nur für mögliche Begleiter.",
@@ -1006,11 +1016,14 @@
     "groupRoomDirExtra": "Wer im {{room}} bei {{name}} steht, ist die Begleitung und muss {{direction}} von {{name}} sein – {{target}}s unpassende Felder gestrichen.",
     "groupRoomDirSubject": "{{direction}} von {{name}} muss eine mögliche Begleitung stehen – {{name}}s Felder ohne solche Begleitung gestrichen.",
     "caseSplitContradiction": "Kurze Probe: {{name}} auf {{cell}} führt direkt zum Widerspruch – Feld ausgeschlossen.",
+    "shortExclude": "{{name}} kann nicht auf {{cell}} stehen – sonst hätte am Ende jemand kein Feld mehr:",
     "caseSplitCommon": "Fallunterscheidung: Egal wo {{name}} steht ({{count}} Möglichkeiten), einige Felder sind in jedem Fall unmöglich – gestrichen.",
     "murderVictimNotRoom": "Im {{room}} sind schon {{count}} Verdächtige – das Opfer war dort nicht (es war allein mit dem Mörder).",
     "murderRoomFill": "{{room}} ist genau gefüllt (Opfer allein mit dem Mörder) – ein Pflichtfeld dort kann nur {{name}} sein.",
     "murderIdentified": "Das Opfer ist im {{room}}; dort ist {{name}} – also ist {{name}} der Mörder, alle anderen verlassen den {{room}}.",
     "murderConfine": "Das Opfer ist im {{room}}; nur {{name}} kann dort sein – {{name}} muss dorthin (allein mit dem Opfer).",
+    "murderNoMurderer": "{{name}} kann dort nicht stehen – sonst bliebe das Opfer nirgends allein mit genau einem Verdächtigen (kein eindeutiger Mörder).",
+    "murderNoVictimCell": "Das Opfer kann dort nicht stehen – dort wäre es nicht allein mit genau einem Verdächtigen.",
     "assume": "Angenommen, {{name}} steht auf {{cell}}:",
     "forcing": "Annahme {{name}} auf {{cell}} führt zum Widerspruch – Feld ausgeschlossen.",
     "satPlace": "{{name}} muss auf {{cell}} – jedes andere Feld führt zum Widerspruch.",
@@ -1021,10 +1034,10 @@
     "stuck": "Stecken geblieben: {{count}} Person(en) offen (Technik noch nicht implementiert)."
   },
   "contra": {
-    "empty": "{{name}} hätte dann kein mögliches Feld mehr – Widerspruch.",
-    "murder": "dann wäre das Opfer mit niemandem mehr allein – Widerspruch.",
-    "general": "dann geht die Anordnung nicht mehr auf – Widerspruch.",
-    "exhausted": "dann lässt sich der Rest nicht mehr zu Ende bringen (alle Möglichkeiten geprüft) – Widerspruch."
+    "empty": "{{name}} hätte dann kein mögliches Feld mehr.",
+    "murder": "dann wäre das Opfer mit niemandem mehr allein.",
+    "general": "dann ginge die Anordnung nicht mehr auf.",
+    "exhausted": "dann ließe sich der Rest nicht mehr zu Ende bringen (alle Möglichkeiten geprüft)."
   },
   "why": {
     "crossed": "{{cell}}: hast du ausgekreuzt.",
@@ -1040,6 +1053,7 @@
     "confinedCol": "{{cell}}: {{name}} ist nur in Spalte {{line}} möglich.",
     "eliminated": "{{cell}}: durch die Hinweise ausgeschlossen.",
     "only": "→ also muss {{name}} auf {{cell}}.",
-    "crossThis": "→ hier kann niemand stehen: kreuze {{cells}} aus."
+    "crossThis": "→ hier kann niemand stehen: kreuze {{cells}} aus.",
+    "caseAssume": "→ Wäre {{name}} auf {{cell}}:"
   }
 }

@@ -327,16 +327,18 @@
   "suspects": [
     {
       "id": "A",
-      "name": "Anna",
+      "name": "Alex",
       "attributes": {
-        "gender": "f",
-        "hairstyle": "ponytailRight",
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "curly",
         "hair": "brown"
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "bed"
+          "type": "inCol",
+          "col": 4
         }
       ]
     },
@@ -350,43 +352,33 @@
       },
       "clues": [
         {
-          "type": "not",
-          "clue": {
-            "type": "onObject",
-            "object": "toilet"
-          }
+          "type": "onObject",
+          "object": "bed"
         }
       ]
     },
     {
       "id": "C",
-      "name": "Cyrus",
+      "name": "Carol",
       "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "hairstyle": "caesar",
-        "hair": "white"
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "brown"
       },
       "clues": [
         {
-          "type": "directionFromObject",
-          "object": "carpet",
-          "dir": "west",
-          "room": "any",
-          "at": 29
+          "type": "nearObject",
+          "object": "crate"
         }
       ]
     },
     {
       "id": "D",
-      "name": "Dylan",
+      "name": "Dalia",
       "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "bald": true,
-        "hair": "white"
+        "gender": "f",
+        "hairstyle": "updo",
+        "hair": "black"
       },
       "clues": [
         {
@@ -394,7 +386,7 @@
           "clues": [
             {
               "type": "sameLineAsObject",
-              "object": "toilet",
+              "object": "tv",
               "line": "col",
               "room": "any"
             },
@@ -413,50 +405,46 @@
       "name": "Edison",
       "attributes": {
         "gender": "m",
-        "bald": true,
-        "hair": "blond"
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "manbun",
+        "hair": "black"
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "crate"
+          "type": "inCol",
+          "col": 2
         }
       ]
     },
     {
       "id": "F",
-      "name": "Floyd",
+      "name": "Freya",
       "attributes": {
-        "gender": "m",
+        "gender": "f",
         "glasses": true,
         "glassesShape": "round",
         "glassesColor": "black",
-        "hairstyle": "mohawk",
-        "hair": "brown"
+        "hairstyle": "curly",
+        "hair": "black"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "onObject",
-              "object": "chair"
-            },
-            {
-              "type": "nearObject",
-              "object": "bed"
-            }
-          ]
+          "type": "directionFromObject",
+          "object": "chair",
+          "dir": "north",
+          "room": "any",
+          "at": 8
         }
       ]
     }
   ],
   "victim": {
-    "name": "Valentin",
+    "name": "Vivian",
     "attributes": {
-      "gender": "m"
+      "gender": "f"
     }
   },
   "boardClues": [],
-  "difficulty": "medium"
+  "difficulty": "hard"
 }

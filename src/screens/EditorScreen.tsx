@@ -263,12 +263,11 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
       if (count >= 2) return setResult({ kind: 'multi' })
       const solution = solver.firstSolution()!
       const m = findMurderer(puzzle, solution)
-      // How "fair" is the case? Pure forward deduction only uses proof-by-
-      // contradiction (forcing/SAT) when every transparent technique is stuck, so
-      // their presence means the case can't be cracked by clean logic alone.
-      const { techniqueCounts } = new DeductionEngine(puzzle).solve()
-      const logic =
-        techniqueCounts.forcing || techniqueCounts.satForcing ? 'contradiction' : 'pure'
+      // How "fair" is the case? The default engine is PURE human logic (forward +
+      // convergent "egal wo X → raus"), never proof-by-contradiction. If it fully
+      // solves, the case is crackable by clean logic; if it gets stuck, cracking it
+      // would need trial-and-error ("assume X → contradiction") — flagged as unfair.
+      const logic = new DeductionEngine(puzzle).solve().solved ? 'pure' : 'contradiction'
       const cov = startCoverage(puzzle)
       setResult({
         kind: 'ok',

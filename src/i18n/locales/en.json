@@ -893,14 +893,20 @@
     "clueCandidates": "{{name}}: the clues leave {{count}} possible cells.",
     "nakedSingle": "{{name}} must be on {{cell}} – the only possible cell.",
     "uniqueConstraint": "Only {{name}} may stand there – others excluded from those cells.",
-    "hiddenSingleRow": "Only {{name}} can be in row {{line}} – so placed there.",
-    "hiddenSingleCol": "Only {{name}} can be in column {{line}} – so placed there.",
+    "hiddenSingleRow": "In row {{line}} everything is crossed out except {{cells}} – only {{name}} fits there, no other suspect and not the victim.",
+    "hiddenSingleCol": "In column {{line}} everything is crossed out except {{cells}} – only {{name}} fits there, no other suspect and not the victim.",
+    "forcedCellRow": "In row {{line}} only {{cell}} is free – someone must be there, so column {{perpLine}} is taken: the other cells of that column are crossed out.",
+    "forcedCellCol": "In column {{line}} only {{cell}} is free – someone must be there, so row {{perpLine}} is taken: the other cells of that row are crossed out.",
+    "hiddenSingleRowVictim": "In row {{line}} everything is crossed out except {{cells}} – only the victim ({{name}}) can be there, no suspect.",
+    "hiddenSingleColVictim": "In column {{line}} everything is crossed out except {{cells}} – only the victim ({{name}}) can be there, no suspect.",
     "nakedGroupRows": "{{people}}: only rows {{lines}} possible – blocked for others.",
     "nakedGroupCols": "{{people}}: only columns {{lines}} possible – blocked for others.",
     "rectangle": "Wherever {{name}} ends up, {{cell}} stays blocked – nobody can be there.",
     "insideXor": "{{other}} is {{otherSide}}, so {{name}} is not {{otherSide}} – cells excluded.",
     "boardCountFull": "Already {{count}} person on {{object}} – excluded for everyone else.",
     "boardCountConfine": "Only {{name}} can be on {{object}} – so must go there.",
+    "emptyRoomsAllOccupied": "Enough rooms are already occupied that the rest must stay empty (exactly {{count}} empty) – nobody can be here.",
+    "emptyRoomsConfine": "The allowed empty rooms are already fixed ({{count}}) – so {{room}} must be occupied, and only {{name}} can be there.",
     "relationalDirection": "{{name}} is {{direction}} of {{target}} – impossible cells removed.",
     "relationalSameRoom": "{{name}} is in the same room as {{target}} – other rooms removed.",
     "sameObject": "{{name}} must stand beside the same object ({{objectNom}}) as the named person/someone – impossible cells removed.",
@@ -912,6 +918,10 @@
     "roomCoverageReserve": "Every room has exactly one suspect; {{name}} belongs in the {{room}} – others are excluded from it.",
     "roomCoverageConfine": "Only {{name}} can fill the {{room}}, and no room stays empty – {{name}} must go there.",
     "companionRoom": "{{name}} was alone with exactly the matching person – the {{room}} doesn't fit, so not there.",
+    "companionForce": "{{name}} is in {{room}} alone with exactly one matching person – only {{target}} qualifies, so {{target}} must go there.",
+    "companionReserve": "{{name}} is in {{room}} alone with only matching company – everyone else (and the victim) must leave the {{room}}.",
+    "companionPairing": "{{count}} people each need a matching companion in separate rooms – only {{people}} can cover that, so they are confined to those rooms.",
+    "companionFit": "{{name}} can't be there – the required companion doesn't fit in the room too (row/column, chair, or reserved cells).",
     "roomExistsRoom": "Someone matching had to be on {{object}} in {{name}}'s room; the {{room}} can't, so not there.",
     "roomExistsRoomNear": "Someone matching had to be beside {{object}} in {{name}}'s room; the {{room}} can't, so not there.",
     "roomExistsSpotOn": "Someone must be on {{object}} in {{name}}'s room ({{room}}) – only {{cell}} can do that. The cell is certainly taken: the rest of its row and column is blocked, the cell itself only fits possible companions.",
@@ -937,11 +947,14 @@
     "groupRoomDirExtra": "Anyone in the {{room}} with {{name}} is the companion and must be {{direction}} of {{name}} – {{target}}'s unfitting cells removed.",
     "groupRoomDirSubject": "A possible companion must stand {{direction}} of {{name}} – {{name}}'s cells without one are removed.",
     "caseSplitContradiction": "Quick check: {{name}} on {{cell}} leads straight to a contradiction – cell ruled out.",
+    "shortExclude": "{{name}} can't be on {{cell}} – otherwise someone is left with no cell in the end:",
     "caseSplitCommon": "Case split: wherever {{name}} stands ({{count}} options), some cells are impossible either way – removed.",
     "murderVictimNotRoom": "The {{room}} already holds {{count}} suspects – the victim wasn't there (they were alone with the murderer).",
     "murderRoomFill": "The {{room}} is exactly full (victim alone with the murderer) – one required cell there can only be {{name}}.",
     "murderIdentified": "The victim is in the {{room}}; {{name}} is there too – so {{name}} is the murderer, everyone else leaves the {{room}}.",
     "murderConfine": "The victim is in the {{room}}; only {{name}} can be there – {{name}} must go there (alone with the victim).",
+    "murderNoMurderer": "{{name}} can't be there – otherwise the victim is nowhere left alone with exactly one suspect (no clear murderer).",
+    "murderNoVictimCell": "The victim can't be there – there it wouldn't be alone with exactly one suspect.",
     "assume": "Suppose {{name}} were on {{cell}}:",
     "forcing": "Assuming {{name}} on {{cell}} leads to a contradiction – cell excluded.",
     "satPlace": "{{name}} must be on {{cell}} – every other cell leads to a contradiction.",
@@ -952,10 +965,10 @@
     "stuck": "Stuck: {{count}} person(s) unresolved (technique not yet implemented)."
   },
   "contra": {
-    "empty": "{{name}} would then have no possible cell left – contradiction.",
-    "murder": "the victim could then no longer be alone with anyone – contradiction.",
-    "general": "the arrangement then no longer works out – contradiction.",
-    "exhausted": "the rest then can't be completed (all possibilities checked) – contradiction."
+    "empty": "{{name}} would then have no possible cell left.",
+    "murder": "the victim could then no longer be alone with anyone.",
+    "general": "the arrangement then no longer works out.",
+    "exhausted": "the rest then can't be completed (all possibilities checked)."
   },
   "why": {
     "crossed": "{{cell}}: you've crossed it out.",
@@ -971,6 +984,7 @@
     "confinedCol": "{{cell}}: {{name}} can only be in column {{line}}.",
     "eliminated": "{{cell}}: excluded by the clues.",
     "only": "→ so {{name}} must be on {{cell}}.",
-    "crossThis": "→ no one can be here: cross out {{cells}}."
+    "crossThis": "→ no one can be here: cross out {{cells}}.",
+    "caseAssume": "→ If {{name}} were on {{cell}}:"
   }
 }

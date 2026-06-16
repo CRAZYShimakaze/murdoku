@@ -96,8 +96,24 @@
       "type": "bed",
       "occupiable": true
     },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
     "c": {
       "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
       "occupiable": true
     },
     "t": {
@@ -108,52 +124,8 @@
       "type": "tv",
       "occupiable": false
     },
-    "p": {
-      "type": "plant",
-      "occupiable": false
-    },
     "g": {
       "type": "shelf",
-      "occupiable": false
-    },
-    "x": {
-      "type": "box",
-      "occupiable": false
-    },
-    "u": {
-      "type": "shrub",
-      "occupiable": false
-    },
-    "y": {
-      "type": "statue",
-      "occupiable": false
-    },
-    "z": {
-      "type": "rubble",
-      "occupiable": false
-    },
-    "h": {
-      "type": "horse",
-      "occupiable": true
-    },
-    "m": {
-      "type": "mud",
-      "occupiable": true
-    },
-    "k": {
-      "type": "cow",
-      "occupiable": false
-    },
-    "i": {
-      "type": "pig",
-      "occupiable": false
-    },
-    "o": {
-      "type": "boulder",
-      "occupiable": false
-    },
-    "e": {
-      "type": "gift",
       "occupiable": false
     },
     "d": {
@@ -164,6 +136,34 @@
       "type": "locker",
       "occupiable": false
     },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
     "q": {
       "type": "punchbag",
       "occupiable": false
@@ -172,24 +172,44 @@
       "type": "fuelpump",
       "occupiable": false
     },
-    "a": {
-      "type": "tree",
-      "occupiable": false
-    },
     "w": {
       "type": "trash",
       "occupiable": false
     },
-    "j": {
-      "type": "oil",
-      "occupiable": true
-    },
-    "K": {
-      "type": "cash",
+    "p": {
+      "type": "plant",
       "occupiable": false
     },
-    "n": {
-      "type": "crate",
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
       "occupiable": false
     }
   },
@@ -292,14 +312,11 @@
   "suspects": [
     {
       "id": "A",
-      "name": "Alex",
+      "name": "Anna",
       "attributes": {
-        "gender": "m",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "bald": true,
-        "hair": "blond"
+        "gender": "f",
+        "hairstyle": "ponytailRight",
+        "hair": "brown"
       },
       "clues": [
         {
@@ -307,10 +324,10 @@
           "clues": [
             {
               "type": "inRoom",
-              "room": "4"
+              "room": "E"
             },
             {
-              "type": "nearWindow"
+              "type": "corner"
             }
           ]
         }
@@ -318,52 +335,32 @@
     },
     {
       "id": "B",
-      "name": "Bella",
+      "name": "Bernd",
       "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "braids",
-        "hair": "black"
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "bald": true,
+        "hair": "white"
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "locker"
+          "type": "sameLineAsObject",
+          "object": "pc",
+          "line": "col",
+          "room": "any"
         }
       ]
     },
     {
       "id": "C",
-      "name": "Carol",
-      "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "bun",
-        "hair": "brown"
-      },
-      "clues": [
-        {
-          "type": "uniqueOnObject",
-          "object": "carpet"
-        }
-      ]
-    },
-    {
-      "id": "D",
-      "name": "Dylan",
+      "name": "Cyrus",
       "attributes": {
         "gender": "m",
         "beard": true,
         "beardStyle": "full",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
         "bald": true,
-        "hair": "blond"
+        "hair": "brown"
       },
       "clues": [
         {
@@ -373,31 +370,35 @@
       ]
     },
     {
-      "id": "E",
-      "name": "Elsa",
+      "id": "D",
+      "name": "Dylan",
       "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "pixie",
-        "hair": "brown"
+        "gender": "m",
+        "hairstyle": "afro",
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "nearObject",
-              "object": "carpet"
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "corner"
-              }
-            }
-          ]
+          "type": "nearObject",
+          "object": "pc"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "manbun",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "table"
         }
       ]
     },
@@ -407,20 +408,20 @@
       "attributes": {
         "gender": "m",
         "hairstyle": "mohawk",
-        "hair": "white"
+        "hair": "black"
       },
       "clues": [
         {
-          "type": "inRow",
-          "row": 3
+          "type": "nearObject",
+          "object": "carpet"
         }
       ]
     }
   ],
   "victim": {
-    "name": "Veit",
+    "name": "Vanessa",
     "attributes": {
-      "gender": "m"
+      "gender": "f"
     }
   },
   "boardClues": [
@@ -430,5 +431,5 @@
       "count": 1
     }
   ],
-  "difficulty": "medium"
+  "difficulty": "hard"
 }

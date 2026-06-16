@@ -208,13 +208,16 @@ export class BesideSameObjectClue extends Clue {
   }
   // definiteCells stays null (default): negation depends on others, so it prunes nothing.
 
-  /** Connected same-type object groups (orthogonally adjacent cells = one instance). */
+  /** Connected same-type object groups (orthogonally adjacent cells = one instance) — but
+   *  an instance NEVER crosses a room border: two adjacent table tiles in different rooms
+   *  are TWO tables, so "beside the same table" means the two people share ONE room. */
   private instances(board: Board): Set<Cell>[] {
     const cells = new Set<Cell>(board.objectCells(this.object))
     const seen = new Set<Cell>()
     const out: Set<Cell>[] = []
     for (const start of cells) {
       if (seen.has(start)) continue
+      const room = board.roomIdOf(start)
       const comp = new Set<Cell>()
       const stack: Cell[] = [start]
       while (stack.length > 0) {
@@ -222,7 +225,9 @@ export class BesideSameObjectClue extends Clue {
         if (seen.has(c)) continue
         seen.add(c)
         comp.add(c)
-        for (const nb of board.neighbors4(c)) if (cells.has(nb) && !seen.has(nb)) stack.push(nb)
+        for (const nb of board.neighbors4(c)) {
+          if (cells.has(nb) && !seen.has(nb) && board.roomIdOf(nb) === room) stack.push(nb)
+        }
       }
       out.push(comp)
     }

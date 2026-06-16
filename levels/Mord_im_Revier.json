@@ -332,11 +332,10 @@
       "name": "Alex",
       "attributes": {
         "gender": "m",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
+        "beard": true,
+        "beardStyle": "full",
         "hairstyle": "curly",
-        "hair": "white"
+        "hair": "brown"
       },
       "clues": [
         {
@@ -353,26 +352,11 @@
       "name": "Bella",
       "attributes": {
         "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
         "hairstyle": "braids",
-        "hair": "white"
-      },
-      "clues": [
-        {
-          "type": "directionFromObject",
-          "object": "carpet",
-          "dir": "west",
-          "room": "any",
-          "at": 7
-        }
-      ]
-    },
-    {
-      "id": "C",
-      "name": "Cyrus",
-      "attributes": {
-        "gender": "m",
-        "hairstyle": "caesar",
-        "hair": "brown"
+        "hair": "black"
       },
       "clues": [
         {
@@ -382,14 +366,15 @@
       ]
     },
     {
-      "id": "D",
-      "name": "Dylan",
+      "id": "C",
+      "name": "Carol",
       "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "bald": true,
-        "hair": "blond"
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "bun",
+        "hair": "black"
       },
       "clues": [
         {
@@ -399,14 +384,12 @@
       ]
     },
     {
-      "id": "E",
-      "name": "Edison",
+      "id": "D",
+      "name": "Dalia",
       "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "hairstyle": "manbun",
-        "hair": "brown"
+        "gender": "f",
+        "hairstyle": "updo",
+        "hair": "blond"
       },
       "clues": [
         {
@@ -414,10 +397,28 @@
           "room": "7"
         }
       ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "bald": true,
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "6"
+        }
+      ]
     }
   ],
   "victim": {
-    "name": "Volker",
+    "name": "Victor",
     "attributes": {
       "gender": "m"
     }
@@ -429,5 +430,5 @@
       "count": 2
     }
   ],
-  "difficulty": "medium"
+  "difficulty": "hard"
 }

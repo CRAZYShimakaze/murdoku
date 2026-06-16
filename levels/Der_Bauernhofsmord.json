@@ -298,33 +298,47 @@
   "suspects": [
     {
       "id": "A",
-      "name": "Anna",
+      "name": "Alex",
       "attributes": {
-        "gender": "f",
-        "hairstyle": "ponytailRight",
-        "hair": "blond"
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "curly",
+        "hair": "white"
       },
       "clues": [
         {
-          "type": "not",
-          "clue": {
-            "type": "onObject",
-            "object": "toilet"
-          }
+          "type": "onObject",
+          "object": "bed"
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bernd",
+      "name": "Bella",
       "attributes": {
-        "gender": "m",
-        "hairstyle": "combOver",
+        "gender": "f",
+        "hairstyle": "braids",
         "hair": "black"
       },
       "clues": [
         {
-          "type": "nearDoor"
+          "type": "and",
+          "clues": [
+            {
+              "type": "sameLineAsObject",
+              "object": "shelf",
+              "line": "col",
+              "room": "any"
+            },
+            {
+              "type": "roomCompanion",
+              "count": 1,
+              "attribute": "gender",
+              "value": "f"
+            }
+          ]
         }
       ]
     },
@@ -334,12 +348,12 @@
       "attributes": {
         "gender": "f",
         "hairstyle": "bun",
-        "hair": "black"
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "shelf"
+          "type": "onObject",
+          "object": "mud"
         }
       ]
     },
@@ -350,73 +364,8 @@
         "gender": "m",
         "beard": true,
         "beardStyle": "full",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "bald": true,
-        "hair": "brown"
-      },
-      "clues": [
-        {
-          "type": "onObject",
-          "object": "mud"
-        }
-      ]
-    },
-    {
-      "id": "E",
-      "name": "Edison",
-      "attributes": {
-        "gender": "m",
-        "bald": true,
-        "hair": "white"
-      },
-      "clues": [
-        {
-          "type": "and",
-          "clues": [
-            {
-              "type": "nearObject",
-              "object": "tree"
-            },
-            {
-              "type": "sameLineAsObject",
-              "object": "lamp",
-              "line": "row",
-              "room": "any"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "F",
-      "name": "Floyd",
-      "attributes": {
-        "gender": "m",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "mohawk",
-        "hair": "brown"
-      },
-      "clues": [
-        {
-          "type": "nearObject",
-          "object": "shrub"
-        }
-      ]
-    },
-    {
-      "id": "G",
-      "name": "Greta",
-      "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "hime",
-        "hair": "white"
+        "hairstyle": "afro",
+        "hair": "blond"
       },
       "clues": [
         {
@@ -425,6 +374,85 @@
           "dir": "west",
           "room": "any",
           "at": 64
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "pixie",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "horse"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "curly",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "roomCompanion",
+              "count": 1,
+              "attribute": "hair",
+              "value": "black"
+            },
+            {
+              "type": "sameLineAsObject",
+              "object": "mud",
+              "line": "col",
+              "room": "any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "spiky",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "sameLineAsObject",
+              "object": "chicken",
+              "line": "col",
+              "room": "any"
+            },
+            {
+              "type": "alone"
+            }
+          ]
         }
       ]
     },
@@ -438,14 +466,25 @@
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "table"
+          "type": "and",
+          "clues": [
+            {
+              "type": "directionFromObject",
+              "object": "shrub",
+              "dir": "north",
+              "room": "any",
+              "at": 17
+            },
+            {
+              "type": "alone"
+            }
+          ]
         }
       ]
     }
   ],
   "victim": {
-    "name": "Veit",
+    "name": "Vincent",
     "attributes": {
       "gender": "m"
     }

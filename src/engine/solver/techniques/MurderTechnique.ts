@@ -81,7 +81,51 @@ export class MurderTechnique extends Technique {
       }
     }
 
-    return this.applyRoomFill(ctx)
+    const fill = this.applyRoomFill(ctx)
+    if (fill) return fill
+    return this.applyFeasibility(ctx)
+  }
+
+  /**
+   * Direct murder-rule elimination ("…sonst hätte das Opfer keinen Mörder mehr"): a cell
+   * is impossible if PLACING someone there would leave the victim unable to be alone with
+   * EXACTLY ONE suspect. One tentative placement, one feasibility look — no propagation
+   * chain, so it stays the kind of single-step rule check a player makes by hand, not a
+   * trial. Bounded so it can't blow up on big boards.
+   */
+  private applyFeasibility(ctx: SolveContext): DeductionStep | null {
+    const order = [...ctx.state.unplaced()].sort(
+      (a, b) => ctx.state.domain(a).size - ctx.state.domain(b).size,
+    )
+    let budget = 48
+    for (const id of order) {
+      const cells = [...ctx.state.domain(id)]
+      if (cells.length < 2 || budget - cells.length < 0) {
+        if (cells.length >= 2) break
+        continue
+      }
+      budget -= cells.length
+      const bad = cells.filter((c) => {
+        const trial = ctx.clone()
+        trial.place(id, c)
+        return !trial.murderPossible()
+      })
+      // Keep at least one cell — all-bad would be a contradiction, handled elsewhere.
+      if (bad.length === 0 || bad.length === cells.length) continue
+      const removed = ctx.removeWhere(id, (c) => bad.includes(c))
+      if (removed.length > 0) {
+        return {
+          technique: 'murderRule',
+          personId: id,
+          eliminated: [{ personId: id, cells: removed }],
+          explanation: {
+            key: ctx.isVictim(id) ? 'step.murderNoVictimCell' : 'step.murderNoMurderer',
+            params: { name: id },
+          },
+        }
+      }
+    }
+    return null
   }
 
   /**

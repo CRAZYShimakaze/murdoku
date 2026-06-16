@@ -127,6 +127,10 @@ export class RoomReasoningTechnique extends Technique {
           attribute: rcomp.attribute,
         })
         if (step) return step
+        const force = this.applyCompanionForce(ctx, suspect.id, rcomp)
+        if (force) return force
+        const reserve = this.applyCompanionReserve(ctx, suspect.id, rcomp)
+        if (reserve) return reserve
       }
       for (const aw of suspect.clues.flatMap(aloneWithList)) {
         const step = this.applyAloneWith(ctx, suspect.id, aw)
@@ -324,6 +328,86 @@ export class RoomReasoningTechnique extends Technique {
       }
     }
     return null
+  }
+
+  /**
+   * Positive companion rule: the subject is confined to room R and was alone with EXACTLY
+   * `count` others matching X. If exactly that many matching suspects can still be in R,
+   * every one of them MUST be there — the unique possible companion is forced into the room.
+   * ("Elsa ist in der Lobby, allein mit genau einer Frau; nur Dalia kann auch dorthin →
+   * Dalia muss in die Lobby.") The mirror of applyComposition's negative elimination.
+   */
+  private applyCompanionForce(
+    ctx: SolveContext,
+    id: PersonId,
+    rcomp: RoomCompanionClue,
+  ): DeductionStep | null {
+    const room = ctx.guaranteedRoomOf(id)
+    if (!room) return null
+    const victim = ctx.puzzle.victim.id
+    const matches = (o: PersonId): boolean =>
+      o !== id && o !== victim && ctx.puzzle.attributesOf(o)[rcomp.attribute] === rcomp.value
+
+    // Count matching suspects already certain in R, and those that could still be there.
+    let already = 0
+    const free: PersonId[] = []
+    for (const s of ctx.puzzle.suspects) {
+      const o = s.id
+      if (!matches(o)) continue
+      const placed = ctx.state.placed.get(o)
+      if (placed !== undefined) {
+        if (ctx.roomOf(placed) === room) already++
+        continue
+      }
+      if (![...ctx.state.domain(o)].some((c) => ctx.roomOf(c) === room)) continue
+      if (ctx.guaranteedRoomOf(o) === room) already++
+      else free.push(o)
+    }
+    // Exactly `count` matching suspects can fill the slots → every free one must take it.
+    if (already + free.length !== rcomp.count || free.length === 0) return null
+    for (const o of free) {
+      const removed = ctx.removeWhere(o, (c) => ctx.roomOf(c) !== room)
+      if (removed.length > 0) {
+        return {
+          technique: 'roomReasoning',
+          personId: o,
+          eliminated: [{ personId: o, cells: removed }],
+          explanation: { key: 'step.companionForce', params: { name: id, target: o, room } },
+        }
+      }
+    }
+    return null
+  }
+
+  /**
+   * Reserve an "alone with `count` matching" subject's room: once the subject is confined
+   * to room R, R holds ONLY the subject and (matching) companions — so the victim and every
+   * NON-matching suspect must leave R. (Mirror of the "alone" reserve, for "alone with X".)
+   */
+  private applyCompanionReserve(
+    ctx: SolveContext,
+    id: PersonId,
+    rcomp: RoomCompanionClue,
+  ): DeductionStep | null {
+    const room = ctx.guaranteedRoomOf(id)
+    if (!room) return null
+    const victim = ctx.puzzle.victim.id
+    const eliminated: Elimination[] = []
+    for (const other of ctx.state.unplaced()) {
+      if (other === id) continue
+      const isMatch =
+        other !== victim && ctx.puzzle.attributesOf(other)[rcomp.attribute] === rcomp.value
+      if (isMatch) continue // a matching companion may legitimately share the room
+      const removed = ctx.removeWhere(other, (c) => ctx.roomOf(c) === room)
+      if (removed.length > 0) eliminated.push({ personId: other, cells: removed })
+    }
+    if (eliminated.length === 0) return null
+    return {
+      technique: 'roomReasoning',
+      personId: id,
+      eliminated,
+      explanation: { key: 'step.companionReserve', params: { name: id, room } },
+    }
   }
 
   /** Small helper to build a single-person elimination step. */

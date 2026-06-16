@@ -196,33 +196,34 @@ function makeAttributes(gender: 'm' | 'f', rng: Rng): Record<string, AttributeVa
   return attrs
 }
 
-/** Forward-deduction tier; a level needing search (unique but not forward-
- *  solvable) is 'hard' — still fully logical (solvable by contradiction). */
+/** Honest tier from the human-logic engine (forward + convergent). Only ever called on
+ *  levels that ARE human-solvable (easy construction / generic fallback), so the
+ *  `!solved` guard is a defensive fallback that shouldn't fire. */
 function rateTier(level: LevelJson): GenDifficulty {
   const result = new DeductionEngine(loadLevel(level)).solve()
-  if (!result.solved) return 'hard' // needs search — still logical (contradiction)
+  if (!result.solved) return 'hard' // not human-solvable (shouldn't happen here)
   const tier = difficultyOf(result.maxRank)
   return tier === 'expert' ? 'hard' : tier
 }
 
-/** Forward-deduction rating — the construction oracle. Forward-solvable ALREADY proves
- *  uniqueness (the engine never guesses); `forcingFree` means no proof-by-contradiction
- *  (so the hint system is always a clean chain); `maxRank` is the hardest technique the
- *  solution needs. One cheap call gives both uniqueness and difficulty. */
-function logicRating(level: LevelJson): { solved: boolean; forcingFree: boolean; maxRank: number } {
-  // Rate WITHOUT the deep case split: its exhaustive failure mode dominates the
-  // runtime on the many rejected candidates, and anything forcing-free without it
-  // is forcing-free with it — accepted levels lose nothing.
-  const result = new DeductionEngine(loadLevel(level), { deepSplit: false }).solve()
-  const forcingFree =
-    result.solved && !result.techniqueCounts.forcing && !result.techniqueCounts.satForcing
-  return { solved: result.solved, forcingFree, maxRank: result.maxRank }
+/** Human-logic rating — the construction oracle. The DEFAULT engine is PURE forward +
+ *  convergent deduction (no "assume X → contradiction"), so a level it fully solves is
+ *  BOTH human-solvable AND unique (the engine never guesses). `maxRank` is the hardest
+ *  technique the solution needs. One cheap call gives uniqueness + difficulty AND the
+ *  guarantee that the hint chain a player follows is free of trial-and-error. A level
+ *  that needs a contradiction simply comes back `solved: false` and is rejected. */
+function logicRating(level: LevelJson): { solved: boolean; maxRank: number } {
+  // Accept ONLY levels solvable by straight forward deduction — NO case split. The user
+  // found auto-generated case-splits ("Fallunterscheidung") too frequent and too deep to
+  // solve by hand. Players/hints still get the full pipeline for hand-made levels.
+  const result = new DeductionEngine(loadLevel(level), { noCaseSplit: true }).solve()
+  return { solved: result.solved, maxRank: result.maxRank }
 }
 
 /** The hardest forward-deduction rank that DEFINES each tier (see TECHNIQUE_RANK):
  *  medium MUST need a rank-4 room/count deduction, hard a rank-5 one (murder rule,
- *  group-room reasoning, short case split; the rank-6 nested case split also rates
- *  hard) — all still pure logic (forcing/SAT searches are never used). */
+ *  group-room reasoning, or the CONVERGENT "egal wo X → raus" case split) — all pure
+ *  human logic; contradiction case splits and forcing/SAT are never used. */
 const TARGET_RANK: Record<GenDifficulty, number> = { easy: 1, medium: 4, hard: 5 }
 const targetRankOf = (d?: GenDifficulty): number => (d ? TARGET_RANK[d] : TARGET_RANK.hard)
 
@@ -270,11 +271,11 @@ interface PickOptions {
 
 /**
  * Run many attempts and keep the best PURE-LOGIC candidate for the target tier. Every
- * eligible level is solvable by forward deduction (⇒ unique) with NO proof-by-
- * contradiction; among those the score prefers the exact target rank, then pin-free,
- * then line-free. A board that can't reach the target rank still yields its loosest
- * forcing-free level (rated honestly by `rankToTier`), so we always return a logical
- * level — never a contradiction one. Returns null only if nothing forcing-free turns up.
+ * eligible level is solvable by forward + convergent deduction (⇒ unique) with NO
+ * proof-by-contradiction; among those the score prefers the exact target rank, then
+ * pin-free, then line-free. A board that can't reach the target rank still yields its
+ * loosest human-solvable level (rated honestly by `rankToTier`), so we always return a
+ * logical level — never a trial-and-error one. Returns null only if nothing solves.
  */
 function pickBestLevel(
   attempt: Attempt,
@@ -293,10 +294,10 @@ function pickBestLevel(
     const result = attempt(new Rng(baseSeed + a * 7919), baseSeed + a)
     if (result) {
       const rating = logicRating(result.level)
-      // Only pure-logic (forcing-free) levels are eligible — the player must be able to
-      // solve by a clean chain, never "assume X → contradiction". Breadth is a gentle
-      // tie-breaker, never a bar.
-      if (rating.forcingFree) {
+      // Only human-solvable levels are eligible — the player must be able to solve by a
+      // clean forward/convergent chain, never "assume X → contradiction". Breadth is a
+      // gentle tie-breaker, never a bar.
+      if (rating.solved) {
         result.level.difficulty = rankToTier(rating.maxRank)
         const rankMiss = Math.abs(rating.maxRank - targetRank)
         const lines = countLineClues(result.level)
@@ -1359,15 +1360,15 @@ function countAnchors(
  * never run the old (expensive) prove-uniqueness-by-search loop.
  *
  *   1. TIGHTEN — start each suspect on their tightest natural clue and add more until the
- *      case is forward-solvable and forcing-free (no proof-by-contradiction).
+ *      case is human-solvable (forward + convergent, no proof-by-contradiction).
  *   2. LOOSEN  — drop redundant ANDed parts, then widen each single clue toward looser
  *      candidates, RAISING the technique rank the solution needs up to `target`
- *      (medium ⇒ a rank-4 room/count deduction, hard ⇒ the rank-5 murder rule) while
- *      staying forcing-free. Looser clues ⇒ harder deductions.
+ *      (medium ⇒ a rank-4 room/count deduction, hard ⇒ the rank-5 murder rule or
+ *      convergent case split) while staying human-solvable. Looser clues ⇒ harder.
  *
- * Returns the loosest forcing-free clue set found — its rank may fall short of `target`
+ * Returns the loosest human-solvable clue set found — its rank may fall short of `target`
  * on a constrained board, and the caller (`pickBestLevel`) rates it honestly and keeps
- * hunting. Returns null only if the board admits no forcing-free forward solution.
+ * hunting. Returns null only if the board admits no human-solvable forward solution.
  */
 /** How many of a suspect's loosest candidate clues the widen pass (2b) tries — bounds
  *  the per-attempt cost on big, clue-rich boards. */
@@ -1452,31 +1453,32 @@ function constructLogicClues(
     return false
   }
 
-  // 1) TIGHTEN until forward-solvable & forcing-free (add a clue to the suspect with
-  //    the fewest, never inRow+inCol together, ≤ maxLineClues line clues overall).
+  // 1) TIGHTEN until human-solvable (add a clue to the suspect with the fewest, never
+  //    inRow+inCol together, ≤ maxLineClues line clues overall). The default engine is
+  //    contradiction-free, so "solved" already means "solvable without trial-and-error".
   for (let guard = 0; guard < 400; guard++) {
     const st = rate()
-    if (st.solved && st.forcingFree) break
+    if (st.solved) break
     if (!addPart()) return null
   }
-  if (!rate().forcingFree) return null // no forcing-free forward solution on this board
+  if (!rate().solved) return null // no human-solvable forward chain on this board
 
   // 2a) LOOSEN: drop redundant ANDed parts — minimal clues ⇒ the hardest forward path —
-  //     as long as it stays forcing-free and doesn't overshoot the target rank.
+  //     as long as it stays human-solvable and doesn't overshoot the target rank.
   for (const id of suspectIds) {
     const u = used.get(id)!
     for (let k = u.length - 1; k >= 0 && u.length > 1; k--) {
       const removed = u.splice(k, 1)[0]
       const st = rate()
-      if (!(st.solved && st.forcingFree && st.maxRank <= target)) u.splice(k, 0, removed)
+      if (!(st.solved && st.maxRank <= target)) u.splice(k, 0, removed)
     }
   }
 
   // 2b) LOOSEN: widen each single clue toward looser candidates (more open cells) to push
   //     the needed rank up to the target — loosest-that-still-works wins, capped so it
-  //     never tips into a harder tier or a contradiction. Stop early once target is hit.
-  //     Only the WIDEN_SCAN loosest candidates are tried (they are the rank-raising ones),
-  //     so a big, clue-rich board can't blow up the attempt's cost.
+  //     never tips into a harder tier. Stop early once target is hit. Only the WIDEN_SCAN
+  //     loosest candidates are tried (they are the rank-raising ones), so a big, clue-rich
+  //     board can't blow up the attempt's cost.
   if (rate().maxRank < target) {
     for (const id of rng.shuffle([...suspectIds])) {
       if (rate().maxRank >= target) break
@@ -1487,7 +1489,7 @@ function constructLogicClues(
       for (let j = list(id).length - 1; j >= lo; j--) {
         u[0] = j
         const st = rate()
-        if (st.solved && st.forcingFree && st.maxRank <= target && !hasCoordPair(id) && lineSuspects() <= maxLineClues) {
+        if (st.solved && st.maxRank <= target && !hasCoordPair(id) && lineSuspects() <= maxLineClues) {
           break
         }
         u[0] = current

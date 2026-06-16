@@ -4,6 +4,7 @@ import type { Solution } from '../model/Solution.ts'
 export type Technique =
   | 'clueCandidates'
   | 'nakedSingle'
+  | 'forcedCell'
   | 'uniqueConstraint'
   | 'hiddenSingleRow'
   | 'hiddenSingleCol'
@@ -14,10 +15,13 @@ export type Technique =
   | 'rectangle'
   | 'insideXor'
   | 'boardCount'
+  | 'emptyRooms'
   | 'roomReasoning'
   | 'roomCoverage'
   | 'roomCapacity'
   | 'groupRoom'
+  | 'companionFit'
+  | 'companionPairing'
   | 'murderRule'
   | 'caseSplit'
   | 'caseSplitDeep'
@@ -79,6 +83,7 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   murderer: 0,
   stuck: 0,
   nakedSingle: 1,
+  forcedCell: 1,
   uniqueConstraint: 1,
   victim: 1,
   hiddenSingleRow: 2,
@@ -90,10 +95,13 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   rectangle: 3,
   insideXor: 3,
   boardCount: 4,
+  emptyRooms: 4,
   roomReasoning: 4,
   roomCoverage: 4,
   roomCapacity: 4,
   groupRoom: 5,
+  companionFit: 4,
+  companionPairing: 5,
   murderRule: 5,
   caseSplit: 5,
   caseSplitDeep: 6,
