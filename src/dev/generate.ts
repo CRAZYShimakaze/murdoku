@@ -1,6 +1,11 @@
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { generateLevel, type GenDifficulty } from '../engine/generator/index.ts'
+import {
+  generateLevel,
+  themeDefaultObjects,
+  GENERATOR_OBJECT_TYPES,
+  type GenDifficulty,
+} from '../engine/generator/index.ts'
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`)
@@ -15,9 +20,17 @@ const seedArg = arg('seed')
 const seed = seedArg !== undefined ? Number(seedArg) : undefined
 const themeId = arg('theme')
 const difficulty = arg('difficulty') as GenDifficulty | undefined
+// --objects all | a,b,c | (omitted → the theme's natural kit, like the generator UI).
+const objArg = arg('objects')
+const objects =
+  objArg === 'all'
+    ? GENERATOR_OBJECT_TYPES
+    : objArg
+      ? objArg.split(',').map((s) => s.trim())
+      : themeDefaultObjects(themeId)
 
 const t0 = performance.now()
-const level = generateLevel({ width, height, suspects, seed, themeId, difficulty })
+const level = generateLevel({ width, height, suspects, seed, themeId, difficulty, objects })
 const ms = performance.now() - t0
 
 const path = resolve(process.cwd(), `levels/${level.id}.json`)

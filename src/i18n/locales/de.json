@@ -83,6 +83,9 @@
     "random": "Zufällig setzen",
     "randomHint": "Verdächtige mit Hinweisen zufällig erzeugen",
     "randomizing": "Erzeuge Fall …",
+    "randomBoard": "Räume & Objekte würfeln",
+    "randomBoardHint": "Räume und Objekte neu erzeugen (Verdächtige bleiben)",
+    "randomizingBoard": "Erzeuge Räume & Objekte …",
     "result_genfail": "Kein lösbares Level gefunden — Brett anpassen oder erneut versuchen."
   },
   "tutorial": {

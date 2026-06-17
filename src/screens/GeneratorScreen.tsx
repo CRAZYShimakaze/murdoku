@@ -8,10 +8,16 @@ import { OBJECT_GLYPHS } from '../game/glyphs.ts'
 import {
   OCCUPIABLE_OBJECT_TYPES,
   BLOCKING_OBJECT_TYPES,
-  DEFAULT_OBJECT_TYPES,
+  GENERATOR_OBJECT_TYPES,
   THEME_IDS,
+  themeDefaultObjects,
   type GenDifficulty,
 } from '../engine/generator/index.ts'
+
+/** The objects pre-selected for a theme: a specific theme → its natural kit; "random" →
+ *  EVERYTHING, so whichever theme is rolled has all its objects available (deselect freely). */
+const objectsForTheme = (id: string): string[] =>
+  id === 'random' ? GENERATOR_OBJECT_TYPES : themeDefaultObjects(id)
 
 const GEN_DIFFS: GenDifficulty[] = ['easy', 'medium', 'hard']
 /** Short codes for the faux case reference shown on the dossier (pure flavour). */
@@ -24,7 +30,8 @@ const DEFAULT_SETTINGS = {
   size: 8,
   difficulty: 'medium' as GenDifficulty,
   theme: 'random',
-  objects: [...DEFAULT_OBJECT_TYPES],
+  // Default theme is "random" → start with EVERYTHING selected (see objectsForTheme).
+  objects: [...GENERATOR_OBJECT_TYPES],
   windows: true,
   doors: false,
 }
@@ -60,6 +67,13 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
       else next.add(type)
       return next
     })
+
+  // Picking a theme pre-selects the objects that naturally fit its rooms (farm → animals,
+  // supermarket → fridges); "random" pre-selects everything. The user can still toggle.
+  const changeTheme = (id: string) => {
+    setTheme(id)
+    setObjects(new Set(objectsForTheme(id)))
+  }
 
   /** One toggle group of object chips (walkable vs blocking). The optional hint is an
       explanatory suffix shown only on desktop — it would overflow the narrow mobile row. */
@@ -200,7 +214,7 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
                   className="mk-select-input"
                   value={theme}
                   disabled={busy}
-                  onChange={(e) => setTheme(e.target.value)}
+                  onChange={(e) => changeTheme(e.target.value)}
                 >
                   <option value="random">{t('theme.random')}</option>
                   {THEME_IDS.map((id) => (

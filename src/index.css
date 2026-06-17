@@ -1605,12 +1605,28 @@ button {
   padding: 0.4rem 0.6rem;
 }
 /* The language toggle sits at the far right behind its own divider. */
-.mk-editor__lang {
+/* The "regenerate rooms & objects" tool sits in its own slot, pushed to the right so it
+   lands just LEFT of the divider (the language group's left border) — Räume · Strich · ⚙. */
+.mk-editor__tool {
   display: flex;
   align-items: center;
   margin-left: auto;
   padding: 0.5rem 0.95rem;
+}
+.mk-editor__lang {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.95rem;
   border-left: 1px solid var(--line-strong);
+}
+/* The "regenerate rooms & objects" button reuses the gear chrome (floor-plan icon),
+   but without the gear's hover spin. */
+.mk-gear--board:hover svg {
+  transform: none;
+}
+.mk-gear--board:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 /* The editor's right column holds the object palette, whose labels are far longer
    than the game's icon-only tools (e.g. "Waschmaschine", "Eingangshalle"). Give it
@@ -2817,6 +2833,12 @@ button {
     gap: 0.4rem;
     padding: 0;
     border-right: 0;
+    order: 3; /* theme · difficulty · size flow AFTER the title + gear (see order rules below) */
+  }
+  /* Settings gear belongs on the TOP row beside the title input, not down with
+     theme/difficulty: title(1) → gear(2, pushed right) → theme/difficulty/size(3) wrap below. */
+  .mk-editor .mk-field--title {
+    order: 1;
   }
   .mk-editor .mk-field__label {
     display: none;
@@ -2848,10 +2870,17 @@ button {
     min-width: 0;
     height: auto;
   }
-  /* Language toggle dropped from the editor header on phones — it only cost height
-     (the language can still be switched on the start screen). */
-  .mk-editor__lang {
+  /* On phones: show the Settings gear (top-right), but hide the room-regenerate tool —
+     it's a desktop editing action and was breaking the wrapped mobile header. */
+  .mk-editor__tool {
     display: none;
+  }
+  .mk-editor__lang {
+    display: flex;
+    order: 2; /* right after the title field, before theme/difficulty/size */
+    margin-left: auto; /* pushes the gear to the right of the top row */
+    padding: 0;
+    border-left: 0;
   }
   .mk-editor .mk-board {
     /* a bit shorter than the game board so the tool picker below stays on-screen */

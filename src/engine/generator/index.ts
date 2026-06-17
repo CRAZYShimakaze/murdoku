@@ -6,6 +6,7 @@ export {
   themeRooms,
   themeOutdoor,
   themeFromRoomKeys,
+  themeDefaultObjects,
   GENERATOR_OBJECT_TYPES,
   DEFAULT_OBJECT_TYPES,
 } from './Generator.ts'

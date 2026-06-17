@@ -68,9 +68,10 @@ function piecePath(
   ctx.roundRect(left, top, right - left, bottom - top, [tl, tr, br, bl])
 }
 
-/** One cell of a wooden table surface (auto-tiled). */
+/** One cell of a wooden table surface (auto-tiled). Inset a touch more than the cell so a
+ *  carpet underneath stays visible around the table (and merged tables read as one block). */
 export function drawTableTile(ctx: Ctx, x: number, y: number, S: number, conn: Conn): void {
-  const pad = S * 0.1
+  const pad = S * 0.15
   const ow = Math.max(1.6, S * 0.06)
   const ov = Math.max(0.75, S * 0.02)
   // black outline (slightly larger), then the wood top — outline shows only on
@@ -123,16 +124,31 @@ export function drawTableTile(ctx: Ctx, x: number, y: number, S: number, conn: C
   }
 }
 
-/** One cell of a soft rug (auto-tiled, translucent so the room colour shows). */
+/** One cell of a soft rug (auto-tiled, translucent so the room colour shows). Sized so it
+ *  reads as a rug yet still peeks out around the smaller furniture sitting on it, with a
+ *  small woven motif (a diamond per cell) that tiles across the whole merged rug. */
 export function drawCarpetTile(ctx: Ctx, x: number, y: number, S: number, conn: Conn): void {
-  const pad = S * 0.11
-  ctx.fillStyle = 'rgba(176, 116, 84, 0.5)'
-  piecePath(ctx, x, y, S, conn, pad, S * 0.14, 0)
+  const pad = S * 0.1
+  ctx.fillStyle = 'rgba(170, 108, 76, 0.55)'
+  piecePath(ctx, x, y, S, conn, pad, S * 0.12, 0)
   ctx.fill()
-  // a lighter inner inset, also merged, for a woven-rug look
-  ctx.fillStyle = 'rgba(214, 168, 132, 0.4)'
-  piecePath(ctx, x, y, S, conn, pad + S * 0.06, S * 0.1, 0)
+  // a lighter inner field, also merged, for a woven border
+  ctx.fillStyle = 'rgba(216, 170, 134, 0.45)'
+  piecePath(ctx, x, y, S, conn, pad + S * 0.06, S * 0.09, 0)
   ctx.fill()
+  // woven motif: a small diamond centred in the cell (tiles across the merged rug)
+  const cx = x + S / 2
+  const cy = y + S / 2
+  const d = S * 0.16
+  ctx.strokeStyle = 'rgba(120, 74, 50, 0.4)'
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  ctx.beginPath()
+  ctx.moveTo(cx, cy - d)
+  ctx.lineTo(cx + d, cy)
+  ctx.lineTo(cx, cy + d)
+  ctx.lineTo(cx - d, cy)
+  ctx.closePath()
+  ctx.stroke()
 }
 
 /** A plush armchair (occupiable seat), drawn from the bundled armchair.png. */

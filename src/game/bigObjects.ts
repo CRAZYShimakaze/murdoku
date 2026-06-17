@@ -87,15 +87,19 @@ export function drawBigObject(
   S: number,
   vertical: boolean,
 ): void {
+  // Shrink to ~82% about the 2-cell footprint's centre so a carpet underneath stays visible.
+  const cx = vertical ? x + S / 2 : x + S
+  const cy = vertical ? y + S : y + S / 2
+  ctx.save()
+  ctx.translate(cx, cy)
+  ctx.scale(0.82, 0.82)
+  ctx.translate(-cx, -cy)
   // The bed has a real up/down (pillow/feet), so it gets a dedicated vertical
   // drawing. The car is top-down, so rotating it 90° is fine.
   if (type === 'bed') {
     if (vertical) bedV(ctx, x, y, S, 2 * S)
     else bedH(ctx, x, y, 2 * S, S)
-    return
-  }
-  ctx.save()
-  if (vertical) {
+  } else if (vertical) {
     ctx.translate(x + S / 2, y + S)
     ctx.rotate(Math.PI / 2)
     carH(ctx, -S, -S / 2, 2 * S, S)

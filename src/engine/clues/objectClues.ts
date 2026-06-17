@@ -11,6 +11,12 @@ import type { AttributeValue, Cell, Direction8, Explanation, PersonId } from '..
  * object cells (no dependency on where other people stand).
  */
 
+/** Object types whose orthogonally-adjacent cells form ONE object instance: a table
+ *  surface auto-merges into a big table, a bed/car spans two cells, a carpet is one rug.
+ *  Everything else — chairs above all — is COUNTED INDIVIDUALLY (two chairs side by side
+ *  are two chairs, never "the same chair"). */
+const MERGE_INSTANCE_TYPES = new Set(['table', 'bed', 'car', 'carpet'])
+
 /** Which line a person shares with the object. */
 export type LineKind = 'col' | 'row' | 'either'
 /** Optional room qualifier tying the object's room to the person's. */
@@ -213,6 +219,8 @@ export class BesideSameObjectClue extends Clue {
    *  are TWO tables, so "beside the same table" means the two people share ONE room. */
   private instances(board: Board): Set<Cell>[] {
     const cells = new Set<Cell>(board.objectCells(this.object))
+    // Only surfaces/multi-cell objects merge; chairs (and the rest) stay individual.
+    if (!MERGE_INSTANCE_TYPES.has(this.object)) return [...cells].map((c) => new Set<Cell>([c]))
     const seen = new Set<Cell>()
     const out: Set<Cell>[] = []
     for (const start of cells) {

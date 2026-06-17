@@ -9,9 +9,10 @@ import { difficultyOf } from '../solver/DeductionStep.ts'
 import { startCoverage } from '../solver/coverage.ts'
 import { createClue } from '../clues/ClueFactory.ts'
 import { createBoardClue } from '../clues/boardClues.ts'
-import { MULTI_CELL_TYPES, VICTIM_ID } from '../model/types.ts'
+import { VICTIM_ID } from '../model/types.ts'
 import type { AttributeValue, Cell, PersonId, Side } from '../model/types.ts'
 import { OBJECT_CATALOG, type ObjectDef } from '../model/objects.ts'
+import { furnishRooms, kitFor } from './furnishing.ts'
 import type { Board } from '../model/Board.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
 import type { BoardClueJson, LevelJson, SuspectJson } from '../io/LevelSchema.ts'
@@ -27,7 +28,6 @@ interface Theme {
 // The generator places from the shared object catalog (same one the editor paints).
 const ALL_OBJECTS: readonly ObjectDef[] = OBJECT_CATALOG
 const OCCUPIABLE: ObjectDef[] = ALL_OBJECTS.filter((o) => o.occupiable)
-const BLOCKING: ObjectDef[] = ALL_OBJECTS.filter((o) => !o.occupiable)
 
 /** Every placeable object type (for the UI's per-object toggles). */
 export const GENERATOR_OBJECT_TYPES: string[] = ALL_OBJECTS.map((o) => o.type)
@@ -131,6 +131,18 @@ export function themeRooms(id: string): string[] {
 /** A theme's outdoor room names (→ rooms[].outside for inside/outside clues). */
 export function themeOutdoor(id: string): string[] {
   return (THEMES.find((t) => t.id === id) ?? THEMES[0]).outdoor
+}
+
+/**
+ * The object types that naturally belong to a theme — every object any of its rooms'
+ * archetypes would place (a farm offers animals, a supermarket fridges, a garage cars).
+ * The generator UI uses this to PRE-SELECT sensible objects when a theme is picked; the
+ * user can still toggle. For "random" (no theme) it returns the plain defaults.
+ */
+export function themeDefaultObjects(themeId?: string): string[] {
+  const theme = THEMES.find((t) => t.id === themeId)
+  if (!theme) return [...DEFAULT_OBJECT_TYPES]
+  return kitFor(theme.rooms, theme.outdoor)
 }
 
 /**
@@ -379,8 +391,10 @@ function pickBestLevel(
       // Only human-solvable levels are eligible — the player must be able to solve by a
       // clean forward/convergent chain, never "assume X → contradiction". For hard the
       // score then maximises hard relational clues + breadth (rank only a floor); for
-      // easy/medium it prefers the exact target rank.
-      if (rating.solved) {
+      // easy/medium it prefers the exact target rank. The extra countSolutions guarantees
+      // UNIQUENESS independent of engine soundness — a dense object layout can shift the
+      // solution space, and a non-unique level must never slip through.
+      if (rating.solved && new SearchSolver(loadLevel(result.level)).countSolutions(2) === 1) {
         result.level.difficulty = tierFor(result.level, target, rating.maxRank)
         const score = scoreLevel(result.level, target, rating.maxRank, result.pins)
         if (score < bestScore) {
@@ -397,6 +411,65 @@ function pickBestLevel(
     if (performance.now() > hardDeadline) break
   }
   return best
+}
+
+/**
+ * Final tidy-up before a generated level ships: drop every clue the puzzle does NOT
+ * actually need — ESPECIALLY the bonus board (global) clues, which are pure flavour and
+ * are usually pointless in a generated level. A clue is removed only while the level stays
+ * uniquely & human-solvably (forward deduction ⇒ unique, double-checked with countSolutions)
+ * AND keeps its difficulty tier. Each suspect always keeps at least one clue; compound
+ * (AND) suspect clues may shed redundant parts. Returns the pruned level.
+ */
+function pruneClues(level: LevelJson, target: GenDifficulty | undefined): LevelJson {
+  const tier = level.difficulty as GenDifficulty
+  // A candidate is acceptable iff still unique, human-solvable, and the SAME tier (and for
+  // easy: still solvable by the simple rank-≤2 steps that define easy).
+  const accepts = (lv: LevelJson): boolean => {
+    const r = logicRating(lv)
+    if (!r.solved) return false
+    if (new SearchSolver(loadLevel(lv)).countSolutions(2) !== 1) return false
+    if (tierFor(lv, target, r.maxRank) !== tier) return false
+    return tier !== 'easy' || r.maxRank <= 2
+  }
+
+  let work = level
+
+  // 1) Board (global) clues — drop any that aren't needed. These are bonus flavour, so
+  //    they almost always go (exactly what the user wants).
+  if (work.boardClues && work.boardClues.length > 0) {
+    const kept: BoardClueJson[] = []
+    const all = work.boardClues
+    for (let i = 0; i < all.length; i++) {
+      const trial: LevelJson = { ...work, boardClues: [...kept, ...all.slice(i + 1)] }
+      if (!accepts(trial)) kept.push(all[i]) // needed → keep it
+    }
+    work = { ...work, boardClues: kept }
+  }
+
+  // 2) Suspect clues — shed redundant ANDed parts (never below one clue per suspect).
+  //    Committed incrementally so each test sees the already-pruned earlier suspects.
+  for (const id of work.suspects.map((s) => s.id)) {
+    const clue = work.suspects.find((s) => s.id === id)!.clues?.[0]
+    if (!clue || clue.type !== 'and') continue
+    let parts = clue.clues
+    let changed = false
+    for (let i = parts.length - 1; i >= 0 && parts.length > 1; i--) {
+      const trial = parts.filter((_, j) => j !== i)
+      const trialClue: ClueJson = trial.length === 1 ? trial[0] : { type: 'and', clues: trial }
+      const lv: LevelJson = {
+        ...work,
+        suspects: work.suspects.map((s) => (s.id === id ? { ...s, clues: [trialClue] } : s)),
+      }
+      if (accepts(lv)) { parts = trial; changed = true }
+    }
+    if (changed) {
+      const newClue: ClueJson = parts.length === 1 ? parts[0] : { type: 'and', clues: parts }
+      work = { ...work, suspects: work.suspects.map((s) => (s.id === id ? { ...s, clues: [newClue] } : s)) }
+    }
+  }
+
+  return work
 }
 
 /** Generate a uniquely-solvable level. Throws if no seed yields one. */
@@ -416,7 +489,7 @@ export function generateLevel(options: GenerateOptions): LevelJson {
       const result = tryGenerate(options, new Rng(baseSeed + a * 7919), baseSeed + a)
       if (result) {
         result.level.difficulty = rateTier(result.level)
-        return result.level
+        return pruneClues(result.level, 'easy')
       }
     }
     const fallback = pickBestLevel(
@@ -425,7 +498,7 @@ export function generateLevel(options: GenerateOptions): LevelJson {
       'easy',
       pick,
     )
-    if (fallback) return fallback
+    if (fallback) return pruneClues(fallback, 'easy')
     throw new Error(`Could not generate an easy ${width}x${height} level for ${suspects} suspects`)
   }
 
@@ -436,7 +509,7 @@ export function generateLevel(options: GenerateOptions): LevelJson {
     pick,
   )
   if (!level) throw new Error(`Could not generate a ${width}x${height} level for ${suspects} suspects`)
-  return level
+  return pruneClues(level, options.difficulty)
 }
 
 export interface FillBoardOptions {
@@ -636,11 +709,13 @@ function tryGenerate(
   const roomCount = Math.max(3, Math.min(theme.rooms.length, Math.round(suspects * 0.7)))
   const rooms = generateRooms(width, height, roomCount, rng)
   const roomOf = (cell: Cell): string => rooms.roomMap[Math.floor(cell / width)][cell % width]
-  // Which room ids are outdoor/garage (mirrors buildLevel's name assignment).
+  // Room id → i18n nameKey, computed ONCE and shared by furnishing, outdoor detection,
+  // and buildLevel (so the three can never disagree about which room is which).
+  const roomNameById = new Map<string, string>()
+  rooms.ids.forEach((id, i) => roomNameById.set(id, theme.rooms[i % theme.rooms.length]))
+  const roomNameOf = (cell: Cell): string => roomNameById.get(roomOf(cell))!
   const outdoorIds = new Set<string>()
-  rooms.ids.forEach((id, i) => {
-    if (theme.outdoor.includes(theme.rooms[i % theme.rooms.length])) outdoorIds.add(id)
-  })
+  for (const [id, key] of roomNameById) if (theme.outdoor.includes(key)) outdoorIds.add(id)
   const isOutdoor = (cell: Cell): boolean => outdoorIds.has(roomOf(cell))
 
   const suspectIds: PersonId[] = Array.from({ length: suspects }, (_, i) => String.fromCharCode(65 + i))
@@ -650,10 +725,9 @@ function tryGenerate(
   if (!placed) return null
 
   const peopleCells = new Set<Cell>(placed.placement.values())
-  const allow = options.objects ?? DEFAULT_OBJECT_TYPES
-  const occ = OCCUPIABLE.filter((o) => allow.includes(o.type))
-  const blocking = BLOCKING.filter((o) => allow.includes(o.type))
-  const objects = placeObjects(width, height, peopleCells, rng, occ, blocking, isOutdoor, roomOf)
+  const allow = new Set(options.objects ?? DEFAULT_OBJECT_TYPES)
+  // Semantic furnishing: each room gets objects that fit it, arranged to look built.
+  const objects = furnishRooms({ width, height, peopleCells, rng, allow, roomNameOf, isOutdoor, roomIdOf: roomOf })
   // Windows are on by default; when allowed, only some levels get them (then 2–6).
   const windows =
     options.windows === false ? [] : rng.chance(0.5) ? placeWindows(width, height, rng) : []
@@ -669,9 +743,17 @@ function tryGenerate(
 
   const victim = victimPerson(rng)
   const victimMeta = { name: victim.name, attributes: makeAttributes(victim.gender, rng) }
-  const base = buildLevel(theme, width, height, rooms, objects, windows, doors, suspectMeta, victimMeta, seedIndex)
+  const base = buildLevel(theme, width, height, rooms, roomNameById, objects, windows, doors, suspectMeta, victimMeta, seedIndex)
   const basePuzzle = loadLevel(base)
   const solution = new Solution(placed.placement)
+
+  // HARD: offer several true board (global) clues UP FRONT so the suspect-clue construction
+  // leans on them — they end up genuinely needed (and plural), which the user wants. Pruning
+  // later keeps only those still required. Medium/easy get at most one bonus clue (below).
+  if (options.difficulty === 'hard') {
+    const offered = offerHardBoardClues(basePuzzle, solution, rng, suspects)
+    if (offered.length > 0) base.boardClues = offered
+  }
 
   const candidates = new Map<PersonId, ClueJson[]>()
   for (const id of suspectIds) {
@@ -710,10 +792,9 @@ function tryGenerate(
     if (!ded.solved || ded.maxRank > 2) return null
   }
 
-  // Now and then add a board-wide clue (consistent with the solution) as bonus
-  // flavour. It is true for the unique solution, so uniqueness/murderer are kept.
-  // Kept off forward-constructed easy levels to preserve their clean, minimal feel.
-  if (!easyConstruct && rng.chance(0.35)) {
+  // Medium: now and then add ONE board-wide clue as bonus flavour (hard already got a set
+  // up front; easy stays clean). True for the unique solution, so the answer is unchanged.
+  if (!easyConstruct && options.difficulty !== 'hard' && rng.chance(0.35)) {
     const bc = bonusBoardClue(finalPuzzle, solution, rng)
     if (bc) base.boardClues = [bc]
   }
@@ -721,11 +802,11 @@ function tryGenerate(
 }
 
 /**
- * A board-wide clue that genuinely holds for `solution` (or null). Because it only
- * constrains the already-unique solution, adding it never changes the answer — it
- * is pure extra flavour: "exactly N people stood on a <object>" or "N rooms empty".
+ * All board-wide clues that genuinely hold for `solution`: "exactly N people stood on a
+ * <object>" (per object type) and "N rooms are empty". The forward deduction engine has
+ * techniques for these (BoardCount / EmptyRooms / RoomCoverage), so they can be load-bearing.
  */
-function bonusBoardClue(puzzle: Puzzle, solution: Solution, rng: Rng): BoardClueJson | null {
+function trueBoardClues(puzzle: Puzzle, solution: Solution): BoardClueJson[] {
   const board = puzzle.board
   const candidates: BoardClueJson[] = []
 
@@ -744,8 +825,25 @@ function bonusBoardClue(puzzle: Puzzle, solution: Solution, rng: Rng): BoardClue
   for (const id of board.rooms.keys()) if (!occupied.has(id)) empty++
   if (empty > 0) candidates.push({ type: 'emptyRooms', count: empty })
 
-  const valid = candidates.filter((c) => createBoardClue(c).test(solution, puzzle))
+  return candidates.filter((c) => createBoardClue(c).test(solution, puzzle))
+}
+
+/** One board-wide clue that holds for `solution` (or null) — bonus flavour for medium/easy. */
+function bonusBoardClue(puzzle: Puzzle, solution: Solution, rng: Rng): BoardClueJson | null {
+  const valid = trueBoardClues(puzzle, solution)
   return valid.length ? rng.pick(valid) : null
+}
+
+/**
+ * A diverse handful of true board clues to OFFER a hard level up front (before the suspect
+ * clues are built), so the construction leans on them and they become genuinely needed —
+ * the user wants hard levels to USE global clues, often more than one. The final pruning
+ * keeps exactly those the puzzle still needs. Count scales with the board.
+ */
+function offerHardBoardClues(puzzle: Puzzle, solution: Solution, rng: Rng, suspects: number): BoardClueJson[] {
+  const valid = rng.shuffle(trueBoardClues(puzzle, solution))
+  const cap = Math.min(valid.length, 3 + Math.floor(suspects / 3)) // 6×6≈4, 9×9≈5
+  return valid.slice(0, cap)
 }
 
 // --- board ----------------------------------------------------------------
@@ -852,70 +950,6 @@ function generateSolution(
   return null
 }
 
-function placeObjects(
-  width: number,
-  height: number,
-  peopleCells: Set<Cell>,
-  rng: Rng,
-  occ: ObjectDef[],
-  blocking: ObjectDef[],
-  isOutdoor: (cell: Cell) => boolean,
-  roomOf: (cell: Cell) => string,
-): { groundMap: string[]; topMap: string[] } {
-  const ground: string[][] = Array.from({ length: height }, () => new Array<string>(width).fill('.'))
-  const top: string[][] = Array.from({ length: height }, () => new Array<string>(width).fill('.'))
-  const inB = (r: number, c: number) => r >= 0 && r < height && c >= 0 && c < width
-  const free = (r: number, c: number) => inB(r, c) && top[r][c] === '.' && ground[r][c] === '.'
-
-  /** Beds and cars occupy two adjacent tiles; the partner must be empty (and, for
-   *  a car, both tiles outdoor). Returns true if the pair was placed. */
-  const placePair = (r: number, c: number, def: ObjectDef): boolean => {
-    for (const [dr, dc] of rng.shuffle([
-      [0, 1],
-      [1, 0],
-      [0, -1],
-      [-1, 0],
-    ])) {
-      const r2 = r + dr
-      const c2 = c + dc
-      if (!free(r2, c2)) continue
-      // A 2-cell object must lie within a single room.
-      if (roomOf(r * width + c) !== roomOf(r2 * width + c2)) continue
-      if (def.type === 'car' && !(isOutdoor(r * width + c) && isOutdoor(r2 * width + c2))) continue
-      top[r][c] = def.char
-      top[r2][c2] = def.char
-      return true
-    }
-    return false
-  }
-
-  // Ground objects (carpet) sit under people; multi-cell ones (bed/car) span two
-  // tiles; everything else is a single top object. A pair that won't fit is skipped
-  // (no chair fallback) so the chosen object set is respected.
-  const placeOcc = (r: number, c: number, def: ObjectDef): void => {
-    if (def.layer === 'ground') ground[r][c] = def.char
-    else if (MULTI_CELL_TYPES.has(def.type)) placePair(r, c, def)
-    else top[r][c] = def.char
-  }
-
-  for (let cell = 0; cell < width * height; cell++) {
-    const r = Math.floor(cell / width)
-    const c = cell % width
-    if (!free(r, c)) continue // already part of a placed bed/car
-    if (peopleCells.has(cell)) {
-      if (occ.length > 0 && rng.next() < 0.5) placeOcc(r, c, rng.pick(occ))
-      continue
-    }
-    const roll = rng.next()
-    if (blocking.length > 0 && roll < 0.3) top[r][c] = rng.pick(blocking).char
-    else if (occ.length > 0 && roll < 0.45) placeOcc(r, c, rng.pick(occ))
-  }
-  return {
-    groundMap: ground.map((row) => row.join('')),
-    topMap: top.map((row) => row.join('')),
-  }
-}
-
 /**
  * Place a handful of windows on the outer wall (2–6), each owned by a border cell
  * on its outward side. Several windows keep "beside a window" non-unique.
@@ -973,6 +1007,7 @@ function buildLevel(
   width: number,
   height: number,
   rooms: { roomMap: string[]; ids: string[] },
+  roomNameById: Map<string, string>,
   objects: { groundMap: string[]; topMap: string[] },
   windows: { r: number; c: number; side: Side }[],
   doors: { r: number; c: number; side: Side }[],
@@ -982,7 +1017,7 @@ function buildLevel(
 ): LevelJson {
   const roomDefs: Record<string, { nameKey: string; color: string }> = {}
   rooms.ids.forEach((id, i) => {
-    roomDefs[id] = { nameKey: theme.rooms[i % theme.rooms.length], color: ROOM_COLORS[i % ROOM_COLORS.length] }
+    roomDefs[id] = { nameKey: roomNameById.get(id)!, color: ROOM_COLORS[i % ROOM_COLORS.length] }
   })
   const objectDefs: Record<string, { type: string; occupiable: boolean }> = {}
   for (const obj of ALL_OBJECTS) objectDefs[obj.char] = { type: obj.type, occupiable: obj.occupiable }
@@ -1500,8 +1535,12 @@ function constructLogicClues(
   // third start on a BROAD one ("nicht neben einer Pflanze", "nicht im Garten") so
   // levels keep using clues that leave much of the board open — a deliberate
   // preference WITHOUT any fixed quota (the user's call).
+  // HARD (preferIndirect) starts MORE suspects on a broad clue, leaving gaps the global
+  // board clues then resolve — so the offered board clues become genuinely needed (the
+  // user wants hard to lean on global clues, often several).
+  const broadStartChance = preferIndirect ? 0.5 : 0.35
   const used = new Map<PersonId, number[]>(
-    suspectIds.map((id) => [id, [rng.chance(0.35) ? broadestIdx(id) : 0]]),
+    suspectIds.map((id) => [id, [rng.chance(broadStartChance) ? broadestIdx(id) : 0]]),
   )
   const clueOf = (id: PersonId): ClueJson => {
     const parts = used.get(id)!.map((i) => list(id)[i])

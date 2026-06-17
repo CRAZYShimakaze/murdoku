@@ -5,8 +5,8 @@ import EditorBoard from '../components/EditorBoard.tsx'
 import SuspectsPanel from '../components/SuspectsPanel.tsx'
 import ObjectIcon from '../components/ObjectIcon.tsx'
 import { OBJECT_GLYPHS } from '../game/glyphs.ts'
-import { THEME_IDS, themeRooms, themeOutdoor, themeFromRoomKeys } from '../engine/generator/index.ts'
-import { fillBoardCluesAsync, type GenHandle } from '../game/generatorClient.ts'
+import { THEME_IDS, themeRooms, themeOutdoor, themeFromRoomKeys, themeDefaultObjects } from '../engine/generator/index.ts'
+import { fillBoardCluesAsync, generateLevelAsync, type GenHandle } from '../game/generatorClient.ts'
 import { LEVELS, levelMetaFromJson, type Difficulty, type LevelMeta } from '../game/levels.ts'
 import {
   saveCustomLevel,
@@ -143,6 +143,8 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   const [sessionId] = useState(() => `editor-${Date.now()}`)
   const [randomizing, setRandomizing] = useState(false)
   const randomHandle = useRef<GenHandle | null>(null)
+  const [regenBusy, setRegenBusy] = useState(false)
+  const regenHandle = useRef<GenHandle | null>(null)
 
   // Every level already in the game (bundled + saved): a content signature to spot an
   // exact duplicate, and the titles to warn about a name clash. Computed once.
@@ -252,6 +254,52 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
     randomHandle.current?.cancel()
     randomHandle.current = null
     setRandomizing(false)
+  }
+
+  /**
+   * Generate fresh ROOMS + OBJECTS (layout, floor, furniture, windows, doors) for the
+   * current theme/size/difficulty, KEEPING the suspects & victim and the global clues —
+   * the people are still (re)made on the left. Runs in the worker.
+   */
+  const regenerateBoard = () => {
+    setResult(null)
+    setRegenBusy(true)
+    const handle = generateLevelAsync({
+      width: state.size,
+      height: state.size,
+      suspects: state.suspects.length,
+      difficulty,
+      themeId: theme,
+      objects: themeDefaultObjects(theme),
+    })
+    regenHandle.current = handle
+    handle.promise
+      .then((level) => {
+        regenHandle.current = null
+        setRegenBusy(false)
+        const gen = editorStateFromLevel(level)
+        // Take only the BOARD (rooms/floor/objects/openings); keep people + global clues.
+        setState((s) => ({
+          ...s,
+          roomMap: gen.roomMap,
+          roomNames: gen.roomNames,
+          groundMap: gen.groundMap,
+          topMap: gen.topMap,
+          windows: gen.windows,
+          doors: gen.doors,
+        }))
+      })
+      .catch((err: Error) => {
+        regenHandle.current = null
+        setRegenBusy(false)
+        if (err.message !== 'cancelled') setResult({ kind: 'genfail' })
+      })
+  }
+
+  const cancelRegen = () => {
+    regenHandle.current?.cancel()
+    regenHandle.current = null
+    setRegenBusy(false)
   }
 
   const check = () => {
@@ -539,6 +587,34 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* "Regenerate rooms & objects" — its own slot LEFT of the divider (the divider
+            is the left border of .mk-editor__lang), so it isn't grouped with the gear. */}
+        <div className="mk-editor__tool">
+          <button
+            type="button"
+            className="mk-gear mk-gear--board"
+            onClick={regenerateBoard}
+            disabled={regenBusy}
+            title={t('editor.randomBoardHint')}
+            aria-label={t('editor.randomBoard')}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <rect x="3.5" y="3.5" width="17" height="17" rx="1.6" />
+              <path d="M13 3.5 V12 M3.5 12 H9 M13 12 H20.5" />
+            </svg>
+          </button>
         </div>
 
         <div className="mk-editor__lang">
@@ -923,6 +999,18 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
             <span className="mk-spinner" />
             <p>{t('editor.randomizing')}</p>
             <button type="button" className="mk-btn mk-btn--ghost" onClick={cancelRandom}>
+              {t('generate.cancel')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {regenBusy && (
+        <div className="mk-overlay">
+          <div className="mk-dialog">
+            <span className="mk-spinner" />
+            <p>{t('editor.randomizingBoard')}</p>
+            <button type="button" className="mk-btn mk-btn--ghost" onClick={cancelRegen}>
               {t('generate.cancel')}
             </button>
           </div>

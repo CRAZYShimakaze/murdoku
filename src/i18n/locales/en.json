@@ -83,6 +83,9 @@
     "random": "Randomize",
     "randomHint": "Generate suspects & clues at random",
     "randomizing": "Building case …",
+    "randomBoard": "Randomize rooms & objects",
+    "randomBoardHint": "Generate fresh rooms and objects (suspects kept)",
+    "randomizingBoard": "Building rooms & objects …",
     "result_genfail": "No solvable level found — adjust the board or try again."
   },
   "tutorial": {

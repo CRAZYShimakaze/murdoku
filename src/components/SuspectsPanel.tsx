@@ -55,14 +55,38 @@ export default function SuspectsPanel({
   onRandom,
   randomizing,
 }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage ?? i18n.language
   const { genderColors } = useSettings()
   const [editing, setEditing] = useState<number | 'victim' | null>(null)
   const preview = useCluePreview(state)
 
+  // Global (board) rules, rendered exactly like the game's clue panel, so the editor
+  // shows at a glance which ones are set. Best effort — skipped if the board won't build.
+  const boardNotes = useMemo(() => {
+    try {
+      const puzzle = loadLevel(buildPlayableLevel(state, 'preview'))
+      const renderer = new Renderer(i18n.getResourceBundle(lang, 'translation'), puzzle)
+      return puzzle.boardClues.map((c) => renderer.render(c.describe()))
+    } catch {
+      return []
+    }
+  }, [state, lang, i18n])
+
   return (
     <div className="mk-clues mk-editor__left">
       <p className="mk-clues__title">{t('game.suspects')}</p>
+
+      {boardNotes.length > 0 && (
+        <div className="mk-boardclues">
+          {boardNotes.map((note, i) => (
+            <p key={i} className="mk-boardclue">
+              <span className="mk-boardclue__icon">🔍</span>
+              {note}
+            </p>
+          ))}
+        </div>
+      )}
 
       {state.suspects.map((s, i) => {
         const line = preview(i)
