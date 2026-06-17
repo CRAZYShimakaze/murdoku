@@ -252,6 +252,89 @@ function breadthPenalty(level: LevelJson): number {
   return Math.round((1 - startCoverage(loadLevel(level)).constrainedRatio) * 60)
 }
 
+/**
+ * The "hard" clue families — relational/social clues a player can only use by
+ * cross-referencing OTHER people: "one direction from <person>", "beside the same
+ * <object> as <person / someone with a trait>", and the whole "in a room WITH
+ * someone (with a trait)" group. They are inherently BROAD (many candidate cells),
+ * so piling many of them onto a level makes it both harder and more open — the
+ * user's definition of a hard level (à la Museum / Der Bauernhof), as opposed to
+ * the old "needs a rank-5 technique" definition. Scales with the board on its own:
+ * more suspects ⇒ room for more such clues.
+ */
+const HARD_CLUE_TYPES = new Set<string>([
+  'direction', // one direction from a person
+  'besideSameObject', // same object instance as a person / someone with a trait
+  'roomExists', // in a room where someone (with a trait) was on/beside an object
+  'roomCompanion', // alone with someone who has a trait
+  'roomAttribute', // none / someone / everyone else in the room had a trait
+  'sameRoom', // same room as a person
+  'insideXor', // exactly one of the two was outside
+])
+
+/** Leaf clue types, flattening `and` and unwrapping `not`. */
+function leafTypes(clue: ClueJson): string[] {
+  if (clue.type === 'and') return clue.clues.flatMap(leafTypes)
+  if (clue.type === 'not') return leafTypes(clue.clue)
+  return [clue.type]
+}
+
+/** Does a suspect's clue use a HARD (relational/social) family? */
+const isHardClue = (clue: ClueJson): boolean => leafTypes(clue).some((t) => HARD_CLUE_TYPES.has(t))
+
+/** How many suspects carry a hard relational/social clue. */
+function hardClueCount(level: LevelJson): number {
+  let n = 0
+  for (const s of level.suspects) if ((s.clues ?? []).some(isHardClue)) n++
+  return n
+}
+
+/** Size-scaled goal for hard: a majority of suspects should carry a hard clue
+ *  (4×4 ≈ 2, 6×6 ≈ 3, 9×9 ≈ 5) — "many hard clues, scaled to the board" per the user. */
+function wantHardClues(level: LevelJson): number {
+  return Math.max(1, Math.round(level.suspects.length * 0.6))
+}
+
+/** Honest tier for a solvable candidate. HARD is COMPOSITION-driven: hard once it
+ *  carries enough hard relational clues OR still needs the rank-5 murder rule;
+ *  otherwise rated by the rank it truly needs. Medium/easy stay purely rank-based. */
+function tierFor(level: LevelJson, target: GenDifficulty | undefined, maxRank: number): GenDifficulty {
+  if (target === 'hard' && (hardClueCount(level) >= wantHardClues(level) || maxRank >= TARGET_RANK.hard)) {
+    return 'hard'
+  }
+  return rankToTier(maxRank)
+}
+
+/** Score a solvable candidate (lower = better). HARD is driven by COMPOSITION — many
+ *  broad relational/social clues, with the technique rank demoted to a soft floor (must
+ *  stay at least medium-hard) — so the generator stops returning the same few rank-5
+ *  levels and instead piles on hard, board-opening clues. Easy/medium keep the
+ *  rank-nearness score (then few pins, breadth, few line clues). */
+function scoreLevel(
+  level: LevelJson,
+  target: GenDifficulty | undefined,
+  maxRank: number,
+  pins: number,
+): number {
+  const lines = countLineClues(level)
+  if (target === 'hard') {
+    const breadth = Math.round(startCoverage(loadLevel(level)).avgBreadth * 100)
+    const floorMiss = Math.max(0, TARGET_RANK.medium - maxRank) // below medium ⇒ heavy penalty
+    return floorMiss * 2000 - hardClueCount(level) * 200 - breadth + pins * 100 + lines * 50
+  }
+  const rankMiss = Math.abs(maxRank - targetRankOf(target))
+  return rankMiss * 1000 + pins * 100 + breadthPenalty(level) + lines
+}
+
+/** A candidate good enough to stop the search early. For hard that means it already
+ *  reaches the size-scaled hard-clue goal (and stays ≥ medium-hard); otherwise it is
+ *  the exact target rank. Pins / line clues must be absent either way. */
+function isIdeal(level: LevelJson, target: GenDifficulty | undefined, maxRank: number, pins: number): boolean {
+  if (pins !== 0 || countLineClues(level) !== 0) return false
+  if (target === 'hard') return maxRank >= TARGET_RANK.medium && hardClueCount(level) >= wantHardClues(level)
+  return maxRank === targetRankOf(target)
+}
+
 /** Cap on "was in row X / column Y" clues per level (rows + columns combined) — they are
  *  coordinate-y and dull, so keep them scarce. */
 const MAX_LINE_CLUES = 2
@@ -287,7 +370,6 @@ function pickBestLevel(
   const softDeadline = performance.now() + (opts.timeBudgetMs ?? 3000)
   // Generation must ALWAYS finish well under a minute (user requirement).
   const hardDeadline = performance.now() + (opts.hardTimeBudgetMs ?? 45000)
-  const targetRank = targetRankOf(target)
   let best: LevelJson | null = null
   let bestScore = Infinity
   for (let a = 0; a < maxAttempts; a++) {
@@ -295,18 +377,17 @@ function pickBestLevel(
     if (result) {
       const rating = logicRating(result.level)
       // Only human-solvable levels are eligible — the player must be able to solve by a
-      // clean forward/convergent chain, never "assume X → contradiction". Breadth is a
-      // gentle tie-breaker, never a bar.
+      // clean forward/convergent chain, never "assume X → contradiction". For hard the
+      // score then maximises hard relational clues + breadth (rank only a floor); for
+      // easy/medium it prefers the exact target rank.
       if (rating.solved) {
-        result.level.difficulty = rankToTier(rating.maxRank)
-        const rankMiss = Math.abs(rating.maxRank - targetRank)
-        const lines = countLineClues(result.level)
-        const score = rankMiss * 1000 + result.pins * 100 + breadthPenalty(result.level) + lines
+        result.level.difficulty = tierFor(result.level, target, rating.maxRank)
+        const score = scoreLevel(result.level, target, rating.maxRank, result.pins)
         if (score < bestScore) {
           best = result.level
           bestScore = score
         }
-        if (rankMiss === 0 && result.pins === 0 && lines === 0) break
+        if (isIdeal(result.level, target, rating.maxRank, result.pins)) break
       }
     }
     // Once we hold a candidate, stop at the soft deadline; with nothing yet keep hunting
@@ -447,7 +528,7 @@ function fillAttempt(
   const chosen =
     difficulty === 'easy'
       ? constructEasyClues(base, suspectIds, solution, candidates, rng)
-      : constructLogicClues(base, suspectIds, candidates, rng, targetRankOf(difficulty), MAX_LINE_CLUES)
+      : constructLogicClues(base, suspectIds, candidates, rng, targetRankOf(difficulty), MAX_LINE_CLUES, difficulty === 'hard')
   if (!chosen) return null
 
   // Limit how many suspects are obvious from the START (their own clue pins one cell):
@@ -605,7 +686,7 @@ function tryGenerate(
   // the easy generic fallback) use natural clue selection.
   const chosen = easyConstruct
     ? constructEasyClues(base, suspectIds, solution, candidates, rng)
-    : constructLogicClues(base, suspectIds, candidates, rng, targetRankOf(options.difficulty), MAX_LINE_CLUES)
+    : constructLogicClues(base, suspectIds, candidates, rng, targetRankOf(options.difficulty), MAX_LINE_CLUES, options.difficulty === 'hard')
   if (!chosen) return null
 
   // Easy: at most ONE suspect may be directly placeable from the start (the rest
@@ -1380,6 +1461,10 @@ function constructLogicClues(
   rng: Rng,
   target: number,
   maxLineClues: number,
+  /** HARD only: actively convert suspects onto broad relational/social clues so the
+   *  level leans on MANY hard clues (the user's definition of hard), not on a single
+   *  high-rank technique. */
+  preferIndirect = false,
 ): Map<PersonId, ClueJson> | null {
   for (const id of suspectIds) if (candidates.get(id)!.length === 0) return null
 
@@ -1431,6 +1516,8 @@ function constructLogicClues(
   }
   const lineSuspects = (): number =>
     suspectIds.filter((id) => used.get(id)!.some((i) => isLine(list(id)[i]))).length
+  const hasHardClue = (id: PersonId): boolean =>
+    used.get(id)!.some((i) => HARD_CLUE_TYPES.has(list(id)[i].type))
 
   // Fallback tightener: AND another part onto the suspect with the fewest (the old
   // construction) — used once single-clue tightening alone doesn't get there.
@@ -1471,6 +1558,30 @@ function constructLogicClues(
       const removed = u.splice(k, 1)[0]
       const st = rate()
       if (!(st.solved && st.maxRank <= target)) u.splice(k, 0, removed)
+    }
+  }
+
+  // 2a-hard) HARD ONLY — make as many suspects as possible carry a BROAD relational/social
+  //     clue (one direction from a person, beside the same object as someone, in a room with
+  //     someone). These are the "hard" families the user wants piled up; the loosest one
+  //     first (wide ⇒ the player must cross-reference more). A switch is kept ONLY while the
+  //     level stays human-solvable, so it never turns it unsolvable or ambiguous; suspects
+  //     with no workable hard candidate just keep their current clue.
+  if (preferIndirect) {
+    for (const id of rng.shuffle([...suspectIds])) {
+      if (hasHardClue(id)) continue
+      const u = used.get(id)!
+      if (u.length !== 1) continue
+      const current = u[0]
+      const hardIdx = list(id)
+        .map((clue, i) => ({ clue, i }))
+        .filter(({ clue, i }) => HARD_CLUE_TYPES.has(clue.type) && i !== current)
+        .sort((a, b) => breadthAt(id, b.i) - breadthAt(id, a.i))
+      for (const { i } of hardIdx) {
+        u[0] = i
+        if (rate().solved && !hasCoordPair(id) && lineSuspects() <= maxLineClues) break
+        u[0] = current
+      }
     }
   }
 
