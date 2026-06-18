@@ -224,12 +224,23 @@ function rateTier(level: LevelJson): GenDifficulty {
  *  technique the solution needs. One cheap call gives uniqueness + difficulty AND the
  *  guarantee that the hint chain a player follows is free of trial-and-error. A level
  *  that needs a contradiction simply comes back `solved: false` and is rejected. */
-function logicRating(level: LevelJson): { solved: boolean; maxRank: number } {
+/** Combinatorial "chain" techniques — the cross-referencing reasoning the user enjoys
+ *  at hard ("E & F take columns 2+3 ⇒ nobody else there ⇒ B is column 1 ⇒ D column 8"):
+ *  naked groups / rectangle (set reservation), forced cells ("doppelter Ausschluss"),
+ *  and the counting/capacity rules. NOT the trivial naked-single domino. */
+const CHAIN_TECHNIQUES = [
+  'nakedGroupRows', 'nakedGroupCols', 'rectangle',
+  'forcedCell',
+  'boardCount', 'emptyRooms', 'roomCapacity', 'roomCoverage', 'companionPairing', 'companionFit',
+] as const
+
+function logicRating(level: LevelJson): { solved: boolean; maxRank: number; chainSteps: number } {
   // Accept ONLY levels solvable by straight forward deduction — NO case split. The user
   // found auto-generated case-splits ("Fallunterscheidung") too frequent and too deep to
   // solve by hand. Players/hints still get the full pipeline for hand-made levels.
   const result = new DeductionEngine(loadLevel(level), { noCaseSplit: true }).solve()
-  return { solved: result.solved, maxRank: result.maxRank }
+  const chainSteps = CHAIN_TECHNIQUES.reduce((n, t) => n + (result.techniqueCounts[t] ?? 0), 0)
+  return { solved: result.solved, maxRank: result.maxRank, chainSteps }
 }
 
 /** The hardest forward-deduction rank that DEFINES each tier (see TECHNIQUE_RANK):
@@ -291,6 +302,24 @@ function leafTypes(clue: ClueJson): string[] {
   return [clue.type]
 }
 
+/** Families EXEMPT from the "max 2 per family" variety cap: each instance reads as a
+ *  DIFFERENT clue (a different object / room / window-vs-door), so repeating them isn't
+ *  monotonous — unlike a chain of "north of …". Row/column clues are NOT exempt: they're
+ *  capped AND actively avoided (especially at easy). */
+const UNCAPPED_TYPES = new Set<string>([
+  'onObject', 'uniqueOnObject',
+  'nearObject', 'uniqueNearObject', 'nearObjectAny',
+  'inRoom',
+  'nearWindow', 'uniqueNearWindow',
+  'nearDoor', 'uniqueNearDoor',
+])
+/** The capped families of a clue (the ones the variety limit counts). Row and column
+ *  clues collapse to one "line" family, so at most 2 line clues total. */
+const cappedFamilies = (clue: ClueJson): string[] =>
+  leafTypes(clue)
+    .filter((t) => !UNCAPPED_TYPES.has(t))
+    .map((t) => (t === 'inRow' || t === 'inCol' ? 'line' : t))
+
 /** Does a suspect's clue use a HARD (relational/social) family? */
 const isHardClue = (clue: ClueJson): boolean => leafTypes(clue).some((t) => HARD_CLUE_TYPES.has(t))
 
@@ -327,15 +356,28 @@ function scoreLevel(
   target: GenDifficulty | undefined,
   maxRank: number,
   pins: number,
+  chainSteps = 0,
 ): number {
   const lines = countLineClues(level)
   if (target === 'hard') {
     const breadth = Math.round(startCoverage(loadLevel(level)).avgBreadth * 100)
     const floorMiss = Math.max(0, TARGET_RANK.medium - maxRank) // below medium ⇒ heavy penalty
-    return floorMiss * 2000 - hardClueCount(level) * 200 - breadth + pins * 100 + lines * 50
+    // Breadth stays; chains are a BONUS on top — prefer levels whose solution needs
+    // combinatorial cross-referencing over a flat clue→place→place cascade.
+    return (
+      floorMiss * 2000 -
+      hardClueCount(level) * 200 -
+      breadth -
+      chainSteps * 150 +
+      pins * 100 +
+      lines * 50
+    )
   }
   const rankMiss = Math.abs(maxRank - targetRankOf(target))
-  return rankMiss * 1000 + pins * 100 + breadthPenalty(level) + lines
+  // Row/column clues read as dull coordinates — prefer the attempt with fewer (the user
+  // wants them rare at easy). The per-attempt line reduction is the main lever; this only
+  // breaks ties when several candidates exist.
+  return rankMiss * 1000 + pins * 100 + lines * 20 + breadthPenalty(level)
 }
 
 /** A candidate good enough to stop the search early. For hard that means it already
@@ -396,7 +438,7 @@ function pickBestLevel(
       // solution space, and a non-unique level must never slip through.
       if (rating.solved && new SearchSolver(loadLevel(result.level)).countSolutions(2) === 1) {
         result.level.difficulty = tierFor(result.level, target, rating.maxRank)
-        const score = scoreLevel(result.level, target, rating.maxRank, result.pins)
+        const score = scoreLevel(result.level, target, rating.maxRank, result.pins, rating.chainSteps)
         if (score < bestScore) {
           best = result.level
           bestScore = score
@@ -1080,21 +1122,34 @@ function candidatesFor(
   }
 
   // --- object: same line / direction (objects are fixed → deducible) ---
+  // A clue whose candidates already lie in ONE row or column is just a disguised line
+  // clue — the honest `in row/col X` (added below) says it instead.
+  const collapsesToLine = (json: ClueJson): boolean => {
+    const cells = createClue(json).candidateCells(board)
+    if (!cells || cells.size === 0) return false
+    const rows = new Set<number>()
+    const cols = new Set<number>()
+    for (const c of cells) {
+      const rc = board.rc(c)
+      rows.add(rc.row)
+      cols.add(rc.col)
+    }
+    return rows.size === 1 || cols.size === 1
+  }
   for (const def of ALL_OBJECTS) {
     const objCells = board.objectCells(def.type)
     if (objCells.length === 0) continue
-    for (const line of ['col', 'row', 'either'] as const) {
-      out.push({ type: 'sameLineAsObject', object: def.type, line, room: 'any' })
-    }
-    // Several tiles of the type → anchor each direction clue to ONE tile ("east of
-    // the tree at Z7/S6"); the existential "east of SOME tree" is ambiguous to read.
-    for (const dir of ['north', 'south', 'east', 'west'] as const) {
-      if (objCells.length === 1) {
-        out.push({ type: 'directionFromObject', object: def.type, dir, room: 'any' })
-      } else {
-        for (const at of objCells) {
-          out.push({ type: 'directionFromObject', object: def.type, dir, room: 'any', at })
-        }
+    // Object line/direction clues ONLY for a UNIQUE object tile — a repeated object
+    // would need a "(Z7/S6)" anchor coordinate, which reads badly. And skip the ones
+    // that collapse to a single line (those become the plain inRow/inCol clue).
+    if (objCells.length === 1) {
+      for (const line of ['col', 'row', 'either'] as const) {
+        const json: ClueJson = { type: 'sameLineAsObject', object: def.type, line, room: 'any' }
+        if (!collapsesToLine(json)) out.push(json)
+      }
+      for (const dir of ['north', 'south', 'east', 'west'] as const) {
+        const json: ClueJson = { type: 'directionFromObject', object: def.type, dir, room: 'any' }
+        if (!collapsesToLine(json)) out.push(json)
       }
     }
     // "beside the SAME object instance as …" — only when the subject is beside one.
@@ -1270,6 +1325,37 @@ function candidatesFor(
   out.push({ type: 'not', clue: { type: 'corner' } })
   if (board.cellsNearWindow().size > 0) out.push({ type: 'not', clue: { type: 'nearWindow' } })
   if (board.cellsNearDoor().size > 0) out.push({ type: 'not', clue: { type: 'nearDoor' } })
+
+  // --- "spicy" negations of FORWARD-deducible relational/social/object clues:
+  // "nicht im selben Raum wie X", "keine Frau / niemand mit Bart im Raum", "nicht in
+  // derselben Zeile/Richtung wie ein Objekt". Broad, make-you-think elimination clues
+  // (the user wants "nicht" used now and then for extra deduction). All propagate
+  // forward — sameRoom via the different-room rule, the negated room-attribute via
+  // not(some)≡none, the object ones via the not-clue's definite cells. The test-filter
+  // below keeps only those TRUE here; HARD_CLUE_TYPES counts sameRoom/roomAttribute. ---
+  for (const id of otherSuspects) {
+    out.push({ type: 'not', clue: { type: 'sameRoom', as: id } })
+  }
+  for (const { attribute, value } of attrPairs) {
+    out.push({
+      type: 'not',
+      clue: { type: 'roomAttribute', quantifier: 'some', attribute, value, excludeSelf: editorSafe },
+    })
+  }
+  for (const def of ALL_OBJECTS) {
+    const objCells = board.objectCells(def.type)
+    // Same rule as the positive object clues: only a UNIQUE object (no "(Z/S)" anchor)
+    // and not when the inner clue is just a disguised single line.
+    if (objCells.length !== 1) continue
+    for (const line of ['col', 'row', 'either'] as const) {
+      const inner: ClueJson = { type: 'sameLineAsObject', object: def.type, line, room: 'any' }
+      if (!collapsesToLine(inner)) out.push({ type: 'not', clue: inner })
+    }
+    for (const dir of ['north', 'south', 'east', 'west'] as const) {
+      const inner: ClueJson = { type: 'directionFromObject', object: def.type, dir, room: 'any' }
+      if (!collapsesToLine(inner)) out.push({ type: 'not', clue: inner })
+    }
+  }
 
   // Keep only clues TRUE for this solution; sort tightest-first (tightness once each).
   const scored = out
@@ -1451,6 +1537,80 @@ function constructEasyClues(
       chosen.set(id, current)
     }
   }
+
+  // VARIETY cap (all difficulties): at most 2 clues of the same family (line clues
+  // exempt). Switch an offender to another easy clue that keeps the short chain
+  // solvable; give up on this layout if it can't be met.
+  const capTypes = cappedFamilies
+  const famCounts = (): Map<string, number> => {
+    const m = new Map<string, number>()
+    for (const id of suspectIds) for (const t of capTypes(chosen.get(id)!)) m.set(t, (m.get(t) ?? 0) + 1)
+    return m
+  }
+  for (let guard = 0; guard < 200; guard++) {
+    const over = [...famCounts().entries()].find(([, n]) => n > 2)?.[0]
+    if (over === undefined) break
+    let fixed = false
+    for (const id of rng.shuffle([...suspectIds])) {
+      const cur = chosen.get(id)!
+      if (!capTypes(cur).includes(over)) continue
+      for (const e of cand.get(id)!) {
+        if (e.json === cur || capTypes(e.json).includes(over)) continue
+        chosen.set(id, e.json)
+        if ([...famCounts().values()].every((n) => n <= 2) && solvableChain()) {
+          fixed = true
+          break
+        }
+        chosen.set(id, cur)
+      }
+      if (fixed) break
+    }
+    if (!fixed) return null
+  }
+
+  // AVOID line clues: the user finds "in row/column X" dull at EASY and wants it rare
+  // (ideally none, occasionally one — not on most suspects). Replace each line-carrying
+  // suspect with a NON-line clue that keeps the short chain solvable and within the cap;
+  // prefer a few-open-cells clue over a direct pin so it isn't trivialised. Keep the line
+  // clue only when nothing else works.
+  const hasLine = (c: ClueJson): boolean =>
+    c.type === 'and' ? c.clues.some(hasLine) : isLineClue(c)
+  for (const id of rng.shuffle([...suspectIds])) {
+    const cur = chosen.get(id)!
+    if (!hasLine(cur)) continue
+    const opts = cand
+      .get(id)!
+      .filter((e) => e.json !== cur && !hasLine(e.json))
+      .sort((a, b) => {
+        const sa = a.cells.size >= 2 && a.cells.size <= SHORT_CHAIN_CELLS ? 0 : 1
+        const sb = b.cells.size >= 2 && b.cells.size <= SHORT_CHAIN_CELLS ? 0 : 1
+        return sa - sb || clarityOf(a.json) - clarityOf(b.json)
+      })
+    for (const e of opts) {
+      chosen.set(id, e.json)
+      if ([...famCounts().values()].every((n) => n <= 2) && solvableChain()) break
+      chosen.set(id, cur)
+    }
+  }
+
+  // EASY: the victim must be placed LAST — ALL suspects pin from their own clues first,
+  // then the victim is simply the last free cell. The user dislikes the mid-solve "this
+  // lone cell can only be the victim ⇒ now the rest follows" (fine at medium/hard, not
+  // easy). Reject layouts where the forward solve places the victim before a suspect.
+  const victimPlacedLast = (): boolean => {
+    const lvl = { ...base, suspects: base.suspects.map((s) => ({ ...s, clues: [chosen.get(s.id)!] })) }
+    const res = new DeductionEngine(loadLevel(lvl)).solve()
+    if (!res.solved) return false
+    let victimAt = -1
+    let lastSuspectAt = -1
+    res.steps.forEach((step, i) => {
+      if (step.placedCell === undefined || !step.personId) return
+      if (step.personId === VICTIM_ID) victimAt = i
+      else lastSuspectAt = i
+    })
+    return victimAt > lastSuspectAt
+  }
+  if (!victimPlacedLast()) return null
   return chosen
 }
 
@@ -1556,7 +1716,19 @@ function constructLogicClues(
   const lineSuspects = (): number =>
     suspectIds.filter((id) => used.get(id)!.some((i) => isLine(list(id)[i]))).length
   const hasHardClue = (id: PersonId): boolean =>
-    used.get(id)!.some((i) => HARD_CLUE_TYPES.has(list(id)[i].type))
+    used.get(id)!.some((i) => isHardClue(list(id)[i]))
+
+  // VARIETY: at most 2 clues of the same family (positive and negated count together),
+  // across all difficulties — so a level can't lean on one type (e.g. a chain of
+  // "north of …"). Object / room / window-door / line families are EXEMPT (they read as
+  // different clues per target); see `UNCAPPED_TYPES`.
+  const cappedTypes = cappedFamilies
+  const typeCounts = (): Map<string, number> => {
+    const m = new Map<string, number>()
+    for (const id of suspectIds) for (const t of cappedTypes(clueOf(id))) m.set(t, (m.get(t) ?? 0) + 1)
+    return m
+  }
+  const capOk = (): boolean => [...typeCounts().values()].every((n) => n <= 2)
 
   // Fallback tightener: AND another part onto the suspect with the fewest (the old
   // construction) — used once single-clue tightening alone doesn't get there.
@@ -1614,11 +1786,11 @@ function constructLogicClues(
       const current = u[0]
       const hardIdx = list(id)
         .map((clue, i) => ({ clue, i }))
-        .filter(({ clue, i }) => HARD_CLUE_TYPES.has(clue.type) && i !== current)
+        .filter(({ clue, i }) => isHardClue(clue) && i !== current)
         .sort((a, b) => breadthAt(id, b.i) - breadthAt(id, a.i))
       for (const { i } of hardIdx) {
         u[0] = i
-        if (rate().solved && !hasCoordPair(id) && lineSuspects() <= maxLineClues) break
+        if (rate().solved && !hasCoordPair(id) && lineSuspects() <= maxLineClues && capOk()) break
         u[0] = current
       }
     }
@@ -1639,12 +1811,50 @@ function constructLogicClues(
       for (let j = list(id).length - 1; j >= lo; j--) {
         u[0] = j
         const st = rate()
-        if (st.solved && st.maxRank <= target && !hasCoordPair(id) && lineSuspects() <= maxLineClues) {
+        if (
+          st.solved &&
+          st.maxRank <= target &&
+          !hasCoordPair(id) &&
+          lineSuspects() <= maxLineClues &&
+          capOk()
+        ) {
           break
         }
         u[0] = current
       }
     }
+  }
+
+  // 3) VARIETY CAP repair: if any family is still used >2× (e.g. from the broad starts),
+  //    switch an offending single-clue suspect to a different family that keeps the level
+  //    solvable and within the cap; give up on the board if it can't be met.
+  for (let guard = 0; guard < 200 && !capOk(); guard++) {
+    const overType = [...typeCounts().entries()].find(([, n]) => n > 2)?.[0]
+    if (overType === undefined) break
+    let fixed = false
+    for (const id of rng.shuffle([...suspectIds])) {
+      const u = used.get(id)!
+      if (u.length !== 1 || !cappedTypes(list(id)[u[0]]).includes(overType)) continue
+      const current = u[0]
+      for (let i = 0; i < list(id).length; i++) {
+        if (i === current || cappedTypes(list(id)[i]).includes(overType)) continue
+        u[0] = i
+        const st = rate()
+        if (
+          st.solved &&
+          st.maxRank <= target &&
+          !hasCoordPair(id) &&
+          lineSuspects() <= maxLineClues &&
+          capOk()
+        ) {
+          fixed = true
+          break
+        }
+        u[0] = current
+      }
+      if (fixed) break
+    }
+    if (!fixed) return null
   }
 
   return new Map(suspectIds.map((id) => [id, clueOf(id)]))

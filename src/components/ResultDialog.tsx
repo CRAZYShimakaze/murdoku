@@ -13,6 +13,11 @@ interface Props {
   /** On a win: jump straight to the next level (omitted when none is available). */
   onNext?: () => void
   onRetry: () => void
+  /** On a win: replay this level from scratch. */
+  onRestart?: () => void
+  /** On a win: tuck the verdict away to look at the solved board (tap the board to
+   *  bring it back). Omitted on a loss, which stays modal. */
+  onDismiss?: () => void
   onBack: () => void
   /** Generated-level extras (only shown on a win of a freshly generated level). */
   generated?: boolean
@@ -30,6 +35,8 @@ export default function ResultDialog({
   failures,
   onNext,
   onRetry,
+  onRestart,
+  onDismiss,
   onBack,
   generated,
   saved,
@@ -44,7 +51,13 @@ export default function ResultDialog({
   const value = () => name.trim() || (defaultName ?? '')
 
   return (
-    <div className="mk-overlay">
+    <div
+      className="mk-overlay"
+      data-dismissible={onDismiss ? 'true' : undefined}
+      // Tapping the dimmed backdrop (never the card itself) tucks the verdict away so
+      // the solved board is visible. `onClick` already ignores a scroll/drag on touch.
+      onClick={onDismiss ? (e) => e.target === e.currentTarget && onDismiss() : undefined}
+    >
       <div className="mk-dialog" role="dialog" aria-modal="true">
         <span className="mk-dialog__stamp" data-win={win}>
           {win ? t('result.winStamp') : t('result.loseStamp')}
@@ -104,6 +117,12 @@ export default function ResultDialog({
               {t('result.nextLevel')}
             </button>
           )}
+          {win && onRestart && (
+            <button type="button" className="mk-btn mk-btn--ghost mk-btn--restart" onClick={onRestart}>
+              <span className="mk-btn__icon" aria-hidden="true">↻</span>
+              {t('result.restart')}
+            </button>
+          )}
           {showGen && (
             <>
               <button
@@ -132,6 +151,12 @@ export default function ResultDialog({
             {t('result.back')}
           </button>
         </div>
+
+        {onDismiss && (
+          <button type="button" className="mk-dialog__peek" onClick={onDismiss}>
+            {t('result.peekHint')}
+          </button>
+        )}
       </div>
     </div>
   )

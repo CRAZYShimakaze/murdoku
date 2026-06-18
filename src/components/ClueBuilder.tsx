@@ -464,15 +464,17 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
         // a woman / someone with glasses / …). The picked entry sets `roomTarget` and
         // the matching field; "allein" then tightens it to "only the two of them".
         const sameRoomValue =
-          c.roomTarget === 'attr'
-            ? c.attribute === 'gender'
-              ? `attr:gender:${c.value ?? 'f'}`
-              : `attr:${c.attribute}`
-            : c.of
-              ? `person:${c.of}`
-              : c.object
-                ? `object:${c.object}`
-                : ''
+          c.roomTarget === 'anyone'
+            ? 'anyone'
+            : c.roomTarget === 'attr'
+              ? c.attribute === 'gender'
+                ? `attr:gender:${c.value ?? 'f'}`
+                : `attr:${c.attribute}`
+              : c.of
+                ? `person:${c.of}`
+                : c.object
+                  ? `object:${c.object}`
+                  : ''
         const valuedAttr =
           c.roomTarget === 'attr' && c.attribute && c.attribute !== 'gender'
             ? VALUED_ATTRS[c.attribute]
@@ -484,7 +486,9 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
               value={sameRoomValue}
               onChange={(e) => {
                 const v = e.target.value
-                if (v.startsWith('person:')) {
+                if (v === 'anyone') {
+                  update(i, { roomTarget: 'anyone', of: undefined, object: undefined })
+                } else if (v.startsWith('person:')) {
                   update(i, { roomTarget: 'person', of: v.slice(7), object: undefined })
                 } else if (v.startsWith('object:')) {
                   update(i, { roomTarget: 'object', object: v.slice(7), of: undefined })
@@ -501,6 +505,7 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
                 }
               }}
             >
+              <option value="anyone">{t('cond.sameRoomAnyone')}</option>
               <optgroup label={t('cond.grpPeople')}>
                 {ctx.others.map((o) => (
                   <option key={o.id} value={`person:${o.id}`}>
@@ -543,7 +548,7 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
                 ))}
               </select>
             )}
-            {aloneToggle(c, i)}
+            {c.roomTarget !== 'anyone' && aloneToggle(c, i)}
           </>
         )
       }

@@ -1,0 +1,346 @@
+{
+  "schema": 1,
+  "id": "editor-der-b-rofall",
+  "title": "Der Bürofall",
+  "size": {
+    "width": 6,
+    "height": 6
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.openoffice",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "room.meeting",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.kitchen",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.reception",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.serverroom",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.archive",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.bossoffice",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.copyroom",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.kitchenette",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.storage",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.conference",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.lobby",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.commonroom",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.mailroom",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.printroom",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "111222",
+    "111222",
+    "111222",
+    "888444",
+    "888444",
+    "888444"
+  ],
+  "groundMap": [
+    "......",
+    "..r...",
+    "......",
+    "......",
+    "......",
+    "......"
+  ],
+  "topMap": [
+    "......",
+    "....b.",
+    "....b.",
+    "t....t",
+    "..p..p",
+    "t....."
+  ],
+  "windows": [
+    {
+      "r": 0,
+      "c": 4,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    }
+  ],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "ponytailRight",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "table"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "braids",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "not",
+          "clue": {
+            "type": "atWall"
+          }
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "bun",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "bed"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "updo",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "carpet"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "pixie",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 5
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vanessa",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "easy"
+}

@@ -103,7 +103,7 @@ export default function Toolbar({
         <span>{t('tool.undo')}</span>
       </button>
 
-      <button type="button" className="mk-tool" onClick={onHint}>
+      <button type="button" className="mk-tool mk-tool--hint" onClick={onHint}>
         <span className="mk-tool__icon">💡</span>
         <span>{t('tool.hint')}</span>
       </button>

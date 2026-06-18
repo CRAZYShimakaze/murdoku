@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DeductionEngine,
@@ -58,6 +58,10 @@ interface Props {
   onNext?: (level: LevelMeta) => void
   /** Tutorial mode: fresh start, separate storage slot (doesn't touch the demo). */
   tutorial?: boolean
+  /** Which tutorial level is running: 1 = demo, 2 = Tutorial Wohnung. */
+  tutorialPhase?: 1 | 2
+  /** From the phase-1 verdict step: advance to the second tutorial level. */
+  onTutorialAdvance?: () => void
 }
 
 interface Result {
@@ -79,7 +83,17 @@ function formatTime(total: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 }
 
-export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onNext, tutorial }: Props) {
+export default function GameScreen({
+  meta,
+  onBack,
+  generated,
+  onNew,
+  onEdit,
+  onNext,
+  tutorial,
+  tutorialPhase,
+  onTutorialAdvance,
+}: Props) {
   const { t, i18n } = useTranslation()
   const storageId = tutorial ? '__tutorial__' : meta.id
   const puzzle = useMemo(() => loadLevel(meta.json), [meta])
@@ -103,13 +117,33 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   const [selected, setSelected] = useState<PersonId | null>(null)
   const [hoveredSuspect, setHoveredSuspect] = useState<PersonId | null>(null)
   const [xTool, setXTool] = useState(false)
-  const tut = useTutorialFlow({ enabled: !!tutorial, puzzle, solution, session, selected, setSelected })
+  const [result, setResult] = useState<Result | null>(null)
+  // After a win the verdict can be tucked away to study the solved board; a tap on the
+  // board brings it back (see the review layer below).
+  const [dialogHidden, setDialogHidden] = useState(false)
+  const tut = useTutorialFlow({
+    enabled: !!tutorial,
+    puzzle,
+    solution,
+    session,
+    selected,
+    setSelected,
+    phase: tutorialPhase ?? 1,
+    won: !!result?.win,
+    onAdvancePhase: onTutorialAdvance ?? NOOP,
+  })
   const [hint, setHint] = useState<HintResult | null>(null)
   const [hintShown, setHintShown] = useState(false) // hint requested (even if none was found)
   const [hintRequestId, setHintRequestId] = useState(0) // bumped per request → scrolls the hint into view
-  const [result, setResult] = useState<Result | null>(null)
   const [elapsed, setElapsed] = useState(0)
   const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
+  // The settings dialog is controlled so the tutorial can open it (and explain it).
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  useEffect(() => {
+    if (!tut.active) return
+    if (tut.settingsPhase === 'open') setSettingsOpen(true)
+    else if (tut.settingsPhase === null) setSettingsOpen(false)
+  }, [tut.active, tut.settingsPhase])
 
   // Header title fit (mostly mobile): the title slot sits between the back/edit
   // buttons and the timer. If the title + size tag overflow it, drop the tag first;
@@ -217,6 +251,12 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
     setSelected(id)
     setXTool(false)
   }
+  // After placing a figure, drop the selection so their candidate highlight clears — the
+  // player is done with that suspect.
+  const commitAndClear = (cell: Cell, id: PersonId) => {
+    session.commit(cell, id)
+    setSelected(null)
+  }
   const toggleX = () => {
     setXTool((v) => {
       if (!v) setSelected(null)
@@ -231,6 +271,38 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
   const onResetClick = () => {
     session.resetAll()
     clearHint()
+  }
+
+  // Replay the solved level from scratch: clear the board, drop the verdict, restart the
+  // clock. (Offered on the win dialog.)
+  const restart = () => {
+    session.resetAll()
+    clearHint()
+    setSelected(null)
+    setXTool(false)
+    setResult(null)
+    setDialogHidden(false)
+    setElapsed(0)
+    // Restarting from the final tutorial verdict means "I'm done learning" — drop the
+    // guided overlay and let the level be played freely.
+    if (tut.active) tut.end()
+  }
+
+  // Tap (not scroll/drag) on the revealed board re-opens the tucked-away verdict. A
+  // pointer that moves past a small threshold is a swipe — it must NOT count as a tap,
+  // which matters on touch where a scroll starts as a press.
+  const reviewTap = useRef<{ x: number; y: number; moved: boolean } | null>(null)
+  const onReviewDown = (e: ReactPointerEvent) => {
+    reviewTap.current = { x: e.clientX, y: e.clientY, moved: false }
+  }
+  const onReviewMove = (e: ReactPointerEvent) => {
+    const t = reviewTap.current
+    if (t && !t.moved && Math.hypot(e.clientX - t.x, e.clientY - t.y) > 10) t.moved = true
+  }
+  const onReviewUp = () => {
+    const t = reviewTap.current
+    reviewTap.current = null
+    if (t && !t.moved) setDialogHidden(false)
   }
 
   // The next un-done action from the full solution: cross a now-empty cell, or place
@@ -258,9 +330,10 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
       : null
   const selectHL = tut.active ? tut.highlight : highlight
   const boardHighlight = hintHL ?? selectHL
-  const boardHighlightColor = hintHL ? HINT_BLACK : CANDIDATE_BLUE
-  // The selection (blue) as the second layer, only when a hint already owns the first.
-  const boardHighlight2 = hintHL && selectHL ? selectHL : null
+  // In the tutorial the flow owns both layers (black "to cross" over blue candidates);
+  // outside it, a hint (black) sits over the selection (blue).
+  const boardHighlightColor = tut.active ? tut.highlightColor : hintHL ? HINT_BLACK : CANDIDATE_BLUE
+  const boardHighlight2 = tut.active ? tut.highlight2 : hintHL && selectHL ? selectHL : null
   const hintText = activeHint
     ? renderer.render(activeHint.step.explanation)
     : hintShown && !hintDone
@@ -285,6 +358,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
     }
     markSolved(storageId)
     session.clearSaved()
+    setDialogHidden(false) // a fresh verdict always shows the dialog first
     const m = findMurderer(puzzle, solution)
     const room = puzzle.board.rooms.get(m.roomId)
     // Next level honours the saved filter, the hidden-author toggle and the
@@ -344,7 +418,13 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
         </div>
         <div className="mk-game__corner">
           {settings.timer && <span className="mk-timer">{formatTime(elapsed)}</span>}
-          <SettingsButton />
+          <SettingsButton
+            open={settingsOpen}
+            onOpenChange={(o) => {
+              setSettingsOpen(o)
+              if (o && tut.active) tut.onSettingsOpen()
+            }}
+          />
         </div>
       </header>
 
@@ -372,31 +452,54 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
           highlightColor2={CANDIDATE_BLUE}
           helpMarks={tut.active ? null : refMarks}
           emphasize={hoveredSuspect}
-          xTool={tut.active ? false : xTool}
+          xTool={tut.active ? tut.xTool : xTool}
           reveal={reveal}
           roomName={(key) => t(key)}
           occupantAt={session.occupantAt}
           onPlaceMark={tut.active ? tut.onPlaceMark : session.placeMark}
-          onCommit={tut.active ? tut.onCommit : session.commit}
+          onCommit={tut.active ? tut.onCommit : commitAndClear}
           onRemove={tut.active ? NOOP : session.remove}
-          onSetCross={tut.active ? NOOP : session.setCross}
+          onSetCross={tut.active ? tut.onSetCross : session.setCross}
           onSelectSuspect={tut.active ? (id) => id && tut.onSelect(id) : selectFromBoard}
         />
+        {result?.win && dialogHidden && (
+          <div
+            className="mk-review"
+            onPointerDown={onReviewDown}
+            onPointerMove={onReviewMove}
+            onPointerUp={onReviewUp}
+            onPointerCancel={() => (reviewTap.current = null)}
+          >
+            <span className="mk-review__pill">
+              <span className="mk-review__icon" aria-hidden="true">⌕</span>
+              {t('result.reopenHint')}
+            </span>
+          </div>
+        )}
       </div>
 
       <Toolbar
-        xTool={tut.active ? false : xTool}
-        onToggleX={tut.active ? NOOP : toggleX}
+        xTool={tut.active ? tut.xTool : xTool}
+        onToggleX={tut.active ? tut.onToggleX : toggleX}
         onUndo={tut.active ? NOOP : onUndoClick}
         canUndo={tut.active ? false : session.canUndo}
         onReset={tut.active ? NOOP : onResetClick}
-        onHint={tut.active ? NOOP : showHint}
+        onHint={
+          tut.active
+            ? () => {
+                if (tut.hintPhase) {
+                  showHint()
+                  tut.onHint()
+                }
+              }
+            : showHint
+        }
         onSubmit={submit}
         allPlaced={session.allPlaced}
         legend={<Legend puzzle={puzzle} />}
       />
 
-      {result && (
+      {result && !dialogHidden && (
         <ResultDialog
           win={result.win}
           murderer={result.win ? result.murderer : null}
@@ -416,6 +519,8 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
               : undefined
           }
           onRetry={() => setResult(null)}
+          onRestart={result.win ? restart : undefined}
+          onDismiss={result.win ? () => setDialogHidden(true) : undefined}
           onBack={onBack}
           generated={generated}
           saved={saved}
@@ -429,7 +534,7 @@ export default function GameScreen({ meta, onBack, generated, onNew, onEdit, onN
         />
       )}
 
-      {tut.coach && !result && <Coach view={tut.coach} />}
+      {tut.coach && (!result || tut.coach.overDialog) && <Coach view={tut.coach} />}
     </div>
   )
 }

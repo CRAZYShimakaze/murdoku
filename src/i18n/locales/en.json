@@ -99,7 +99,10 @@
       "notCandidate": "No, not here — that's not a possible tile for {{name}}.",
       "holdToPlace": "Press and hold for ~1 second to place (not just a tap).",
       "tapForNote": "Here just tap briefly to leave a note.",
-      "wrongCell": "No, not here — think again."
+      "wrongCell": "No, not here — think again.",
+      "armCross": "Activate »Block cell« (the X tool) first.",
+      "crossWrong": "Not that tile — only block the highlighted ones.",
+      "markOnly": "Just small notes here — don't place yet."
     },
     "welcome": {
       "title": "Welcome, detective!",
@@ -184,6 +187,122 @@
     "solve": {
       "title": "Solve!",
       "body": "Done — everyone is placed! Now press »Solve«. Whoever is alone with the victim is the murderer."
+    },
+    "verdict": {
+      "title": "Case closed — now what?",
+      "body": "Congratulations! Here's the verdict. You can »reopen« the case (solve it again from scratch) or tap aside to look at the solved board once more — tap the board and the verdict comes back. In real cases you can also jump straight to the next level from here. Press »Next« — there's one more important thing to learn."
+    },
+    "w_intro": {
+      "title": "Second case: The Flat",
+      "body": "Another case — this time you'll learn to cross out (block) tiles yourself. It helps a lot with narrowing down. Tap »Next«."
+    },
+    "w_selectE": {
+      "title": "Select Emil",
+      "body": "Let's start at the bottom with Emil. (On mobile, scroll down through the suspects.) Tap Emil's card."
+    },
+    "w_rowE": {
+      "title": "Emil is in row 6",
+      "body": "Emil was beside a table AND in row 6 — the three blue tiles are possible for him. Since only ONE person stands per row, nobody else is in row 6. So the two black-outlined tiles (R6/C5, R6/C6) can go — you'll block them yourself in a moment."
+    },
+    "w_armX": {
+      "title": "Activate »Block cell«",
+      "body": "Tap »X« / Block cell at the top right (in the bottom bar on mobile). It lets you mark tiles as impossible yourself."
+    },
+    "w_crossE": {
+      "title": "Cross out tiles",
+      "body": "Now tap the two black-outlined tiles in row 6 (R6/C5 and R6/C6). They get an X: nobody can stand there anymore."
+    },
+    "w_selectA": {
+      "title": "Select Armin",
+      "body": "Now back up (scroll up on mobile) and select Armin."
+    },
+    "w_noteA": {
+      "title": "Where can Armin be?",
+      "body": "Armin was in the kitchen (top right). Briefly tap the blue-outlined kitchen tiles to note a small A."
+    },
+    "w_selectB": {
+      "title": "Select Bella",
+      "body": "On to Bella. Tap her card."
+    },
+    "w_noteB": {
+      "title": "Where can Bella be?",
+      "body": "Bella was in the kitchen too, and in a corner. Note the blue corner tiles with a small B."
+    },
+    "w_rowsAB": {
+      "title": "Nobody else in rows 1 & 2",
+      "body": "Armin and Bella are BOTH in the kitchen — so in rows 1 and 2. That takes both rows: nobody else can stand there. So the black-outlined tiles to the left are empty — you'll block them in a moment."
+    },
+    "w_crossAB": {
+      "title": "Cross out the left",
+      "body": "Tap the black-outlined tiles on the left. They all get an X. (The tile with the plant is blocked anyway — no need to cross it.)"
+    },
+    "w_selectC": {
+      "title": "Select Caro",
+      "body": "Now Caro. Tap her card."
+    },
+    "w_placeC": {
+      "title": "Place Caro",
+      "body": "Caro was on a chair. Every other chair is crossed out or sits in rows 1–2 (Armin/Bella) — only R4/C3 is left! That's how crossing out helps. Press and hold the tile for ~1 second to place Caro."
+    },
+    "w_hintBtn": {
+      "title": "The hint button",
+      "body": "Ever stuck? Try the Hint button — press it once."
+    },
+    "w_hintShown": {
+      "title": "A hint appears",
+      "body": "Above the suspects there's now a hint — it tells you what to cross out next, or which person can be placed and why. So you're never stuck. But use it sparingly: solving it yourself is more fun. Every level is solvable by pure logic."
+    },
+    "w_settingsBtn": {
+      "title": "Open settings",
+      "body": "The gear at the top right — tap it to open the settings."
+    },
+    "w_settingsOpen": {
+      "title": "Tune the help",
+      "body": "Here you set how much help you get — from lots of hints to none at all. Try it out. A real master detective needs no help — but decide for yourself! Then tap »Next«."
+    },
+    "w_selectD": {
+      "title": "Finish up: Diana",
+      "body": "Let's place the rest together. Select Diana."
+    },
+    "w_placeD": {
+      "title": "Place Diana",
+      "body": "Diana was on a toilet — there's only one (R5/C1). Press and hold it for ~1 second."
+    },
+    "w_selectE2": {
+      "title": "Place Emil",
+      "body": "Select Emil again."
+    },
+    "w_placeE": {
+      "title": "Emil is clear",
+      "body": "Diana (column 1) and Caro (column 3) block two of his tiles, and you crossed out R6/C5 and R6/C6 — only R6/C4 is left. Place Emil there (press and hold ~1 second)."
+    },
+    "w_selectB2": {
+      "title": "Place Bella",
+      "body": "Select Bella again."
+    },
+    "w_placeB": {
+      "title": "Bella's corner",
+      "body": "Armin is north of Bella — so Bella must be lower: the corner R2/C6. Place Bella (press and hold ~1 second)."
+    },
+    "w_selectA2": {
+      "title": "Place Armin",
+      "body": "Select Armin."
+    },
+    "w_placeA": {
+      "title": "Place Armin",
+      "body": "Armin's only tile left is R1/C5 — in the kitchen, north of Bella. Press and hold the tile for ~1 second."
+    },
+    "w_selectV": {
+      "title": "The victim",
+      "body": "Only the victim is left. Tap their card."
+    },
+    "w_placeV": {
+      "title": "Place the victim",
+      "body": "The victim is on the last free tile (R3/C2). Press and hold it for ~1 second."
+    },
+    "w_solve": {
+      "title": "Solve the case!",
+      "body": "Everyone is placed. Press »Solve« — whoever is alone with the victim is the murderer. Good luck with your own cases!"
     }
   },
   "generate": {
@@ -300,6 +419,9 @@
     "loseBody": "At least one person is misplaced. Keep at it!",
     "loseClues": "These clues aren't satisfied yet:",
     "retry": "Keep solving",
+    "restart": "Reopen case",
+    "reopenHint": "Show verdict",
+    "peekHint": "Tap aside to view the scene",
     "nextLevel": "Next level",
     "back": "Back to cases",
     "save": "Keep it",
@@ -484,6 +606,8 @@
     "f_dat": "a woman",
     "m_nom": "a man",
     "f_nom": "a woman",
+    "m_nom_neg": "no man",
+    "f_nom_neg": "no woman",
     "any": "someone",
     "withTraitPre": "someone who had",
     "withTraitPost": ""
@@ -687,11 +811,17 @@
     "roomAttribute": {
       "none": "[[No one:roomAttrNone]] in {{poss}} room had {{attribute}}",
       "some": "[[Someone:roomAttrSome]] with {{attribute}} was in {{poss}} room",
+      "someNeg": "[[No one:roomAttrNone]] with {{attribute}} was in {{poss}} room",
+      "noneNeg": "[[Someone:roomAttrSome]] with {{attribute}} was in {{poss}} room",
+      "allNeg": "[[Not everyone:roomAttrAll]] in {{poss}} room had {{attribute}}",
       "all": "[[Everyone:roomAttrAll]] in {{poss}} room had {{attribute}}"
     },
     "roomGender": {
       "none": "[[No one:roomAttrNone]] in {{poss}} room was {{who}}",
       "some": "In {{poss}} room there was {{who}}",
+      "someNeg": "In {{poss}} room there was {{whoNeg}}",
+      "noneNeg": "In {{poss}} room there was {{who}}",
+      "allNeg": "[[Not everyone:roomAttrAll]] in {{poss}} room was {{who}}",
       "all": "[[Everyone:roomAttrAll]] in {{poss}} room was {{who}}"
     },
     "direction": "{{subject}} was {{neg}}{{direction}} of {{target}}",
@@ -702,11 +832,17 @@
     "aloneWith": "{{subject}} was {{neg}}[[alone with:aloneWith]] {{who}}",
     "aloneWithTrait": "{{subject}} was {{neg}}[[alone with:aloneWith]] a person who had {{attribute}}",
     "roomExistsOnObject": "{{who}} was [[on:onObject]] {{object}} in {{poss}} area",
+    "roomExistsOnObjectNeg": "{{whoNeg}} was [[on:onObject]] {{object}} in {{poss}} area",
     "roomExistsNearObject": "{{who}} was [[beside:nearObject]] {{object}} in {{poss}} area",
+    "roomExistsNearObjectNeg": "{{whoNeg}} was [[beside:nearObject]] {{object}} in {{poss}} area",
     "roomExistsAnyOn": "someone else was [[on:onObject]] {{object}} in {{poss}} area",
+    "roomExistsAnyOnNeg": "no one else was [[on:onObject]] {{object}} in {{poss}} area",
     "roomExistsAnyNear": "someone else was [[beside:nearObject]] {{object}} in {{poss}} area",
+    "roomExistsAnyNearNeg": "no one else was [[beside:nearObject]] {{object}} in {{poss}} area",
     "roomExistsTraitOn": "someone who had {{attribute}} was [[on:onObject]] {{object}} in {{poss}} area",
+    "roomExistsTraitOnNeg": "no one who had {{attribute}} was [[on:onObject]] {{object}} in {{poss}} area",
     "roomExistsTraitNear": "someone who had {{attribute}} was [[beside:nearObject]] {{object}} in {{poss}} area",
+    "roomExistsTraitNearNeg": "no one who had {{attribute}} was [[beside:nearObject]] {{object}} in {{poss}} area",
     "sameRoom": "{{subject}} was {{neg}}[[in the same room as:sameRoom]] {{target}}",
     "sameRoomAsObject": "{{subject}} was {{neg}}[[in the same room as:sameRoomAsObject]] {{objectNom}}",
     "aloneSameRoom": "{{subject}} was {{neg}}[[alone in a room with:aloneSameRoom]] {{target}}",
@@ -714,12 +850,16 @@
     "sameLineAsObject": "{{subject}} was {{neg}}in the same {{line}} as {{object}}{{roomRel}}",
     "directionFromObject": "{{subject}} was {{neg}}{{direction}} of {{object}}{{atCell}}{{roomRel}}",
     "besideSameObject": "{{subject}} was beside {{object}}. {{mate}} was beside {{objectSame}}.",
+    "besideSameObjectNeg": "{{subject}} and {{mateLc}} were not both beside {{objectSame}}.",
     "besideSameObjectDir": "{{subject}} was beside {{object}}. {{mate}} was {{direction}} of {{subjectObj}}, beside {{objectSame}}.",
+    "besideSameObjectDirNeg": "{{subject}} and {{mateLc}} ({{direction}}) were not both beside {{objectSame}}.",
     "nearDoor": "{{subject}} was {{neg}}[[beside a door:nearDoor]]",
     "inside": "{{subject}} was {{neg}}[[inside:inside]]",
     "outside": "{{subject}} was {{neg}}[[outside:outside]]",
     "notAlone": "{{subject}} was {{neg}}[[not alone in the room:notAlone]]",
+    "notAloneNeg": "{{subject}} was [[alone in the room:alone]]",
     "insideXor": "{{subject}} and {{target}} were neither both [[inside:inside]] nor both [[outside:outside]]",
+    "insideXorNeg": "{{subject}} and {{target}} were both [[inside:inside]] or both [[outside:outside]]",
     "aloneWithPeople": "{{subject}} was {{neg}}alone with {{target}} and {{count}} more ({{attribute}})",
     "aloneWithDir": "{{subject}} was {{neg}}alone with {{target}} and {{count}} more ({{attribute}}, one {{direction}})",
     "connAnd": "and",
@@ -810,6 +950,7 @@
     "grpObjects": "Objects",
     "grpAttrs": "Attributes",
     "companionWith": "with",
+    "sameRoomAnyone": "anyone (not alone)",
     "portal": "Window/Door",
     "inout": "Inside/Outside",
     "line": "Row/Column",
@@ -918,6 +1059,8 @@
     "aloneExcludeLine": "{{name}} must be alone, but {{line}} {{num}} lies entirely in the {{room}} and is occupied – so not there.",
     "aloneReserve": "{{name}} is alone in the {{room}} – everyone else is excluded from it.",
     "notAloneRoom": "{{name}} wasn't alone – cells whose room nobody else could join are removed.",
+    "notAloneForce": "{{name}} wasn't alone in the {{room}} – only {{target}} can still join, so they must be there.",
+    "notAloneOccupied": "{{name}} wasn't alone in the {{room}} – it needs ≥2 people, only possible with {{cell}} taken; rest of that row and column blocked.",
     "roomCoverageReserve": "Every room has exactly one suspect; {{name}} belongs in the {{room}} – others are excluded from it.",
     "roomCoverageConfine": "Only {{name}} can fill the {{room}}, and no room stays empty – {{name}} must go there.",
     "companionRoom": "{{name}} was alone with exactly the matching person – the {{room}} doesn't fit, so not there.",
@@ -938,8 +1081,11 @@
     "attrSomeRoom": "{{name}}'s room must hold a matching person – the {{room}} can't, so not there.",
     "attrAllRoom": "Everyone in {{name}}'s room must match – the {{room}} has someone who doesn't, so not there.",
     "attrExcludeRoom": "No one in {{name}}'s room may have {{attribute}}; the {{room}} has such a person – so not there.",
+    "attrExcludeRoomGender": "{{name}}'s room must have {{whoNeg}}; the {{room}} has {{who}} – so not there.",
     "attrPigeonhole": "No one in {{name}}'s room may have {{attribute}}; the {{room}} is bound to have such a person (too many for the other rooms) – so not there.",
+    "attrPigeonholeGender": "{{name}}'s room must have {{whoNeg}}; the {{room}} is bound to have {{who}} (too many for the other rooms) – so not there.",
     "attrReserve": "{{name}} is in the {{room}}, which must have no {{attribute}} – such people are excluded.",
+    "attrReserveGender": "{{name}} is in the {{room}}, which must have {{whoNeg}} – such people are excluded.",
     "groupRoomMemberOut": "{{name}}'s group must share one room, but a member can't be in the {{room}} – the group isn't there.",
     "groupRoomForeign": "Someone who can't belong to {{name}}'s group is certainly in the {{room}} – the group isn't there.",
     "groupRoomNoExtra": "No fitting companion for {{name}}'s group can be in the {{room}} – the group isn't there.",

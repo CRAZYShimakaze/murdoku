@@ -2,10 +2,19 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import SettingsDialog from './SettingsDialog.tsx'
 
-/** The gear in a screen's top-right corner, opening the settings case file. */
-export default function SettingsButton() {
+/** The gear in a screen's top-right corner, opening the settings case file. Optionally
+ *  CONTROLLED (the tutorial opens it) via `open` / `onOpenChange`; uncontrolled otherwise. */
+export default function SettingsButton({
+  open: openProp,
+  onOpenChange,
+}: { open?: boolean; onOpenChange?: (open: boolean) => void } = {}) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
+  const [openState, setOpenState] = useState(false)
+  const open = openProp ?? openState
+  const setOpen = (o: boolean) => {
+    setOpenState(o)
+    onOpenChange?.(o)
+  }
 
   return (
     <>

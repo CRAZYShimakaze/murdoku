@@ -56,8 +56,10 @@ function validateMap(
   }
 }
 
-/** Parse and validate a level JSON object into a Puzzle. */
-export function loadLevel(level: LevelJson): Puzzle {
+/** Parse and validate a level JSON object into a Puzzle. With `skipClues` the suspects,
+ *  victim and board are built but NO clue objects are constructed — a lightweight load
+ *  for the level-picker thumbnails, which only draw the board (rooms / objects / walls). */
+export function loadLevel(level: LevelJson, opts: { skipClues?: boolean } = {}): Puzzle {
   assert(level.schema === 1, `unsupported schema ${level.schema}`)
   const { width, height } = level.size
   assert(width > 0 && height > 0, 'size must be positive')
@@ -129,13 +131,13 @@ export function loadLevel(level: LevelJson): Puzzle {
     assert(s.id !== VICTIM_ID, `suspect id "${s.id}" is reserved`)
     assert(!seen.has(s.id), `duplicate suspect id "${s.id}"`)
     seen.add(s.id)
-    const clues = (s.clues ?? []).map(createClue)
+    const clues = opts.skipClues ? [] : (s.clues ?? []).map(createClue)
     return new Suspect(s.id, s.name, s.attributes ?? {}, clues)
   })
 
   const victim = new Victim(level.victim.name, level.victim.attributes ?? {})
-  const globalClues = (level.globalClues ?? []).map(createClue)
-  const boardClues = (level.boardClues ?? []).map(createBoardClue)
+  const globalClues = opts.skipClues ? [] : (level.globalClues ?? []).map(createClue)
+  const boardClues = opts.skipClues ? [] : (level.boardClues ?? []).map(createBoardClue)
 
   return new Puzzle(level.id, board, suspects, victim, globalClues, boardClues)
 }

@@ -1,0 +1,404 @@
+{
+  "schema": 1,
+  "id": "editor-die-fernsehjunkies",
+  "title": "Die Fernsehjunkies",
+  "size": {
+    "width": 8,
+    "height": 8
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.openoffice",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "room.meeting",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.kitchen",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.reception",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.serverroom",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.archive",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.bossoffice",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.copyroom",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.kitchenette",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.storage",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.conference",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.lobby",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.commonroom",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.mailroom",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.printroom",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "111CCCCC",
+    "111CCCCC",
+    "11AACCCC",
+    "11AABBBB",
+    "111BBBBB",
+    "111BB666",
+    "77777666",
+    "77777666"
+  ],
+  "groundMap": [
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........"
+  ],
+  "topMap": [
+    "ttgt.g..",
+    "fs...tt.",
+    "..g.....",
+    "ts.g.fft",
+    "f.......",
+    "tt..f..g",
+    "..stf.gt",
+    ".ttt...g"
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "ponytailRight",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "B"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "braids",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "7"
+            },
+            {
+              "type": "not",
+              "clue": {
+                "type": "nearObject",
+                "object": "tv"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "bun",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "inRoom",
+          "room": "A"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "afro",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "not",
+          "clue": {
+            "type": "atWall"
+          }
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "pixie",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "inRow",
+          "row": 6
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Floyd",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "mohawk",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "spiky",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "not",
+              "clue": {
+                "type": "corner"
+              }
+            },
+            {
+              "type": "inCol",
+              "col": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vita",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "easy"
+}

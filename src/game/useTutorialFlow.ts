@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { VICTIM_ID, type Cell, type PersonId, type Puzzle, type Solution } from '../engine/index.ts'
-import { CANDIDATE_BLUE } from './palette.ts'
+import { CANDIDATE_BLUE, HINT_BLACK } from './palette.ts'
 import type { GameSession } from './useGameSession.ts'
 
-type Kind = 'info' | 'select' | 'note' | 'place'
+type Kind = 'info' | 'select' | 'note' | 'place' | 'tool' | 'cross' | 'dialog'
 interface Step {
   kind: Kind
   id: string
   who?: PersonId
   target?: string
+  /** For `cross` steps: the cells (row, col) the player should X out. */
+  cells?: [number, number][]
 }
 
-/** The scripted, guided solve of the demo level — one action per step. */
-const STEPS: Step[] = [
+/** Phase 1 — the demo (4×4): selecting, candidate notes, placing, the verdict. */
+const DEMO_STEPS: Step[] = [
   { kind: 'info', id: 'welcome' },
   { kind: 'info', id: 'goal' },
   { kind: 'info', id: 'rules' },
@@ -35,6 +37,51 @@ const STEPS: Step[] = [
   { kind: 'select', id: 'selectV', who: VICTIM_ID },
   { kind: 'place', id: 'placeV', who: VICTIM_ID },
   { kind: 'info', id: 'solve', target: '.mk-tool--submit' },
+  // After the win the verdict dialog appears — the coach explains it, then "next"
+  // loads the second tutorial level.
+  { kind: 'dialog', id: 'verdict', target: '.mk-dialog' },
+]
+
+/** Phase 2 — "Tutorial Wohnung" (6×6): crossing fields (the X-tool), row/column
+ *  elimination, the hint button, settings, then a full guided solve. The X-out targets
+ *  are hard-wired to this level's solution
+ *  (A=Z1/S5, B=Z2/S6, victim=Z3/S2, C=Z4/S3, D=Z5/S1, E=Z6/S4). */
+const WOHNUNG_STEPS: Step[] = [
+  { kind: 'info', id: 'w_intro', target: '.mk-board' },
+  // E sits in row 6 (3 spots) — so nobody else is in row 6: introduce crossing.
+  { kind: 'select', id: 'w_selectE', who: 'E' },
+  { kind: 'info', id: 'w_rowE', target: '.mk-board', who: 'E', cells: [[5, 4], [5, 5]] },
+  { kind: 'tool', id: 'w_armX', target: '.mk-tool--x' },
+  { kind: 'cross', id: 'w_crossE', who: 'E', cells: [[5, 4], [5, 5]] },
+  // A & B are both in the kitchen (rows 1+2) — cross the rest of rows 1+2 (the living
+  // room cells on the left).
+  { kind: 'select', id: 'w_selectA', who: 'A' },
+  { kind: 'note', id: 'w_noteA', who: 'A' },
+  { kind: 'select', id: 'w_selectB', who: 'B' },
+  { kind: 'note', id: 'w_noteB', who: 'B' },
+  { kind: 'info', id: 'w_rowsAB', target: '.mk-board', cells: [[0, 1], [0, 2], [1, 0], [1, 1], [1, 2]] },
+  { kind: 'cross', id: 'w_crossAB', cells: [[0, 1], [0, 2], [1, 0], [1, 1], [1, 2]] },
+  // Caro is on a chair — the others are crossed or in rows 1+2, so only one is left.
+  { kind: 'select', id: 'w_selectC', who: 'C' },
+  { kind: 'place', id: 'w_placeC', who: 'C' },
+  // The hint tool — actually press it, then read the hint that appears.
+  { kind: 'tool', id: 'w_hintBtn', target: '.mk-tool--hint' },
+  { kind: 'info', id: 'w_hintShown', target: '.mk-hintbar' },
+  // The settings — open them and show what's tunable.
+  { kind: 'tool', id: 'w_settingsBtn', target: '.mk-gear' },
+  { kind: 'info', id: 'w_settingsOpen', target: '.mk-settings' },
+  // Finish the case, guided.
+  { kind: 'select', id: 'w_selectD', who: 'D' },
+  { kind: 'place', id: 'w_placeD', who: 'D' },
+  { kind: 'select', id: 'w_selectE2', who: 'E' },
+  { kind: 'place', id: 'w_placeE', who: 'E' },
+  { kind: 'select', id: 'w_selectB2', who: 'B' },
+  { kind: 'place', id: 'w_placeB', who: 'B' },
+  { kind: 'select', id: 'w_selectA2', who: 'A' },
+  { kind: 'place', id: 'w_placeA', who: 'A' },
+  { kind: 'select', id: 'w_selectV', who: VICTIM_ID },
+  { kind: 'place', id: 'w_placeV', who: VICTIM_ID },
+  { kind: 'info', id: 'w_solve', target: '.mk-tool--submit' },
 ]
 
 export interface CoachView {
@@ -42,9 +89,15 @@ export interface CoachView {
   body: string
   stepLabel: string
   target?: string
-  /** Dim the screen + spotlight the target (info/select). Bright board for note/place. */
+  /** Dim the screen + spotlight the target (info/select/tool/dialog). Bright board for
+   *  note/place/cross steps (the highlighted cells live on the board). */
   dim: boolean
-  /** For bright (note/place) steps: place the card away from the candidates. */
+  /** Render ON TOP of the result dialog (the phase-1 verdict explanation). */
+  overDialog: boolean
+  /** Spotlights a centered dialog (verdict / settings) — the card gets a wider, safe
+   *  placement so it doesn't cover the dialog. */
+  dialogStep: boolean
+  /** For bright steps: place the card away from the highlighted cells. */
   cardSide: 'top' | 'bottom'
   error: string | null
   showNext: boolean
@@ -55,11 +108,27 @@ export interface CoachView {
 export interface TutorialFlow {
   active: boolean
   coach: CoachView | null
+  /** Primary highlight (blue candidates, OR black "to cross" cells on a cross step). */
   highlight: Set<Cell> | null
   highlightColor: { wash: string; ring: string }
+  /** Secondary highlight (blue candidates UNDER the black to-cross ring). */
+  highlight2: Set<Cell> | null
+  /** Whether the X-tool is armed (true only during a cross step). */
+  xTool: boolean
   onSelect: (id: PersonId) => void
   onPlaceMark: (cell: Cell, id: PersonId) => void
   onCommit: (cell: Cell, id: PersonId) => void
+  onToggleX: () => void
+  onSetCross: (cell: Cell, value: boolean) => void
+  onHint: () => void
+  onSettingsOpen: () => void
+  /** True while the "press Hint" step is active (GameScreen actually fires the hint). */
+  hintPhase: boolean
+  /** Drives the settings dialog: 'button' = waiting for the gear tap, 'open' = keep it
+   *  open and explain it, null = closed. */
+  settingsPhase: 'button' | 'open' | null
+  /** End the tutorial (e.g. the player restarts the level on the final dialog). */
+  end: () => void
 }
 
 interface Params {
@@ -69,14 +138,30 @@ interface Params {
   session: GameSession
   selected: PersonId | null
   setSelected: (id: PersonId | null) => void
+  /** 1 = demo, 2 = Tutorial Wohnung. Drives which script runs. */
+  phase: 1 | 2
+  /** True once the level is solved (so the flow can advance to the verdict step). */
+  won: boolean
+  /** Called from the phase-1 verdict step to load the second tutorial level. */
+  onAdvancePhase: () => void
 }
 
-export function useTutorialFlow({ enabled, puzzle, solution, session, setSelected }: Params): TutorialFlow {
+export function useTutorialFlow({
+  enabled,
+  puzzle,
+  solution,
+  session,
+  setSelected,
+  phase,
+  won,
+  onAdvancePhase,
+}: Params): TutorialFlow {
   const { t } = useTranslation()
+  const STEPS = phase === 1 ? DEMO_STEPS : WOHNUNG_STEPS
   const [idx, setIdx] = useState(0)
   const [active, setActive] = useState(enabled)
   const [error, setError] = useState<string | null>(null)
-  const step = STEPS[idx]
+  const step = STEPS[Math.min(idx, STEPS.length - 1)]
 
   // Keep the focus suspect selected during note/place steps (so the board accepts input).
   useEffect(() => {
@@ -86,7 +171,19 @@ export function useTutorialFlow({ enabled, puzzle, solution, session, setSelecte
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, active])
 
+  // The win arrives after the "press Solve" step — advance to the verdict explanation
+  // (phase 1 only; phase 2 just shows the normal dialog and the tutorial is over).
+  useEffect(() => {
+    if (active && won && phase === 1 && step.id === 'solve') {
+      setError(null)
+      setIdx((i) => Math.min(i + 1, STEPS.length - 1))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [won, active, phase, step.id])
+
   const nameOf = (id?: PersonId) => (id ? puzzle.nameOf(id) : '')
+  const cellsOf = (s: Step): Set<Cell> =>
+    new Set((s.cells ?? []).map(([r, c]) => puzzle.board.idx(r, c)))
 
   /** Cells where `who` could still legally stand given the current board. */
   const liveCandidates = (who: PersonId): Set<Cell> => {
@@ -132,17 +229,24 @@ export function useTutorialFlow({ enabled, puzzle, solution, session, setSelecte
     setIdx((i) => Math.min(i + 1, STEPS.length - 1))
   }
 
-  const candidates =
-    active && (step.kind === 'note' || step.kind === 'place') && step.who
-      ? liveCandidates(step.who)
-      : null
+  // Two highlight layers: cells to CROSS are ringed BLACK (the primary layer, same as a
+  // hint), the subject's possible cells stay BLUE underneath. A plain note/place step just
+  // shows the blue candidates.
+  const candidates = active && step.who ? liveCandidates(step.who) : null
+  const crossCells = step.cells && step.cells.length > 0 ? cellsOf(step) : null
+  const highlight = active
+    ? (crossCells ?? (step.kind === 'note' || step.kind === 'place' ? candidates : null))
+    : null
+  const highlight2 = active && crossCells ? candidates : null
+  const highlightColor = crossCells ? HINT_BLACK : CANDIDATE_BLUE
 
-  // Keep the coach card clear of the highlighted candidates.
+  // Keep the coach card clear of the highlighted cells.
   let cardSide: 'top' | 'bottom' = 'bottom'
-  if (candidates && candidates.size > 0) {
+  const cardRef = highlight ?? highlight2
+  if (cardRef && cardRef.size > 0) {
     let sum = 0
-    for (const c of candidates) sum += puzzle.board.rc(c).row
-    cardSide = sum / candidates.size >= puzzle.board.height / 2 ? 'top' : 'bottom'
+    for (const c of cardRef) sum += puzzle.board.rc(c).row
+    cardSide = sum / cardRef.size >= puzzle.board.height / 2 ? 'top' : 'bottom'
   }
 
   const onSelect = (id: PersonId) => {
@@ -159,10 +263,19 @@ export function useTutorialFlow({ enabled, puzzle, solution, session, setSelecte
       if (id === step.who) setSelected(id)
       else setError(t('tutorial.err.stayWith', { name: nameOf(step.who) }))
     }
-    // info steps: ignore selection
+    // info / tool / cross / dialog steps: ignore selection
   }
 
   const onPlaceMark = (cell: Cell, _id: PersonId) => {
+    // While the coach EXPLAINS (an info step with a focus suspect), let the player jot
+    // small notes on that suspect's candidate cells — but not place the figure yet.
+    if (step.kind === 'info' && step.who) {
+      if (liveCandidates(step.who).has(cell)) {
+        setError(null)
+        session.placeMark(cell, step.who)
+      }
+      return
+    }
     if (step.kind === 'note' && step.who) {
       const cands = liveCandidates(step.who)
       if (!cands.has(cell)) {
@@ -179,6 +292,7 @@ export function useTutorialFlow({ enabled, puzzle, solution, session, setSelecte
       return
     }
     if (step.kind === 'place') setError(t('tutorial.err.holdToPlace'))
+    else if (step.kind === 'cross') setError(t('tutorial.err.armCross'))
     else if (step.kind === 'select') setError(t('tutorial.err.selectFirst', { name: nameOf(step.who) }))
   }
 
@@ -195,7 +309,46 @@ export function useTutorialFlow({ enabled, puzzle, solution, session, setSelecte
       return
     }
     if (step.kind === 'note') setError(t('tutorial.err.tapForNote'))
+    else if (step.kind === 'info' && step.who) setError(t('tutorial.err.markOnly'))
     else if (step.kind === 'select') setError(t('tutorial.err.selectFirst', { name: nameOf(step.who) }))
+  }
+
+  // Each "tool" step advances when the player presses THAT specific button — arming the
+  // X-tool, pressing Hint, or opening Settings. (The tutorial otherwise controls these.)
+  const onToggleX = () => {
+    if (step.id === 'w_armX') {
+      setError(null)
+      next()
+    }
+  }
+  const onHint = () => {
+    if (step.id === 'w_hintBtn') {
+      setError(null)
+      next()
+    }
+  }
+  const onSettingsOpen = () => {
+    if (step.id === 'w_settingsBtn') {
+      setError(null)
+      next()
+    }
+  }
+
+  // Crossing a field: only the intended cells are allowed; once they're all crossed the
+  // step is done.
+  const onSetCross = (cell: Cell, value: boolean) => {
+    if (step.kind !== 'cross') return
+    const want = cellsOf(step)
+    if (value && !want.has(cell)) {
+      setError(t('tutorial.err.crossWrong'))
+      return
+    }
+    setError(null)
+    session.setCross(cell, value)
+    const crossed = new Set(session.state.crosses)
+    if (value) crossed.add(cell)
+    else crossed.delete(cell)
+    if ([...want].every((c) => crossed.has(c))) next()
   }
 
   const coach: CoachView | null = active
@@ -204,11 +357,26 @@ export function useTutorialFlow({ enabled, puzzle, solution, session, setSelecte
         body: t(`tutorial.${step.id}.body`),
         stepLabel: t('tutorial.step', { n: idx + 1, total: STEPS.length }),
         target: step.kind === 'select' ? `[data-suspect="${step.who}"]` : step.target,
-        dim: step.kind === 'info' || step.kind === 'select',
+        // An info step that highlights board cells stays BRIGHT (like a note/place step)
+        // so the card sits clear of the cells (via cardSide); other info/select/tool/
+        // dialog steps dim + spotlight their target.
+        dim:
+          (step.kind === 'info' && !(step.cells && step.cells.length > 0)) ||
+          step.kind === 'select' ||
+          step.kind === 'tool' ||
+          step.kind === 'dialog',
+        overDialog: step.kind === 'dialog',
+        // Steps that spotlight a centered dialog (the verdict, the open settings) get a
+        // wider, safely-placed card so it doesn't bury the dialog.
+        dialogStep: step.kind === 'dialog' || step.id === 'w_settingsOpen',
         cardSide,
         error,
-        showNext: step.kind === 'info' && idx < STEPS.length - 1,
-        onNext: next,
+        // A plain info step gets a "next"; the verdict step's "next" loads level 2; the
+        // "press Solve" steps wait for the actual win, so they show no button.
+        showNext:
+          (step.kind === 'info' && step.id !== 'solve' && step.id !== 'w_solve') ||
+          step.kind === 'dialog',
+        onNext: step.kind === 'dialog' ? onAdvancePhase : next,
         onSkip: () => {
           setError(null)
           setActive(false)
@@ -219,10 +387,25 @@ export function useTutorialFlow({ enabled, puzzle, solution, session, setSelecte
   return {
     active,
     coach,
-    highlight: candidates,
-    highlightColor: CANDIDATE_BLUE,
+    highlight,
+    highlightColor,
+    highlight2,
+    xTool: active && step.kind === 'cross',
     onSelect,
     onPlaceMark,
     onCommit,
+    onToggleX,
+    onSetCross,
+    onHint,
+    onSettingsOpen,
+    hintPhase: active && step.id === 'w_hintBtn',
+    settingsPhase: !active
+      ? null
+      : step.id === 'w_settingsBtn'
+        ? 'button'
+        : step.id === 'w_settingsOpen'
+          ? 'open'
+          : null,
+    end: () => setActive(false),
   }
 }

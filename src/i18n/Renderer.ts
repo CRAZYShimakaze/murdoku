@@ -85,11 +85,18 @@ export class Renderer {
       }
       case 'attribute':
         return this.lookup(`attr.${value}`) ?? String(value)
+      // `who` resolves "a man/woman" (m_nom/f_nom) and its negated "kein/keine"
+      // form (…_neg); `whoNeg` is the same lookup under a second name so a template
+      // can show both ("darf keine Frau sein; … ist eine Frau").
       case 'who':
+      case 'whoNeg':
         return this.lookup(`who.${value}`) ?? String(value)
       // The "mate" of a "beside the same object" clue: anyone / a named person / a
-      // trait-bearer. Encoded as "any" | "person:<id>" | "attr:<token>".
-      case 'mate': {
+      // trait-bearer. Encoded as "any" | "person:<id>" | "attr:<token>". `mate` is
+      // capitalised (it starts its own sentence: "Jemand war …"); `mateLc` stays
+      // lower-case for mid-sentence use ("… und jemand waren nicht …").
+      case 'mate':
+      case 'mateLc': {
         const s = String(value)
         const phrase = s.startsWith('person:')
           ? this.puzzle.nameOf(s.slice(7))
@@ -102,7 +109,7 @@ export class Renderer {
                 return `${pre} ${this.lookup(`attr.${token}`) ?? token} ${post}`.replace(/\s+/g, ' ').trim()
               })()
             : (this.lookup('who.any') ?? s)
-        // Capitalised: the mate starts its own sentence ("Jemand war … / Eine Frau war …").
+        if (name === 'mateLc') return phrase
         return phrase ? phrase.charAt(0).toUpperCase() + phrase.slice(1) : phrase
       }
       case 'room': {
@@ -161,19 +168,36 @@ export class Renderer {
   }
 
   /**
-   * Negation. If the inner clue's template has a `{{neg}}` slot (all the
-   * "{{subject}} war …" clues do), render it with "nicht " injected so it reads
-   * "X war nicht …". Otherwise fall back to wrapping it as "nicht (…)".
+   * Negation, in order of preference:
+   * 1. A dedicated negated wording: if the inner clue defines a `<key>Neg` template
+   *    it reads naturally on its own ("In seinem Raum war keine Frau" for not(some
+   *    woman)). A `who` token flips to its "kein/keine" form so the article fits.
+   * 2. An inline `{{neg}}` slot (all the "{{subject}} war …" clues have one): inject
+   *    "nicht " so it reads "X war nicht …".
+   * 3. Fallback: wrap it as "nicht (…)".
    */
   private renderNot(
     child: Explanation,
     extra: Record<string, string | number>,
     nameSubject = false,
   ): string {
-    const neg = this.lookup('clue.negWord') ?? 'nicht '
-    const template = child.children && child.children.length > 0 ? null : this.lookup(child.key)
-    if (template && template.includes('{{neg}}')) {
-      return this.render(child, { ...extra, neg }, nameSubject)
+    const isComposite = !!(child.children && child.children.length > 0)
+    if (!isComposite) {
+      const negKey = `${child.key}Neg`
+      if (this.lookup(negKey) !== undefined) {
+        // Expose a negated `who` ("keine Frau") ALONGSIDE the positive one, so the
+        // Neg template picks whichever its quantifier needs (none→positive, some→neg).
+        const params = { ...(child.params ?? {}) }
+        if (typeof params.who === 'string') params.whoNeg = `${params.who}_neg`
+        // Mid-sentence lower-case mate ("… und jemand waren nicht …").
+        if (typeof params.mate === 'string') params.mateLc = params.mate
+        return this.render({ key: negKey, params }, extra, nameSubject)
+      }
+      const template = this.lookup(child.key)
+      if (template && template.includes('{{neg}}')) {
+        const neg = this.lookup('clue.negWord') ?? 'nicht '
+        return this.render(child, { ...extra, neg }, nameSubject)
+      }
     }
     const inner = this.render(child, extra, nameSubject)
     return (this.lookup('clue.not') ?? 'nicht ({{child}})').replace('{{child}}', inner)

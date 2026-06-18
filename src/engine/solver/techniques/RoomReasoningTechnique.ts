@@ -9,11 +9,11 @@ import {
 } from '../../clues/socialClues.ts'
 import { SameRoomClue } from '../../clues/relationalClues.ts'
 import { SameRoomAsObjectClue } from '../../clues/objectClues.ts'
-import { AndClue } from '../../clues/compositeClues.ts'
+import { AndClue, NotClue } from '../../clues/compositeClues.ts'
 import type { Clue } from '../../clues/Clue.ts'
 import type { Axis, SolveContext } from '../SolveContext.ts'
 import type { DeductionStep, Elimination } from '../DeductionStep.ts'
-import type { Cell, PersonId } from '../../model/types.ts'
+import type { Cell, Explanation, PersonId } from '../../model/types.ts'
 import type { Puzzle } from '../../model/Puzzle.ts'
 
 /**
@@ -30,8 +30,26 @@ function aloneClues(clue: Clue): { companion: PersonId | null }[] {
   return []
 }
 
+/** "not(some X)" is exactly "none X" and "not(none X)" is "some X", so a negated
+ *  room-attribute clue reduces to the opposite quantifier. ("not all" has no single
+ *  quantifier — it just means ≥1 non-matching other — so it yields nothing here.) */
+function negateRoomAttribute(inner: Clue): RoomAttributeClue | null {
+  if (!(inner instanceof RoomAttributeClue)) return null
+  if (inner.quantifier === 'some')
+    return new RoomAttributeClue('none', inner.attribute, inner.value, inner.excludeSelf)
+  if (inner.quantifier === 'none')
+    return new RoomAttributeClue('some', inner.attribute, inner.value, inner.excludeSelf)
+  return null
+}
+
 function roomAttributes(clue: Clue): RoomAttributeClue[] {
   if (clue instanceof RoomAttributeClue) return [clue]
+  // "Niemand mit X in seinem Raum" is authored as not(some X); fold the negation
+  // into the equivalent quantifier so the room reasoning below sees the constraint.
+  if (clue instanceof NotClue) {
+    const flipped = negateRoomAttribute(clue.inner)
+    return flipped ? [flipped] : []
+  }
   if (clue instanceof AndClue) return clue.clues.flatMap(roomAttributes)
   return []
 }
@@ -88,6 +106,15 @@ export class RoomReasoningTechnique extends Technique {
       for (const re of suspect.clues.flatMap(roomExistsList)) {
         const step = this.applyRoomExists(ctx, suspect.id, re)
         if (step) return step
+      }
+      // The positive "not alone" rules hold even once the subject is PLACED (their room
+      // is then certain), so run them before the placed-skip. Occupancy first (it can
+      // pin the companion CELLS in a full permutation), then the single-companion force.
+      if (suspect.clues.flatMap(notAloneList).length > 0) {
+        const occ = this.applyNotAloneOccupancy(ctx, suspect.id)
+        if (occ) return occ
+        const force = this.applyNotAloneForce(ctx, suspect.id)
+        if (force) return force
       }
       if (ctx.state.placed.has(suspect.id)) continue
       for (const rc of suspect.clues.flatMap(roomAttributes)) {
@@ -168,6 +195,88 @@ export class RoomReasoningTechnique extends Technique {
       personId: id,
       eliminated: [{ personId: id, cells: removed }],
       explanation: { key: 'step.notAloneRoom', params: { name: id } },
+    }
+  }
+
+  /** "Not alone" needs ≥2 people in the subject's room, and in a full permutation each
+   *  sits in a distinct row AND column. A still-occupiable cell of that room is therefore
+   *  FORCED occupied when, without it, no two of the room's live cells have a distinct
+   *  row and column — then its whole row and column are taken (cross dead for everyone).
+   *  (Study cells after row 5 is reserved: {(3,4),(5,3),(5,4)}; two distinct-row/col seats
+   *  only fit on {(3,4),(5,3)} ⇒ both occupied ⇒ Dennis and G fall out directly.) Sound:
+   *  the real solution seats ≥2 distinct-row/col people there, all among the live cells. */
+  private applyNotAloneOccupancy(ctx: SolveContext, id: PersonId): DeductionStep | null {
+    if (!ctx.fullPermutation) return null
+    const placed = ctx.state.placed.get(id)
+    const room = placed !== undefined ? ctx.roomOf(placed) : ctx.guaranteedRoomOf(id)
+    if (!room) return null
+    // Cells of R someone (any suspect or the victim) can still occupy.
+    const live: Cell[] = []
+    for (const cell of ctx.board.cellsInRoom(room)) {
+      if (ctx.puzzle.people().some((p) => ctx.cellsOf(p.id).includes(cell))) live.push(cell)
+    }
+    const hasDistinctPair = (cells: Cell[]): boolean => {
+      for (let i = 0; i < cells.length; i++) {
+        for (let j = i + 1; j < cells.length; j++) {
+          const a = ctx.board.rc(cells[i])
+          const b = ctx.board.rc(cells[j])
+          if (a.row !== b.row && a.col !== b.col) return true
+        }
+      }
+      return false
+    }
+    if (!hasDistinctPair(live)) return null
+    for (const c of live) {
+      if (hasDistinctPair(live.filter((x) => x !== c))) continue
+      const { row, col } = ctx.board.rc(c)
+      const eliminated: Elimination[] = []
+      for (const p of ctx.state.unplaced()) {
+        const removed = ctx.removeWhere(p, (x) => {
+          if (x === c) return false
+          const rc = ctx.board.rc(x)
+          return rc.row === row || rc.col === col
+        })
+        if (removed.length > 0) eliminated.push({ personId: p, cells: removed })
+      }
+      if (eliminated.length > 0) {
+        return {
+          technique: 'roomReasoning',
+          eliminated,
+          explanation: { key: 'step.notAloneOccupied', params: { name: id, room, cell: c } },
+        }
+      }
+    }
+    return null
+  }
+
+  /** Positive side of "not alone": when the subject is confined to one room R and
+   *  exactly ONE other person (suspect OR victim) could still be in R — nobody else
+   *  is there yet — that person MUST be the companion, so drop their cells outside R.
+   *  (G is not alone in the study and only Dennis can still join him ⇒ Dennis is in
+   *  the study.) Sound: the only person able to satisfy "not alone" has to be there. */
+  private applyNotAloneForce(ctx: SolveContext, id: PersonId): DeductionStep | null {
+    const placed = ctx.state.placed.get(id)
+    const room = placed !== undefined ? ctx.roomOf(placed) : ctx.guaranteedRoomOf(id)
+    if (!room) return null
+    const possible: PersonId[] = []
+    for (const person of ctx.puzzle.people()) {
+      if (person.id === id) continue
+      const pc = ctx.state.placed.get(person.id)
+      if (pc !== undefined) {
+        if (ctx.roomOf(pc) === room) return null // a companion is already present
+        continue
+      }
+      if (ctx.cellsOf(person.id).some((c) => ctx.roomOf(c) === room)) possible.push(person.id)
+    }
+    if (possible.length !== 1) return null
+    const companion = possible[0]
+    const removed = ctx.removeWhere(companion, (c) => ctx.roomOf(c) !== room)
+    if (removed.length === 0) return null
+    return {
+      technique: 'roomReasoning',
+      personId: companion,
+      eliminated: [{ personId: companion, cells: removed }],
+      explanation: { key: 'step.notAloneForce', params: { name: id, target: companion, room } },
     }
   }
 
@@ -597,6 +706,20 @@ export class RoomReasoningTechnique extends Technique {
     return null
   }
 
+  /** Explanation for a "no one with X in my room" elimination. Gender reads as
+   *  "darf keine Frau sein" (own `*Gender` wording via `who`/`whoNeg`); other traits
+   *  reuse the "{{attribute}} haben" wording with the value-encoded trait token. */
+  private attrStep(baseKey: string, id: PersonId, room: string, rc: RoomAttributeClue): Explanation {
+    if (rc.attribute === 'gender') {
+      return {
+        key: `${baseKey}Gender`,
+        params: { name: id, room, who: `${rc.value}_nom`, whoNeg: `${rc.value}_nom_neg` },
+      }
+    }
+    const token = rc.value === true ? rc.attribute : `${rc.attribute}_${rc.value}`
+    return { key: baseKey, params: { name: id, room, attribute: token } }
+  }
+
   private applyRoomAttribute(
     ctx: SolveContext,
     id: PersonId,
@@ -614,10 +737,7 @@ export class RoomReasoningTechnique extends Technique {
           technique: 'roomReasoning',
           personId: id,
           eliminated: [{ personId: id, cells: removed }],
-          explanation: {
-            key: 'step.attrExcludeRoom',
-            params: { name: id, room, attribute: rc.attribute },
-          },
+          explanation: this.attrStep('step.attrExcludeRoom', id, room, rc),
         }
       }
     }
@@ -629,10 +749,7 @@ export class RoomReasoningTechnique extends Technique {
           technique: 'roomReasoning',
           personId: id,
           eliminated,
-          explanation: {
-            key: 'step.attrReserve',
-            params: { name: id, room: myRoom, attribute: rc.attribute },
-          },
+          explanation: this.attrStep('step.attrReserve', id, myRoom, rc),
         }
       }
     }
@@ -681,10 +798,7 @@ export class RoomReasoningTechnique extends Technique {
             technique: 'roomReasoning',
             personId: id,
             eliminated: [{ personId: id, cells: removed }],
-            explanation: {
-              key: 'step.attrPigeonhole',
-              params: { name: id, room: target, attribute: rc.attribute },
-            },
+            explanation: this.attrStep('step.attrPigeonhole', id, target, rc),
           }
         }
       }

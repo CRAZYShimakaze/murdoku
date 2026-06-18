@@ -5,7 +5,7 @@ import type { Clue, Explanation, PersonId } from '../engine/index.ts'
 import InfoTip from './InfoTip.tsx'
 
 /** Params rendered bold (objects/rooms etc. — also shown on the board). */
-const BOLD_PARAMS = new Set(['object', 'objectNom', 'objects', 'room', 'attribute', 'who', 'row', 'col', 'n', 'line', 'roomRel', 'target', 'people', 'atCell'])
+const BOLD_PARAMS = new Set(['object', 'objectNom', 'objects', 'room', 'attribute', 'who', 'whoNeg', 'mate', 'mateLc', 'row', 'col', 'n', 'line', 'roomRel', 'target', 'people', 'atCell'])
 
 interface Props {
   renderer: Renderer
@@ -67,13 +67,25 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
       if (exp.key === 'clue.not') {
         const child = exp.children[0]
         const negWord = renderer.lookup('clue.negWord') ?? 'nicht '
-        const childTmpl =
-          child.children && child.children.length > 0 ? null : renderer.lookup(child.key)
-        // Inject "nicht " into the child sentence ("X war nicht …") when it has a
-        // {{neg}} slot; otherwise fall back to wrapping it as "nicht (…)".
-        if (childTmpl && childTmpl.includes('{{neg}}')) {
-          return renderExp(child, { ...extra, neg: negWord })
+        const isComposite = !!(child.children && child.children.length > 0)
+        if (!isComposite) {
+          // A dedicated negated wording ("In seinem Raum war keine Frau"): the child's
+          // `<key>Neg` template, with any `who` token flipped to its "kein/keine" form.
+          const negTmpl = renderer.lookup(`${child.key}Neg`)
+          if (negTmpl !== undefined) {
+            const params: Record<string, string | number> = { ...extra, ...(child.params ?? {}) }
+            if (typeof params.who === 'string') params.whoNeg = `${params.who}_neg`
+            if (typeof params.mate === 'string') params.mateLc = params.mate
+            return parseTemplate(negTmpl, params)
+          }
+          // Inject "nicht " into the child sentence ("X war nicht …") when it has a
+          // {{neg}} slot.
+          const childTmpl = renderer.lookup(child.key)
+          if (childTmpl && childTmpl.includes('{{neg}}')) {
+            return renderExp(child, { ...extra, neg: negWord })
+          }
         }
+        // Fallback: wrap it as "nicht (…)".
         return parseTemplate(
           renderer.lookup('clue.not') ?? 'not ({{child}})',
           extra,

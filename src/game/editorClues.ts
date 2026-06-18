@@ -148,7 +148,7 @@ export interface Condition {
   portal?: PortalKind // portal — window or door
   side?: InOutKind // inout — inside or outside
   axis?: AxisKind // line — row or column
-  roomTarget?: 'person' | 'object' | 'attr' // sameRoom — what the room is shared with
+  roomTarget?: 'person' | 'object' | 'attr' | 'anyone' // sameRoom — what the room is shared with ('anyone' = not alone)
   dist?: number // offset — exact distance (≥1) in the cardinal direction
   objects?: string[] // nearObject — beside one of these object TYPES (1 = single, ≥2 = any)
   extraCount?: number // aloneWith — how many extra matching people share the room
@@ -234,9 +234,13 @@ function baseJson(c: Condition): ClueJson | null {
       return { type: 'notAlone' }
     case 'sameRoom': {
       // One dropdown offers people, objects AND attributes ("a woman", "someone with
-      // glasses", …). The optional `alone` flag tightens it to "only the two of them".
+      // glasses", …) plus "irgendjemand" (anyone). The optional `alone` flag tightens
+      // it to "only the two of them" (not for "anyone").
       const alone = c.alone ? { alone: true as const } : {}
       const target = c.roomTarget ?? (c.object ? 'object' : 'person')
+      // "in a room with anyone" = simply not alone (someone else shares the room, who
+      // doesn't matter). NICHT then flips it to "alone".
+      if (target === 'anyone') return { type: 'notAlone' }
       if (target === 'attr') {
         const { attribute, value } = attrValue(c)
         return c.alone
@@ -429,7 +433,8 @@ function jsonToCondition(json: ClueJson): Condition | null {
     case 'alone':
       return make('alone')
     case 'notAlone':
-      return make('notAlone')
+      // Surfaced as the "same room as anyone" option, so it round-trips into that UI.
+      return make('sameRoom', { roomTarget: 'anyone' })
     case 'sameRoom':
       return make('sameRoom', { roomTarget: 'person', of: c.as, alone: c.alone })
     case 'roomCompanion':

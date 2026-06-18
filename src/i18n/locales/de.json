@@ -99,7 +99,10 @@
       "notCandidate": "Nein, hier nicht – das ist kein mögliches Feld für {{name}}.",
       "holdToPlace": "Zum Setzen ~1 Sekunde gedrückt halten (nicht nur kurz tippen).",
       "tapForNote": "Hier nur kurz antippen, um eine Notiz zu machen.",
-      "wrongCell": "Nein, hier nicht – überlege noch einmal."
+      "wrongCell": "Nein, hier nicht – überlege noch einmal.",
+      "armCross": "Aktiviere erst »Feld sperren« (das X-Werkzeug).",
+      "crossWrong": "Dieses Feld nicht – sperre nur die hervorgehobenen Felder.",
+      "markOnly": "Hier nur kleine Notizen machen – noch nicht setzen."
     },
     "welcome": {
       "title": "Willkommen, Detektiv!",
@@ -184,6 +187,122 @@
     "solve": {
       "title": "Lösen!",
       "body": "Geschafft – alle sind gesetzt! Drücke jetzt auf »Lösen«. Wer allein mit dem Opfer im Raum ist, ist der Mörder."
+    },
+    "verdict": {
+      "title": "Fall gelöst – und jetzt?",
+      "body": "Glückwunsch! Hier siehst du die Auflösung. Du kannst den Fall »neu aufrollen« (das Level von vorn lösen) oder daneben tippen, um das gelöste Brett noch einmal anzuschauen – tippst du dann aufs Brett, kommt das Urteil zurück. In echten Fällen geht's von hier auch direkt zum nächsten Level. Drücke »Weiter« – wir üben noch etwas Wichtiges."
+    },
+    "w_intro": {
+      "title": "Zweiter Fall: Die Wohnung",
+      "body": "Noch ein Fall – diesmal lernst du, Felder selbst auszuxen (zu sperren). Das hilft enorm beim Eingrenzen. Tippe auf »Weiter«."
+    },
+    "w_selectE": {
+      "title": "Emil auswählen",
+      "body": "Fangen wir unten mit Emil an. (Am Handy bei den Verdächtigen nach unten scrollen.) Tippe auf Emils Karte."
+    },
+    "w_rowE": {
+      "title": "Emil ist in Zeile 6",
+      "body": "Emil war neben einem Tisch UND in Zeile 6 – die drei blauen Felder kommen für ihn infrage. Da pro Zeile nur EINE Person steht, ist sonst niemand in Zeile 6. Die beiden schwarz umrandeten Felder (Z6/S5, Z6/S6) können also weg – gleich sperrst du sie selbst."
+    },
+    "w_armX": {
+      "title": "»Feld sperren« aktivieren",
+      "body": "Tippe oben rechts auf »X« / Feld sperren (am Handy in der Leiste unten). Damit kannst du Felder selbst als unmöglich markieren."
+    },
+    "w_crossE": {
+      "title": "Felder ausxen",
+      "body": "Tippe jetzt die beiden schwarz umrandeten Felder in Zeile 6 an (Z6/S5 und Z6/S6). Sie bekommen ein X: dort kann niemand mehr stehen."
+    },
+    "w_selectA": {
+      "title": "Armin auswählen",
+      "body": "Jetzt nach oben (am Handy hochscrollen) und Armin wählen."
+    },
+    "w_noteA": {
+      "title": "Wo kann Armin sein?",
+      "body": "Armin war in der Küche (oben rechts). Markiere die blau umrandeten Küchen-Felder kurz mit einem kleinen A."
+    },
+    "w_selectB": {
+      "title": "Bella auswählen",
+      "body": "Weiter mit Bella. Tippe auf ihre Karte."
+    },
+    "w_noteB": {
+      "title": "Wo kann Bella sein?",
+      "body": "Bella war ebenfalls in der Küche, und zwar in einer Ecke. Markiere die blauen Ecken-Felder mit einem kleinen B."
+    },
+    "w_rowsAB": {
+      "title": "Niemand sonst in Zeile 1 & 2",
+      "body": "Armin und Bella stehen BEIDE in der Küche – also in Zeile 1 und 2. Damit sind beide Zeilen vergeben: sonst kann dort niemand stehen. Die schwarz umrandeten Felder links daneben sind also leer – gleich sperrst du sie."
+    },
+    "w_crossAB": {
+      "title": "Links ausxen",
+      "body": "Tippe die schwarz umrandeten Felder links an. Alle bekommen ein X. (Das Feld mit der Pflanze ist sowieso blockiert – das musst du nicht sperren.)"
+    },
+    "w_selectC": {
+      "title": "Caro auswählen",
+      "body": "Jetzt Caro. Tippe auf ihre Karte."
+    },
+    "w_placeC": {
+      "title": "Caro setzen",
+      "body": "Caro war auf einem Stuhl. Alle anderen Stühle sind ausgext oder liegen in Zeile 1–2 (Armin/Bella) – es bleibt nur Z4/S3! So hilft das Ausxen. Halte das Feld ~1 Sekunde gedrückt, um Caro zu setzen."
+    },
+    "w_hintBtn": {
+      "title": "Der Tipp-Knopf",
+      "body": "Steckst du mal fest? Probier den Tipp-Knopf – drück ihn einmal."
+    },
+    "w_hintShown": {
+      "title": "Ein Tipp erscheint",
+      "body": "Über den Verdächtigen steht jetzt ein Tipp – er sagt dir, was als Nächstes ausgext werden kann oder welche Person warum gesetzt wird. So bleibst du nie stecken. Nutze ihn aber sparsam: Selber lösen macht mehr Spaß. Alle Level sind rein logisch lösbar."
+    },
+    "w_settingsBtn": {
+      "title": "Einstellungen öffnen",
+      "body": "Oben rechts das Zahnrad – tippe es an, um die Einstellungen zu öffnen."
+    },
+    "w_settingsOpen": {
+      "title": "Hilfe einstellen",
+      "body": "Hier stellst du ein, wie viel Hilfe du bekommst – von vielen Hinweisen bis gar keinen. Probier es ruhig aus. Ein echter Meisterdetektiv braucht keine Hilfe – aber entscheide selbst! Danach »Weiter«."
+    },
+    "w_selectD": {
+      "title": "Zu Ende lösen: Diana",
+      "body": "Den Rest setzen wir gemeinsam. Wähle Diana."
+    },
+    "w_placeD": {
+      "title": "Diana setzen",
+      "body": "Diana war auf einer Toilette – es gibt nur eine (Z5/S1). Halte sie ~1 Sekunde gedrückt."
+    },
+    "w_selectE2": {
+      "title": "Emil setzen",
+      "body": "Wähle Emil noch einmal."
+    },
+    "w_placeE": {
+      "title": "Emil ist eindeutig",
+      "body": "Diana (Spalte 1) und Caro (Spalte 3) sperren zwei seiner Felder, Z6/S5 und Z6/S6 hast du ausgext – nur Z6/S4 bleibt. Setze Emil dort (~1 Sekunde gedrückt halten)."
+    },
+    "w_selectB2": {
+      "title": "Bella setzen",
+      "body": "Wähle Bella erneut."
+    },
+    "w_placeB": {
+      "title": "Bellas Ecke",
+      "body": "Armin steht nördlich von Bella – Bella muss also weiter unten stehen: die Ecke Z2/S6. Setze Bella (~1 Sekunde gedrückt halten)."
+    },
+    "w_selectA2": {
+      "title": "Armin setzen",
+      "body": "Wähle Armin."
+    },
+    "w_placeA": {
+      "title": "Armin setzen",
+      "body": "Für Armin bleibt Z1/S5 – in der Küche, nördlich von Bella. Halte das Feld ~1 Sekunde gedrückt."
+    },
+    "w_selectV": {
+      "title": "Das Opfer",
+      "body": "Es fehlt nur noch das Opfer. Tippe auf seine Karte."
+    },
+    "w_placeV": {
+      "title": "Opfer setzen",
+      "body": "Das Opfer steht auf dem letzten freien Feld (Z3/S2). Halte es ~1 Sekunde gedrückt."
+    },
+    "w_solve": {
+      "title": "Fall lösen!",
+      "body": "Alle sind gesetzt. Drücke »Lösen« – wer allein mit dem Opfer im Raum ist, ist der Mörder. Viel Erfolg bei deinen eigenen Fällen!"
     }
   },
   "generate": {
@@ -300,6 +419,9 @@
     "loseBody": "Mindestens eine Person steht falsch. Bleib dran!",
     "loseClues": "Diese Hinweise sind noch nicht erfüllt:",
     "retry": "Weiter rätseln",
+    "restart": "Neu aufrollen",
+    "reopenHint": "Urteil ansehen",
+    "peekHint": "Daneben tippen, um den Tatort zu betrachten",
     "nextLevel": "Nächstes Level",
     "back": "Zur Levelauswahl",
     "save": "Behalten",
@@ -554,6 +676,8 @@
     "f_dat": "einer Frau",
     "m_nom": "ein Mann",
     "f_nom": "eine Frau",
+    "m_nom_neg": "kein Mann",
+    "f_nom_neg": "keine Frau",
     "any": "jemand",
     "withTraitPre": "jemand, der",
     "withTraitPost": "hatte,"
@@ -756,11 +880,17 @@
     "roomAttribute": {
       "none": "[[Niemand:roomAttrNone]] in {{poss}} Raum hatte {{attribute}}",
       "some": "[[Jemand:roomAttrSome]] mit {{attribute}} war in {{poss}} Raum",
+      "someNeg": "[[Niemand:roomAttrNone]] mit {{attribute}} war in {{poss}} Raum",
+      "noneNeg": "[[Jemand:roomAttrSome]] mit {{attribute}} war in {{poss}} Raum",
+      "allNeg": "[[Nicht alle:roomAttrAll]] in {{poss}} Raum hatten {{attribute}}",
       "all": "[[Alle:roomAttrAll]] in {{poss}} Raum hatten {{attribute}}"
     },
     "roomGender": {
       "none": "[[Niemand:roomAttrNone]] in {{poss}} Raum war {{who}}",
       "some": "In {{poss}} Raum war {{who}}",
+      "someNeg": "In {{poss}} Raum war {{whoNeg}}",
+      "noneNeg": "In {{poss}} Raum war {{who}}",
+      "allNeg": "[[Nicht jede Person:roomAttrAll]] in {{poss}} Raum war {{who}}",
       "all": "[[Jede Person:roomAttrAll]] in {{poss}} Raum war {{who}}"
     },
     "direction": "{{subject}} war {{neg}}{{direction}} von {{target}}",
@@ -771,11 +901,17 @@
     "aloneWith": "{{subject}} war {{neg}}[[allein mit:aloneWith]] {{who}}",
     "aloneWithTrait": "{{subject}} war {{neg}}[[allein mit:aloneWith]] einer Person, die {{attribute}} hatte",
     "roomExistsOnObject": "In {{poss}} Raum saß {{who}} [[auf:onObject]] {{object}}",
+    "roomExistsOnObjectNeg": "In {{poss}} Raum saß {{whoNeg}} [[auf:onObject]] {{object}}",
     "roomExistsNearObject": "In {{poss}} Raum stand {{who}} [[neben:nearObject]] {{object}}",
+    "roomExistsNearObjectNeg": "In {{poss}} Raum stand {{whoNeg}} [[neben:nearObject]] {{object}}",
     "roomExistsAnyOn": "In {{poss}} Raum saß jemand anderes [[auf:onObject]] {{object}}",
+    "roomExistsAnyOnNeg": "In {{poss}} Raum saß niemand anderes [[auf:onObject]] {{object}}",
     "roomExistsAnyNear": "In {{poss}} Raum stand jemand anderes [[neben:nearObject]] {{object}}",
+    "roomExistsAnyNearNeg": "In {{poss}} Raum stand niemand anderes [[neben:nearObject]] {{object}}",
     "roomExistsTraitOn": "In {{poss}} Raum saß jemand, der {{attribute}} hatte, [[auf:onObject]] {{object}}",
+    "roomExistsTraitOnNeg": "In {{poss}} Raum saß niemand, der {{attribute}} hatte, [[auf:onObject]] {{object}}",
     "roomExistsTraitNear": "In {{poss}} Raum stand jemand, der {{attribute}} hatte, [[neben:nearObject]] {{object}}",
+    "roomExistsTraitNearNeg": "In {{poss}} Raum stand niemand, der {{attribute}} hatte, [[neben:nearObject]] {{object}}",
     "sameRoom": "{{subject}} war {{neg}}[[im selben Raum wie:sameRoom]] {{target}}",
     "sameRoomAsObject": "{{subject}} war {{neg}}[[im selben Raum wie:sameRoomAsObject]] {{objectNom}}",
     "aloneSameRoom": "{{subject}} war {{neg}}[[allein in einem Raum mit:aloneSameRoom]] {{target}}",
@@ -783,12 +919,16 @@
     "sameLineAsObject": "{{subject}} war {{neg}}in derselben {{line}} mit {{object}}{{roomRel}}",
     "directionFromObject": "{{subject}} war {{neg}}{{direction}} von {{object}}{{atCell}}{{roomRel}}",
     "besideSameObject": "{{subject}} war neben {{object}}. {{mate}} war neben {{objectSame}}.",
+    "besideSameObjectNeg": "{{subject}} und {{mateLc}} waren nicht beide neben {{objectSame}}.",
     "besideSameObjectDir": "{{subject}} war neben {{object}}. {{mate}} war {{direction}} neben {{objectSame}}.",
+    "besideSameObjectDirNeg": "{{subject}} und {{mateLc}} ({{direction}}) waren nicht beide neben {{objectSame}}.",
     "nearDoor": "{{subject}} war {{neg}}[[neben einer Tür:nearDoor]]",
     "inside": "{{subject}} war {{neg}}[[drinnen:inside]]",
     "outside": "{{subject}} war {{neg}}[[draußen:outside]]",
     "notAlone": "{{subject}} war {{neg}}[[nicht allein im Raum:notAlone]]",
+    "notAloneNeg": "{{subject}} war [[allein im Raum:alone]]",
     "insideXor": "{{subject}} und {{target}} waren weder beide [[drinnen:inside]] noch beide [[draußen:outside]]",
+    "insideXorNeg": "{{subject}} und {{target}} waren beide [[drinnen:inside]] oder beide [[draußen:outside]]",
     "aloneWithPeople": "{{subject}} war {{neg}}allein mit {{target}} und {{count}} weiteren ({{attribute}})",
     "aloneWithDir": "{{subject}} war {{neg}}allein mit {{target}} und {{count}} weiteren ({{attribute}}, eine {{direction}})",
     "connAnd": "und",
@@ -879,6 +1019,7 @@
     "grpObjects": "Objekte",
     "grpAttrs": "Merkmale",
     "companionWith": "mit",
+    "sameRoomAnyone": "irgendjemandem (nicht allein)",
     "portal": "Fenster/Tür",
     "inout": "Drinnen/Draußen",
     "line": "Zeile/Spalte",
@@ -987,6 +1128,8 @@
     "aloneExcludeLine": "{{name}} muss allein sein, aber {{line}} {{num}} liegt ganz im {{room}} und ist belegt – also nicht dort.",
     "aloneReserve": "{{name}} ist allein im {{room}} – alle anderen dort ausgeschlossen.",
     "notAloneRoom": "{{name}} war nicht allein – Felder, zu denen niemand mehr in den Raum dazukommen kann, gestrichen.",
+    "notAloneForce": "{{name}} war nicht allein im {{room}} – nur {{target}} kann noch dazukommen, muss also dort sein.",
+    "notAloneOccupied": "{{name}} war nicht allein im {{room}} – dort müssen ≥2 Personen stehen, was nur mit {{cell}} belegt geht; restliche Zeile und Spalte gesperrt.",
     "roomCoverageReserve": "Jeder Raum hat genau einen Verdächtigen; {{name}} gehört in den {{room}} – andere dort ausgeschlossen.",
     "roomCoverageConfine": "Den {{room}} kann nur {{name}} besetzen, und kein Raum bleibt leer – {{name}} muss dorthin.",
     "companionRoom": "{{name}} war allein mit genau einer passenden Person – im {{room}} passt das nicht, also nicht dort.",
@@ -1007,8 +1150,11 @@
     "attrSomeRoom": "In {{name}}s Raum muss eine passende Person sein – im {{room}} kann das niemand sein, also nicht dort.",
     "attrAllRoom": "In {{name}}s Raum müssen alle passen – im {{room}} ist jemand Unpassendes, also nicht dort.",
     "attrExcludeRoom": "In {{name}}s Raum darf niemand {{attribute}} haben; im {{room}} ist so jemand – also nicht dort.",
+    "attrExcludeRoomGender": "In {{name}}s Raum darf {{whoNeg}} sein; im {{room}} ist {{who}} – also nicht dort.",
     "attrPigeonhole": "In {{name}}s Raum darf niemand {{attribute}} haben; im {{room}} sitzt aber zwangsläufig so jemand (zu viele für die übrigen Räume) – also nicht dort.",
+    "attrPigeonholeGender": "In {{name}}s Raum darf {{whoNeg}} sein; im {{room}} ist aber zwangsläufig {{who}} (zu viele für die übrigen Räume) – also nicht dort.",
     "attrReserve": "{{name}} ist im {{room}}, dort darf niemand {{attribute}} haben – solche Personen ausgeschlossen.",
+    "attrReserveGender": "{{name}} ist im {{room}}, dort darf {{whoNeg}} sein – solche Personen ausgeschlossen.",
     "groupRoomMemberOut": "{{name}}s Gruppe muss zusammen in einem Raum sein, aber ein Mitglied kann nicht in den {{room}} – die Gruppe ist nicht dort.",
     "groupRoomForeign": "Im {{room}} ist sicher jemand, der nicht zu {{name}}s Gruppe gehören kann – die Gruppe ist nicht dort.",
     "groupRoomNoExtra": "Für {{name}}s Gruppe gibt es im {{room}} keine passende Begleitung – die Gruppe ist nicht dort.",

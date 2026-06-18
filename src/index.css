@@ -730,6 +730,14 @@ button {
 .mk-card:has(.mk-custom) .mk-card__title {
   padding-right: 3.4rem;
 }
+/* On desktop there's room — a case name WITHOUT an author may run to 3 lines so it stays
+   readable (with an author, 2 lines leave room for the signature). Scoped to ≥641px so
+   the mobile one-line clamp still wins on small screens. */
+@media (min-width: 641px) {
+  .mk-card:not(:has(.mk-card__author)) .mk-card__title {
+    -webkit-line-clamp: 3;
+  }
+}
 /* Author on the card: the NAME is the point — a brass typewriter signature
    ("— Mika Abendroth") that may wrap onto a second line. */
 .mk-card__author {
@@ -1816,6 +1824,12 @@ button {
 .mk-pal__canvas[data-occupiable='false'] {
   box-shadow: 0 0 0 2px var(--crimson);
 }
+/* Windows & doors are WALLS, not blocked objects — ring them the legend's blue 'an der
+   Wand' colour (same as the .mk-pal--wall frame) instead of red, so the palette shows
+   three distinct states: walkable (green), blocked object (red), wall (blue). */
+.mk-pal--wall .mk-pal__canvas[data-occupiable='false'] {
+  box-shadow: 0 0 0 2px var(--diff-tutorial);
+}
 
 /* Mobile-only object picker: a native dropdown (grouped walkable/blocking) plus
    a live preview tile of the selected object's real icon. Keeps the palette to a
@@ -2189,6 +2203,95 @@ button {
   gap: 0.6rem;
   margin-top: 0.4rem;
 }
+/* The verdict can be tapped aside to study the solved board — the dimmed backdrop reads
+   as dismissible, the case card itself does not. */
+.mk-overlay[data-dismissible='true'] {
+  cursor: pointer;
+}
+.mk-overlay[data-dismissible='true'] .mk-dialog {
+  cursor: auto;
+}
+/* Typewriter footnote under the actions: "tap aside to view the scene". */
+.mk-dialog__peek {
+  margin-top: 0.05rem;
+  padding: 0.25rem 0.5rem;
+  background: none;
+  border: 0;
+  font-family: var(--font-type);
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--bone-faint);
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+.mk-dialog__peek:hover {
+  color: var(--brass);
+}
+/* "Reopen case" ghost button — the brass arrow spins back on hover. */
+.mk-btn--restart .mk-btn__icon {
+  display: inline-block;
+  margin-right: 0.35rem;
+  color: var(--brass);
+  transition: transform 0.45s cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+.mk-btn--restart:hover:not(:disabled) .mk-btn__icon {
+  transform: rotate(-180deg);
+}
+
+/* Review layer over the REVEALED board: transparent so the solved scene reads clearly,
+   with a bobbing brass "show verdict" tab pinned near the bottom; a tap anywhere recalls
+   the verdict (a swipe does not — handled in JS). A soft bottom vignette lifts the tab. */
+.mk-review {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  align-content: end;
+  justify-items: center;
+  padding-bottom: clamp(0.9rem, 3.5vw, 1.8rem);
+  cursor: pointer;
+  touch-action: pan-y;
+  background: radial-gradient(120% 45% at 50% 100%, rgba(8, 7, 11, 0.42), transparent 72%);
+  animation: fade 0.3s ease;
+}
+.mk-review__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.05rem;
+  font-family: var(--font-type);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  color: var(--bone);
+  background: linear-gradient(180deg, var(--ink-700), var(--ink-850));
+  border: 1px solid var(--brass-dim);
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+  animation: reviewbob 2.6s ease-in-out infinite;
+}
+.mk-review__icon {
+  color: var(--brass);
+  font-size: 1.05rem;
+  line-height: 1;
+}
+@keyframes reviewbob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-review__pill {
+    animation: none;
+  }
+  .mk-btn--restart:hover .mk-btn__icon {
+    transform: none;
+  }
+}
 .mk-nameform {
   display: grid;
   gap: 0.7rem;
@@ -2521,7 +2624,10 @@ button {
 .mk-coach__card {
   position: fixed;
   left: 50%;
-  width: min(30rem, calc(100vw - 1.6rem));
+  width: min(31rem, calc(100vw - 1.4rem));
+  /* Never swallow the whole screen — long cards scroll instead of burying the board. */
+  max-height: min(62vh, 27rem);
+  overflow-y: auto;
   pointer-events: auto;
   background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
   border: 1px solid var(--brass-dim);
@@ -2530,6 +2636,13 @@ button {
   box-shadow: var(--shadow-pop);
   display: grid;
   gap: 0.5rem;
+}
+/* Steps that explain a centered dialog (verdict / settings): a WIDE card pinned to the
+   top so it reads in few lines and leaves the dialog (and its buttons) clear below. On a
+   small screen it spans the width and is kept short so the dialog stays usable underneath. */
+.mk-coach__card[data-dialog='true'] {
+  width: min(44rem, calc(100vw - 1.2rem));
+  max-height: 42vh;
 }
 .mk-coach__card[data-placement='center'] {
   top: 50%;

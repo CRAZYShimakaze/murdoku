@@ -33,13 +33,18 @@ export default function Coach({ view }: { view: CoachView }) {
     }
   }, [view.target, view.dim])
 
-  const placement = !view.dim
-    ? view.cardSide
-    : rect
-      ? rect.top + rect.height / 2 < window.innerHeight / 2
-        ? 'bottom'
-        : 'top'
-      : 'center'
+  // Steps that spotlight a centered dialog pin the card to the top (clear of the dialog
+  // and its buttons below). Bright steps use the computed cardSide; dim steps sit opposite
+  // their spotlight.
+  const placement = view.dialogStep
+    ? 'top'
+    : !view.dim
+      ? view.cardSide
+      : rect
+        ? rect.top + rect.height / 2 < window.innerHeight / 2
+          ? 'bottom'
+          : 'top'
+        : 'center'
 
   return (
     <div className="mk-coach">
@@ -58,7 +63,11 @@ export default function Coach({ view }: { view: CoachView }) {
           <div className="mk-coach__dim" />
         ))}
 
-      <div className="mk-coach__card" data-placement={placement}>
+      <div
+        className="mk-coach__card"
+        data-placement={placement}
+        data-dialog={view.dialogStep ? 'true' : undefined}
+      >
         <div className="mk-coach__head">
           <span className="mk-coach__badge">🕵️</span>
           <span className="mk-coach__step">{view.stepLabel}</span>
