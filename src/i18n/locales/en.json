@@ -92,6 +92,8 @@
     "next": "Next",
     "skip": "Skip tutorial",
     "step": "{{n}}/{{total}}",
+    "lockRestart": "That would restart the case — handy in a real game. Here, press »Next« for the second part.",
+    "lockBack": "That would go back to the level list — but then you'd miss the second part! Press »Next«.",
     "err": {
       "wrongSelect": "Select {{name}} first.",
       "selectFirst": "Select {{name}} first.",

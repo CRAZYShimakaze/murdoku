@@ -139,6 +139,15 @@ export default function GameScreen({
   const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
   // The settings dialog is controlled so the tutorial can open it (and explain it).
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // On the phase-1 tutorial verdict, Restart / Back are LOCKED (they'd skip the second
+  // part) — clicking them just explains what they'd do; only the coach's "Next" proceeds.
+  const [tutNote, setTutNote] = useState<string | null>(null)
+  useEffect(() => {
+    if (!tutNote) return
+    const id = window.setTimeout(() => setTutNote(null), 4200)
+    return () => window.clearTimeout(id)
+  }, [tutNote])
+  const verdictLock = tut.active && !!tut.coach?.overDialog
   useEffect(() => {
     if (!tut.active) return
     if (tut.settingsPhase === 'open') setSettingsOpen(true)
@@ -519,9 +528,15 @@ export default function GameScreen({
               : undefined
           }
           onRetry={() => setResult(null)}
-          onRestart={result.win ? restart : undefined}
+          onRestart={
+            result.win
+              ? verdictLock
+                ? () => setTutNote(t('tutorial.lockRestart'))
+                : restart
+              : undefined
+          }
           onDismiss={result.win ? () => setDialogHidden(true) : undefined}
-          onBack={onBack}
+          onBack={verdictLock ? () => setTutNote(t('tutorial.lockBack')) : onBack}
           generated={generated}
           saved={saved}
           defaultName={meta.title}
@@ -535,6 +550,12 @@ export default function GameScreen({
       )}
 
       {tut.coach && (!result || tut.coach.overDialog) && <Coach view={tut.coach} />}
+
+      {tutNote && (
+        <div className="mk-coachnote" role="status" aria-live="polite">
+          {tutNote}
+        </div>
+      )}
     </div>
   )
 }

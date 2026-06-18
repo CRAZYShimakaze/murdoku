@@ -92,6 +92,8 @@
     "next": "Weiter",
     "skip": "Tutorial überspringen",
     "step": "{{n}}/{{total}}",
+    "lockRestart": "Das würde den Fall neu starten – im echten Spiel praktisch. Hier geht's mit »Weiter« zum zweiten Teil.",
+    "lockBack": "Das würde zur Levelauswahl gehen – dann verpasst du aber den zweiten Teil! Drück »Weiter«.",
     "err": {
       "wrongSelect": "Wähle zuerst {{name}}.",
       "selectFirst": "Wähle zuerst {{name}}.",
