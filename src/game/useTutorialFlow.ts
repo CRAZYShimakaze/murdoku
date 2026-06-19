@@ -175,8 +175,12 @@ export function useTutorialFlow({
   // (phase 1 only; phase 2 just shows the normal dialog and the tutorial is over).
   useEffect(() => {
     if (active && won && phase === 1 && step.id === 'solve') {
+      // React to the external win event: advance to the verdict step. The setState
+      // belongs here (it's a response to an event, not derived render state).
+      /* eslint-disable react-hooks/set-state-in-effect */
       setError(null)
       setIdx((i) => Math.min(i + 1, STEPS.length - 1))
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [won, active, phase, step.id])

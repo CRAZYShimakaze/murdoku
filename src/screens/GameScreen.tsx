@@ -150,8 +150,11 @@ export default function GameScreen({
   const verdictLock = tut.active && !!tut.coach?.overDialog
   useEffect(() => {
     if (!tut.active) return
-    if (tut.settingsPhase === 'open') setSettingsOpen(true)
-    else if (tut.settingsPhase === null) setSettingsOpen(false)
+    // Sync the dialog to the tutorial-driven phase (open / forced-closed); other
+    // phases leave the player's own toggle alone. This is a genuine external sync.
+    if (tut.settingsPhase === 'open' || tut.settingsPhase === null)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSettingsOpen(tut.settingsPhase === 'open')
   }, [tut.active, tut.settingsPhase])
 
   // Header title fit (mostly mobile): the title slot sits between the back/edit

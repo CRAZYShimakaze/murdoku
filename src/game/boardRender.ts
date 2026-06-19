@@ -178,15 +178,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       ctx.fillStyle = view.highlightColor?.wash ?? BOARD.highlight
       ctx.fillRect(x, y, S, S)
     }
-    // Reduced-help area marks: filled like candidates (blue), negated in red.
-    if (view.helpMarks?.fill.has(c)) {
-      ctx.fillStyle = CANDIDATE_BLUE.wash
-      ctx.fillRect(x, y, S, S)
-    }
-    if (view.helpMarks?.redFill.has(c)) {
-      ctx.fillStyle = REF_RED.wash
-      ctx.fillRect(x, y, S, S)
-    }
+    // Reduced-help area marks are drawn as quiet outlines later — no wash here.
   }
 
   // --- carpet rug (occupiable ground layer) — auto-tiled into one surface --
@@ -396,49 +388,85 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   if (view.highlight2) drawRings(view.highlight2, view.highlightColor2?.ring ?? BOARD.highlightRing, S * 0.13)
   if (view.highlight) drawRings(view.highlight, view.highlightColor?.ring ?? BOARD.highlightRing, S * 0.07)
 
-  // Trace a room's outline just inside its walls (hover + reduced-help marks).
-  const traceRoom = (room: string, color: string, inset: number, width: number) => {
-    const wall = (r: number, c: number) =>
-      !board.inBounds(r, c) || board.roomIdOf(board.idx(r, c)) !== room
+  // Trace the boundary of a cell region just inside its edges: for each cell in
+  // `domain`, stroke the sides whose orthogonal neighbour is NOT `inside`. Shared
+  // by room outlines (hover + in-room marks) and reduced-help area marks.
+  const traceBoundary = (
+    domain: Iterable<Cell>,
+    inside: (r: number, c: number) => boolean,
+    color: string,
+    inset: number,
+    width: number,
+    dash: boolean,
+  ) => {
     ctx.strokeStyle = color
     ctx.lineWidth = width
     ctx.lineCap = 'round'
+    ctx.setLineDash(dash ? [S * 0.14, S * 0.1] : [])
     ctx.beginPath()
-    for (let c = 0; c < W * H; c++) {
-      if (board.roomIdOf(c) !== room) continue
+    for (const c of domain) {
       const { row, col } = board.rc(c)
       const { x, y } = xy(c)
-      if (wall(row - 1, col)) {
+      if (!inside(row - 1, col)) {
         ctx.moveTo(x + inset, y + inset)
         ctx.lineTo(x + S - inset, y + inset)
       }
-      if (wall(row + 1, col)) {
+      if (!inside(row + 1, col)) {
         ctx.moveTo(x + inset, y + S - inset)
         ctx.lineTo(x + S - inset, y + S - inset)
       }
-      if (wall(row, col - 1)) {
+      if (!inside(row, col - 1)) {
         ctx.moveTo(x + inset, y + inset)
         ctx.lineTo(x + inset, y + S - inset)
       }
-      if (wall(row, col + 1)) {
+      if (!inside(row, col + 1)) {
         ctx.moveTo(x + S - inset, y + inset)
         ctx.lineTo(x + S - inset, y + S - inset)
       }
     }
     ctx.stroke()
+    ctx.setLineDash([])
   }
+
+  // Trace a room's outline just inside its walls (hover + reduced-help marks).
+  const traceRoom = (room: string, color: string, inset: number, width: number) => {
+    const cells: Cell[] = []
+    for (let c = 0; c < W * H; c++) if (board.roomIdOf(c) === room) cells.push(c)
+    traceBoundary(
+      cells,
+      (r, c) => board.inBounds(r, c) && board.roomIdOf(board.idx(r, c)) === room,
+      color,
+      inset,
+      width,
+      false,
+    )
+  }
+
+  // Trace an arbitrary cell set (a clue's referenced row/col/wall/outside region)
+  // as a dashed outline — the reduced-help "quiet" language.
+  const traceCellSet = (cells: Set<Cell>, color: string, inset: number, width: number) =>
+    traceBoundary(
+      cells,
+      (r, c) => board.inBounds(r, c) && cells.has(board.idx(r, c)),
+      color,
+      inset,
+      width,
+      true,
+    )
 
   // --- reduced-help marks: per-clue references instead of candidate sets ---
   if (view.helpMarks) {
     const m = view.helpMarks
-    // Area cells (row/col, on-object, …) carry the normal candidate ring.
-    drawRings(m.fill, CANDIDATE_BLUE.ring, S * 0.07)
-    drawRings(m.redFill, REF_RED.ring, S * 0.07)
     // Referenced objects get a dashed "chalk circle" — evidence, not a candidate.
     ctx.setLineDash([S * 0.14, S * 0.1])
     drawRings(m.ring, CANDIDATE_BLUE.ring, S * 0.1)
     drawRings(m.redRing, REF_RED.ring, S * 0.1)
     ctx.setLineDash([])
+    // Area/line references (row/col, corner, wall, outside, same line): each
+    // region traced as its OWN dashed outline — quiet, no wash. Negated → red.
+    const areaWidth = Math.max(2, S * 0.05)
+    for (const a of m.areas)
+      traceCellSet(a.cells, a.neg ? REF_RED.ring : CANDIDATE_BLUE.ring, S * 0.08, areaWidth)
     const roomWidth = Math.max(2, S * 0.055)
     for (const room of m.rooms) traceRoom(room, CANDIDATE_BLUE.ring, S * 0.06, roomWidth)
     for (const room of m.redRooms) traceRoom(room, REF_RED.ring, S * 0.06, roomWidth)

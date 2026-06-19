@@ -1,16 +1,19 @@
 /**
  * Reduced-help mode ("Kommissar"): instead of the full candidate intersection,
  * each clue marks only what it REFERENCES on the board — the player draws the
- * conclusion. Marks of all clues are shown side by side (no intersection):
+ * conclusion. The marks stay deliberately quiet: one consistent "outline the
+ * reference, never wash a whole area" language (matching room outlines + object
+ * rings, which players already read well). Marks of all clues are shown side by
+ * side (no intersection):
  *
- * - row/col, on-object, outside/inside, wall, corner, same line as an object →
- *   their cells, filled (as the full mode would, just per clue)
- * - object references (beside X, same line/room as X, direction from X, …) →
+ * - row/col, outside/inside, wall, corner, same line as an object →
+ *   a dashed outline around that region (each clue's region traced on its own,
+ *   so two overlapping areas stay legible) — never a filled wash
+ * - object references (on/beside X, same line/room as X, direction from X, …) →
  *   only the object cells, as a dashed "chalk" ring
  * - in-room (incl. alone/not alone) → the room's outline only
  * - beside a window/door → the window/door symbols themselves light up
- * - NEGATED clues mark the same reference in red ("not here") instead of the
- *   filled complement
+ * - NEGATED clues mark the same reference in red ("not here")
  *
  * Relational/social clues (depend on other people) mark nothing — exactly as
  * in full mode, where their candidateCells are null.
@@ -44,9 +47,18 @@ import {
   type Clue,
 } from '../engine/index.ts'
 
+/** One area/line clue's referenced region, traced as its own dashed outline. */
+export interface AreaMark {
+  cells: Set<Cell>
+  /** Negated clue → traced in red ("not this band"). */
+  neg: boolean
+}
+
 export interface HelpMarks {
-  /** Candidate-style filled cells (row/col, on-object, outside, wall, corner). */
-  fill: Set<Cell>
+  /** Area/line references (row/col, corner, wall, outside, same line as object).
+   *  Each clue contributes its OWN region so two overlapping areas (e.g. a row and
+   *  a column) read as two outlines, not one merged blob. */
+  areas: AreaMark[]
   /** Referenced object cells, drawn as a dashed ring only (no wash). */
   ring: Set<Cell>
   /** Rooms whose outline is traced. */
@@ -55,7 +67,6 @@ export interface HelpMarks {
   windows: boolean
   doors: boolean
   /** The same shapes for NEGATED clues, drawn in red ("not here"). */
-  redFill: Set<Cell>
   redRing: Set<Cell>
   redRooms: Set<string>
   redWindows: boolean
@@ -64,12 +75,11 @@ export interface HelpMarks {
 
 function empty(): HelpMarks {
   return {
-    fill: new Set(),
+    areas: [],
     ring: new Set(),
     rooms: new Set(),
     windows: false,
     doors: false,
-    redFill: new Set(),
     redRing: new Set(),
     redRooms: new Set(),
     redWindows: false,
@@ -79,12 +89,11 @@ function empty(): HelpMarks {
 
 export function hasMarks(marks: HelpMarks): boolean {
   return (
-    marks.fill.size > 0 ||
+    marks.areas.length > 0 ||
     marks.ring.size > 0 ||
     marks.rooms.size > 0 ||
     marks.windows ||
     marks.doors ||
-    marks.redFill.size > 0 ||
     marks.redRing.size > 0 ||
     marks.redRooms.size > 0 ||
     marks.redWindows ||
@@ -109,13 +118,11 @@ function addClue(clue: Clue, board: Board, neg: boolean, out: HelpMarks): void {
     return
   }
 
-  const fill = neg ? out.redFill : out.fill
   const ring = neg ? out.redRing : out.ring
   const rooms = neg ? out.redRooms : out.rooms
 
-  // Area clues keep their (per-clue) filled cells; negated → the same area in red.
+  // Area / line clues → their region, outlined on its own (no wash). Negated → red.
   if (
-    clue instanceof OnObjectClue ||
     clue instanceof InRowClue ||
     clue instanceof InColClue ||
     clue instanceof CornerClue ||
@@ -123,20 +130,21 @@ function addClue(clue: Clue, board: Board, neg: boolean, out: HelpMarks): void {
     clue instanceof OutsideClue ||
     clue instanceof UniqueOutsideClue
   ) {
-    addAll(fill, clue.candidateCells(board))
+    out.areas.push({ cells: clue.candidateCells(board), neg })
     return
   }
 
-  // "Same row/column as an object": the line itself is the lead — fill it as
-  // full mode would (per clue), plus a chalk ring on the anchoring object(s).
+  // "Same row/column as an object": outline the line, plus a chalk ring on the
+  // anchoring object(s) so the player sees what the line is pinned to.
   if (clue instanceof SameLineAsObjectClue) {
-    addAll(fill, clue.candidateCells(board))
+    out.areas.push({ cells: clue.candidateCells(board), neg })
     addAll(ring, objectRef(board, clue.object))
     return
   }
 
-  // Object references → only the object itself.
+  // Object references → only the object itself (on it / beside it / the same one).
   if (
+    clue instanceof OnObjectClue ||
     clue instanceof NearObjectClue ||
     clue instanceof UniqueOnObjectClue ||
     clue instanceof UniqueNearObjectClue ||
