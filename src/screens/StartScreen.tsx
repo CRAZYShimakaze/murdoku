@@ -1,5 +1,52 @@
 import { useTranslation } from 'react-i18next'
 import LanguageToggle from '../components/LanguageToggle.tsx'
+import BloodText from '../components/BloodText.tsx'
+
+/* Hand-inked, line-art case-file icons (no emoji): brass strokes via currentColor,
+ * crimson accents (threads / pins / fresh stamp) via the .mk-ic-red* classes. */
+
+/** Tutorial — a magnifier examining a fingerprint: "learn to investigate". */
+const IconTutorial = (
+  <svg className="mk-tile__svg" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <g stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+      <path d="M6.5 20.6C6.5 15.9 10.4 12 15.1 12c2 0 3.9.7 5.3 1.9" />
+      <path d="M9 21c0-3.3 2.7-6 6-6 1.5 0 2.9.6 4 1.6" />
+      <path d="M11.6 21.4c0-1.9 1.6-3.4 3.5-3.4.9 0 1.8.4 2.4 1" />
+    </g>
+    <circle cx="18.4" cy="13.4" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+    <line x1="23.2" y1="18.2" x2="28" y2="23" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
+  </svg>
+)
+
+/** Editor — a corkboard of pinned notes joined by red thread: "assemble your case". */
+const IconEditor = (
+  <svg className="mk-tile__svg" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <rect x="3.5" y="5.5" width="25" height="21" rx="2" stroke="currentColor" strokeWidth="1.6" />
+    <path className="mk-ic-red" d="M9 11 L23 10.5 L15.5 21.7 Z" strokeWidth="1.1" strokeLinejoin="round" />
+    <rect x="6.4" y="8.4" width="5.2" height="4" rx="0.6" stroke="currentColor" strokeWidth="1" />
+    <rect x="20" y="8" width="5.2" height="4" rx="0.6" stroke="currentColor" strokeWidth="1" />
+    <rect x="12.9" y="19.7" width="5.2" height="4" rx="0.6" stroke="currentColor" strokeWidth="1" />
+    <circle className="mk-ic-red-fill" cx="9" cy="11" r="1.5" />
+    <circle className="mk-ic-red-fill" cx="23" cy="10.5" r="1.5" />
+    <circle className="mk-ic-red-fill" cx="15.5" cy="21.7" r="1.5" />
+  </svg>
+)
+
+/** Level generieren — a rubber stamp pressing a fresh case mark: "a new case is issued". */
+const IconGenerate = (
+  <svg className="mk-tile__svg" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <rect x="12" y="4.5" width="8" height="5" rx="1.6" stroke="currentColor" strokeWidth="1.6" />
+    <path d="M16 9.5V12M11 12h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    <rect x="9.5" y="12" width="13" height="4.6" rx="1.4" stroke="currentColor" strokeWidth="1.6" />
+    <ellipse className="mk-ic-red" cx="16" cy="23.6" rx="9" ry="3.4" strokeWidth="1.3" />
+    <path
+      className="mk-ic-red"
+      d="M16 21.7V25.5M14.3 22.7 17.7 24.5M17.7 22.7 14.3 24.5"
+      strokeWidth="1.1"
+      strokeLinecap="round"
+    />
+  </svg>
+)
 
 export default function StartScreen({
   onPlay,
@@ -55,7 +102,34 @@ export default function StartScreen({
               </a>
             </p>
           </div>
-          <p className="mk-start__tag">{t('app.subtitle')}</p>
+          <p className="mk-start__tag">
+            {/* flicked-blood splatter behind the line — denser by the smeared M, with a
+                fine trail toward the right (decorative, sits behind the text) */}
+            <svg
+              className="mk-start__splatter"
+              viewBox="0 0 240 60"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <circle className="deep" cx="70" cy="31" r="7.5" opacity="0.78" />
+              <circle className="deep" cx="96" cy="35" r="4.6" opacity="0.7" />
+              <circle cx="84" cy="24" r="4.4" opacity="0.8" />
+              <circle cx="58" cy="41" r="3.4" opacity="0.72" />
+              <circle cx="108" cy="27" r="3" opacity="0.66" />
+              <circle cx="49" cy="21" r="2.5" opacity="0.66" />
+              <circle cx="34" cy="38" r="1.7" opacity="0.55" />
+              <circle cx="124" cy="23" r="3.1" opacity="0.66" />
+              <circle cx="144" cy="17" r="2.4" opacity="0.58" />
+              <circle cx="164" cy="13" r="1.9" opacity="0.5" />
+              <circle cx="184" cy="10" r="1.4" opacity="0.44" />
+              <circle cx="204" cy="8" r="1" opacity="0.38" />
+              <circle cx="118" cy="43" r="2.1" opacity="0.55" />
+              <circle cx="208" cy="40" r="2.3" opacity="0.5" />
+              <ellipse cx="156" cy="16" rx="4.6" ry="1.3" transform="rotate(-22 156 16)" opacity="0.5" />
+              <ellipse cx="118" cy="34" rx="5" ry="1.4" transform="rotate(8 118 34)" opacity="0.5" />
+            </svg>
+            <BloodText text={t('app.subtitle')} />
+          </p>
           <div className="mk-start__cta">
             <button type="button" className="mk-btn mk-btn--primary" onClick={onPlay}>
               {t('start.play')}
@@ -63,16 +137,19 @@ export default function StartScreen({
           </div>
           <div className="mk-start__more">
             <button type="button" className="mk-tile" onClick={onTutorial}>
-              <span className="mk-tile__icon">🎓</span>
-              {t('start.tutorial')}
+              <span className="mk-tile__icon">{IconTutorial}</span>
+              <span className="mk-tile__label">{t('start.tutorial')}</span>
+              <span className="mk-tile__no">№ 001</span>
             </button>
             <button type="button" className="mk-tile" onClick={onEditor}>
-              <span className="mk-tile__icon">🛠️</span>
-              {t('start.editor')}
+              <span className="mk-tile__icon">{IconEditor}</span>
+              <span className="mk-tile__label">{t('start.editor')}</span>
+              <span className="mk-tile__no">№ 002</span>
             </button>
             <button type="button" className="mk-tile" onClick={onGenerate}>
-              <span className="mk-tile__icon">🎲</span>
-              {t('start.generate')}
+              <span className="mk-tile__icon">{IconGenerate}</span>
+              <span className="mk-tile__label">{t('start.generate')}</span>
+              <span className="mk-tile__no">№ 003</span>
             </button>
           </div>
           <div className="mk-start__lang">
