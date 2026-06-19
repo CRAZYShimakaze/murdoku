@@ -10,51 +10,35 @@ import { BEARD_STYLES, GLASSES_COLORS, GLASSES_SHAPES, HAIRSTYLE_IDS } from './a
  */
 
 export type CondKind =
-  | 'inRoom' // + optional "allein" (alone/notAlone in that room)
+  // Raum — one hub for everything about the subject's room
+  | 'room' // alone / in a specific room / same room as (person|object|trait|anyone) / someone on-beside an object
+  | 'aloneWith' // alone with a named person + N others matching a trait
+  // Objekte
   | 'onObject' // + optional "einzige" (unique)
   | 'nearObject' // + optional "einzige"
-  | 'portal' // window / door, + optional "einzige"
+  | 'sameObject' // beside the same object instance as a person / trait / anyone
+  | 'sameLineAsObject'
+  // Lage am Brett
   | 'inout' // inside / outside, + optional "einzige"
+  | 'portal' // window / door, + optional "einzige"
   | 'line' // row / column + value
-  | 'corner'
-  | 'atWall'
-  | 'sameRoom'
-  | 'direction'
+  | 'boardPos' // in a corner / at a wall
+  // Richtung & Abstand
+  | 'direction' // 8-way direction from a person OR an object
   | 'offset' // exactly N cells in a cardinal direction of a person
   | 'insideXor'
-  | 'roomAttribute'
-  | 'roomExists' // someone with a trait sat on an object in the subject's room
-  | 'aloneWith' // alone with a named person + N others matching a trait
-  | 'sameLineAsObject'
-  | 'directionFromObject'
-  | 'sameObject' // beside the same object instance as a person / trait / anyone
-  // Round-trip only (not offered as fresh entries): the room-agnostic alone clues,
-  // kept so older / generated levels using them still open in the editor.
-  | 'alone'
-  | 'notAlone'
 
-/** Condition kinds the user can pick, in menu order. (`portal` is filtered out by
- *  the builder when the board has neither windows nor doors.) */
-export const COND_KINDS: CondKind[] = [
-  'inRoom',
-  'onObject',
-  'nearObject',
-  'sameLineAsObject',
-  'directionFromObject',
-  'sameObject',
-  'portal',
-  'inout',
-  'line',
-  'corner',
-  'atWall',
-  'sameRoom',
-  'direction',
-  'offset',
-  'insideXor',
-  'roomAttribute',
-  'roomExists',
-  'aloneWith',
+/** The menu sections (optgroup headers), in order. `portal` is filtered out by the
+ *  builder when the board has neither windows nor doors. */
+export const COND_SECTIONS: { labelKey: string; kinds: CondKind[] }[] = [
+  { labelKey: 'condGrp.room', kinds: ['room', 'aloneWith'] },
+  { labelKey: 'condGrp.object', kinds: ['onObject', 'nearObject', 'sameObject', 'sameLineAsObject'] },
+  { labelKey: 'condGrp.board', kinds: ['inout', 'portal', 'line', 'boardPos'] },
+  { labelKey: 'condGrp.dir', kinds: ['direction', 'offset', 'insideXor'] },
 ]
+
+/** Flat list of pickable kinds, in menu order (derived from the sections). */
+export const COND_KINDS: CondKind[] = COND_SECTIONS.flatMap((s) => s.kinds)
 
 /** Window vs door, for the merged "Fenster/Tür" condition. */
 export type PortalKind = 'window' | 'door'
@@ -129,33 +113,35 @@ export const VALUED_ATTRS: Record<string, { values: string[]; labelKey: string }
 export interface Condition {
   kind: CondKind
   not: boolean
-  room?: string // inRoom — room id char
-  object?: string // onObject / nearObject / sameRoom(object variant) — object TYPE
+  room?: string // room(in) — room id char
+  object?: string // onObject / nearObject / room(object|onObject) — object TYPE
   index?: number // line — 0-based row/column index
-  of?: string // sameRoom(person variant) / direction / insideXor — other suspect id
-  dir?: Direction8 // direction / directionFromObject — 8 compass directions
-  at?: number // directionFromObject — cell index of ONE object tile (undefined = any)
-  quantifier?: Quantifier // roomAttribute
-  /** roomAttribute / sameRoom(attr variant); 'any' = roomExists "irgendjemand",
-   *  'object' = roomAttribute about an OBJECT in the room ("im Raum war keine Kiste"). */
+  of?: string // room(person) / direction(person) / insideXor — other suspect id
+  dir?: Direction8 // direction — 8 compass directions
+  at?: number // direction(object) — cell index of ONE object tile (undefined = any)
+  quantifier?: Quantifier // room(with-trait) — none / some / all
+  /** room(with-trait) / sameObject / room(onObject); 'any' = "irgendjemand". */
   attribute?: AttrKind | 'any' | 'object'
   value?: string // valued attribute (gender, hair, hairstyle, …)
   hair?: string // legacy roomAttribute value (read for old drafts; new ones use `value`)
   line?: LineKind // sameLineAsObject — column / row / either
-  roomRel?: RoomRel // sameLineAsObject / directionFromObject — room qualifier
-  alone?: boolean // sameRoom / inRoom — also requires being alone (no one else in the room)
+  roomRel?: RoomRel // sameLineAsObject / direction(object) — room qualifier
+  alone?: boolean // room — also requires being alone (no one else in the room)
   unique?: boolean // onObject / nearObject / portal / inout — the ONLY person there
   portal?: PortalKind // portal — window or door
   side?: InOutKind // inout — inside or outside
   axis?: AxisKind // line — row or column
-  roomTarget?: 'person' | 'object' | 'attr' | 'anyone' // sameRoom — what the room is shared with ('anyone' = not alone)
+  roomTarget?: 'person' | 'object' | 'attr' | 'anyone' // room(with) — shared with whom ('anyone' = not alone)
   dist?: number // offset — exact distance (≥1) in the cardinal direction
   objects?: string[] // nearObject — beside one of these object TYPES (1 = single, ≥2 = any)
   extraCount?: number // aloneWith — how many extra matching people share the room
   aloneDir?: 'none' | Direction // aloneWith — one extra is in this cardinal direction
   objTarget?: 'any' | 'person' | 'attr' // sameObject — who else is beside the same object
   objDir?: 'none' | Direction8 // sameObject — optional direction of the mate from subject
-  objRel?: 'on' | 'near' // roomExists — the companion is ON or BESIDE the object
+  objRel?: 'on' | 'near' // room(onObject) — the companion is ON or BESIDE the object
+  roomMode?: 'alone' | 'in' | 'with' | 'onObject' // room — which kind of room statement
+  dirTarget?: 'person' | 'object' | 'attr' // direction — relative to a person, an object or a trait-bearer
+  pos?: 'corner' | 'wall' // boardPos — in a corner or at a wall
 }
 
 export interface ClueGroup {
@@ -170,23 +156,57 @@ export function emptyClueGroup(): ClueGroup {
 /** The (attribute, value) a room-attribute / companion condition encodes.
  *  ('any'/'object' never reach this — their builders handle them before.) */
 function attrValue(c: Condition): { attribute: string; value: AttributeValue } {
-  const attribute = c.attribute === 'any' || c.attribute === 'object' || !c.attribute ? 'beard' : c.attribute
+  const attribute =
+    c.attribute === 'any' || c.attribute === 'object' || !c.attribute ? 'beard' : c.attribute
   const spec = VALUED_ATTRS[attribute]
   if (spec) return { attribute, value: c.value ?? c.hair ?? spec.values[0] }
   return { attribute, value: true } // boolean traits: beard / glasses / bald
 }
 
 /** Convert one condition to its engine clue JSON (sans the NICHT wrapper).
- *  NOTE: `inRoom` folds its own NICHT in (see `condJson`). */
+ *  NOTE: `room` (mode 'in' + alone) folds its own NICHT in (see `condJson`). */
 function baseJson(c: Condition): ClueJson | null {
   switch (c.kind) {
-    case 'inRoom': {
-      if (!c.room) return null
-      // "allein" on → alone/not-alone in the room (NICHT flips which); off → plain
-      // room membership (the wrapper applies NICHT as "not in the room").
-      if (c.alone) return { type: 'inRoom', room: c.room, occupancy: c.not ? 'notAlone' : 'alone' }
-      return { type: 'inRoom', room: c.room }
+    case 'room': {
+      // The "Im Raum …" hub. The aspect dropdown (roomMode) chooses which underlying
+      // room clue is emitted — membership / alone / same-room-as / someone-on-object.
+      const mode = c.roomMode ?? 'in'
+      if (mode === 'alone') return { type: 'alone' } // NICHT → "nicht allein"
+      if (mode === 'in') {
+        if (!c.room) return null
+        // "allein" on → alone/not-alone in that room (NICHT flips which); off → plain
+        // membership (the wrapper applies NICHT as "not in the room").
+        if (c.alone) return { type: 'inRoom', room: c.room, occupancy: c.not ? 'notAlone' : 'alone' }
+        return { type: 'inRoom', room: c.room }
+      }
+      if (mode === 'onObject') {
+        if (!c.object) return null
+        const relation = c.objRel ?? 'on'
+        if (c.attribute === 'any' || c.attribute === 'object' || !c.attribute) {
+          return { type: 'roomExists', object: c.object, relation }
+        }
+        const { attribute, value } = attrValue(c)
+        return { type: 'roomExists', attribute, value, object: c.object, relation }
+      }
+      // mode === 'with' — same room as a person / object / trait / anyone.
+      const alone = c.alone ? { alone: true as const } : {}
+      const target = c.roomTarget ?? 'person'
+      // "with anyone" = simply not alone; NICHT then flips it to "alone".
+      if (target === 'anyone') return { type: 'notAlone' }
+      if (target === 'attr') {
+        const { attribute, value } = attrValue(c)
+        const quantifier = c.quantifier ?? 'some'
+        // "jemand mit Merkmal" + allein = exactly one matching companion.
+        if (quantifier === 'some' && c.alone) return { type: 'roomCompanion', count: 1, attribute, value }
+        return { type: 'roomAttribute', quantifier, attribute, value, excludeSelf: true }
+      }
+      if (target === 'object') {
+        return c.object ? { type: 'sameRoomAsObject', object: c.object, ...alone } : null
+      }
+      return c.of ? { type: 'sameRoom', as: c.of, ...alone } : null
     }
+    case 'boardPos':
+      return c.pos === 'wall' ? { type: 'atWall' } : { type: 'corner' }
     case 'onObject':
       if (!c.object) return null
       return c.unique
@@ -224,47 +244,9 @@ function baseJson(c: Condition): ClueJson | null {
       return c.axis === 'col'
         ? { type: 'inCol', col: c.index ?? 0 }
         : { type: 'inRow', row: c.index ?? 0 }
-    case 'corner':
-      return { type: 'corner' }
-    case 'atWall':
-      return { type: 'atWall' }
-    case 'alone':
-      return { type: 'alone' }
-    case 'notAlone':
-      return { type: 'notAlone' }
-    case 'sameRoom': {
-      // One dropdown offers people, objects AND attributes ("a woman", "someone with
-      // glasses", …) plus "irgendjemand" (anyone). The optional `alone` flag tightens
-      // it to "only the two of them" (not for "anyone").
-      const alone = c.alone ? { alone: true as const } : {}
-      const target = c.roomTarget ?? (c.object ? 'object' : 'person')
-      // "in a room with anyone" = simply not alone (someone else shares the room, who
-      // doesn't matter). NICHT then flips it to "alone".
-      if (target === 'anyone') return { type: 'notAlone' }
-      if (target === 'attr') {
-        const { attribute, value } = attrValue(c)
-        return c.alone
-          ? { type: 'roomCompanion', count: 1, attribute, value }
-          : { type: 'roomAttribute', quantifier: 'some', attribute, value, excludeSelf: true }
-      }
-      if (target === 'object') {
-        return c.object ? { type: 'sameRoomAsObject', object: c.object, ...alone } : null
-      }
-      return c.of ? { type: 'sameRoom', as: c.of, ...alone } : null
-    }
     case 'sameLineAsObject':
       return c.object
         ? { type: 'sameLineAsObject', object: c.object, line: c.line ?? 'col', room: c.roomRel ?? 'any' }
-        : null
-    case 'directionFromObject':
-      return c.object
-        ? {
-            type: 'directionFromObject',
-            object: c.object,
-            dir: c.dir ?? 'north',
-            room: c.roomRel ?? 'any',
-            ...(c.at !== undefined ? { at: c.at } : {}),
-          }
         : null
     case 'sameObject': {
       if (!c.object) return null
@@ -281,37 +263,34 @@ function baseJson(c: Condition): ClueJson | null {
       if (!mate) return null
       return { type: 'besideSameObject', object: c.object, mate, ...(dir ? { dir } : {}) }
     }
-    case 'direction':
+    case 'direction': {
+      // Merged "Richtung von …": relative to a person, an object, OR a trait-bearer.
+      // For object/attr the `quantifier` chooses ∃ ('some') vs ∀ ('all'); a specific
+      // object tile (`at`) overrides the quantifier (it's that one tile).
+      const all = c.quantifier === 'all'
+      if (c.dirTarget === 'object') {
+        return c.object
+          ? {
+              type: 'directionFromObject',
+              object: c.object,
+              dir: c.dir ?? 'north',
+              room: c.roomRel ?? 'any',
+              ...(c.at !== undefined ? { at: c.at } : all ? { all: true } : {}),
+            }
+          : null
+      }
+      if (c.dirTarget === 'attr') {
+        const { attribute, value } = attrValue(c)
+        return { type: 'directionFromAttr', attribute, value, dir: c.dir ?? 'north', quantifier: all ? 'all' : 'some' }
+      }
       return c.of ? { type: 'direction', of: c.of, dir: c.dir ?? 'north' } : null
+    }
     case 'offset':
       return c.of
         ? { type: 'offset', of: c.of, dir: (c.dir as Direction) ?? 'east', distance: Math.max(1, c.dist ?? 1) }
         : null
     case 'insideXor':
       return c.of ? { type: 'insideXor', with: c.of } : null
-    case 'roomAttribute': {
-      // "Im Raum …" with "Objekt" in the first dropdown: "there was a crate in his
-      // room" — the NICHT chip turns it into "his room had NO crate".
-      if (c.attribute === 'object') {
-        return c.object ? { type: 'sameRoomAsObject', object: c.object } : null
-      }
-      const { attribute, value } = attrValue(c)
-      return {
-        type: 'roomAttribute',
-        quantifier: c.quantifier ?? 'some',
-        attribute,
-        value,
-        excludeSelf: true,
-      }
-    }
-    case 'roomExists': {
-      if (!c.object) return null
-      const relation = c.objRel ?? 'on'
-      // "irgendjemand": no attribute filter — any other suspect counts.
-      if (c.attribute === 'any') return { type: 'roomExists', object: c.object, relation }
-      const { attribute, value } = attrValue(c)
-      return { type: 'roomExists', attribute, value, object: c.object, relation }
-    }
     case 'aloneWith': {
       if (!c.of) return null
       const { attribute, value } = attrValue(c)
@@ -331,8 +310,8 @@ function baseJson(c: Condition): ClueJson | null {
 function condJson(c: Condition): ClueJson | null {
   const base = baseJson(c)
   if (!base) return null
-  // "im Raum + allein" folds NICHT into alone/notAlone already — don't double-negate.
-  if (c.kind === 'inRoom' && c.alone) return base
+  // "in Raum X + allein" folds NICHT into alone/notAlone already — don't double-negate.
+  if (c.kind === 'room' && c.roomMode === 'in' && c.alone) return base
   return c.not ? { type: 'not', clue: base } : base
 }
 
@@ -375,12 +354,16 @@ function jsonToCondition(json: ClueJson): Condition | null {
     objTarget: 'any',
     objDir: 'none',
     objRel: 'on',
+    roomMode: 'in',
+    roomTarget: 'person',
+    dirTarget: 'person',
+    pos: 'corner',
     ...extra,
   })
   switch (c.type) {
     case 'inRoom':
-      if (!c.occupancy) return make('inRoom', { room: c.room })
-      return make('inRoom', { room: c.room, alone: true, not: c.occupancy === 'notAlone' })
+      if (!c.occupancy) return make('room', { roomMode: 'in', room: c.room })
+      return make('room', { roomMode: 'in', room: c.room, alone: true, not: c.occupancy === 'notAlone' })
     case 'onObject':
       return make('onObject', { object: c.object, unique: false })
     case 'uniqueOnObject':
@@ -392,7 +375,14 @@ function jsonToCondition(json: ClueJson): Condition | null {
     case 'sameLineAsObject':
       return make('sameLineAsObject', { object: c.object, line: c.line, roomRel: c.room })
     case 'directionFromObject':
-      return make('directionFromObject', { object: c.object, dir: c.dir, roomRel: c.room, at: c.at })
+      return make('direction', {
+        dirTarget: 'object',
+        object: c.object,
+        dir: c.dir,
+        roomRel: c.room,
+        at: c.at,
+        quantifier: c.all ? 'all' : 'some',
+      })
     case 'besideSameObject': {
       const m = c.mate
       return make('sameObject', {
@@ -405,7 +395,7 @@ function jsonToCondition(json: ClueJson): Condition | null {
       })
     }
     case 'sameRoomAsObject':
-      return make('sameRoom', { roomTarget: 'object', object: c.object, alone: c.alone })
+      return make('room', { roomMode: 'with', roomTarget: 'object', object: c.object, alone: c.alone })
     case 'nearWindow':
       return make('portal', { portal: 'window', unique: false })
     case 'uniqueNearWindow':
@@ -427,39 +417,53 @@ function jsonToCondition(json: ClueJson): Condition | null {
     case 'inCol':
       return make('line', { axis: 'col', index: c.col })
     case 'corner':
-      return make('corner')
+      return make('boardPos', { pos: 'corner' })
     case 'atWall':
-      return make('atWall')
+      return make('boardPos', { pos: 'wall' })
     case 'alone':
-      return make('alone')
+      // The room hub's "war allein" aspect.
+      return make('room', { roomMode: 'alone' })
     case 'notAlone':
-      // Surfaced as the "same room as anyone" option, so it round-trips into that UI.
-      return make('sameRoom', { roomTarget: 'anyone' })
+      // The room hub's "im selben Raum wie irgendjemand" (= not alone) aspect.
+      return make('room', { roomMode: 'with', roomTarget: 'anyone' })
     case 'sameRoom':
-      return make('sameRoom', { roomTarget: 'person', of: c.as, alone: c.alone })
+      return make('room', { roomMode: 'with', roomTarget: 'person', of: c.as, alone: c.alone })
     case 'roomCompanion':
-      // "alone with a <attribute>" → the attribute target of "same room as …".
+      // "alone with one matching person" → the trait target + allein in the room hub.
       if (c.count !== 1) return null
-      return make('sameRoom', {
+      return make('room', {
+        roomMode: 'with',
         roomTarget: 'attr',
+        quantifier: 'some',
         alone: true,
         attribute: c.attribute as AttrKind,
         value: typeof c.value === 'string' ? c.value : undefined,
       })
     case 'direction':
-      return make('direction', { of: c.of, dir: c.dir })
+      return make('direction', { dirTarget: 'person', of: c.of, dir: c.dir })
+    case 'directionFromAttr':
+      return make('direction', {
+        dirTarget: 'attr',
+        attribute: c.attribute as AttrKind,
+        value: typeof c.value === 'string' ? c.value : undefined,
+        dir: c.dir,
+        quantifier: c.quantifier ?? 'some',
+      })
     case 'offset':
       return make('offset', { of: c.of, dir: c.dir, dist: c.distance })
     case 'insideXor':
       return make('insideXor', { of: c.with })
     case 'roomAttribute':
-      return make('roomAttribute', {
+      return make('room', {
+        roomMode: 'with',
+        roomTarget: 'attr',
         quantifier: c.quantifier,
         attribute: c.attribute as AttrKind,
         value: typeof c.value === 'string' ? c.value : undefined,
       })
     case 'roomExists':
-      return make('roomExists', {
+      return make('room', {
+        roomMode: 'onObject',
         attribute: (c.attribute ?? 'any') as AttrKind | 'any',
         value: typeof c.value === 'string' ? c.value : undefined,
         object: c.object,
@@ -508,18 +512,17 @@ export function defaultCondition(
     kind,
     not: false,
     room: ctx.rooms[0],
-    // "on object" / roomExists clues need a tile a person can stand ON; pre-pick an
-    // occupiable object for those.
+    // "on object" and the room hub (which can switch to its on/beside-object aspect)
+    // need a tile a person can stand ON; pre-pick an occupiable object for those.
     object:
-      kind === 'onObject' || kind === 'roomExists'
+      kind === 'onObject' || kind === 'room'
         ? (ctx.objects.find((o) => OCCUPIABLE_OBJECT_TYPES.includes(o)) ?? ctx.objects[0])
         : ctx.objects[0],
     index: 0,
     of: ctx.others[0]?.id,
     dir: 'north',
     quantifier: 'some',
-    // roomExists starts as "irgendjemand" (its simplest reading); attribute clues as a trait.
-    attribute: kind === 'roomExists' ? 'any' : 'beard',
+    attribute: 'beard',
     value: 'blond',
     line: 'col',
     roomRel: 'any',
@@ -528,7 +531,10 @@ export function defaultCondition(
     portal: ctx.hasWindows === false && ctx.hasDoors ? 'door' : 'window',
     side: 'inside',
     axis: 'row',
+    roomMode: 'in',
     roomTarget: 'person',
+    dirTarget: 'person',
+    pos: 'corner',
     dist: 1,
     objects: kind === 'nearObject' && ctx.objects[0] ? [ctx.objects[0]] : [],
     extraCount: 1,

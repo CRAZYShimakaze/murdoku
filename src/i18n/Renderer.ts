@@ -85,6 +85,17 @@ export class Renderer {
       }
       case 'attribute':
         return this.lookup(`attr.${value}`) ?? String(value)
+      // "every <object>" derived from the dative `object.*` token, gender-correct and
+      // without per-type plurals: de "einem Baum"→"jedem Baum", "einer Pflanze"→"jeder
+      // Pflanze"; en "a tree"→"every tree". Used by the universal direction-from-object clue.
+      case 'objectEvery': {
+        const base = this.lookup(`object.${value}`) ?? String(value)
+        return base
+          .replace(/^einem /, 'jedem ')
+          .replace(/^einer /, 'jeder ')
+          .replace(/^an /, 'every ')
+          .replace(/^a /, 'every ')
+      }
       // `who` resolves "a man/woman" (m_nom/f_nom) and its negated "kein/keine"
       // form (…_neg); `whoNeg` is the same lookup under a second name so a template
       // can show both ("darf keine Frau sein; … ist eine Frau").

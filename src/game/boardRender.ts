@@ -129,7 +129,8 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     return { x: ox + col * S, y: oy + row * S }
   }
 
-  /** Same-room orthogonal neighbours carrying the same object type, for auto-tiling. */
+  /** Same-room neighbours (incl. diagonals) carrying the same object type, for
+   *  auto-tiling — the diagonals let a tile round its inner (concave) L-corners. */
   const connOf = (c: Cell, layer: 'top' | 'ground', type: string): Conn => {
     const { row, col } = board.rc(c)
     const room = board.roomIdOf(c)
@@ -145,6 +146,10 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       s: same(row + 1, col),
       w: same(row, col - 1),
       e: same(row, col + 1),
+      ne: same(row - 1, col + 1),
+      nw: same(row - 1, col - 1),
+      se: same(row + 1, col + 1),
+      sw: same(row + 1, col - 1),
     }
   }
 

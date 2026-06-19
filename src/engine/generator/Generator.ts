@@ -9,7 +9,7 @@ import { difficultyOf } from '../solver/DeductionStep.ts'
 import { startCoverage } from '../solver/coverage.ts'
 import { createClue } from '../clues/ClueFactory.ts'
 import { createBoardClue } from '../clues/boardClues.ts'
-import { VICTIM_ID } from '../model/types.ts'
+import { VICTIM_ID, inDirection8 } from '../model/types.ts'
 import type { AttributeValue, Cell, PersonId, Side } from '../model/types.ts'
 import { OBJECT_CATALOG, type ObjectDef } from '../model/objects.ts'
 import { furnishRooms, kitFor } from './furnishing.ts'
@@ -287,6 +287,7 @@ function breadthPenalty(level: LevelJson): number {
  */
 const HARD_CLUE_TYPES = new Set<string>([
   'direction', // one direction from a person
+  'directionFromAttr', // one direction from someone with a trait
   'besideSameObject', // same object instance as a person / someone with a trait
   'roomExists', // in a room where someone (with a trait) was on/beside an object
   'roomCompanion', // alone with someone who has a trait
@@ -1151,6 +1152,14 @@ function candidatesFor(
         const json: ClueJson = { type: 'directionFromObject', object: def.type, dir, room: 'any' }
         if (!collapsesToLine(json)) out.push(json)
       }
+    } else {
+      // Several tiles → "{dir} of EVERY {object}" (universal): unambiguous and deducible
+      // (the intersection of the per-tile direction sets). The test-filter keeps only
+      // the cardinal that actually holds for the solution.
+      for (const dir of ['north', 'south', 'east', 'west'] as const) {
+        const json: ClueJson = { type: 'directionFromObject', object: def.type, dir, room: 'any', all: true }
+        if (!collapsesToLine(json)) out.push(json)
+      }
     }
     // "beside the SAME object instance as …" — only when the subject is beside one.
     if (board.cellsNearObject(def.type).has(cell)) {
@@ -1235,6 +1244,29 @@ function candidatesFor(
     else if (row > o.row) out.push({ type: 'direction', of: id, dir: 'south' })
     else if (col < o.col) out.push({ type: 'direction', of: id, dir: 'west' })
     else if (col > o.col) out.push({ type: 'direction', of: id, dir: 'east' })
+  }
+
+  // "{dir} of {at least one | every} person with a trait" (victim counts) — offer the
+  // cardinal that holds, for each basic trait. 'some' is forward-deducible via the
+  // relational technique's one-sided bound, 'all' via the stronger two-sided bound; the
+  // candidate filter keeps only those that actually help.
+  const attrDirPairs: { attribute: string; value: AttributeValue }[] = [
+    { attribute: 'gender', value: 'm' },
+    { attribute: 'gender', value: 'f' },
+    { attribute: 'beard', value: true },
+    { attribute: 'glasses', value: true },
+    { attribute: 'bald', value: true },
+  ]
+  for (const { attribute, value } of attrDirPairs) {
+    const matchers = puzzle
+      .allIds()
+      .filter((id) => id !== suspectId && puzzle.attributesOf(id)[attribute] === value)
+    if (matchers.length === 0) continue
+    for (const dir of ['north', 'south', 'east', 'west'] as const) {
+      const inDir = (id: PersonId) => inDirection8(dir, { row, col }, board.rc(solution.cellOf(id)))
+      if (matchers.some(inDir)) out.push({ type: 'directionFromAttr', attribute, value, dir, quantifier: 'some' })
+      if (matchers.every(inDir)) out.push({ type: 'directionFromAttr', attribute, value, dir, quantifier: 'all' })
+    }
   }
 
   // --- room-attribute clues: "no one / some / everyone else in the room had X" ---
@@ -1387,6 +1419,8 @@ function tightness(json: ClueJson, puzzle: Puzzle): number {
       return 90
     case 'direction':
       return 100
+    case 'directionFromAttr':
+      return 110
     default:
       return 60
   }

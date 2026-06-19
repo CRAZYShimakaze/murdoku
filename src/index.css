@@ -2079,6 +2079,22 @@ button {
   font-size: 0.8rem;
   padding: 0.35rem 0.4rem;
 }
+/* Compact number box (offset distance, aloneWith count): a fixed, centred field —
+   without this it inherits `.mk-input { flex: 1 }` and stretches into a big empty bar. */
+.mk-cond__num {
+  flex: 0 0 auto;
+  width: 3.25rem;
+  min-width: 3.25rem;
+  text-align: center;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.85rem;
+}
+/* Inline unit/label between controls ("Felder"), so a lone number isn't cryptic. */
+.mk-cond__unit {
+  font-size: 0.78rem;
+  color: var(--bone-dim);
+  white-space: nowrap;
+}
 .mk-cond__kind {
   font-weight: 600;
 }

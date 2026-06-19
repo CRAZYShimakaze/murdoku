@@ -12,7 +12,13 @@ export {
   CornerClue,
   AtWallClue,
 } from './unaryClues.ts'
-export { DirectionClue, InsideXorClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
+export {
+  DirectionClue,
+  DirectionFromAttrClue,
+  InsideXorClue,
+  OffsetClue,
+  SameRoomClue,
+} from './relationalClues.ts'
 export {
   SameLineAsObjectClue,
   SameRoomAsObjectClue,

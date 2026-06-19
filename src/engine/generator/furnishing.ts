@@ -22,9 +22,12 @@ import { OBJECT_CATALOG } from '../model/objects.ts'
 
 const CHAR_OF: Record<string, string> = {}
 const IS_OCCUPIABLE: Record<string, boolean> = {}
+/** Reverse of CHAR_OF for occupiability — used to keep carpet out from under blockers. */
+const OCC_OF_CHAR: Record<string, boolean> = {}
 for (const o of OBJECT_CATALOG) {
   CHAR_OF[o.type] = o.char
   IS_OCCUPIABLE[o.type] = o.occupiable
+  OCC_OF_CHAR[o.char] = o.occupiable
 }
 
 /** Objects that look natural HEAPED together (a stack of boxes); every other fill item is
@@ -588,8 +591,10 @@ export function furnishRooms(p: FurnishParams): { groundMap: string[]; topMap: s
       else fails++
     }
 
-    // 3) Carpet rug underneath (ground layer) — a connected patch, under furniture and
-    //    people alike (only objects on the TOP layer block a tile).
+    // 3) Carpet rug underneath (ground layer) — a connected patch, under people and
+    //    OCCUPIABLE furniture (seats), but NEVER under a non-occupiable object: its
+    //    "blocked" card would hide the rug. (The BFS still spreads past such cells, so
+    //    the rug simply has a hole there.)
     if (recipe.carpet > 0 && allow.has('carpet')) {
       const target2 = Math.round(recipe.carpet * cells.length)
       const seed = rng.pick(cells)
@@ -598,7 +603,9 @@ export function furnishRooms(p: FurnishParams): { groundMap: string[]; topMap: s
       let laid = 0
       while (queue.length && laid < target2) {
         const cell = queue.shift()!
-        if (at(G, cell) === '.') { put(G, cell, CHAR_OF.carpet); laid++ }
+        const topCh = at(T, cell)
+        const carpetOk = topCh === '.' || OCC_OF_CHAR[topCh] === true
+        if (at(G, cell) === '.' && carpetOk) { put(G, cell, CHAR_OF.carpet); laid++ }
         for (const nb of rng.shuffle(neighbors4(cell))) if (!seen.has(nb) && inRoom(nb)) { seen.add(nb); queue.push(nb) }
       }
     }

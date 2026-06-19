@@ -5,7 +5,7 @@ import type { Clue, Explanation, PersonId } from '../engine/index.ts'
 import InfoTip from './InfoTip.tsx'
 
 /** Params rendered bold (objects/rooms etc. — also shown on the board). */
-const BOLD_PARAMS = new Set(['object', 'objectNom', 'objects', 'room', 'attribute', 'who', 'whoNeg', 'mate', 'mateLc', 'row', 'col', 'n', 'line', 'roomRel', 'target', 'people', 'atCell'])
+const BOLD_PARAMS = new Set(['object', 'objectNom', 'objectEvery', 'objects', 'room', 'attribute', 'who', 'whoNeg', 'mate', 'mateLc', 'row', 'col', 'n', 'line', 'roomRel', 'target', 'people', 'atCell'])
 
 interface Props {
   renderer: Renderer

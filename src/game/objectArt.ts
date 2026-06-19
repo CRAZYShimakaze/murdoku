@@ -9,12 +9,18 @@ import armchairUrl from '../../assets/armchair.png'
 
 type Ctx = CanvasRenderingContext2D
 
-/** Which orthogonal neighbours belong to the same merged group. */
+/** Which neighbours belong to the same merged group. The diagonals are optional;
+ *  when set, they let a tile round its INNER (concave) L-corners — a corner whose two
+ *  orthogonal sides are connected but whose diagonal cell is empty. */
 export interface Conn {
   n: boolean
   e: boolean
   s: boolean
   w: boolean
+  ne?: boolean
+  nw?: boolean
+  se?: boolean
+  sw?: boolean
 }
 
 // Bitmap assets used by the board. Loaded once; canvases call onArtReady() to
@@ -44,7 +50,11 @@ export function onArtReady(cb: () => void): () => void {
  * Path for one cell of a merged surface: flush with connected neighbours (so
  * pieces butt together seamlessly) and inset + rounded on outer edges. `ov`
  * overlaps connected edges slightly to hide anti-alias hairlines (use 0 for
- * translucent fills, which must not double up).
+ * translucent fills, which must not double up). Each corner is one of:
+ *  - CONVEX  (both sides open) — the outer rounded corner;
+ *  - CONCAVE (both sides connected but the diagonal cell empty) — the inner corner
+ *    of an L, rounded INWARD so it closes off smoothly instead of a square nub;
+ *  - SQUARE  (a straight run or a fully-filled block corner).
  */
 function piecePath(
   ctx: Ctx,
@@ -56,16 +66,43 @@ function piecePath(
   r: number,
   ov: number,
 ): void {
-  const left = x + (conn.w ? -ov : inset)
-  const right = x + S - (conn.e ? -ov : inset)
-  const top = y + (conn.n ? -ov : inset)
-  const bottom = y + S - (conn.s ? -ov : inset)
-  const tl = !conn.n && !conn.w ? r : 0
-  const tr = !conn.n && !conn.e ? r : 0
-  const br = !conn.s && !conn.e ? r : 0
-  const bl = !conn.s && !conn.w ? r : 0
+  const L = x + (conn.w ? -ov : inset)
+  const R = x + S - (conn.e ? -ov : inset)
+  const T = y + (conn.n ? -ov : inset)
+  const B = y + S - (conn.s ? -ov : inset)
+  const Q = Math.PI / 2
+  // Concave (inner-L) radius = inset + ov: the arc lands exactly on the NEIGHBOURS' inset
+  // edges, so the L closes flush (no offset). Because each layer uses its OWN inset, a
+  // lower (outline) layer — drawn with a smaller inset — keeps a smaller notch and so
+  // peeks out INSIDE the curve as an inline rim, the width of the inset difference.
+  const ci = inset + ov
+  // 'conv' = outer rounded (radius r), 'conc' = inner (concave) rounded (radius ci), 'sq' = sharp.
+  const kind = (a: boolean, b: boolean, diag?: boolean) =>
+    !a && !b ? 'conv' : a && b && diag === false ? 'conc' : 'sq'
+  const tl = kind(conn.n, conn.w, conn.nw)
+  const tr = kind(conn.n, conn.e, conn.ne)
+  const br = kind(conn.s, conn.e, conn.se)
+  const bl = kind(conn.s, conn.w, conn.sw)
+  const rad = (k: string) => (k === 'conv' ? r : k === 'conc' ? ci : 0)
   ctx.beginPath()
-  ctx.roundRect(left, top, right - left, bottom - top, [tl, tr, br, bl])
+  ctx.moveTo(L + rad(tl), T)
+  ctx.lineTo(R - rad(tr), T)
+  if (tr === 'conv') ctx.arc(R - r, T + r, r, -Q, 0, false)
+  else if (tr === 'conc') ctx.arc(R, T, ci, Math.PI, Q, true)
+  else ctx.lineTo(R, T)
+  ctx.lineTo(R, B - rad(br))
+  if (br === 'conv') ctx.arc(R - r, B - r, r, 0, Q, false)
+  else if (br === 'conc') ctx.arc(R, B, ci, 3 * Q, Math.PI, true)
+  else ctx.lineTo(R, B)
+  ctx.lineTo(L + rad(bl), B)
+  if (bl === 'conv') ctx.arc(L + r, B - r, r, Q, Math.PI, false)
+  else if (bl === 'conc') ctx.arc(L, B, ci, 0, -Q, true)
+  else ctx.lineTo(L, B)
+  ctx.lineTo(L, T + rad(tl))
+  if (tl === 'conv') ctx.arc(L + r, T + r, r, Math.PI, 3 * Q, false)
+  else if (tl === 'conc') ctx.arc(L, T, ci, Q, 0, true)
+  else ctx.lineTo(L, T)
+  ctx.closePath()
 }
 
 /** One cell of a wooden table surface (auto-tiled). Inset a touch more than the cell so a
@@ -132,7 +169,8 @@ export function drawCarpetTile(ctx: Ctx, x: number, y: number, S: number, conn: 
   ctx.fillStyle = 'rgba(170, 108, 76, 0.55)'
   piecePath(ctx, x, y, S, conn, pad, S * 0.12, 0)
   ctx.fill()
-  // a lighter inner field, also merged, for a woven border
+  // a lighter inner field, also merged, for a woven border (its larger inset makes the
+  // darker field above line the diagonal notch as an inline, just like the outer edges)
   ctx.fillStyle = 'rgba(216, 170, 134, 0.45)'
   piecePath(ctx, x, y, S, conn, pad + S * 0.06, S * 0.09, 0)
   ctx.fill()

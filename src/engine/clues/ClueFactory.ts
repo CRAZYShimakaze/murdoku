@@ -12,7 +12,13 @@ import {
   OnObjectClue,
   OutsideClue,
 } from './unaryClues.ts'
-import { DirectionClue, InsideXorClue, OffsetClue, SameRoomClue } from './relationalClues.ts'
+import {
+  DirectionClue,
+  DirectionFromAttrClue,
+  InsideXorClue,
+  OffsetClue,
+  SameRoomClue,
+} from './relationalClues.ts'
 import {
   BesideSameObjectClue,
   DirectionFromObjectClue,
@@ -77,12 +83,13 @@ export type ClueJson =
       excludeSelf?: boolean
     }
   | { type: 'direction'; of: PersonId; dir: Direction8 }
+  | { type: 'directionFromAttr'; attribute: string; value: AttributeValue; dir: Direction8; quantifier?: 'some' | 'all' }
   | { type: 'insideXor'; with: PersonId }
   | { type: 'offset'; of: PersonId; dir: Direction; distance: number }
   | { type: 'sameRoom'; as: PersonId; alone?: boolean }
   | { type: 'sameLineAsObject'; object: string; line: LineKind; room: RoomRel }
-  /** `at` (cell index) anchors the clue to ONE object tile; omitted = any of the type. */
-  | { type: 'directionFromObject'; object: string; dir: Direction8; room: RoomRel; at?: number }
+  /** `at` (cell index) anchors to ONE tile; `all` = every tile (∀); else any (∃). */
+  | { type: 'directionFromObject'; object: string; dir: Direction8; room: RoomRel; at?: number; all?: boolean }
   | { type: 'sameRoomAsObject'; object: string; alone?: boolean }
   | { type: 'besideSameObject'; object: string; mate: ObjectMate; dir?: Direction8 }
   | { type: 'roomCompanion'; count: number; attribute: string; value: AttributeValue }
@@ -161,6 +168,8 @@ export function createClue(json: ClueJson): Clue {
       )
     case 'direction':
       return new DirectionClue(json.of, json.dir)
+    case 'directionFromAttr':
+      return new DirectionFromAttrClue(json.attribute, json.value, json.dir, json.quantifier ?? 'some')
     case 'offset':
       return new OffsetClue(json.of, json.dir, json.distance)
     case 'sameRoom':
@@ -168,7 +177,7 @@ export function createClue(json: ClueJson): Clue {
     case 'sameLineAsObject':
       return new SameLineAsObjectClue(json.object, json.line, json.room)
     case 'directionFromObject':
-      return new DirectionFromObjectClue(json.object, json.dir, json.room, json.at ?? null)
+      return new DirectionFromObjectClue(json.object, json.dir, json.room, json.at ?? null, json.all ?? false)
     case 'sameRoomAsObject':
       return new SameRoomAsObjectClue(json.object, json.alone ?? false)
     case 'besideSameObject':

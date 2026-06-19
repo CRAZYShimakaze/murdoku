@@ -138,16 +138,19 @@ export class SameRoomAsObjectClue extends UnaryClue {
   }
 }
 
-/** "{name} was {dir} of a {object}" (optionally same/other room). With `at`, the
- *  clue is anchored to the object TILE at that cell ("east of the tree at Z7/S6") —
- *  unambiguous when several objects of the type exist. Without it, ANY object of
- *  the type counts (legacy/existential reading, kept for older levels). */
+/** "{name} was {dir} of a {object}" (optionally same/other room). Three readings of
+ *  WHICH object tile (when several of the type exist):
+ *   - `at` set → anchored to that ONE tile ("east of the tree at Z7/S6");
+ *   - `all` (and no `at`) → {dir} of EVERY such tile ("north of every tree" — the
+ *     INTERSECTION of the per-tile direction sets);
+ *   - otherwise → existential, {dir} of AT LEAST ONE (the union; the default/legacy). */
 export class DirectionFromObjectClue extends UnaryClue {
   constructor(
     readonly object: string,
     readonly direction: Direction8,
     readonly room: RoomRel,
     readonly at: Cell | null = null,
+    readonly all = false,
   ) {
     super()
   }
@@ -156,21 +159,30 @@ export class DirectionFromObjectClue extends UnaryClue {
     const objs = objectsOf(board, this.object).filter(
       (o) => this.at === null || board.idx(o.row, o.col) === this.at,
     )
+    const ok = (s: { row: number; col: number }, sRoom: string, o: { row: number; col: number; room: string }) =>
+      inDirection8(this.direction, s, o) && roomRelOk(this.room, o.room === sRoom)
+    // 'all' (universal) only when unanchored — a single anchored tile is its own answer.
+    const universal = this.all && this.at === null && objs.length > 0
     const out = new Set<Cell>()
     for (const cell of board.occupiableCells()) {
       const s = board.rc(cell)
       const sRoom = board.roomIdOf(cell)
-      for (const o of objs) {
-        if (inDirection8(this.direction, s, o) && roomRelOk(this.room, o.room === sRoom)) {
-          out.add(cell)
-          break
-        }
+      if (universal ? objs.every((o) => ok(s, sRoom, o)) : objs.some((o) => ok(s, sRoom, o))) {
+        out.add(cell)
       }
     }
     return out
   }
 
   describe(): Explanation {
+    // Universal → "von jedem Baum" (objectEvery). Otherwise the existing template:
+    // "von einem Baum" plus the (Z7/S6) anchor coordinate only when anchored.
+    if (this.at === null && this.all) {
+      return {
+        key: 'clue.directionFromObjectAll',
+        params: { objectEvery: this.object, direction: this.direction, roomRel: this.room },
+      }
+    }
     return {
       key: 'clue.directionFromObject',
       // atCell: "<type>:<cell>" — the Renderer shows the coordinate only when the
