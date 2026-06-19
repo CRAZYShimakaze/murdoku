@@ -40,9 +40,9 @@ const ITEM_CAP: Record<string, number> = { lamp: 1, tv: 1, plant: 3, statue: 4 }
 /** Room kinds the furnisher knows. Many room nameKeys map to the same archetype. */
 type Archetype =
   | 'bath' | 'laundry' | 'kitchen' | 'bedroom' | 'cell' | 'living' | 'dining'
-  | 'office' | 'library' | 'auditorium' | 'storage' | 'lockerroom'
+  | 'office' | 'library' | 'auditorium' | 'storage' | 'lockerroom' | 'music'
   | 'shopAisle' | 'shopChilled' | 'checkout' | 'workshop' | 'parking' | 'gym'
-  | 'greenhouse' | 'garden' | 'pasture'
+  | 'greenhouse' | 'garden' | 'pasture' | 'forest' | 'camp' | 'lake'
   | 'animalCow' | 'animalPig' | 'animalHen' | 'animalStable'
   | 'gallery' | 'genericIndoor' | 'genericOutdoor'
 
@@ -85,8 +85,8 @@ const it = (type: string, w = 1): FillBlock => ({ kind: 'item', type, w })
 // + one fridge; bedroom = beds + a nightstand; storage/shop = shelf racks.
 const RECIPES: Record<Archetype, Recipe> = {
   bath: {
-    features: [ft('toilet', 'single', 1, 1), ft('washingmachine', 'single', 0, 1)],
-    fill: [rk('shelf', 1, 2, 2), it('plant', 2), it('washingmachine', 1), it('trash', 1), set('table', 1, 1, 1, 1), it('chair', 1)],
+    features: [ft('toilet', 'single', 1, 1), ft('shower', 'single', 0, 1), ft('washingmachine', 'single', 0, 1)],
+    fill: [it('shower', 2), rk('shelf', 1, 2, 2), it('plant', 2), it('washingmachine', 1), it('trash', 1), set('table', 1, 1, 1, 1), it('chair', 1)],
     targetFill: 0.34, carpet: 0.18,
   },
   laundry: {
@@ -111,8 +111,13 @@ const RECIPES: Record<Archetype, Recipe> = {
   },
   living: {
     features: [ft('tv', 'single', 1, 1), ft('lamp', 'single', 0, 1)],
-    fill: [set('table', 1, 2, 4, 3), it('shelf', 2), it('plant', 2), it('chair', 1)],
+    fill: [set('table', 1, 2, 4, 3), it('shelf', 2), it('plant', 2), it('chair', 1), it('piano', 1)],
     targetFill: 0.42, carpet: 0.16,
+  },
+  music: {
+    features: [ft('piano', 'single', 1, 1), ft('lamp', 'single', 0, 1)],
+    fill: [rk('chair', 2, 4, 4), set('table', 1, 1, 2, 1), it('shelf', 1), it('plant', 2), it('chair', 1)],
+    targetFill: 0.4, carpet: 0.16,
   },
   dining: {
     features: [],
@@ -189,6 +194,22 @@ const RECIPES: Record<Archetype, Recipe> = {
     fill: [cl('cow', 2, 3, 2), it('tree', 2), it('shrub', 2), it('mud', 2), it('boulder', 1)],
     targetFill: 0.3, carpet: 0,
   },
+  // --- camping / wilderness (bear lives ONLY here → "Bär nur draußen") ---
+  forest: {
+    features: [ft('tree', 'cluster', 2, 4)],
+    fill: [cl('tree', 2, 4, 4), cl('shrub', 2, 4, 3), it('boulder', 2), it('mud', 1), it('rubble', 1), it('bear', 1)],
+    targetFill: 0.34, carpet: 0,
+  },
+  camp: {
+    features: [ft('tree', 'single', 1, 2)],
+    fill: [set('table', 1, 1, 4, 2), it('chair', 1), it('crate', 2), it('box', 1), it('trash', 1), cl('shrub', 1, 3, 2), it('mud', 1), it('bear', 1)],
+    targetFill: 0.34, carpet: 0,
+  },
+  lake: {
+    features: [ft('boulder', 'cluster', 1, 2)],
+    fill: [it('boulder', 2), cl('shrub', 2, 4, 3), it('tree', 1), it('mud', 2), it('rubble', 1), it('bear', 1)],
+    targetFill: 0.26, carpet: 0,
+  },
   animalCow: { features: [ft('cow', 'cluster', 3, 5)], fill: [it('cow', 3), it('crate', 2), it('mud', 2), it('shrub', 1)], targetFill: 0.44, carpet: 0 },
   animalPig: { features: [ft('pig', 'cluster', 3, 5)], fill: [it('pig', 3), it('crate', 2), it('mud', 2)], targetFill: 0.42, carpet: 0 },
   animalHen: { features: [ft('chicken', 'cluster', 4, 6)], fill: [it('chicken', 3), it('crate', 2), it('shrub', 1)], targetFill: 0.44, carpet: 0 },
@@ -222,7 +243,7 @@ const ARCHETYPE_OF: Record<string, Archetype> = {
   living: 'living', lounge: 'living', salon: 'living', commonroom: 'living', lobby: 'living', foyer: 'living',
   vestibule: 'living', firesideroom: 'living', breakroom: 'living', staffroom: 'living', waiting: 'living', waitingroom: 'living',
   reception: 'living', receptionarea: 'living', frontdesk: 'living', conservatory: 'living', smokingroom: 'living',
-  musicroom: 'living', musichall: 'living', gameroom: 'living', ballroom: 'living', farmhouse: 'living',
+  musicroom: 'music', musichall: 'music', gameroom: 'living', ballroom: 'living', farmhouse: 'living',
   dining: 'dining', dininghall: 'dining', restaurant: 'dining', canteen: 'dining', cafeteria: 'dining',
   breakfastroom: 'dining', cafe: 'dining', bar: 'dining',
   office: 'office', study: 'office', openoffice: 'office', bossoffice: 'office', chiefoffice: 'office', meeting: 'office',
@@ -250,6 +271,11 @@ const ARCHETYPE_OF: Record<string, Archetype> = {
   pasture: 'pasture',
   cowshed: 'animalCow', pigsty: 'animalPig', henhouse: 'animalHen', stable: 'animalStable',
   maingallery: 'gallery', exposition: 'gallery', gallery: 'gallery', specialexhibit: 'gallery', entrancehall: 'gallery',
+  // camping / wilderness
+  forest: 'forest', clearing: 'forest',
+  lake: 'lake', jetty: 'lake',
+  campsite1: 'camp', campsite2: 'camp', campfire: 'camp', picnicarea: 'camp',
+  playground: 'garden', kiosk: 'shopAisle', cabin: 'bedroom', showers: 'bath',
 }
 
 /** Keyword fallback for room keys not in the explicit map (future themes). */

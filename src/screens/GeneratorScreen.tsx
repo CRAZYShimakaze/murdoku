@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import SettingsButton from '../components/SettingsButton.tsx'
+import BloodText from '../components/BloodText.tsx'
+import BloodSplatter from '../components/BloodSplatter.tsx'
 import { generateLevelAsync, type GenHandle } from '../game/generatorClient.ts'
 import { levelMetaFromJson, type LevelMeta } from '../game/levels.ts'
 import { loadGenSettings, saveGenSettings } from '../game/storage.ts'
@@ -143,7 +145,10 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
             ←
           </button>
           <h1>
-            {t('generate.title')}
+            <span className="mk-titleblood">
+              <BloodSplatter className="mk-titleblood__splatter" />
+              <BloodText text={t('generate.title')} />
+            </span>
             <small>{t('generate.subtitle')}</small>
           </h1>
           <SettingsButton />

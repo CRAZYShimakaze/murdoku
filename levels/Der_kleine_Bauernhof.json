@@ -1,0 +1,338 @@
+{
+  "schema": 1,
+  "id": "editor-der-kleine-bauernhof",
+  "title": "Der kleine Bauernhof",
+  "size": {
+    "width": 6,
+    "height": 6
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.pasture",
+      "color": "#e8d8b0",
+      "outside": true
+    },
+    "2": {
+      "nameKey": "room.yard",
+      "color": "#b9d0e6",
+      "outside": true
+    },
+    "3": {
+      "nameKey": "room.garden",
+      "color": "#cfe0cf",
+      "outside": true
+    },
+    "4": {
+      "nameKey": "room.shed",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.farmhouse",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.cowshed",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.pigsty",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.barn",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.henhouse",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.stable",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.greenhouse",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.pantry",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.dairy",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.field",
+      "color": "#a8e0d0",
+      "outside": true
+    },
+    "F": {
+      "nameKey": "room.pond",
+      "color": "#ded0e6",
+      "outside": true
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "111333",
+    "111133",
+    "991444",
+    "997444",
+    "977744",
+    "977744"
+  ],
+  "groundMap": [
+    "......",
+    "......",
+    "......",
+    "......",
+    "......",
+    "......"
+  ],
+  "topMap": [
+    "km.a.a",
+    "..k...",
+    ".Hm..n",
+    "m..nm.",
+    "H.mi.z",
+    "..i..."
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "ponytailRight",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "chicken"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "braids",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "onObject",
+              "object": "mud"
+            },
+            {
+              "type": "sameRoomAsObject",
+              "object": "cow",
+              "alone": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "sameRoomAsObject",
+          "object": "pig",
+          "alone": true
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "updo",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "rubble"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "manbun",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "tree"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vidal",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "medium"
+}

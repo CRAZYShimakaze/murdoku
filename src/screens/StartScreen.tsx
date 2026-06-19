@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import LanguageToggle from '../components/LanguageToggle.tsx'
 import BloodText from '../components/BloodText.tsx'
+import BloodSplatter from '../components/BloodSplatter.tsx'
 
 /* Hand-inked, line-art case-file icons (no emoji): brass strokes via currentColor,
  * crimson accents (threads / pins / fresh stamp) via the .mk-ic-red* classes. */
@@ -103,31 +104,7 @@ export default function StartScreen({
             </p>
           </div>
           <p className="mk-start__tag">
-            {/* flicked-blood splatter behind the line — denser by the smeared M, with a
-                fine trail toward the right (decorative, sits behind the text) */}
-            <svg
-              className="mk-start__splatter"
-              viewBox="0 0 240 60"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <circle className="deep" cx="70" cy="31" r="7.5" opacity="0.78" />
-              <circle className="deep" cx="96" cy="35" r="4.6" opacity="0.7" />
-              <circle cx="84" cy="24" r="4.4" opacity="0.8" />
-              <circle cx="58" cy="41" r="3.4" opacity="0.72" />
-              <circle cx="108" cy="27" r="3" opacity="0.66" />
-              <circle cx="49" cy="21" r="2.5" opacity="0.66" />
-              <circle cx="34" cy="38" r="1.7" opacity="0.55" />
-              <circle cx="124" cy="23" r="3.1" opacity="0.66" />
-              <circle cx="144" cy="17" r="2.4" opacity="0.58" />
-              <circle cx="164" cy="13" r="1.9" opacity="0.5" />
-              <circle cx="184" cy="10" r="1.4" opacity="0.44" />
-              <circle cx="204" cy="8" r="1" opacity="0.38" />
-              <circle cx="118" cy="43" r="2.1" opacity="0.55" />
-              <circle cx="208" cy="40" r="2.3" opacity="0.5" />
-              <ellipse cx="156" cy="16" rx="4.6" ry="1.3" transform="rotate(-22 156 16)" opacity="0.5" />
-              <ellipse cx="118" cy="34" rx="5" ry="1.4" transform="rotate(8 118 34)" opacity="0.5" />
-            </svg>
+            <BloodSplatter className="mk-start__splatter" />
             <BloodText text={t('app.subtitle')} />
           </p>
           <div className="mk-start__cta">

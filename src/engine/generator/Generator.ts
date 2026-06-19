@@ -117,6 +117,11 @@ const THEMES: Theme[] = [
     rooms: ['room.evidenceroom', 'room.openoffice', 'room.receptionarea', 'room.chiefoffice', 'room.interrogation', 'room.cell1', 'room.cell2', 'room.armory', 'room.forensics', 'room.dispatch', 'room.lockerroom', 'room.breakroom', 'room.archive', 'room.briefing', 'room.garage'],
     outdoor: ['room.garage'],
   },
+  {
+    id: 'camping',
+    rooms: ['room.forest', 'room.clearing', 'room.lake', 'room.campsite1', 'room.campsite2', 'room.campfire', 'room.picnicarea', 'room.jetty', 'room.playground', 'room.parking', 'room.restroom', 'room.showers', 'room.kiosk', 'room.reception', 'room.cabin'],
+    outdoor: ['room.forest', 'room.clearing', 'room.lake', 'room.campsite1', 'room.campsite2', 'room.campfire', 'room.picnicarea', 'room.jetty', 'room.playground', 'room.parking'],
+  },
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
 
@@ -1058,9 +1063,18 @@ function buildLevel(
   victim: { name: string; attributes: Record<string, AttributeValue> },
   seedIndex: number,
 ): LevelJson {
-  const roomDefs: Record<string, { nameKey: string; color: string }> = {}
+  const roomDefs: Record<string, { nameKey: string; color: string; outside?: boolean }> = {}
+  const outdoorKeys = new Set(theme.outdoor)
   rooms.ids.forEach((id, i) => {
-    roomDefs[id] = { nameKey: roomNameById.get(id)!, color: ROOM_COLORS[i % ROOM_COLORS.length] }
+    const nameKey = roomNameById.get(id)!
+    roomDefs[id] = {
+      nameKey,
+      color: ROOM_COLORS[i % ROOM_COLORS.length],
+      // Flag the theme's outdoor rooms as `outside` so they read as exterior and
+      // enable inside/outside clues (previously omitted, so generated outdoor rooms
+      // never counted as "outside"). The bear lives only in these wilderness rooms.
+      ...(outdoorKeys.has(nameKey) ? { outside: true } : {}),
+    }
   })
   const objectDefs: Record<string, { type: string; occupiable: boolean }> = {}
   for (const obj of ALL_OBJECTS) objectDefs[obj.char] = { type: obj.type, occupiable: obj.occupiable }

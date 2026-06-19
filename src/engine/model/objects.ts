@@ -5,7 +5,7 @@
  * tile (`occupiable`), and which layer it sits on:
  *   - 'ground': drawn beneath people (carpet) — a person can share the tile;
  *   - 'top':    the tile's object (chair, table, …); occupiable ones (chair/bed/
- *               car/horse/mud/oil/toilet) let a person sit on them, the rest block the tile.
+ *               car/horse/mud/oil/toilet/shower) let a person stand on them, the rest block.
  */
 export interface ObjectDef {
   char: string
@@ -24,6 +24,7 @@ export const OBJECT_CATALOG: ObjectDef[] = [
   { char: 's', type: 'chair', occupiable: true, layer: 'top' },
   { char: 'b', type: 'bed', occupiable: true, layer: 'top' },
   { char: 'T', type: 'toilet', occupiable: true, layer: 'top' },
+  { char: 'S', type: 'shower', occupiable: true, layer: 'top' },
   { char: 'c', type: 'car', occupiable: true, layer: 'top' },
   { char: 'h', type: 'horse', occupiable: true, layer: 'top' },
   { char: 'm', type: 'mud', occupiable: true, layer: 'top' },
@@ -37,6 +38,7 @@ export const OBJECT_CATALOG: ObjectDef[] = [
   { char: 'W', type: 'washingmachine', occupiable: false, layer: 'top' },
   { char: 'F', type: 'fridge', occupiable: false, layer: 'top' },
   { char: 'L', type: 'lamp', occupiable: false, layer: 'top' },
+  { char: 'P', type: 'piano', occupiable: false, layer: 'top' },
   // --- blocking: containers ---
   { char: 'x', type: 'box', occupiable: false, layer: 'top' },
   { char: 'n', type: 'crate', occupiable: false, layer: 'top' },
@@ -54,6 +56,7 @@ export const OBJECT_CATALOG: ObjectDef[] = [
   { char: 'k', type: 'cow', occupiable: false, layer: 'top' },
   { char: 'i', type: 'pig', occupiable: false, layer: 'top' },
   { char: 'H', type: 'chicken', occupiable: false, layer: 'top' },
+  { char: 'B', type: 'bear', occupiable: false, layer: 'top' },
   // --- blocking: outdoor / decor ---
   { char: 'y', type: 'statue', occupiable: false, layer: 'top' },
   { char: 'o', type: 'boulder', occupiable: false, layer: 'top' },

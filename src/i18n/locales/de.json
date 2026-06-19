@@ -346,7 +346,8 @@
     "restaurant": "Restaurant",
     "farm": "Bauernhof",
     "supermarkt": "Supermarkt",
-    "police-station": "Polizeistation"
+    "police-station": "Polizeistation",
+    "camping": "Campingplatz"
   },
   "select": {
     "title": "Die Akten",
@@ -467,7 +468,10 @@
     "washingmachine": "einer Waschmaschine",
     "fridge": "einem Kühlschrank",
     "chicken": "einem Huhn",
-    "lamp": "einer Lampe"
+    "lamp": "einer Lampe",
+    "piano": "einem Klavier",
+    "bear": "einem Bären",
+    "shower": "einer Dusche"
   },
   "objectNom": {
     "table": "ein Tisch",
@@ -502,7 +506,10 @@
     "washingmachine": "eine Waschmaschine",
     "fridge": "ein Kühlschrank",
     "chicken": "ein Huhn",
-    "lamp": "eine Lampe"
+    "lamp": "eine Lampe",
+    "piano": "ein Klavier",
+    "bear": "ein Bär",
+    "shower": "eine Dusche"
   },
   "objectSame": {
     "table": "demselben Tisch",
@@ -537,7 +544,10 @@
     "washingmachine": "derselben Waschmaschine",
     "fridge": "demselben Kühlschrank",
     "chicken": "demselben Huhn",
-    "lamp": "derselben Lampe"
+    "lamp": "derselben Lampe",
+    "piano": "demselben Klavier",
+    "bear": "demselben Bären",
+    "shower": "derselben Dusche"
   },
   "objName": {
     "floor": "Boden",
@@ -574,7 +584,10 @@
     "washingmachine": "Waschmaschine",
     "fridge": "Kühlschrank",
     "chicken": "Huhn",
-    "lamp": "Lampe"
+    "lamp": "Lampe",
+    "piano": "Klavier",
+    "bear": "Bär",
+    "shower": "Dusche"
   },
   "legend": {
     "title": "Legende",
@@ -735,6 +748,18 @@
     "dairy": "Milchkammer",
     "field": "Feld",
     "pond": "Teich",
+    "forest": "Wald",
+    "clearing": "Lichtung",
+    "lake": "See",
+    "campsite1": "Campingplatz 1",
+    "campsite2": "Campingplatz 2",
+    "campfire": "Lagerfeuerplatz",
+    "picnicarea": "Picknickplatz",
+    "jetty": "Bootssteg",
+    "playground": "Spielplatz",
+    "showers": "Duschen",
+    "kiosk": "Kiosk",
+    "cabin": "Hütte",
     "bathroom": "Badezimmer",
     "guestroom": "Gästezimmer",
     "hallway": "Flur",

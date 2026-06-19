@@ -791,15 +791,71 @@ button {
   gap: 0.22rem;
   padding: 0.85rem 0 0.8rem;
 }
+/* Case-file label wrapper: holds the blood splatter BEHIND the title (the title keeps
+   its own line-clamp box, which can't host an absolute child). */
+.mk-card__titlewrap {
+  position: relative;
+  isolation: isolate;
+}
+.mk-card__splatter {
+  position: absolute;
+  left: -0.25rem;
+  top: 50%;
+  width: 12rem;
+  max-width: 116%;
+  height: 2.7rem;
+  transform: translateY(-50%) rotate(-1.5deg);
+  z-index: -1;
+  opacity: 0.55;
+  pointer-events: none;
+}
 .mk-card__title {
+  position: relative;
+  z-index: 1;
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.04rem;
-  line-height: 1.18;
+  font-weight: 800;
+  font-size: 1.06rem;
+  line-height: 1.16;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+/* Shared blood-splatter colours (used on the start screen + the level cards). */
+.mk-splatter {
+  fill: var(--crimson);
+}
+.mk-splatter .deep {
+  fill: var(--crimson-deep);
+}
+/* Topbar screen titles (level select + generator) get the same flourish as the
+   cards: a splatter behind, the first letter smeared. Opt-in class so the editor
+   and game topbars stay clean. */
+.mk-titleblood {
+  position: relative;
+  isolation: isolate;
+  display: inline-block;
+}
+.mk-titleblood__splatter {
+  position: absolute;
+  left: -0.45rem;
+  top: 50%;
+  width: calc(100% + 1.1rem);
+  min-width: 9rem;
+  height: 3rem;
+  transform: translateY(-52%) rotate(-1.5deg);
+  z-index: -1;
+  opacity: 0.5;
+  pointer-events: none;
+}
+/* This title font is large — let the drip start at the baseline and run well below
+   the glyph so it clearly reads as dripping down (not a mark mid-letter). */
+.mk-titleblood .mk-bloodletter::after {
+  top: 0.92em;
+  height: 0.62em;
+  width: 0.09em;
 }
 /* keep long titles clear of the "custom" badge in the top-right corner */
 .mk-card:has(.mk-custom) .mk-card__title {

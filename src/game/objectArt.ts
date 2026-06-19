@@ -739,6 +739,221 @@ export function drawFloorLamp(ctx: Ctx, x: number, y: number, S: number): void {
   ctx.restore()
 }
 
+/**
+ * An upright piano (blocking) seen slightly from above: dark walnut body, a lighter
+ * lid surface on top, and a black-and-white keyboard (the 2+3 black-key grouping) across
+ * the front. Same framed idiom (card + 82% shrink) as the other furniture.
+ */
+export function drawPiano(ctx: Ctx, x: number, y: number, S: number): void {
+  ctx.save()
+  ctx.translate(x + S / 2, y + S / 2)
+  ctx.scale(0.82, 0.82)
+  ctx.translate(-(x + S / 2), -(y + S / 2))
+  const dark = '#241a12'
+  const left = x + S * 0.13
+  const top = y + S * 0.13
+  const w = S - 2 * (S * 0.13)
+  const h = S - 2 * (S * 0.13)
+
+  // body
+  ctx.fillStyle = '#5a3c28'
+  ctx.strokeStyle = dark
+  ctx.lineWidth = Math.max(1.4, S * 0.05)
+  ctx.beginPath()
+  ctx.roundRect(left, top, w, h, S * 0.06)
+  ctx.fill()
+  ctx.stroke()
+
+  // lid: a lighter band along the top (the top surface, seen from above)
+  ctx.fillStyle = '#6e4c33'
+  ctx.beginPath()
+  ctx.roundRect(left, top, w, h * 0.3, [S * 0.06, S * 0.06, S * 0.02, S * 0.02])
+  ctx.fill()
+  ctx.stroke()
+
+  // keyboard across the front
+  const kbX = left + w * 0.07
+  const kbW = w * 0.86
+  const kbY = top + h * 0.55
+  const kbH = h * 0.34
+  ctx.fillStyle = '#f3ecde'
+  ctx.beginPath()
+  ctx.roundRect(kbX, kbY, kbW, kbH, S * 0.02)
+  ctx.fill()
+  ctx.stroke()
+  // white-key separators
+  ctx.strokeStyle = '#9a8f7c'
+  ctx.lineWidth = Math.max(0.6, S * 0.012)
+  const keys = 7
+  for (let i = 1; i < keys; i++) {
+    const kx = kbX + (kbW * i) / keys
+    ctx.beginPath()
+    ctx.moveTo(kx, kbY + kbH * 0.18)
+    ctx.lineTo(kx, kbY + kbH)
+    ctx.stroke()
+  }
+  // black keys in the iconic 2 + 3 grouping
+  ctx.fillStyle = '#1c1822'
+  const bw = (kbW / keys) * 0.52
+  for (const p of [1, 2, 4, 5, 6]) {
+    ctx.beginPath()
+    ctx.roundRect(kbX + (kbW * p) / keys - bw / 2, kbY + kbH * 0.04, bw, kbH * 0.55, bw * 0.2)
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
+/**
+ * A bear (blocking, outdoors) in SIDE PROFILE, facing left — chunky and round: a bulky
+ * body, a BIG round head, a SHORT blunt muzzle, four thick legs, eye + nose. The two round
+ * ears are drawn BEFORE the head, so the head overlaps their base and they peek out cleanly
+ * behind its top. Sits on the white card like the trees/boulders.
+ */
+export function drawBear(ctx: Ctx, x: number, y: number, S: number): void {
+  ctx.save()
+  ctx.translate(x + S / 2, y + S / 2)
+  ctx.scale(0.96, 0.96)
+  ctx.translate(-(x + S / 2), -(y + S / 2))
+  const fur = '#6b4423'
+  const furDark = '#2c1c10'
+  const groundY = y + S * 0.85
+  ctx.strokeStyle = furDark
+  ctx.lineWidth = Math.max(1.2, S * 0.035)
+  ctx.lineJoin = 'round'
+
+  // far legs (behind, darker)
+  ctx.fillStyle = '#4a2f18'
+  for (const lx of [0.42, 0.68]) {
+    ctx.beginPath()
+    ctx.roundRect(x + S * lx, y + S * 0.66, S * 0.12, groundY - (y + S * 0.66), S * 0.05)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // chunky body
+  ctx.fillStyle = fur
+  ctx.beginPath()
+  ctx.ellipse(x + S * 0.58, y + S * 0.56, S * 0.28, S * 0.25, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // near legs (front)
+  for (const lx of [0.34, 0.6]) {
+    ctx.beginPath()
+    ctx.roundRect(x + S * lx, y + S * 0.66, S * 0.13, groundY - (y + S * 0.66), S * 0.055)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // EARS FIRST — drawn before the head, so the head then overlaps their base and they
+  // peek out behind its top (no floating circles, no donut).
+  ctx.fillStyle = fur
+  for (const [ex, ey] of [[0.2, 0.29], [0.46, 0.29]] as const) {
+    ctx.beginPath()
+    ctx.arc(x + S * ex, y + S * ey, S * 0.078, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // BIG round head, drawn AFTER the ears (covers their base) — overlaps the body, no neck
+  ctx.beginPath()
+  ctx.arc(x + S * 0.33, y + S * 0.45, S * 0.21, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // small inner ears on the parts that peek out
+  ctx.fillStyle = '#9c7850'
+  for (const [ex, ey] of [[0.18, 0.27], [0.48, 0.27]] as const) {
+    ctx.beginPath()
+    ctx.arc(x + S * ex, y + S * ey, S * 0.028, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // SHORT blunt muzzle (lighter), at the lower front of the head
+  ctx.fillStyle = '#a07a52'
+  ctx.beginPath()
+  ctx.ellipse(x + S * 0.17, y + S * 0.52, S * 0.1, S * 0.085, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // nose at the muzzle tip + eye
+  ctx.fillStyle = '#15100b'
+  ctx.beginPath()
+  ctx.ellipse(x + S * 0.1, y + S * 0.51, S * 0.04, S * 0.034, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(x + S * 0.31, y + S * 0.4, S * 0.022, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+}
+
+/**
+ * A shower (occupiable) seen slightly from above: a tiled tray with a drain, and a WIDE
+ * shower head on a pipe coming down the back wall, throwing a fan of water streams over
+ * the tray. The head + spray are what make it read as a shower. No card (a person stands
+ * on it).
+ */
+export function drawShower(ctx: Ctx, x: number, y: number, S: number): void {
+  ctx.save()
+  const pad = S * 0.1
+  const left = x + pad
+  const top = y + pad
+  const w = S - 2 * pad
+  const h = S - 2 * pad
+  // tiled tray
+  ctx.fillStyle = '#cfe0e8'
+  ctx.strokeStyle = '#7e98a0'
+  ctx.lineWidth = Math.max(1, S * 0.03)
+  ctx.beginPath()
+  ctx.roundRect(left, top, w, h, S * 0.08)
+  ctx.fill()
+  ctx.stroke()
+  // tile grout (2×2)
+  ctx.strokeStyle = 'rgba(126, 152, 160, 0.45)'
+  ctx.lineWidth = Math.max(0.6, S * 0.012)
+  ctx.beginPath()
+  ctx.moveTo(left + w / 2, top)
+  ctx.lineTo(left + w / 2, top + h)
+  ctx.moveTo(left, top + h / 2)
+  ctx.lineTo(left + w, top + h / 2)
+  ctx.stroke()
+  // drain in the lower tray
+  ctx.fillStyle = '#8b9aa0'
+  ctx.strokeStyle = '#5a6b72'
+  ctx.lineWidth = Math.max(0.8, S * 0.018)
+  ctx.beginPath()
+  ctx.arc(x + S / 2, y + S * 0.76, S * 0.05, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // pipe down the back wall to the head
+  const headY = y + S * 0.27
+  ctx.strokeStyle = '#8a949b'
+  ctx.lineWidth = Math.max(2, S * 0.045)
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(x + S / 2, top + S * 0.01)
+  ctx.lineTo(x + S / 2, headY)
+  ctx.stroke()
+  // wide shower head with nozzle holes
+  ctx.fillStyle = '#aab4ba'
+  ctx.strokeStyle = '#5a6b72'
+  ctx.lineWidth = Math.max(1, S * 0.025)
+  ctx.beginPath()
+  ctx.ellipse(x + S / 2, headY, S * 0.17, S * 0.065, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#5a6b72'
+  for (const dx of [-0.11, -0.055, 0, 0.055, 0.11]) {
+    ctx.beginPath()
+    ctx.arc(x + S / 2 + dx * S, headY + S * 0.012, S * 0.011, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // fan of water streams falling from the head
+  ctx.strokeStyle = 'rgba(90, 170, 205, 0.85)'
+  ctx.lineWidth = Math.max(1, S * 0.018)
+  ctx.beginPath()
+  for (const dx of [-0.12, -0.07, -0.025, 0.025, 0.07, 0.12]) {
+    const sx = x + S / 2 + dx * S
+    ctx.moveTo(sx, headY + S * 0.07)
+    ctx.lineTo(sx + dx * S * 0.55, headY + S * 0.32)
+  }
+  ctx.stroke()
+  ctx.restore()
+}
+
 /** A wooden crate (blocking): a slatted fruit/storage box. Sized for the white card. */
 export function drawCrate(ctx: Ctx, x: number, y: number, S: number): void {
   const pad = S * 0.16

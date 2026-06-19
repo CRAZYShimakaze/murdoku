@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import SettingsButton from '../components/SettingsButton.tsx'
 import BloodText from '../components/BloodText.tsx'
+import BloodSplatter from '../components/BloodSplatter.tsx'
 import BoardPreview from '../components/BoardPreview.tsx'
 import {
   DEFAULT_FILTER,
@@ -168,8 +169,9 @@ export default function LevelSelect({ onPick, onBack }: Props) {
             ←
           </button>
           <h1>
-            <span className="mk-secret" onClick={onSecretTap}>
-              {t('select.title')}
+            <span className="mk-secret mk-titleblood" onClick={onSecretTap}>
+              <BloodSplatter className="mk-titleblood__splatter" />
+              <BloodText text={t('select.title')} />
             </span>
             <small>{t('select.subtitle')}</small>
           </h1>
@@ -242,8 +244,11 @@ export default function LevelSelect({ onPick, onBack }: Props) {
                       )}
                       {l.custom && <span className="mk-custom">{t('select.custom')}</span>}
                       <span className="mk-card__body">
-                        <span className="mk-card__title">
-                          <BloodText text={l.title} />
+                        <span className="mk-card__titlewrap">
+                          <BloodSplatter className="mk-card__splatter" />
+                          <span className="mk-card__title">
+                            <BloodText text={l.title} />
+                          </span>
                         </span>
                         {l.author && <span className="mk-card__author">— {l.author}</span>}
                         <span className="mk-card__meta">

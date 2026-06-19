@@ -346,7 +346,8 @@
     "restaurant": "Restaurant",
     "farm": "Farm",
     "supermarkt": "Supermarket",
-    "police-station": "Police station"
+    "police-station": "Police station",
+    "camping": "Campground"
   },
   "select": {
     "title": "The Case Files",
@@ -467,7 +468,10 @@
     "washingmachine": "a washing machine",
     "fridge": "a fridge",
     "chicken": "a chicken",
-    "lamp": "a lamp"
+    "lamp": "a lamp",
+    "piano": "a piano",
+    "bear": "a bear",
+    "shower": "a shower"
   },
   "objName": {
     "floor": "Floor",
@@ -504,7 +508,10 @@
     "washingmachine": "Washing machine",
     "fridge": "Fridge",
     "chicken": "Chicken",
-    "lamp": "Lamp"
+    "lamp": "Lamp",
+    "piano": "Piano",
+    "bear": "Bear",
+    "shower": "Shower"
   },
   "legend": {
     "title": "Legend",
@@ -665,6 +672,18 @@
     "dairy": "Dairy",
     "field": "Field",
     "pond": "Pond",
+    "forest": "Forest",
+    "clearing": "Clearing",
+    "lake": "Lake",
+    "campsite1": "Campsite 1",
+    "campsite2": "Campsite 2",
+    "campfire": "Campfire",
+    "picnicarea": "Picnic Area",
+    "jetty": "Jetty",
+    "playground": "Playground",
+    "showers": "Showers",
+    "kiosk": "Kiosk",
+    "cabin": "Cabin",
     "bathroom": "Bathroom",
     "guestroom": "Guest Room",
     "hallway": "Hallway",

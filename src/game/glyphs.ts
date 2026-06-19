@@ -35,6 +35,9 @@ export const OBJECT_GLYPHS: Record<string, string> = {
   cash: '💰', // legend chip only — the board draws a hand-painted cash register
   crate: '🪵', // legend chip only — the board draws a hand-painted wooden crate
   toilet: '🚽',
+  shower: '🚿', // generator/dropdown chip only — the board draws a hand-painted shower
+  piano: '🎹', // generator/dropdown chip only — the board draws a hand-painted piano
+  bear: '🐻', // generator/dropdown chip only — the board draws a hand-painted bear
   chicken: '🐓', // full-body bird (🐔 is only a head) to match the cow/pig/horse glyphs
   lamp: '💡', // generator/dropdown chip only — the board draws a hand-painted floor lamp
   washingmachine: '🧺', // generator/dropdown chip only — the board draws a hand-painted washer

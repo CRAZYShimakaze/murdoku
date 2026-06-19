@@ -13,6 +13,7 @@ import type { HelpMarks } from './helpMarks.ts'
 import { drawBigObject, drawSingleObject } from './bigObjects.ts'
 import {
   drawArmchair,
+  drawBear,
   drawBookshelf,
   drawCarpetTile,
   drawCashRegister,
@@ -22,7 +23,9 @@ import {
   drawLocker,
   drawMud,
   drawOil,
+  drawPiano,
   drawPunchbag,
+  drawShower,
   drawTableTile,
   drawWashingMachine,
   type Conn,
@@ -670,6 +673,15 @@ export function drawObjectIcon(
     if (!preview) drawBlockedCard(ctx, x, y, S)
     return drawFloorLamp(ctx, x, y, S)
   }
+  if (type === 'piano') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawPiano(ctx, x, y, S)
+  }
+  if (type === 'bear') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawBear(ctx, x, y, S)
+  }
+  if (type === 'shower') return drawShower(ctx, x, y, S) // occupiable → no blocked card
   const glyph = OBJECT_GLYPHS[type]
   if (!glyph) return
   if (!preview && !occupiable) drawBlockedCard(ctx, x, y, S)
