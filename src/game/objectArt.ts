@@ -1002,3 +1002,349 @@ export function drawCrate(ctx: Ctx, x: number, y: number, S: number): void {
   ctx.roundRect(left, top, w, h, S * 0.03)
   ctx.stroke()
 }
+
+/**
+ * One cell of an asphalt street/road (occupiable GROUND layer, auto-tiled into one
+ * CONTINUOUS run exactly like the carpet rug). Dark tarmac with a faded dashed centre
+ * line whose direction follows the road's run (E/W → across, N/S → down); a junction
+ * draws solid stubs toward each connected side, an isolated tile a short centre dash.
+ */
+export function drawStreetTile(ctx: Ctx, x: number, y: number, S: number, conn: Conn): void {
+  const pad = S * 0.06
+  const ov = Math.max(0.75, S * 0.02)
+  // tarmac base, merged seamlessly with connected neighbours
+  ctx.fillStyle = '#43474d'
+  piecePath(ctx, x, y, S, conn, pad, S * 0.1, ov)
+  ctx.fill()
+  // a slightly lighter inner field for a worn-asphalt look
+  ctx.fillStyle = '#4d525a'
+  piecePath(ctx, x, y, S, conn, pad + S * 0.045, S * 0.08, ov)
+  ctx.fill()
+  // dashed centre line — orientation follows the run direction
+  const horiz = conn.e || conn.w
+  const vert = conn.n || conn.s
+  const cx = x + S / 2
+  const cy = y + S / 2
+  ctx.strokeStyle = 'rgba(233, 206, 110, 0.85)' // faded road-marking yellow
+  ctx.lineWidth = Math.max(1.4, S * 0.05)
+  ctx.lineCap = 'butt'
+  ctx.beginPath()
+  if (horiz && vert) {
+    // junction/turn: solid stubs from the centre toward each connected side
+    if (conn.e) { ctx.moveTo(cx, cy); ctx.lineTo(x + S, cy) }
+    if (conn.w) { ctx.moveTo(cx, cy); ctx.lineTo(x, cy) }
+    if (conn.n) { ctx.moveTo(cx, cy); ctx.lineTo(cx, y) }
+    if (conn.s) { ctx.moveTo(cx, cy); ctx.lineTo(cx, y + S) }
+    ctx.stroke()
+  } else {
+    ctx.setLineDash([S * 0.16, S * 0.12])
+    if (horiz) { ctx.moveTo(x, cy); ctx.lineTo(x + S, cy) }
+    else if (vert) { ctx.moveTo(cx, y); ctx.lineTo(cx, y + S) }
+    else { ctx.moveTo(cx - S * 0.18, cy); ctx.lineTo(cx + S * 0.18, cy) } // isolated
+    ctx.stroke()
+    ctx.setLineDash([])
+  }
+}
+
+/**
+ * A ridge (A-frame) tent seen from a slight front angle — OCCUPIABLE (a person is "in
+ * the tent"), so it sits bare on the floor with no blocked card. Two fabric slopes, a
+ * dark triangular door flap, and a guy line to a peg give it the camp-tent read.
+ */
+export function drawTent(ctx: Ctx, x: number, y: number, S: number): void {
+  const groundY = y + S * 0.8
+  const apexX = x + S * 0.46
+  const apexY = y + S * 0.2
+  const leftX = x + S * 0.12
+  const frontFootX = x + S * 0.7 // front gable base, right foot
+  const backFootX = x + S * 0.9 // far slope foot — gives the 3/4 depth
+  // contact shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.14)'
+  ctx.beginPath()
+  ctx.ellipse(x + S * 0.5, groundY + S * 0.03, S * 0.4, S * 0.07, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.lineJoin = 'round'
+  ctx.strokeStyle = '#1f3a2a'
+  ctx.lineWidth = Math.max(1.2, S * 0.03)
+  // far slope (darker) — the side wall receding back-right
+  ctx.fillStyle = '#3f7a4f'
+  ctx.beginPath()
+  ctx.moveTo(apexX, apexY)
+  ctx.lineTo(backFootX, groundY)
+  ctx.lineTo(frontFootX, groundY)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // front gable (lighter) — the triangular face
+  ctx.fillStyle = '#57a06a'
+  ctx.beginPath()
+  ctx.moveTo(apexX, apexY)
+  ctx.lineTo(frontFootX, groundY)
+  ctx.lineTo(leftX, groundY)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // door flap (dark opening) in the front gable
+  ctx.fillStyle = '#243b2c'
+  ctx.beginPath()
+  ctx.moveTo(apexX, apexY + S * 0.06)
+  ctx.lineTo(x + S * 0.3, groundY)
+  ctx.lineTo(x + S * 0.52, groundY)
+  ctx.closePath()
+  ctx.fill()
+  // curled-back flap edge
+  ctx.strokeStyle = '#3f6b4c'
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  ctx.beginPath()
+  ctx.moveTo(apexX, apexY + S * 0.06)
+  ctx.lineTo(x + S * 0.46, groundY)
+  ctx.stroke()
+  // guy line + peg at the front-left
+  ctx.strokeStyle = 'rgba(60,50,40,0.85)'
+  ctx.lineWidth = Math.max(1, S * 0.015)
+  ctx.beginPath()
+  ctx.moveTo(apexX, apexY)
+  ctx.lineTo(x + S * 0.05, groundY)
+  ctx.stroke()
+}
+
+/**
+ * A campfire (blocking): a ring of stones around crossed logs with rising flames, seen
+ * slightly from above. Drawn ring → logs → flames so the fire reads as burning inside
+ * the pit. Sits on the white "blocked" card like the other props.
+ */
+export function drawCampfire(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S / 2
+  const cy = y + S * 0.58
+  // stone ring (drawn first, so logs + flames sit inside it)
+  ctx.fillStyle = '#9aa0a6'
+  ctx.strokeStyle = '#6c7176'
+  ctx.lineWidth = Math.max(1, S * 0.018)
+  const ringN = 8
+  for (let i = 0; i < ringN; i++) {
+    const a = (i / ringN) * Math.PI * 2 + 0.4
+    const sx = cx + Math.cos(a) * S * 0.28
+    const sy = cy + S * 0.12 + Math.sin(a) * S * 0.13
+    ctx.beginPath()
+    ctx.ellipse(sx, sy, S * 0.058, S * 0.044, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // crossed logs
+  ctx.strokeStyle = '#6b4a2b'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(2, S * 0.07)
+  ctx.beginPath()
+  ctx.moveTo(cx - S * 0.2, cy + S * 0.12)
+  ctx.lineTo(cx + S * 0.2, cy - S * 0.02)
+  ctx.moveTo(cx + S * 0.2, cy + S * 0.12)
+  ctx.lineTo(cx - S * 0.2, cy - S * 0.02)
+  ctx.stroke()
+  // flames (layered: outer orange → mid amber → inner yellow)
+  const flame = (h: number, w: number, color: string): void => {
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.moveTo(cx, cy - h)
+    ctx.quadraticCurveTo(cx + w, cy - h * 0.45, cx + w * 0.5, cy)
+    ctx.quadraticCurveTo(cx, cy + S * 0.03, cx - w * 0.5, cy)
+    ctx.quadraticCurveTo(cx - w, cy - h * 0.45, cx, cy - h)
+    ctx.closePath()
+    ctx.fill()
+  }
+  flame(S * 0.42, S * 0.2, '#e8612b')
+  flame(S * 0.3, S * 0.13, '#f6a623')
+  flame(S * 0.18, S * 0.07, '#ffe07a')
+}
+
+/**
+ * A kettle barbecue (blocking): a round black bowl on three splayed legs with a grill
+ * grate, glowing coals showing through, a side handle and a wisp of smoke — seen from a
+ * slight angle. Sits on the white "blocked" card.
+ */
+export function drawGrill(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S / 2
+  const bowlY = y + S * 0.46
+  const rx = S * 0.3
+  const ry = S * 0.2
+  // legs
+  ctx.strokeStyle = '#3a3f45'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(1.5, S * 0.035)
+  for (const dx of [-0.2, 0.04, 0.22]) {
+    ctx.beginPath()
+    ctx.moveTo(cx + dx * S, bowlY + S * 0.03)
+    ctx.lineTo(cx + dx * S * 1.6, y + S * 0.84)
+    ctx.stroke()
+  }
+  // bowl (dark, rounded bottom half)
+  ctx.fillStyle = '#26292e'
+  ctx.strokeStyle = '#15171a'
+  ctx.lineWidth = Math.max(1.2, S * 0.025)
+  ctx.beginPath()
+  ctx.ellipse(cx, bowlY, rx, ry, 0, 0, Math.PI, false)
+  ctx.fill()
+  ctx.stroke()
+  // grate rim (top ellipse)
+  ctx.fillStyle = '#5a6068'
+  ctx.beginPath()
+  ctx.ellipse(cx, bowlY, rx, ry * 0.55, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // glowing coals through the grate
+  ctx.save()
+  ctx.beginPath()
+  ctx.ellipse(cx, bowlY, rx * 0.84, ry * 0.44, 0, 0, Math.PI * 2)
+  ctx.clip()
+  ctx.fillStyle = '#3a3f45'
+  ctx.fillRect(cx - rx, bowlY - ry, rx * 2, ry * 2)
+  const coals: [number, number, string][] = [
+    [-0.13, -0.02, '#e8612b'], [0.05, 0.03, '#f6a623'], [0.16, -0.04, '#e8612b'], [-0.02, 0.05, '#ffd24a'],
+  ]
+  for (const [gx, gy, col] of coals) {
+    ctx.fillStyle = col
+    ctx.beginPath()
+    ctx.ellipse(cx + gx * S, bowlY + gy * S, S * 0.05, S * 0.03, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.restore()
+  // grate bars across the top
+  ctx.strokeStyle = 'rgba(20,22,25,0.8)'
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  for (const f of [-0.5, 0, 0.5]) {
+    ctx.beginPath()
+    ctx.moveTo(cx - rx * 0.86, bowlY + f * ry * 0.5)
+    ctx.lineTo(cx + rx * 0.86, bowlY + f * ry * 0.5)
+    ctx.stroke()
+  }
+  // side handle
+  ctx.strokeStyle = '#3a3f45'
+  ctx.lineWidth = Math.max(1.5, S * 0.03)
+  ctx.beginPath()
+  ctx.moveTo(cx + rx, bowlY - ry * 0.2)
+  ctx.lineTo(cx + rx + S * 0.08, bowlY - ry * 0.32)
+  ctx.stroke()
+  // a wisp of smoke
+  ctx.strokeStyle = 'rgba(200,200,200,0.5)'
+  ctx.lineWidth = Math.max(1, S * 0.018)
+  ctx.beginPath()
+  ctx.moveTo(cx, bowlY - ry * 0.4)
+  ctx.quadraticCurveTo(cx + S * 0.08, y + S * 0.22, cx - S * 0.02, y + S * 0.1)
+  ctx.stroke()
+}
+
+/**
+ * One cell of a LAKE surface (auto-tiled the way the table/carpet merge): the room's
+ * cells fuse into one body of water with rounded outer corners and concave inner corners,
+ * leaving the room's grass-green base showing as a bank around the edge. Inside: a calm
+ * blue fill, a lighter shallow ring just inside the bank, and a couple of gentle ripples.
+ * The room stays a normal (occupiable) room — this only changes how it LOOKS.
+ */
+export function drawWaterTile(ctx: Ctx, x: number, y: number, S: number, conn: Conn): void {
+  const pad = S * 0.13 // grass bank width (about the table's inset, so corners round alike)
+  const ov = Math.max(0.75, S * 0.02)
+  // deep water, merged into one surface
+  ctx.fillStyle = '#4f9ec8'
+  piecePath(ctx, x, y, S, conn, pad, S * 0.2, ov)
+  ctx.fill()
+  // a lighter "shallows" field just inside the bank (its bigger inset lets the darker
+  // water line the concave notches as an inline, exactly like the carpet's woven border)
+  ctx.fillStyle = '#62b2d8'
+  piecePath(ctx, x, y, S, conn, pad + S * 0.06, S * 0.16, ov)
+  ctx.fill()
+  // gentle ripple lines + a sparkle, clipped to the water so they never spill onto grass
+  ctx.save()
+  piecePath(ctx, x, y, S, conn, pad, S * 0.2, ov)
+  ctx.clip()
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)'
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  for (const fy of [0.36, 0.66]) {
+    const yy = y + fy * S
+    ctx.moveTo(x + S * 0.16, yy)
+    ctx.bezierCurveTo(x + S * 0.38, yy - S * 0.05, x + S * 0.62, yy + S * 0.05, x + S * 0.84, yy)
+  }
+  ctx.stroke()
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'
+  ctx.beginPath()
+  ctx.ellipse(x + S * 0.7, y + S * 0.3, S * 0.05, S * 0.025, -0.5, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
+}
+
+/** One round lily pad with the classic single wedge notch, a green radial sheen, a dark
+ *  rim and pale radial veins. `notch` is the direction the V-cut faces (radians). */
+function lilyPad(ctx: Ctx, cx: number, cy: number, r: number, notch: number): void {
+  const gap = 0.32 // half-angle of the wedge cut
+  ctx.beginPath()
+  ctx.moveTo(cx, cy)
+  ctx.arc(cx, cy, r, notch + gap, notch - gap + Math.PI * 2)
+  ctx.closePath()
+  const g = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r)
+  g.addColorStop(0, '#5bb368')
+  g.addColorStop(1, '#2e6f3c')
+  ctx.fillStyle = g
+  ctx.fill()
+  ctx.strokeStyle = '#1f4f29'
+  ctx.lineWidth = Math.max(1, r * 0.09)
+  ctx.stroke()
+  // pale radial veins fanning out from the centre
+  ctx.strokeStyle = 'rgba(225, 245, 225, 0.3)'
+  ctx.lineWidth = Math.max(0.8, r * 0.05)
+  ctx.beginPath()
+  for (let i = 0; i < 7; i++) {
+    const a = notch + gap + ((Math.PI * 2 - 2 * gap) * (i + 0.5)) / 7
+    ctx.moveTo(cx + Math.cos(a) * r * 0.14, cy + Math.sin(a) * r * 0.14)
+    ctx.lineTo(cx + Math.cos(a) * r * 0.86, cy + Math.sin(a) * r * 0.86)
+  }
+  ctx.stroke()
+}
+
+/** A water-lily blossom seen from above: two rings of pointed petals around a golden centre. */
+function lilyFlower(ctx: Ctx, cx: number, cy: number, R: number): void {
+  const petal = (rot: number, len: number, wid: number, color: string): void => {
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.rotate(rot)
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.ellipse(0, -len * 0.55, wid, len * 0.55, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.restore()
+  }
+  // soft shadow on the pad
+  ctx.fillStyle = 'rgba(0,0,0,0.10)'
+  ctx.beginPath()
+  ctx.ellipse(cx, cy + R * 0.1, R * 1.05, R * 0.85, 0, 0, Math.PI * 2)
+  ctx.fill()
+  for (let i = 0; i < 8; i++) petal((i / 8) * Math.PI * 2, R, R * 0.32, '#ef9fc2') // outer pink
+  for (let i = 0; i < 6; i++) petal((i / 6) * Math.PI * 2 + 0.4, R * 0.66, R * 0.26, '#fbd2e5') // inner
+  ctx.fillStyle = '#f4d35e' // golden centre
+  ctx.beginPath()
+  ctx.arc(cx, cy, R * 0.27, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#dca828' // a couple of stamen dots
+  for (const [dx, dy] of [[-0.08, -0.04], [0.07, 0.02], [0, 0.08]] as const) {
+    ctx.beginPath()
+    ctx.arc(cx + dx * R, cy + dy * R, R * 0.05, 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+/**
+ * Water lilies (OCCUPIABLE — a person can be "on a water lily"), seen from directly
+ * above: a faint water shimmer with two floating lily pads and a pink blossom on the
+ * larger one. Sits bare on the tile (no blocked card). The generator places these only
+ * in lake/water rooms, so they read as floating on water.
+ */
+export function drawWaterlily(ctx: Ctx, x: number, y: number, S: number): void {
+  ctx.lineJoin = 'round'
+  // faint ripple of open water under the pads
+  ctx.fillStyle = 'rgba(120, 170, 200, 0.16)'
+  ctx.beginPath()
+  ctx.ellipse(x + S * 0.5, y + S * 0.56, S * 0.42, S * 0.3, 0, 0, Math.PI * 2)
+  ctx.fill()
+  lilyPad(ctx, x + S * 0.68, y + S * 0.38, S * 0.19, -0.8) // small pad, upper-right
+  lilyPad(ctx, x + S * 0.4, y + S * 0.62, S * 0.3, 2.3) // large pad, lower-left
+  lilyFlower(ctx, x + S * 0.42, y + S * 0.52, S * 0.17) // blossom on the large pad
+}

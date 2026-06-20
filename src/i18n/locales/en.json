@@ -395,6 +395,7 @@
     "suspects": "Suspects",
     "selectPrompt": "Tap to select · long-press to place",
     "outsideLabel": "Outside",
+    "waterWalkable": "Someone can stand in the lake too – the lake is walkable.",
     "victim": "The Victim",
     "victimStatement": "was alone with the murderer.",
     "tools": "Tools",
@@ -471,7 +472,12 @@
     "lamp": "a lamp",
     "piano": "a piano",
     "bear": "a bear",
-    "shower": "a shower"
+    "shower": "a shower",
+    "street": "a street",
+    "tent": "a tent",
+    "campfire": "a campfire",
+    "grill": "a grill",
+    "waterlily": "a water lily"
   },
   "objName": {
     "floor": "Floor",
@@ -511,7 +517,12 @@
     "lamp": "Lamp",
     "piano": "Piano",
     "bear": "Bear",
-    "shower": "Shower"
+    "shower": "Shower",
+    "street": "Street",
+    "tent": "Tent",
+    "campfire": "Campfire",
+    "grill": "Grill",
+    "waterlily": "Water lily"
   },
   "legend": {
     "title": "Legend",
@@ -892,7 +903,7 @@
     "aloneWithDir": "{{subject}} was {{neg}}alone with {{target}} and {{count}} more ({{attribute}}, one {{direction}})",
     "connAnd": "and",
     "connOr": "or",
-    "not": "not ({{child}})"
+    "not": "[[not:negation]] ({{child}})"
   },
   "boardClue": {
     "countOnObject": "Exactly {{count}} person was on {{object}}.",
@@ -903,6 +914,7 @@
     "aloneWithVictim": "The victim must be alone in a room with exactly one suspect."
   },
   "tip": {
+    "negation": "Negation – flips the condition to its opposite: what follows is exactly NOT the case.",
     "onObject": "Standing directly on this object (it is walkable).",
     "nearObject": "Right next to it — same room, one tile left, right, above or below the object.",
     "nearWindow": "On the tile right at a window (the window sits on that tile's wall).",

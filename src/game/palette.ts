@@ -14,6 +14,7 @@ export const BOARD = {
   press: '#e2b75e',
   pressScrim: 'rgba(226, 183, 94, 0.20)',
   victim: '#cf463c',
+  grass: '#86b15a', // grassy bank shown around a water room's lake surface
 } as const
 
 /** Distinguishable, on-theme token colours assigned to suspects by index. */

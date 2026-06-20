@@ -19,7 +19,7 @@ import {
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
-import { loadLevel } from '../engine/index.ts'
+import { isWaterRoom, loadLevel } from '../engine/index.ts'
 
 interface Props {
   state: EditorState
@@ -67,11 +67,16 @@ export default function SuspectsPanel({
     try {
       const puzzle = loadLevel(buildPlayableLevel(state, 'preview'))
       const renderer = new Renderer(i18n.getResourceBundle(lang, 'translation'), puzzle)
-      return puzzle.boardClues.map((c) => renderer.render(c.describe()))
+      const notes = puzzle.boardClues.map((c) => renderer.render(c.describe()))
+      // Same global rule as the game: a water room is drawn as a lake but is walkable.
+      if ([...puzzle.board.rooms.values()].some((r) => isWaterRoom(r.nameKey))) {
+        notes.unshift(t('game.waterWalkable'))
+      }
+      return notes
     } catch {
       return []
     }
-  }, [state, lang, i18n])
+  }, [state, lang, i18n, t])
 
   return (
     <div className="mk-clues mk-editor__left">

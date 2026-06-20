@@ -19,6 +19,7 @@
 import type { Rng } from './random.ts'
 import type { Cell } from '../model/types.ts'
 import { OBJECT_CATALOG } from '../model/objects.ts'
+import { isWaterRoom } from '../model/rooms.ts'
 
 const CHAR_OF: Record<string, string> = {}
 const IS_OCCUPIABLE: Record<string, boolean> = {}
@@ -35,14 +36,14 @@ for (const o of OBJECT_CATALOG) {
 const PILE_TYPES = new Set(['box', 'crate', 'rubble', 'oil', 'mud', 'gift'])
 /** Per-room cap on decorative FILL ITEMS that look bad in bulk. Racks, clusters and
  *  features are exempt (a shop wall of fridges or a greenhouse of plants is fine). */
-const ITEM_CAP: Record<string, number> = { lamp: 1, tv: 1, plant: 3, statue: 4 }
+const ITEM_CAP: Record<string, number> = { lamp: 1, tv: 1, plant: 3, statue: 4, campfire: 1, grill: 1 }
 
 /** Room kinds the furnisher knows. Many room nameKeys map to the same archetype. */
 type Archetype =
   | 'bath' | 'laundry' | 'kitchen' | 'bedroom' | 'cell' | 'living' | 'dining'
   | 'office' | 'library' | 'auditorium' | 'storage' | 'lockerroom' | 'music'
   | 'shopAisle' | 'shopChilled' | 'checkout' | 'workshop' | 'parking' | 'gym'
-  | 'greenhouse' | 'garden' | 'pasture' | 'forest' | 'camp' | 'lake'
+  | 'greenhouse' | 'garden' | 'deck' | 'pasture' | 'forest' | 'camp' | 'lake'
   | 'animalCow' | 'animalPig' | 'animalHen' | 'animalStable'
   | 'gallery' | 'genericIndoor' | 'genericOutdoor'
 
@@ -185,9 +186,17 @@ const RECIPES: Record<Archetype, Recipe> = {
     targetFill: 0.5, carpet: 0,
   },
   garden: {
-    features: [ft('tree', 'cluster', 1, 3), ft('statue', 'single', 0, 1)],
-    fill: [cl('shrub', 2, 4, 3), cl('plant', 2, 3, 2), it('tree', 2), it('boulder', 2), it('rubble', 1), it('shrub', 2), it('mud', 2)],
+    features: [ft('tree', 'cluster', 1, 3), ft('statue', 'single', 0, 1), ft('grill', 'single', 0, 1), ft('tent', 'single', 0, 1)],
+    fill: [cl('shrub', 2, 4, 3), cl('plant', 2, 3, 2), it('tree', 2), it('boulder', 2), it('rubble', 1), it('shrub', 2), it('mud', 2), it('grill', 2), it('tent', 1)],
     targetFill: 0.3, carpet: 0,
+  },
+  // A paved outdoor seating area (terrace / balcony / rooftop / porch): an outdoor
+  // dining set, potted greenery and — now and then — a barbecue. A TENT or open
+  // CAMPFIRE would make no sense up here, so neither is offered.
+  deck: {
+    features: [ft('grill', 'single', 0, 1)],
+    fill: [set('table', 1, 2, 4, 4), cl('plant', 2, 3, 3), it('plant', 2), it('chair', 1), it('shrub', 1), it('grill', 1), it('lamp', 1)],
+    targetFill: 0.34, carpet: 0,
   },
   pasture: {
     features: [ft('cow', 'cluster', 2, 3), ft('horse', 'cluster', 0, 1)],
@@ -196,19 +205,22 @@ const RECIPES: Record<Archetype, Recipe> = {
   },
   // --- camping / wilderness (bear lives ONLY here → "Bär nur draußen") ---
   forest: {
-    features: [ft('tree', 'cluster', 2, 4)],
-    fill: [cl('tree', 2, 4, 4), cl('shrub', 2, 4, 3), it('boulder', 2), it('mud', 1), it('rubble', 1), it('bear', 1)],
+    features: [ft('tree', 'cluster', 2, 4), ft('tent', 'single', 0, 1), ft('campfire', 'single', 0, 1)],
+    fill: [cl('tree', 2, 4, 4), cl('shrub', 2, 4, 3), it('boulder', 2), it('mud', 1), it('rubble', 1), it('bear', 1), it('tent', 1), it('campfire', 1)],
     targetFill: 0.34, carpet: 0,
   },
   camp: {
-    features: [ft('tree', 'single', 1, 2)],
-    fill: [set('table', 1, 1, 4, 2), it('chair', 1), it('crate', 2), it('box', 1), it('trash', 1), cl('shrub', 1, 3, 2), it('mud', 1), it('bear', 1)],
+    features: [ft('tent', 'cluster', 1, 2), ft('campfire', 'single', 0, 1), ft('grill', 'single', 0, 1), ft('tree', 'single', 1, 2)],
+    fill: [it('tent', 2), it('grill', 1), set('table', 1, 1, 4, 2), it('chair', 1), it('crate', 2), it('box', 1), it('trash', 1), cl('shrub', 1, 3, 2), it('mud', 1), it('bear', 1)],
     targetFill: 0.34, carpet: 0,
   },
+  // The lake is drawn as open WATER (see boardRender), so it stays mostly clear: only
+  // card-free, water-appropriate things float on it — water lilies (its signature) and the
+  // odd muddy shallow. Camp/grill/tent props belong on the grassy rooms, not on the water.
   lake: {
-    features: [ft('boulder', 'cluster', 1, 2)],
-    fill: [it('boulder', 2), cl('shrub', 2, 4, 3), it('tree', 1), it('mud', 2), it('rubble', 1), it('bear', 1)],
-    targetFill: 0.26, carpet: 0,
+    features: [ft('waterlily', 'cluster', 1, 3)],
+    fill: [cl('waterlily', 2, 4, 5), it('mud', 1)],
+    targetFill: 0.22, carpet: 0,
   },
   animalCow: { features: [ft('cow', 'cluster', 3, 5)], fill: [it('cow', 3), it('crate', 2), it('mud', 2), it('shrub', 1)], targetFill: 0.44, carpet: 0 },
   animalPig: { features: [ft('pig', 'cluster', 3, 5)], fill: [it('pig', 3), it('crate', 2), it('mud', 2)], targetFill: 0.42, carpet: 0 },
@@ -266,14 +278,13 @@ const ARCHETYPE_OF: Record<string, Archetype> = {
   parking: 'parking',
   gym: 'gym', gymnasium: 'gym',
   greenhouse: 'greenhouse',
-  yard: 'garden', garden: 'garden', schoolyard: 'garden', frontyard: 'garden', terrace: 'garden',
-  balcony: 'garden', porch: 'garden', rooftop: 'garden', field: 'garden', pond: 'garden',
+  yard: 'garden', garden: 'garden', schoolyard: 'garden', frontyard: 'garden', field: 'garden', pond: 'garden',
+  terrace: 'deck', balcony: 'deck', porch: 'deck', rooftop: 'deck',
   pasture: 'pasture',
   cowshed: 'animalCow', pigsty: 'animalPig', henhouse: 'animalHen', stable: 'animalStable',
   maingallery: 'gallery', exposition: 'gallery', gallery: 'gallery', specialexhibit: 'gallery', entrancehall: 'gallery',
-  // camping / wilderness
+  // camping / wilderness (lake/jetty/sea/… are handled by isWaterRoom in archetypeOf)
   forest: 'forest', clearing: 'forest',
-  lake: 'lake', jetty: 'lake',
   campsite1: 'camp', campsite2: 'camp', campfire: 'camp', picnicarea: 'camp',
   playground: 'garden', kiosk: 'shopAisle', cabin: 'bedroom', showers: 'bath',
 }
@@ -288,6 +299,7 @@ function keywordArchetype(key: string, outside: boolean): Archetype {
   if (outside) {
     if (has('park')) return 'parking'
     if (has('pasture', 'paddock', 'meadow')) return 'pasture'
+    if (has('terrace', 'balcony', 'patio', 'deck', 'porch', 'rooftop', 'veranda')) return 'deck'
     return 'garden'
   }
   if (has('bath', 'toilet', 'rest', 'wc', 'shower', 'spa')) return 'bath'
@@ -314,6 +326,9 @@ function keywordArchetype(key: string, outside: boolean): Archetype {
 
 /** Classify a room (its i18n nameKey + whether it's an outdoor area) into an archetype. */
 export function archetypeOf(nameKey: string, outside: boolean): Archetype {
+  // Water rooms (lake/jetty/sea/…) furnish from the lake recipe AND get the water look —
+  // one shared definition (isWaterRoom) keeps the two in lock-step for any future theme.
+  if (isWaterRoom(nameKey)) return 'lake'
   const key = nameKey.replace(/^room\./, '').toLowerCase()
   return ARCHETYPE_OF[key] ?? keywordArchetype(key, outside)
 }

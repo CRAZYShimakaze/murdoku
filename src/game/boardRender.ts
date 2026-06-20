@@ -2,6 +2,7 @@ import {
   MULTI_CELL_TYPES,
   VICTIM_ID,
   VOID_ROOM,
+  isWaterRoom,
   type Cell,
   type PersonId,
   type Puzzle,
@@ -15,19 +16,25 @@ import {
   drawArmchair,
   drawBear,
   drawBookshelf,
+  drawCampfire,
   drawCarpetTile,
   drawCashRegister,
   drawCrate,
   drawFloorLamp,
   drawFridge,
+  drawGrill,
   drawLocker,
   drawMud,
   drawOil,
   drawPiano,
   drawPunchbag,
   drawShower,
+  drawStreetTile,
   drawTableTile,
+  drawTent,
   drawWashingMachine,
+  drawWaterlily,
+  drawWaterTile,
   type Conn,
 } from './objectArt.ts'
 
@@ -156,6 +163,25 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     }
   }
 
+  /** Same-ROOM neighbours (incl. diagonals) — auto-tiles a whole room into one merged
+   *  surface (used for the lake water, so the room reads as one body of water). */
+  const roomConnOf = (c: Cell): Conn => {
+    const { row, col } = board.rc(c)
+    const room = board.roomIdOf(c)
+    const same = (r: number, cc: number): boolean =>
+      board.inBounds(r, cc) && board.roomIdOf(board.idx(r, cc)) === room
+    return {
+      n: same(row - 1, col),
+      s: same(row + 1, col),
+      w: same(row, col - 1),
+      e: same(row, col + 1),
+      ne: same(row - 1, col + 1),
+      nw: same(row - 1, col - 1),
+      se: same(row + 1, col + 1),
+      sw: same(row + 1, col - 1),
+    }
+  }
+
   ctx.fillStyle = BOARD.mortar
   ctx.fillRect(ox - 1, oy - 1, W * S + 2, H * S + 2)
 
@@ -175,8 +201,13 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       continue
     }
     const room = board.rooms.get(board.roomIdOf(c))
-    ctx.fillStyle = room?.color ?? '#cfcfcf'
+    // Water rooms: a grass-green bank as the base, with the lake surface inset on top
+    // (rounded, merged across the room). Mechanically still a normal room — the floor
+    // stays occupiable, so a person can stand in the water (the legend says so).
+    const water = room ? isWaterRoom(room.nameKey) : false
+    ctx.fillStyle = water ? BOARD.grass : (room?.color ?? '#cfcfcf')
     ctx.fillRect(x, y, S, S)
+    if (water) drawWaterTile(ctx, x, y, S, roomConnOf(c))
     // Secondary layer (selection) under the primary (hint), so the hint wins on overlap.
     if (view.highlight2?.has(c)) {
       ctx.fillStyle = view.highlightColor2?.wash ?? BOARD.highlight
@@ -187,6 +218,13 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       ctx.fillRect(x, y, S, S)
     }
     // Reduced-help area marks are drawn as quiet outlines later — no wash here.
+  }
+
+  // --- street (occupiable ground layer) — auto-tiled into one continuous road --
+  for (let c = 0; c < W * H; c++) {
+    if (board.tileAt(c).ground?.type !== 'street') continue
+    const { x, y } = xy(c)
+    drawStreetTile(ctx, x, y, S, connOf(c, 'ground', 'street'))
   }
 
   // --- carpet rug (occupiable ground layer) — auto-tiled into one surface --
@@ -635,9 +673,12 @@ export function drawObjectIcon(
   preview = false,
 ): void {
   if (type === 'carpet') return drawCarpetTile(ctx, x, y, S, NO_CONN)
+  if (type === 'street') return drawStreetTile(ctx, x, y, S, NO_CONN)
   if (type === 'table') return drawTableTile(ctx, x, y, S, NO_CONN)
   if (MULTI_CELL_TYPES.has(type)) return drawSingleObject(ctx, type, x, y, S)
   if (type === 'chair') return drawArmchair(ctx, x, y, S)
+  if (type === 'tent') return drawTent(ctx, x, y, S) // occupiable → no card
+  if (type === 'waterlily') return drawWaterlily(ctx, x, y, S) // occupiable → no card
   if (type === 'mud') return drawMud(ctx, x, y, S)
   if (type === 'oil') return drawOil(ctx, x, y, S)
   // blocked custom-art objects sit on the same white card as blocked emoji
@@ -680,6 +721,14 @@ export function drawObjectIcon(
   if (type === 'bear') {
     if (!preview) drawBlockedCard(ctx, x, y, S)
     return drawBear(ctx, x, y, S)
+  }
+  if (type === 'campfire') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawCampfire(ctx, x, y, S)
+  }
+  if (type === 'grill') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawGrill(ctx, x, y, S)
   }
   if (type === 'shower') return drawShower(ctx, x, y, S) // occupiable → no blocked card
   const glyph = OBJECT_GLYPHS[type]

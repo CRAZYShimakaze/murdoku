@@ -15,6 +15,7 @@ import {
   OrClue,
   OutsideClue,
   VICTIM_ID,
+  isWaterRoom,
   type Clue,
   type Cell,
   type PersonId,
@@ -97,6 +98,11 @@ export default function CluePanel({
     const outside = [...puzzle.board.rooms.values()].filter((r) => r.outside).map((r) => t(r.nameKey))
     if (usesInsideOutside && outside.length > 0) {
       notes.push(`${t('game.outsideLabel')}: ${outside.join(', ')}`)
+    }
+    // A water room is drawn as a lake but is a NORMAL, walkable room — say so as a
+    // global rule so players know someone can stand in the water too.
+    if ([...puzzle.board.rooms.values()].some((r) => isWaterRoom(r.nameKey))) {
+      notes.push(t('game.waterWalkable'))
     }
     for (const clue of puzzle.boardClues) notes.push(renderer.render(clue.describe()))
     return notes

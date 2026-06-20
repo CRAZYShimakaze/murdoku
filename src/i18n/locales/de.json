@@ -395,6 +395,7 @@
     "suspects": "Verdächtige",
     "selectPrompt": "Antippen zum Auswählen · lang drücken zum Setzen",
     "outsideLabel": "Draußen",
+    "waterWalkable": "Auch im See kann jemand stehen – der See ist begehbar.",
     "victim": "Das Opfer",
     "victimStatement": "war allein mit dem Mörder.",
     "tools": "Werkzeuge",
@@ -471,7 +472,12 @@
     "lamp": "einer Lampe",
     "piano": "einem Klavier",
     "bear": "einem Bären",
-    "shower": "einer Dusche"
+    "shower": "einer Dusche",
+    "street": "einer Straße",
+    "tent": "einem Zelt",
+    "campfire": "einem Lagerfeuer",
+    "grill": "einem Grill",
+    "waterlily": "einer Seerose"
   },
   "objectNom": {
     "table": "ein Tisch",
@@ -509,7 +515,12 @@
     "lamp": "eine Lampe",
     "piano": "ein Klavier",
     "bear": "ein Bär",
-    "shower": "eine Dusche"
+    "shower": "eine Dusche",
+    "street": "eine Straße",
+    "tent": "ein Zelt",
+    "campfire": "ein Lagerfeuer",
+    "grill": "ein Grill",
+    "waterlily": "eine Seerose"
   },
   "objectSame": {
     "table": "demselben Tisch",
@@ -547,7 +558,12 @@
     "lamp": "derselben Lampe",
     "piano": "demselben Klavier",
     "bear": "demselben Bären",
-    "shower": "derselben Dusche"
+    "shower": "derselben Dusche",
+    "street": "derselben Straße",
+    "tent": "demselben Zelt",
+    "campfire": "demselben Lagerfeuer",
+    "grill": "demselben Grill",
+    "waterlily": "derselben Seerose"
   },
   "objName": {
     "floor": "Boden",
@@ -587,7 +603,12 @@
     "lamp": "Lampe",
     "piano": "Klavier",
     "bear": "Bär",
-    "shower": "Dusche"
+    "shower": "Dusche",
+    "street": "Straße",
+    "tent": "Zelt",
+    "campfire": "Lagerfeuer",
+    "grill": "Grill",
+    "waterlily": "Seerose"
   },
   "legend": {
     "title": "Legende",
@@ -967,7 +988,7 @@
     "aloneWithDir": "{{subject}} war {{neg}}allein mit {{target}} und {{count}} weiteren ({{attribute}}, eine {{direction}})",
     "connAnd": "und",
     "connOr": "oder",
-    "not": "nicht ({{child}})"
+    "not": "[[nicht:negation]] ({{child}})"
   },
   "boardClue": {
     "countOnObject": "Genau {{count}} Person war auf {{object}}.",
@@ -978,6 +999,7 @@
     "aloneWithVictim": "Das Opfer muss mit genau einer verdächtigen Person allein in einem Raum sein."
   },
   "tip": {
+    "negation": "Verneinung – kehrt die Bedingung ins Gegenteil: Das danach Genannte trifft genau NICHT zu.",
     "onObject": "Steht direkt auf diesem Objekt (es ist betretbar).",
     "nearObject": "Direkt daneben — im selben Raum, ein Feld links, rechts, über oder unter dem Objekt.",
     "nearWindow": "Auf dem Feld direkt an einem Fenster (das Fenster sitzt an der Wand dieses Feldes).",

@@ -11,7 +11,7 @@ import { createClue } from '../clues/ClueFactory.ts'
 import { createBoardClue } from '../clues/boardClues.ts'
 import { VICTIM_ID, inDirection8 } from '../model/types.ts'
 import type { AttributeValue, Cell, PersonId, Side } from '../model/types.ts'
-import { OBJECT_CATALOG, type ObjectDef } from '../model/objects.ts'
+import { OBJECT_CATALOG, EDITOR_ONLY_TYPES, type ObjectDef } from '../model/objects.ts'
 import { furnishRooms, kitFor } from './furnishing.ts'
 import type { Board } from '../model/Board.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
@@ -29,8 +29,11 @@ interface Theme {
 const ALL_OBJECTS: readonly ObjectDef[] = OBJECT_CATALOG
 const OCCUPIABLE: ObjectDef[] = ALL_OBJECTS.filter((o) => o.occupiable)
 
-/** Every placeable object type (for the UI's per-object toggles). */
-export const GENERATOR_OBJECT_TYPES: string[] = ALL_OBJECTS.map((o) => o.type)
+/** Every placeable object type (for the UI's per-object toggles). Editor-only types
+ *  (e.g. street, which must be laid as a continuous run) are excluded. */
+export const GENERATOR_OBJECT_TYPES: string[] = ALL_OBJECTS.filter(
+  (o) => !EDITOR_ONLY_TYPES.has(o.type),
+).map((o) => o.type)
 
 /** Object types that may occur by default; the rest are opt-in via `options.objects`. */
 export const DEFAULT_OBJECT_TYPES: string[] = [

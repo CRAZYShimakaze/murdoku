@@ -40,7 +40,15 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
           out.push(...childNodes)
         } else {
           const val = renderer.resolveParam(name, params[name] ?? '')
-          if (name === 'direction') out.push(term(m.index, val, 'direction'))
+          // The negation word ("nicht"/"not") is bold + tooltipped like the concept
+          // words; the trailing space stays outside the bold span so spacing is unchanged.
+          if (name === 'neg') {
+            const word = String(val).trim()
+            if (word) {
+              out.push(term(m.index, word, 'negation'))
+              out.push(' ')
+            }
+          } else if (name === 'direction') out.push(term(m.index, val, 'direction'))
           else if (BOLD_PARAMS.has(name)) out.push(<strong key={m.index}>{val}</strong>)
           else out.push(val)
         }

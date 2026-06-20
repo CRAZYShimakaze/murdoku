@@ -21,6 +21,7 @@ export interface ObjectDef {
 export const OBJECT_CATALOG: ObjectDef[] = [
   // --- occupiable (a person can stand/sit on the tile) ---
   { char: 'r', type: 'carpet', occupiable: true, layer: 'ground' },
+  { char: 'R', type: 'street', occupiable: true, layer: 'ground' },
   { char: 's', type: 'chair', occupiable: true, layer: 'top' },
   { char: 'b', type: 'bed', occupiable: true, layer: 'top' },
   { char: 'T', type: 'toilet', occupiable: true, layer: 'top' },
@@ -29,6 +30,8 @@ export const OBJECT_CATALOG: ObjectDef[] = [
   { char: 'h', type: 'horse', occupiable: true, layer: 'top' },
   { char: 'm', type: 'mud', occupiable: true, layer: 'top' },
   { char: 'j', type: 'oil', occupiable: true, layer: 'top' },
+  { char: 'Z', type: 'tent', occupiable: true, layer: 'top' },
+  { char: 'Y', type: 'waterlily', occupiable: true, layer: 'top' },
   // --- blocking: indoor furniture & appliances ---
   { char: 't', type: 'table', occupiable: false, layer: 'top' },
   { char: 'f', type: 'tv', occupiable: false, layer: 'top' },
@@ -61,7 +64,17 @@ export const OBJECT_CATALOG: ObjectDef[] = [
   { char: 'y', type: 'statue', occupiable: false, layer: 'top' },
   { char: 'o', type: 'boulder', occupiable: false, layer: 'top' },
   { char: 'z', type: 'rubble', occupiable: false, layer: 'top' },
+  // --- blocking: camping / wilderness ---
+  { char: 'G', type: 'campfire', occupiable: false, layer: 'top' },
+  { char: 'M', type: 'grill', occupiable: false, layer: 'top' },
 ]
+
+/**
+ * Types the editor can paint but the GENERATOR must NOT scatter. A street has to be
+ * laid as one CONTINUOUS run (it must connect up), so it is placed by hand in the
+ * editor only; auto-furnishing would drop disconnected road tiles everywhere.
+ */
+export const EDITOR_ONLY_TYPES: ReadonlySet<string> = new Set(['street'])
 
 /** Object types a person can stand on (carpet, chair, bed, car, horse, mud, oil). */
 export const OCCUPIABLE_OBJECT_TYPES: string[] = OBJECT_CATALOG.filter((o) => o.occupiable).map(

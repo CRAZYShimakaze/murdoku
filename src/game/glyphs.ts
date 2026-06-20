@@ -42,6 +42,11 @@ export const OBJECT_GLYPHS: Record<string, string> = {
   lamp: '💡', // generator/dropdown chip only — the board draws a hand-painted floor lamp
   washingmachine: '🧺', // generator/dropdown chip only — the board draws a hand-painted washer
   fridge: '🧊', // generator/dropdown chip only — the board draws a hand-painted fridge
+  tent: '⛺', // palette/dropdown chip only — the board draws a hand-painted tent
+  campfire: '🔥', // palette/dropdown chip only — the board draws a hand-painted campfire
+  grill: '🍖', // palette/dropdown chip only — the board draws a hand-painted kettle grill
+  street: '🛣️', // editor palette chip only — the board draws a hand-painted asphalt road
+  waterlily: '🪷', // palette/dropdown chip only — the board draws hand-painted lily pads
 }
 
 /** Small chips shown on suspect cards so attribute clues are playable. */
