@@ -215,10 +215,12 @@ const RECIPES: Record<Archetype, Recipe> = {
     targetFill: 0.34, carpet: 0,
   },
   // The lake is drawn as open WATER (see boardRender), so it stays mostly clear: only
-  // card-free, water-appropriate things float on it — water lilies (its signature) and the
-  // odd muddy shallow. Camp/grill/tent props belong on the grassy rooms, not on the water.
+  // card-free, water-appropriate things float on it — a rowing boat now and then (a 2-cell
+  // occupiable object, water only because the lake recipe is only ever used for water rooms),
+  // water lilies (its signature) and the odd muddy shallow. Camp/grill/tent props belong on
+  // the grassy rooms, not on the water.
   lake: {
-    features: [ft('waterlily', 'cluster', 1, 3)],
+    features: [ft('boat', 'pair', 0, 1), ft('waterlily', 'cluster', 1, 3)],
     fill: [cl('waterlily', 2, 4, 5), it('mud', 1)],
     targetFill: 0.22, carpet: 0,
   },

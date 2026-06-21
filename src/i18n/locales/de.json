@@ -477,7 +477,8 @@
     "tent": "einem Zelt",
     "campfire": "einem Lagerfeuer",
     "grill": "einem Grill",
-    "waterlily": "einer Seerose"
+    "waterlily": "einer Seerose",
+    "boat": "einem Boot"
   },
   "objectNom": {
     "table": "ein Tisch",
@@ -520,7 +521,8 @@
     "tent": "ein Zelt",
     "campfire": "ein Lagerfeuer",
     "grill": "ein Grill",
-    "waterlily": "eine Seerose"
+    "waterlily": "eine Seerose",
+    "boat": "ein Boot"
   },
   "objectSame": {
     "table": "demselben Tisch",
@@ -563,7 +565,8 @@
     "tent": "demselben Zelt",
     "campfire": "demselben Lagerfeuer",
     "grill": "demselben Grill",
-    "waterlily": "derselben Seerose"
+    "waterlily": "derselben Seerose",
+    "boat": "demselben Boot"
   },
   "objName": {
     "floor": "Boden",
@@ -608,7 +611,8 @@
     "tent": "Zelt",
     "campfire": "Lagerfeuer",
     "grill": "Grill",
-    "waterlily": "Seerose"
+    "waterlily": "Seerose",
+    "boat": "Boot"
   },
   "legend": {
     "title": "Legende",

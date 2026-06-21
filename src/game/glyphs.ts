@@ -19,6 +19,7 @@ export const OBJECT_GLYPHS: Record<string, string> = {
   window: '🪟',
   door: '🚪',
   car: '🚗',
+  boat: '🛶', // palette/dropdown chip only — the board draws a hand-painted rowing boat
   cow: '🐄',
   horse: '🐎',
   pig: '🐖',

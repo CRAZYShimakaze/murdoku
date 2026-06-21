@@ -477,7 +477,8 @@
     "tent": "a tent",
     "campfire": "a campfire",
     "grill": "a grill",
-    "waterlily": "a water lily"
+    "waterlily": "a water lily",
+    "boat": "a boat"
   },
   "objName": {
     "floor": "Floor",
@@ -522,7 +523,8 @@
     "tent": "Tent",
     "campfire": "Campfire",
     "grill": "Grill",
-    "waterlily": "Water lily"
+    "waterlily": "Water lily",
+    "boat": "Boat"
   },
   "legend": {
     "title": "Legend",

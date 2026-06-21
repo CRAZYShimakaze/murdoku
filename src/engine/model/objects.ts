@@ -5,7 +5,7 @@
  * tile (`occupiable`), and which layer it sits on:
  *   - 'ground': drawn beneath people (carpet) — a person can share the tile;
  *   - 'top':    the tile's object (chair, table, …); occupiable ones (chair/bed/
- *               car/horse/mud/oil/toilet/shower) let a person stand on them, the rest block.
+ *               car/boat/horse/mud/oil/toilet/shower) let a person stand on them, the rest block.
  */
 export interface ObjectDef {
   char: string
@@ -27,6 +27,7 @@ export const OBJECT_CATALOG: ObjectDef[] = [
   { char: 'T', type: 'toilet', occupiable: true, layer: 'top' },
   { char: 'S', type: 'shower', occupiable: true, layer: 'top' },
   { char: 'c', type: 'car', occupiable: true, layer: 'top' },
+  { char: 'O', type: 'boat', occupiable: true, layer: 'top' }, // 2-cell, water only (like car/bed)
   { char: 'h', type: 'horse', occupiable: true, layer: 'top' },
   { char: 'm', type: 'mud', occupiable: true, layer: 'top' },
   { char: 'j', type: 'oil', occupiable: true, layer: 'top' },
