@@ -539,10 +539,10 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     if (m.redDoors) glowWalls(doorSides, S * 0.2, S * 0.13, REF_RED.ring)
   }
 
-  // --- crosses -----------------------------------------------------------
-  ctx.strokeStyle = BOARD.cross
-  ctx.lineWidth = Math.max(2, S * 0.09)
+  // --- crosses (dark X drawn over a wider white halo so it stays legible on
+  //     dark rooms — stroke the white rim first, then the dark X on top) -----
   ctx.lineCap = 'round'
+  const crossW = Math.max(2, S * 0.09)
   for (const c of view.crosses) {
     const { x, y } = xy(c)
     const m = S * 0.26
@@ -551,6 +551,11 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.lineTo(x + S - m, y + S - m)
     ctx.moveTo(x + S - m, y + m)
     ctx.lineTo(x + m, y + S - m)
+    ctx.strokeStyle = BOARD.crossOutline
+    ctx.lineWidth = crossW + Math.max(2, S * 0.07)
+    ctx.stroke()
+    ctx.strokeStyle = BOARD.cross
+    ctx.lineWidth = crossW
     ctx.stroke()
   }
 

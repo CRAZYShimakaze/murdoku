@@ -137,6 +137,12 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
   // A faux case reference that updates live as the form changes — dossier flavour only.
   const caseRef = `MD-${String(size).padStart(2, '0')}-${DIFF_CODE[difficulty]}`
 
+  // Which object chips to SHOW: a specific theme → only the objects that fit its rooms
+  // (its kit); "random" → every object. Each group is still split walkable vs blocking.
+  const visible = new Set(objectsForTheme(theme))
+  const occ = OCCUPIABLE_OBJECT_TYPES.filter((t) => visible.has(t))
+  const blk = BLOCKING_OBJECT_TYPES.filter((t) => visible.has(t))
+
   return (
     <div className="mk-screen">
       <div className="mk-generate">
@@ -236,12 +242,13 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
             <div className="mk-divider">
               <span className="mk-divider__label">{t('generate.sectionScene')}</span>
             </div>
-            {objectGroup(
-              t('generate.objectsOccupiable'),
-              OCCUPIABLE_OBJECT_TYPES,
-              t('generate.objectsOccupiableHint'),
-            )}
-            {objectGroup(t('generate.objectsBlocking'), BLOCKING_OBJECT_TYPES)}
+            {occ.length > 0 &&
+              objectGroup(
+                t('generate.objectsOccupiable'),
+                occ,
+                t('generate.objectsOccupiableHint'),
+              )}
+            {blk.length > 0 && objectGroup(t('generate.objectsBlocking'), blk)}
 
             <div className="mk-field">
               <span className="mk-field__label">{t('generate.openings')}</span>

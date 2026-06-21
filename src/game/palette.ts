@@ -6,7 +6,8 @@ export const BOARD = {
   grid: 'rgba(20, 18, 26, 0.35)', // thin in-room tile lines
   outer: '#0d0c12',
   label: 'rgba(28, 22, 40, 0.30)', // room name text
-  cross: 'rgba(34, 28, 40, 0.82)', // eliminated-cell X
+  cross: 'rgba(20, 16, 26, 0.92)', // eliminated-cell X (dark, drawn over a white halo)
+  crossOutline: '#ffffff', // white rim around the X so it pops on dark rooms
   markOutline: '#0d0c12', // black outline behind pencil-mark letters (legibility)
   highlight: 'rgba(226, 183, 94, 0.34)', // candidate wash
   highlightRing: '#e2b75e',
