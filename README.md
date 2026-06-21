@@ -20,12 +20,12 @@
 
 ## Why you'll get hooked
 
-- 🔎 **Pure deduction, zero luck.** Every case has exactly **one** solution, provable by logic alone — no guessing, ever.
-- ♾️ **An endless supply of mysteries.** A built-in generator rolls fresh, guaranteed-unique cases across **15 themed settings** in three difficulties — you'll never run out.
-- ✍️ **Build your own.** A full editor lets you paint a crime scene, write the clues and verify it's solvable — then play it or save it.
-- 🎓 **Learn by doing.** An interactive, guided tutorial cracks a real mini-case *with* you, one step at a time.
-- 🖼️ **A crime scene with character.** Hand-drawn suspects and **40+ themed props**, dressed in a moody "case-file" look down to the film grain.
-- 📱 **Anywhere, in your language.** Plays beautifully on desktop and phone, in English or German, with your progress saved automatically.
+- **Pure deduction, zero luck.** Every case has exactly **one** solution, provable by logic alone — no guessing, ever.
+- **An endless supply of mysteries.** A built-in generator rolls fresh, guaranteed-unique cases across **15 themed settings** in three difficulties — you'll never run out.
+- **Build your own.** A full editor lets you paint a crime scene, write the clues and verify it's solvable — then play it or save it.
+- **Learn by doing.** An interactive, guided tutorial cracks a real mini-case *with* you, one step at a time.
+- **A crime scene with character.** Hand-drawn suspects and **40+ themed props**, dressed in a moody "case-file" look down to the film grain.
+- **Anywhere, in your language.** Plays beautifully on desktop and phone, in English or German, with your progress saved automatically.
 
 ---
 
