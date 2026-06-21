@@ -8,7 +8,7 @@ import {
   type Puzzle,
   type Side,
 } from '../engine/index.ts'
-import { BOARD, CANDIDATE_BLUE, REF_RED, ROOM_HL, suspectColor } from './palette.ts'
+import { BOARD, CANDIDATE_BLUE, HIGHLIGHT_DIM, REF_RED, ROOM_HL, suspectColor } from './palette.ts'
 import { OBJECT_GLYPHS } from './glyphs.ts'
 import type { HelpMarks } from './helpMarks.ts'
 import { drawBigObject, drawSingleObject } from './bigObjects.ts'
@@ -73,6 +73,10 @@ export interface BoardView {
    *  suspect's candidate cells (blue) at the same time as an active hint (black). */
   highlight2?: Set<Cell> | null
   highlightColor2?: { wash: string; ring: string }
+  /** Opacity (0..1) of each candidate-highlight layer. Defaults to 1; a selected suspect
+   *  who is ALREADY placed dims to HIGHLIGHT_DIM so their now-moot candidates recede. */
+  highlightAlpha?: number
+  highlightAlpha2?: number
   /** Reduced-help reference marks (object rings, room outlines, window/door glow). */
   helpMarks?: HelpMarks | null
   /** Thumbnail mode: rooms + walls + object dots only. */
@@ -185,6 +189,10 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   ctx.fillStyle = BOARD.mortar
   ctx.fillRect(ox - 1, oy - 1, W * S + 2, H * S + 2)
 
+  // Cells already taken by a placed figure — a candidate there is no longer possible, so
+  // (like a crossed-off cell) its highlight is faded below. Built once, reused throughout.
+  const occupied = new Set(view.placements.values())
+
   // --- room fills + highlight wash ---------------------------------------
   for (let c = 0; c < W * H; c++) {
     const { x, y } = xy(c)
@@ -209,13 +217,21 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.fillRect(x, y, S, S)
     if (water) drawWaterTile(ctx, x, y, S, roomConnOf(c))
     // Secondary layer (selection) under the primary (hint), so the hint wins on overlap.
+    // A ruled-out candidate — crossed off OR already taken by another figure — fades its
+    // wash by HIGHLIGHT_DIM (same as its ring). Capped, never stacked: a placed suspect's
+    // whole layer is already dimmed, so take the STRONGER dim of the two, not dim².
+    const cellDim = view.crosses.has(c) || occupied.has(c) ? HIGHLIGHT_DIM : 1
     if (view.highlight2?.has(c)) {
+      ctx.globalAlpha = Math.min(view.highlightAlpha2 ?? 1, cellDim)
       ctx.fillStyle = view.highlightColor2?.wash ?? BOARD.highlight
       ctx.fillRect(x, y, S, S)
+      ctx.globalAlpha = 1
     }
     if (view.highlight?.has(c)) {
+      ctx.globalAlpha = Math.min(view.highlightAlpha ?? 1, cellDim)
       ctx.fillStyle = view.highlightColor?.wash ?? BOARD.highlight
       ctx.fillRect(x, y, S, S)
+      ctx.globalAlpha = 1
     }
     // Reduced-help area marks are drawn as quiet outlines later — no wash here.
   }
@@ -419,20 +435,37 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   }
 
   // --- highlight rings on candidate cells (secondary under primary) ------
-  const drawRings = (cells: Set<Cell>, color: string, pad: number) => {
-    ctx.strokeStyle = color
-    ctx.lineWidth = Math.max(2, S * 0.05)
+  // `outline` adds a THIN white line hugging the INSIDE of the coloured ring so the
+  // candidate rectangles stay legible on dark surfaces (e.g. the lake water). On a
+  // candidate cell that's ruled out — crossed off OR already taken by another figure — the
+  // WHOLE marking (blue ring + white) dims by HIGHLIGHT_DIM so the live candidates pop.
+  const ringW = Math.max(2, S * 0.05)
+  const drawRings = (cells: Set<Cell>, color: string, pad: number, outline = false, alpha = 1) => {
     for (const c of cells) {
       const { x, y } = xy(c)
+      // outline = candidate highlight → ruled-out cells fade by HIGHLIGHT_DIM (ring + white).
+      // Capped, not stacked: take the stronger of the layer dim and the per-cell dim.
+      const ruledOut = outline && (view.crosses.has(c) || occupied.has(c))
+      ctx.globalAlpha = Math.min(alpha, ruledOut ? HIGHLIGHT_DIM : 1)
       ctx.beginPath()
       ctx.roundRect(x + pad, y + pad, S - 2 * pad, S - 2 * pad, S * 0.12)
+      ctx.strokeStyle = color
+      ctx.lineWidth = ringW
       ctx.stroke()
+      if (outline) {
+        const wW = Math.max(1, S * 0.018)
+        const ip = pad + ringW / 2 + wW / 2 // sit just inside the coloured ring
+        ctx.beginPath()
+        ctx.roundRect(x + ip, y + ip, S - 2 * ip, S - 2 * ip, S * 0.1)
+        ctx.strokeStyle = '#ffffff'
+        ctx.lineWidth = wW
+        ctx.stroke()
+      }
     }
+    ctx.globalAlpha = 1
   }
-  // The selection ring sits a touch further in, so where a hint cell IS also a
-  // candidate both rings stay visible (blue inside, black outside).
-  if (view.highlight2) drawRings(view.highlight2, view.highlightColor2?.ring ?? BOARD.highlightRing, S * 0.13)
-  if (view.highlight) drawRings(view.highlight, view.highlightColor?.ring ?? BOARD.highlightRing, S * 0.07)
+  // NOTE: the candidate-hint rings are drawn LATER (after the room hover outline) so the
+  // blue rounded rectangles always sit ON TOP of the room enclosure outline — see below.
 
   // Trace the boundary of a cell region just inside its edges: for each cell in
   // `domain`, stroke the sides whose orthogonal neighbour is NOT `inside`. Shared
@@ -552,7 +585,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.moveTo(x + S - m, y + m)
     ctx.lineTo(x + m, y + S - m)
     ctx.strokeStyle = BOARD.crossOutline
-    ctx.lineWidth = crossW + Math.max(2, S * 0.07)
+    ctx.lineWidth = crossW + Math.max(1.5, S * 0.035)
     ctx.stroke()
     ctx.strokeStyle = BOARD.cross
     ctx.lineWidth = crossW
@@ -564,7 +597,6 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   //     suspect's letter only PULSES GENTLY in size around its normal size — it stays in
   //     its slot and the other letters in the cell remain fully visible. A black outline
   //     (stroke under the fill) keeps light marks legible on similar-coloured rooms. ---
-  const occupied = new Set(view.placements.values())
   ctx.strokeStyle = BOARD.markOutline
   ctx.lineJoin = 'round'
   ctx.textAlign = 'left'
@@ -624,6 +656,12 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   if (view.hover != null && !board.isVoid(view.hover)) {
     traceRoom(board.roomIdOf(view.hover), ROOM_HL, S * 0.11, Math.max(1.5, S * 0.04))
   }
+
+  // --- candidate-hint rings (blue rounded rectangles) — drawn AFTER the room hover
+  //     outline so they always sit ON TOP of it. The selection ring sits a touch further
+  //     in, so where a hint cell IS also a candidate both rings stay visible. ----------
+  if (view.highlight2) drawRings(view.highlight2, view.highlightColor2?.ring ?? BOARD.highlightRing, S * 0.13, true, view.highlightAlpha2 ?? 1)
+  if (view.highlight) drawRings(view.highlight, view.highlightColor?.ring ?? BOARD.highlightRing, S * 0.07, true, view.highlightAlpha ?? 1)
 
   // --- hover/press outline: yellow on occupiable, red on blocked --------
   if (view.hover != null) {

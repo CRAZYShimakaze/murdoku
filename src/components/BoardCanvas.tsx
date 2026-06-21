@@ -26,6 +26,10 @@ interface Props {
   /** A second highlight layer (selected suspect's candidates) shown beneath the hint. */
   highlight2?: Set<Cell> | null
   highlightColor2?: { wash: string; ring: string }
+  /** Opacity of each candidate-highlight layer (1 = full; HIGHLIGHT_DIM when the selected
+   *  suspect is already placed, so their now-moot candidates recede). */
+  highlightAlpha?: number
+  highlightAlpha2?: number
   /** Reduced-help reference marks (object rings, room outlines, window/door glow). */
   helpMarks?: HelpMarks | null
   /** Suspect whose notes pulse bigger (when hovering their clue card). */
@@ -109,6 +113,8 @@ export default function BoardCanvas(props: Props) {
       highlightColor: p.highlightColor,
       highlight2: p.highlight2,
       highlightColor2: p.highlightColor2,
+      highlightAlpha: p.highlightAlpha,
+      highlightAlpha2: p.highlightAlpha2,
       helpMarks: p.helpMarks,
       press,
       reveal: p.reveal,
@@ -162,7 +168,7 @@ export default function BoardCanvas(props: Props) {
     cv.style.height = `${layout.h}px`
     redraw(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout, props.state, props.selectedSuspect, props.highlight, props.helpMarks, props.reveal])
+  }, [layout, props.state, props.selectedSuspect, props.highlight, props.highlightAlpha, props.helpMarks, props.reveal])
 
   useEffect(() => () => cancelPress(), [])
 

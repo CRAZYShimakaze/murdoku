@@ -15,7 +15,7 @@ import { Renderer } from '../i18n/Renderer.ts'
 import { useDebugSolveKey } from '../game/debugSolve.ts'
 import { useGameSession } from '../game/useGameSession.ts'
 import { useTutorialFlow } from '../game/useTutorialFlow.ts'
-import { CANDIDATE_BLUE, HINT_BLACK, suspectColor } from '../game/palette.ts'
+import { CANDIDATE_BLUE, HIGHLIGHT_DIM, HINT_BLACK, suspectColor } from '../game/palette.ts'
 import {
   markSolved,
   saveCustomLevel,
@@ -346,6 +346,11 @@ export default function GameScreen({
   // outside it, a hint (black) sits over the selection (blue).
   const boardHighlightColor = tut.active ? tut.highlightColor : hintHL ? HINT_BLACK : CANDIDATE_BLUE
   const boardHighlight2 = tut.active ? tut.highlight2 : hintHL && selectHL ? selectHL : null
+  // A selected suspect who is ALREADY placed has moot candidates — dim their whole
+  // highlight so the live (un-placed) suspects' candidates stand out more.
+  const selDim = !tut.active && selected !== null && session.state.placements.has(selected) ? HIGHLIGHT_DIM : 1
+  const boardHighlightAlpha = hintHL ? 1 : selDim // primary = black hint (full opacity) when a hint is up
+  const boardHighlightAlpha2 = selDim // the secondary layer carries the selection under a hint
   const hintText = activeHint
     ? renderer.render(activeHint.step.explanation)
     : hintShown && !hintDone
@@ -462,6 +467,8 @@ export default function GameScreen({
           highlightColor={boardHighlightColor}
           highlight2={boardHighlight2}
           highlightColor2={CANDIDATE_BLUE}
+          highlightAlpha={boardHighlightAlpha}
+          highlightAlpha2={boardHighlightAlpha2}
           helpMarks={tut.active ? null : refMarks}
           emphasize={hoveredSuspect}
           xTool={tut.active ? tut.xTool : xTool}

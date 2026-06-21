@@ -46,3 +46,7 @@ export const REF_RED = { wash: 'rgba(207, 70, 60, 0.26)', ring: '#cf463c' }
 export const HINT_BLACK = { wash: 'rgba(0, 0, 0, 0.16)', ring: '#000' }
 /** Room outline drawn inside the walls of the hovered cell's room. */
 export const ROOM_HL = '#5a8be0'
+/** Opacity a candidate highlight fades to when it is no longer a real option — the
+ *  suspect is already placed, or the cell is crossed off / taken by another figure. A
+ *  flat factor (never stacked) so live candidates stand out. Single source of truth. */
+export const HIGHLIGHT_DIM = 0.7
