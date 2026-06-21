@@ -1339,12 +1339,21 @@ function lilyFlower(ctx: Ctx, cx: number, cy: number, R: number): void {
  */
 export function drawWaterlily(ctx: Ctx, x: number, y: number, S: number): void {
   ctx.lineJoin = 'round'
+  // Scale the WHOLE plant — pads (leaves), blossom and ripple — to ~80% about the tile
+  // centre, so the entire lily sits smaller and compactly centred on its tile.
+  const cx = x + S * 0.5
+  const cy = y + S * 0.5
+  ctx.save()
+  ctx.translate(cx, cy)
+  ctx.scale(0.8, 0.8)
+  ctx.translate(-cx, -cy)
   // faint ripple of open water under the pads
   ctx.fillStyle = 'rgba(120, 170, 200, 0.16)'
   ctx.beginPath()
-  ctx.ellipse(x + S * 0.5, y + S * 0.56, S * 0.42, S * 0.3, 0, 0, Math.PI * 2)
+  ctx.ellipse(x + S * 0.5, y + S * 0.54, S * 0.42, S * 0.3, 0, 0, Math.PI * 2)
   ctx.fill()
-  lilyPad(ctx, x + S * 0.68, y + S * 0.38, S * 0.19, -0.8) // small pad, upper-right
-  lilyPad(ctx, x + S * 0.4, y + S * 0.62, S * 0.3, 2.3) // large pad, lower-left
-  lilyFlower(ctx, x + S * 0.42, y + S * 0.52, S * 0.17) // blossom on the large pad
+  lilyPad(ctx, x + S * 0.66, y + S * 0.4, S * 0.19, -0.8) // small pad, upper-right
+  lilyPad(ctx, x + S * 0.42, y + S * 0.6, S * 0.3, 2.3) // large pad under the blossom
+  lilyFlower(ctx, x + S * 0.5, y + S * 0.5, S * 0.17) // blossom, centred on the large pad
+  ctx.restore()
 }

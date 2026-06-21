@@ -2,7 +2,7 @@
 
 > *There was a murder last night. A handful of suspects, one victim, a floor plan full of clues — and only one arrangement that truly adds up. Grab your magnifying glass.*
 
-**Murdoku** is a logic mystery for the web: the rigor of Sudoku married to the suspense of a whodunit. Every suspect leaves a clue ("…was sitting on a chair", "…was in the same room as Bryson", "…was **not** beside a wall"). You combine, cross out and place — until every person stands on exactly one tile. Whoever ends up **alone with the victim** in a room is the murderer.
+**Murdoku** is a logic mystery for the web: the rigor of Sudoku married to the suspense of a whodunit. Every suspect leaves a clue — *"…was sitting on a chair", "…was in the same room as Bryson", "…was **not** beside a wall"*. You reason, cross out and place, until every person stands on exactly one tile. Whoever ends up **alone with the victim** in a room is the murderer.
 
 <p align="center">
   <img src="screenshots/murdoku_menu.jpg" width="32%" alt="Start screen: blood-lettered Murdoku title with Open Case, Tutorial, Editor and Generate" />
@@ -18,20 +18,18 @@
 
 ---
 
-## Highlights
+## Why you'll get hooked
 
-- **A guided, interactive tutorial** that teaches the rules by solving a real mini-case with you, step by step.
-- **An automatic case generator** that rolls *endless*, guaranteed-unique mysteries from 10+ themed settings in three difficulties — running in a Web Worker so the interface never stutters.
-- **A full level editor** — paint the floor plan, define suspects, build their clues, verify uniqueness, then play or save your own cases.
-- **48 hand-built bundled cases** spanning a gentle tutorial up through *hard*, on boards from 4×4 to 10×10 — and the generator adds as many more as you like.
-- **A settings desk** behind the gear: language, three assistance levels, a case stopwatch and gender-tinted suspect files.
-- **A noir "case file" look** — dark ink, brass and crimson, a typewriter testimony font, ink stamps, polaroid evidence cards and a faint film-grain over everything.
-- **Fully bilingual** (English & German), switchable at any time, with every clue written out as a natural sentence.
-- **Plays great on desktop and mobile**, with your progress saved locally.
+- 🔎 **Pure deduction, zero luck.** Every case has exactly **one** solution, provable by logic alone — no guessing, ever.
+- ♾️ **An endless supply of mysteries.** A built-in generator rolls fresh, guaranteed-unique cases across **15 themed settings** in three difficulties — you'll never run out.
+- ✍️ **Build your own.** A full editor lets you paint a crime scene, write the clues and verify it's solvable — then play it or save it.
+- 🎓 **Learn by doing.** An interactive, guided tutorial cracks a real mini-case *with* you, one step at a time.
+- 🖼️ **A crime scene with character.** Hand-drawn suspects and **40+ themed props**, dressed in a moody "case-file" look down to the film grain.
+- 📱 **Anywhere, in your language.** Plays beautifully on desktop and phone, in English or German, with your progress saved automatically.
 
 ---
 
-## Hats off to the inventor
+## A tribute to the inventor
 
 The brilliant core idea — fusing Sudoku logic with a murder case — comes from **Manuel Garand**. This project is a loving, freely-interpreted homage to his concept and is not affiliated with him.
 
@@ -47,20 +45,55 @@ The brilliant core idea — fusing Sudoku logic with a murder case — comes fro
 4. **Cross out** anything you can rule out yourself (even across furniture), until only one solution remains.
 5. **Submit.** If everyone stands correctly, the mystery unravels: who was alone with the victim?
 
-Stuck? The **hint giver** explains the next logical step in words — it never hands you the answer, just a nudge in the right direction.
+Stuck? The **hint giver** explains the next logical step in plain words — it never hands you the answer, just a nudge in the right direction.
 
 ---
 
-## What's in the file
+## The clues
 
-- **A whole clue vocabulary** — on/beside an object, beside a window, in a corner, against a wall, in a row/column, alone in the room, "the only person on a chair", "in the same room as X", compass directions, room traits ("nobody with a beard") … all combinable with **AND / OR** and individually negatable with **NOT** — and rendered as clean, grammatical sentences.
-- **Suspects with character** — hand-drawn avatars with gender, beard, glasses, baldness and hair colors. These traits aren't decoration; they're part of the logic.
-- **A lovingly drawn crime scene** — armchairs, bookshelves, beds, cars and tables that **merge seamlessly into large pieces** (rows, L-shapes, 2×2 …), just like the carpets. Windows, walls and pastel rooms included.
-- **Endless new cases** — the built-in **generator** rolls uniquely-solvable levels from 10+ themes (apartment, mansion, hotel, hospital, museum, auto shop …) in three difficulties. It runs in a **Web Worker** so the interface stays smooth.
-- **Build your own cases** — a full **level editor** (see below).
-- **Guided tutorial** — walks you through a real mini-case step by step.
-- **Bilingual** — English & German, switchable anytime.
-- **Desktop & mobile** — responsive layout, touch controls, and your progress is saved locally.
+A whole vocabulary of evidence, every piece rendered as a clean, grammatical sentence:
+
+- **on** or **beside** an object, **beside a window**, **in a corner**, **against a wall**
+- **in a row / column**, **alone in the room**, *"the only person on a chair"*
+- **in the same room as** another suspect, and **compass directions** — *"north of Dana"*
+- **room traits** — *"nobody in the room had a beard"*, *"a woman was in the room"*
+
+…all combinable with **AND / OR** and individually negatable with **NOT**.
+
+Suspects come with **traits that matter** — gender, beard, glasses, baldness and hair color. They aren't decoration; the logic leans on them, and each one has a hand-drawn avatar to match.
+
+---
+
+## The crime scene
+
+Every case is dressed by hand to feel *built*, not random:
+
+- **40+ objects** — armchairs, bookshelves, pianos, fridges, cars, beds, boats, tents, campfires, farm animals, statues and more — chosen to fit each setting. Boats and water lilies drift on the lake, cows fill the barn, fridges line the supermarket aisle, cars wait in the garage.
+- **Pieces that merge** — beds, cars and rowing boats span two tiles and join into one seamless object; carpets and open water tile together into continuous surfaces.
+- **Windows, doors, walls and soft pastel rooms**, with room names that follow the chosen theme.
+
+---
+
+## Endless cases — the generator
+
+Out of files to crack? Roll a new one. The generator builds **uniquely-solvable** mysteries on demand:
+
+- **15 themed settings** — apartment, mansion, hotel, hospital, museum, auto shop, supermarket, farm, school, restaurant, police station, campsite and more — each with fitting rooms and props.
+- **Three difficulties**, on boards from a tight **4×4** up to a sprawling **16×16**.
+- Runs in a **Web Worker**, so the interface never stutters. Keep a case you like, export it as JSON, or simply play and move on.
+
+---
+
+## Build your own crime scene (the editor)
+
+Got your own Murdoku puzzles on paper? Recreate them 1:1:
+
+- Paint **rooms, floor, objects and windows** straight onto the board (4×4 up to 16×16).
+- Create **suspects** (name, traits) and assemble their clues in the flat **clue builder**.
+- **"Check"** tells you whether the case is solvable **and unique** — and who the murderer would be.
+- **"Play"** tests it instantly; **"Save"** files it (with name & difficulty) into your archive or exports it as JSON.
+
+Room names follow the chosen theme — and can be swapped anytime.
 
 ---
 
@@ -77,36 +110,23 @@ Everything is stored locally and applies across the game, picker, generator and 
 
 ---
 
-## A crime scene with atmosphere
+## A case file with atmosphere
 
-Murdoku is dressed as a **noir case file**. Warm near-black "interrogation room" ink, brass and crimson accents, and a faint **film-grain** over the whole app. The display face is **Fraunces**, headings and testimony are typed in **Special Elite**, the body is **Spline Sans**. Cases arrive as **polaroid evidence cards** (taped into place), solved files get a slanted crimson **SOLVED** stamp, the title bleeds its letters, and the generator is laid out as a stamped, **confidential** dossier. Form, not just function.
-
----
-
-## Build your own crime scene (editor)
-
-Got your own Murdoku puzzles on paper? Recreate them 1:1:
-
-- Paint **rooms, floor, objects and windows** straight onto the board (4×4 up to 16×16).
-- Create **suspects** (name, traits) and assemble their clues in the flat **clue builder**.
-- **"Check"** tells you whether the case is solvable **and unique** — and who the murderer would be.
-- **"Play"** tests it instantly, **"Save"** files it (with name & difficulty) into your case archive or exports it as JSON.
-
-Room names follow the chosen theme — and can be swapped anytime.
+Murdoku is dressed as a **noir case file**: warm near-black "interrogation room" ink, brass and crimson accents, and a faint **film grain** over the whole app. The display face is **Fraunces**, headings and testimony are typed in **Special Elite**, the body is **Spline Sans**. Cases arrive as **polaroid evidence cards** taped into place, solved files get a slanted crimson **SOLVED** stamp, the title bleeds its letters, and the generator is laid out as a stamped, **confidential** dossier. Form, not just function.
 
 ---
 
-## The detective's tools
+## Under the hood
 
 Murdoku is built **engine-first**: the entire game logic is a pure, framework-free TypeScript engine (no React, no DOM) — testable, portable, and the single source of truth.
 
 | Area        | Tech |
 |-------------|------|
-| **Engine**  | Pure TypeScript 6 (strict): model, composable `Clue` classes, a backtracking **solver** (uniqueness oracle + answer key) and a **DeductionEngine** for explainable hints |
-| **Frontend**| React 19 + Vite 8, board rendered on **Canvas 2D** |
-| **Generator** | Runs in a **Web Worker**, guarantees unique solutions |
-| **i18n**    | i18next / react-i18next — all text from locale files |
-| **Quality** | Vitest, ESLint 10, strict `tsc` throughout |
+| **Engine**  | Pure TypeScript (strict): model, composable `Clue` classes, a backtracking **solver** (uniqueness oracle + answer key) and a **DeductionEngine** for explainable hints |
+| **Frontend**| React 19 + Vite, board rendered on **Canvas 2D** |
+| **Generator** | Builds guaranteed-unique cases across 15 themes, in a **Web Worker** |
+| **i18n**    | i18next / react-i18next — all text from locale files (EN & DE) |
+| **Quality** | Vitest, ESLint and strict `tsc` throughout |
 
 ---
 
@@ -127,19 +147,19 @@ npm run lint     # ESLint
 npm run typecheck
 ```
 
-And a few bloodhounds for the engine — small CLIs that solve, generate and analyze levels:
+And a few bloodhounds for the engine — small CLIs that solve, generate and analyze cases:
 
 ```bash
 npm run solve      # solve a case
-npm run generate   # roll new cases
+npm run generate   # roll a new case
 npm run show       # print a level in the terminal
-npm run check      # verify all levels are uniquely solvable
-npm run hardest    # find the trickiest cases
+npm run check      # verify levels are uniquely solvable
+npm run hardest    # hunt down the trickiest cases
 ```
 
 ---
 
-## Case file structure
+## Project structure
 
 ```
 src/
@@ -148,13 +168,13 @@ src/
   components/    React building blocks (board, file, toolbar, settings, editor …)
   screens/       Start · Case select · Game · Generator · Tutorial · Editor
   i18n/          English & German + the clue renderer
-levels/          Bundled cases (JSON)
+levels/          Case files (JSON)
 screenshots/     The images above
 ```
 
 ---
 
-## The detective behind the desk
+## Credits
 
 Built by **Dirk Aporius** ([@TheApo](https://github.com/TheApo)) — from the pure logic engine down to the last hand-drawn armchair.
 
