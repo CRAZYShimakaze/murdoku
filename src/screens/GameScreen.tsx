@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DeductionEngine,
@@ -359,6 +359,38 @@ export default function GameScreen({
   // Readable contradiction chain ("if X here → … → impossible"), when the hint has one.
   const hintChain = activeHint?.step.chain?.map((e) => renderer.render(e)) ?? null
 
+  // The level to play next, honouring the saved filter, the hidden-author toggle
+  // and the current solved set — exactly what the picker would offer. Shared by
+  // the post-win "next level" button and the "n" skip shortcut. Null on the last.
+  const computeNext = useCallback((): LevelMeta | null => {
+    const custom = loadCustomLevels().map((j) => levelMetaFromJson(j, true))
+    const filtered = pickerLevels(
+      custom,
+      loadFilter(DEFAULT_FILTER),
+      loadSolved(),
+      loadShowHiddenAuthor(),
+    )
+    return nextLevel(meta, filtered)
+  }, [meta])
+
+  // Press "n" to skip straight to the next level — same target as the verdict's
+  // "next level" button. Only where that navigation exists (not tutorial / generated
+  // / editor test-play, where onNext is omitted) and never while typing in a field.
+  useEffect(() => {
+    if (!onNext) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'n' || e.ctrlKey || e.metaKey || e.altKey) return
+      const el = e.target as HTMLElement | null
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
+      const next = computeNext()
+      if (!next) return
+      e.preventDefault()
+      onNext(next)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onNext, computeNext])
+
   const submit = () => {
     if (!session.allPlaced || !solution) return
     const win =
@@ -378,19 +410,8 @@ export default function GameScreen({
     setDialogHidden(false) // a fresh verdict always shows the dialog first
     const m = findMurderer(puzzle, solution)
     const room = puzzle.board.rooms.get(m.roomId)
-    // Next level honours the saved filter, the hidden-author toggle and the
-    // (now updated) solved set — exactly what the picker would show.
-    let next: LevelMeta | null = null
-    if (onNext) {
-      const custom = loadCustomLevels().map((j) => levelMetaFromJson(j, true))
-      const filtered = pickerLevels(
-        custom,
-        loadFilter(DEFAULT_FILTER),
-        loadSolved(),
-        loadShowHiddenAuthor(),
-      )
-      next = nextLevel(meta, filtered)
-    }
+    // markSolved above already updated the solved set computeNext reads from.
+    const next = onNext ? computeNext() : null
     setResult({
       win: true,
       murderer: {

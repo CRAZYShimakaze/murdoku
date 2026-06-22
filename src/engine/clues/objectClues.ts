@@ -131,9 +131,11 @@ export class SameRoomAsObjectClue extends UnaryClue {
   }
 
   describe(): Explanation {
+    // Both forms of the same token: "wie" wants nominative ("eine Kuh"), the
+    // "alone … mit" wording wants dative ("einer Kuh"). The template picks one.
     return {
       key: this.alone ? 'clue.aloneSameRoomAsObject' : 'clue.sameRoomAsObject',
-      params: { objectNom: this.object },
+      params: { objectNom: this.object, object: this.object },
     }
   }
 }

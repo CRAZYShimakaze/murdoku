@@ -26,6 +26,22 @@ export class Renderer {
     return typeof node === 'string' ? node : undefined
   }
 
+  /**
+   * Count-aware key variant for templates that read differently in singular and
+   * plural ("1 column" vs "2 columns", "1 Raum ist" vs "2 Räume sind"). The base
+   * key holds the plural ("other") form; the locale may add a `<key>_one` sibling
+   * for the singular. Picks `_one` only when a count param (`count`/`n`/`size`)
+   * equals exactly 1 and that variant exists — otherwise the base key is used, so
+   * keys without a `_one` sibling are unaffected.
+   */
+  pluralKey(key: string, params: Record<string, string | number>): string {
+    const n = params.count ?? params.n ?? params.size
+    if (n !== undefined && n !== '' && Number(n) === 1 && this.lookup(`${key}_one`) !== undefined) {
+      return `${key}_one`
+    }
+    return key
+  }
+
   cell(cell: number): string {
     const { row, col } = this.puzzle.board.rc(cell)
     return `${this.lookup('coord.row') ?? 'Z'}${row + 1}/${this.lookup('coord.col') ?? 'S'}${col + 1}`
@@ -255,13 +271,13 @@ export class Renderer {
       if (exp.key === 'clue.or') return parts.join(` ${this.lookup('clue.connOr') ?? 'oder'} `)
       return parts.join(' ')
     }
+    const params = { ...extra, ...(exp.params ?? {}) }
     // Strip the rich-text concept markers `[[word:tipKey]]` → `word` (the UI
     // renderer interprets them; plain text just shows the word).
-    const template = (this.lookup(exp.key) ?? exp.key).replace(
+    const template = (this.lookup(this.pluralKey(exp.key, params)) ?? exp.key).replace(
       /\[\[([^\]]+?):[^\]]+?\]\]/g,
       '$1',
     )
-    const params = { ...extra, ...(exp.params ?? {}) }
     return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) =>
       this.resolveParam(key, params[key] ?? '', nameSubject),
     )

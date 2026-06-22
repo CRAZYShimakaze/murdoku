@@ -932,15 +932,15 @@
     "uniqueOutside": "{{subject}} war {{neg}}[[die einzige Person draußen:uniqueOutside]]",
     "alone": "{{subject}} war {{neg}}[[allein im Raum:alone]]",
     "roomAttribute": {
-      "none": "[[Niemand:roomAttrNone]] in {{poss}} Raum hatte {{attribute}}",
+      "none": "[[Niemand:roomAttrNone]] anderes in {{poss}} Raum hatte {{attribute}}",
       "some": "[[Jemand:roomAttrSome]] mit {{attribute}} war in {{poss}} Raum",
-      "someNeg": "[[Niemand:roomAttrNone]] mit {{attribute}} war in {{poss}} Raum",
+      "someNeg": "[[Niemand:roomAttrNone]] anderes mit {{attribute}} war in {{poss}} Raum",
       "noneNeg": "[[Jemand:roomAttrSome]] mit {{attribute}} war in {{poss}} Raum",
       "allNeg": "[[Nicht alle:roomAttrAll]] in {{poss}} Raum hatten {{attribute}}",
       "all": "[[Alle:roomAttrAll]] in {{poss}} Raum hatten {{attribute}}"
     },
     "roomGender": {
-      "none": "[[Niemand:roomAttrNone]] in {{poss}} Raum war {{who}}",
+      "none": "[[Niemand:roomAttrNone]] anderes in {{poss}} Raum war {{who}}",
       "some": "In {{poss}} Raum war {{who}}",
       "someNeg": "In {{poss}} Raum war {{whoNeg}}",
       "noneNeg": "In {{poss}} Raum war {{who}}",
@@ -948,10 +948,14 @@
       "all": "[[Jede Person:roomAttrAll]] in {{poss}} Raum war {{who}}"
     },
     "direction": "{{subject}} war {{neg}}{{direction}} von {{target}}",
-    "offsetWest": "{{subject}} war {{neg}}genau {{n}} Spalte [[westlich:offset]] von {{target}}",
-    "offsetEast": "{{subject}} war {{neg}}genau {{n}} Spalte [[östlich:offset]] von {{target}}",
-    "offsetNorth": "{{subject}} war {{neg}}genau {{n}} Zeile [[nördlich:offset]] von {{target}}",
-    "offsetSouth": "{{subject}} war {{neg}}genau {{n}} Zeile [[südlich:offset]] von {{target}}",
+    "offsetWest": "{{subject}} war {{neg}}genau {{n}} Spalten [[westlich:offset]] von {{target}}",
+    "offsetWest_one": "{{subject}} war {{neg}}genau {{n}} Spalte [[westlich:offset]] von {{target}}",
+    "offsetEast": "{{subject}} war {{neg}}genau {{n}} Spalten [[östlich:offset]] von {{target}}",
+    "offsetEast_one": "{{subject}} war {{neg}}genau {{n}} Spalte [[östlich:offset]] von {{target}}",
+    "offsetNorth": "{{subject}} war {{neg}}genau {{n}} Zeilen [[nördlich:offset]] von {{target}}",
+    "offsetNorth_one": "{{subject}} war {{neg}}genau {{n}} Zeile [[nördlich:offset]] von {{target}}",
+    "offsetSouth": "{{subject}} war {{neg}}genau {{n}} Zeilen [[südlich:offset]] von {{target}}",
+    "offsetSouth_one": "{{subject}} war {{neg}}genau {{n}} Zeile [[südlich:offset]] von {{target}}",
     "aloneWith": "{{subject}} war {{neg}}[[allein mit:aloneWith]] {{who}}",
     "aloneWithTrait": "{{subject}} war {{neg}}[[allein mit:aloneWith]] einer Person, die {{attribute}} hatte",
     "roomExistsOnObject": "In {{poss}} Raum saß {{who}} [[auf:onObject]] {{object}}",
@@ -969,7 +973,7 @@
     "sameRoom": "{{subject}} war {{neg}}[[im selben Raum wie:sameRoom]] {{target}}",
     "sameRoomAsObject": "{{subject}} war {{neg}}[[im selben Raum wie:sameRoomAsObject]] {{objectNom}}",
     "aloneSameRoom": "{{subject}} war {{neg}}[[allein in einem Raum mit:aloneSameRoom]] {{target}}",
-    "aloneSameRoomAsObject": "{{subject}} war {{neg}}[[allein in einem Raum mit:aloneSameRoomAsObject]] {{objectNom}}",
+    "aloneSameRoomAsObject": "{{subject}} war {{neg}}[[allein in einem Raum mit:aloneSameRoomAsObject]] {{object}}",
     "sameLineAsObject": "{{subject}} war {{neg}}in derselben {{line}} mit {{object}}{{roomRel}}",
     "directionFromObject": "{{subject}} war {{neg}}{{direction}} von {{object}}{{atCell}}{{roomRel}}",
     "directionFromObjectAll": "{{subject}} war {{neg}}{{direction}} von {{objectEvery}}{{roomRel}}",
@@ -988,16 +992,21 @@
     "notAloneNeg": "{{subject}} war [[allein im Raum:alone]]",
     "insideXor": "{{subject}} und {{target}} waren weder beide [[drinnen:inside]] noch beide [[draußen:outside]]",
     "insideXorNeg": "{{subject}} und {{target}} waren beide [[drinnen:inside]] oder beide [[draußen:outside]]",
-    "aloneWithPeople": "{{subject}} war {{neg}}allein mit {{target}} und {{count}} weiteren ({{attribute}})",
-    "aloneWithDir": "{{subject}} war {{neg}}allein mit {{target}} und {{count}} weiteren ({{attribute}}, eine {{direction}})",
+    "aloneWithPeople": "{{subject}} war {{neg}}allein mit {{target}} und {{count}} weiteren Personen ({{attribute}})",
+    "aloneWithPeople_one": "{{subject}} war {{neg}}allein mit {{target}} und einer weiteren Person ({{attribute}})",
+    "aloneWithDir": "{{subject}} war {{neg}}allein mit {{target}} und {{count}} weiteren Personen ({{attribute}}, eine {{direction}})",
+    "aloneWithDir_one": "{{subject}} war {{neg}}allein mit {{target}} und einer weiteren Person ({{attribute}}, eine {{direction}})",
     "connAnd": "und",
     "connOr": "oder",
     "not": "[[nicht:negation]] ({{child}})"
   },
   "boardClue": {
-    "countOnObject": "Genau {{count}} Person war auf {{object}}.",
+    "countOnObject": "Genau {{count}} Personen waren auf {{object}}.",
+    "countOnObject_one": "Genau {{count}} Person war auf {{object}}.",
     "emptyRooms": "Genau {{count}} Räume sind leer.",
-    "everyRoomCount": "In jedem Raum sind genau {{count}} Personen."
+    "emptyRooms_one": "Genau {{count}} Raum ist leer.",
+    "everyRoomCount": "In jedem Raum sind genau {{count}} Personen.",
+    "everyRoomCount_one": "In jedem Raum ist genau {{count}} Person."
   },
   "rule": {
     "aloneWithVictim": "Das Opfer muss mit genau einer verdächtigen Person allein in einem Raum sein."
@@ -1187,6 +1196,7 @@
   "conn": { "and": "UND", "or": "ODER" },
   "step": {
     "clueCandidates": "{{name}}: durch die Hinweise bleiben {{count}} mögliche Felder.",
+    "clueCandidates_one": "{{name}}: durch die Hinweise bleibt {{count}} mögliches Feld.",
     "nakedSingle": "{{name}} muss auf {{cell}} stehen – einziges mögliches Feld.",
     "uniqueConstraint": "Nur {{name}} darf dort stehen – andere von diesen Feldern ausgeschlossen.",
     "hiddenSingleRow": "In Zeile {{line}} ist alles ausgekreuzt bis auf {{cells}} – dort passt nur {{name}}, kein anderer Verdächtiger und nicht das Opfer.",
@@ -1199,7 +1209,8 @@
     "nakedGroupCols": "{{people}}: nur Spalten {{lines}} möglich – für andere gesperrt.",
     "rectangle": "Egal wo {{name}} steht, {{cell}} bleibt blockiert – dort kann niemand stehen.",
     "insideXor": "{{other}} ist {{otherSide}}, also ist {{name}} nicht {{otherSide}} – Felder ausgeschlossen.",
-    "boardCountFull": "Schon {{count}} Person auf {{object}} – für alle anderen ausgeschlossen.",
+    "boardCountFull": "Schon {{count}} Personen auf {{object}} – für alle anderen ausgeschlossen.",
+    "boardCountFull_one": "Schon {{count}} Person auf {{object}} – für alle anderen ausgeschlossen.",
     "boardCountConfine": "Nur {{name}} kann auf {{object}} sein – muss also dorthin.",
     "emptyRoomsAllOccupied": "So viele Räume sind schon belegt, dass die übrigen leer bleiben müssen (genau {{count}} leer) – hier kann niemand mehr stehen.",
     "emptyRoomsConfine": "Die erlaubten leeren Räume stehen schon fest ({{count}}) – {{room}} muss also besetzt sein, und nur {{name}} kann dort stehen.",
@@ -1261,10 +1272,12 @@
     "forcing": "Annahme {{name}} auf {{cell}} führt zum Widerspruch – Feld ausgeschlossen.",
     "satPlace": "{{name}} muss auf {{cell}} – jedes andere Feld führt zum Widerspruch.",
     "satExclude": "{{count}} Felder von {{name}} führen zum Widerspruch – ausgeschlossen.",
+    "satExclude_one": "{{count}} Feld von {{name}} führt zum Widerspruch – ausgeschlossen.",
     "victim": "Das Opfer {{name}} bleibt auf dem letzten freien Feld {{cell}}.",
     "murderer": "Mörder: {{name}} war allein mit dem Opfer im Raum {{room}}.",
     "murdererAmbiguous": "Kein eindeutiger Mörder: {{count}} Verdächtige im Raum {{room}}.",
-    "stuck": "Stecken geblieben: {{count}} Person(en) offen (Technik noch nicht implementiert)."
+    "stuck": "Stecken geblieben: {{count}} Personen offen (Technik noch nicht implementiert).",
+    "stuck_one": "Stecken geblieben: {{count}} Person offen (Technik noch nicht implementiert)."
   },
   "contra": {
     "empty": "{{name}} hätte dann kein mögliches Feld mehr.",

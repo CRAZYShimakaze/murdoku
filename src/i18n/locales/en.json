@@ -845,15 +845,15 @@
     "uniqueOutside": "{{subject}} was {{neg}}[[the only person outside:uniqueOutside]]",
     "alone": "{{subject}} was {{neg}}[[alone in the room:alone]]",
     "roomAttribute": {
-      "none": "[[No one:roomAttrNone]] in {{poss}} room had {{attribute}}",
+      "none": "[[No one:roomAttrNone]] else in {{poss}} room had {{attribute}}",
       "some": "[[Someone:roomAttrSome]] with {{attribute}} was in {{poss}} room",
-      "someNeg": "[[No one:roomAttrNone]] with {{attribute}} was in {{poss}} room",
+      "someNeg": "[[No one:roomAttrNone]] else with {{attribute}} was in {{poss}} room",
       "noneNeg": "[[Someone:roomAttrSome]] with {{attribute}} was in {{poss}} room",
       "allNeg": "[[Not everyone:roomAttrAll]] in {{poss}} room had {{attribute}}",
       "all": "[[Everyone:roomAttrAll]] in {{poss}} room had {{attribute}}"
     },
     "roomGender": {
-      "none": "[[No one:roomAttrNone]] in {{poss}} room was {{who}}",
+      "none": "[[No one:roomAttrNone]] else in {{poss}} room was {{who}}",
       "some": "In {{poss}} room there was {{who}}",
       "someNeg": "In {{poss}} room there was {{whoNeg}}",
       "noneNeg": "In {{poss}} room there was {{who}}",
@@ -861,10 +861,14 @@
       "all": "[[Everyone:roomAttrAll]] in {{poss}} room was {{who}}"
     },
     "direction": "{{subject}} was {{neg}}{{direction}} of {{target}}",
-    "offsetWest": "{{subject}} was {{neg}}exactly {{n}} column(s) [[west:offset]] of {{target}}",
-    "offsetEast": "{{subject}} was {{neg}}exactly {{n}} column(s) [[east:offset]] of {{target}}",
-    "offsetNorth": "{{subject}} was {{neg}}exactly {{n}} row(s) [[north:offset]] of {{target}}",
-    "offsetSouth": "{{subject}} was {{neg}}exactly {{n}} row(s) [[south:offset]] of {{target}}",
+    "offsetWest": "{{subject}} was {{neg}}exactly {{n}} columns [[west:offset]] of {{target}}",
+    "offsetWest_one": "{{subject}} was {{neg}}exactly {{n}} column [[west:offset]] of {{target}}",
+    "offsetEast": "{{subject}} was {{neg}}exactly {{n}} columns [[east:offset]] of {{target}}",
+    "offsetEast_one": "{{subject}} was {{neg}}exactly {{n}} column [[east:offset]] of {{target}}",
+    "offsetNorth": "{{subject}} was {{neg}}exactly {{n}} rows [[north:offset]] of {{target}}",
+    "offsetNorth_one": "{{subject}} was {{neg}}exactly {{n}} row [[north:offset]] of {{target}}",
+    "offsetSouth": "{{subject}} was {{neg}}exactly {{n}} rows [[south:offset]] of {{target}}",
+    "offsetSouth_one": "{{subject}} was {{neg}}exactly {{n}} row [[south:offset]] of {{target}}",
     "aloneWith": "{{subject}} was {{neg}}[[alone with:aloneWith]] {{who}}",
     "aloneWithTrait": "{{subject}} was {{neg}}[[alone with:aloneWith]] a person who had {{attribute}}",
     "roomExistsOnObject": "{{who}} was [[on:onObject]] {{object}} in {{poss}} area",
@@ -882,7 +886,7 @@
     "sameRoom": "{{subject}} was {{neg}}[[in the same room as:sameRoom]] {{target}}",
     "sameRoomAsObject": "{{subject}} was {{neg}}[[in the same room as:sameRoomAsObject]] {{objectNom}}",
     "aloneSameRoom": "{{subject}} was {{neg}}[[alone in a room with:aloneSameRoom]] {{target}}",
-    "aloneSameRoomAsObject": "{{subject}} was {{neg}}[[alone in a room with:aloneSameRoomAsObject]] {{objectNom}}",
+    "aloneSameRoomAsObject": "{{subject}} was {{neg}}[[alone in a room with:aloneSameRoomAsObject]] {{object}}",
     "sameLineAsObject": "{{subject}} was {{neg}}in the same {{line}} as {{object}}{{roomRel}}",
     "directionFromObject": "{{subject}} was {{neg}}{{direction}} of {{object}}{{atCell}}{{roomRel}}",
     "directionFromObjectAll": "{{subject}} was {{neg}}{{direction}} of {{objectEvery}}{{roomRel}}",
@@ -908,9 +912,12 @@
     "not": "[[not:negation]] ({{child}})"
   },
   "boardClue": {
-    "countOnObject": "Exactly {{count}} person was on {{object}}.",
+    "countOnObject": "Exactly {{count}} people were on {{object}}.",
+    "countOnObject_one": "Exactly {{count}} person was on {{object}}.",
     "emptyRooms": "Exactly {{count}} rooms are empty.",
-    "everyRoomCount": "Every room has exactly {{count}} people."
+    "emptyRooms_one": "Exactly {{count}} room is empty.",
+    "everyRoomCount": "Every room has exactly {{count}} people.",
+    "everyRoomCount_one": "Every room has exactly {{count}} person."
   },
   "rule": {
     "aloneWithVictim": "The victim must be alone in a room with exactly one suspect."
@@ -1100,6 +1107,7 @@
   "conn": { "and": "AND", "or": "OR" },
   "step": {
     "clueCandidates": "{{name}}: the clues leave {{count}} possible cells.",
+    "clueCandidates_one": "{{name}}: the clues leave {{count}} possible cell.",
     "nakedSingle": "{{name}} must be on {{cell}} – the only possible cell.",
     "uniqueConstraint": "Only {{name}} may stand there – others excluded from those cells.",
     "hiddenSingleRow": "In row {{line}} everything is crossed out except {{cells}} – only {{name}} fits there, no other suspect and not the victim.",
@@ -1112,7 +1120,8 @@
     "nakedGroupCols": "{{people}}: only columns {{lines}} possible – blocked for others.",
     "rectangle": "Wherever {{name}} ends up, {{cell}} stays blocked – nobody can be there.",
     "insideXor": "{{other}} is {{otherSide}}, so {{name}} is not {{otherSide}} – cells excluded.",
-    "boardCountFull": "Already {{count}} person on {{object}} – excluded for everyone else.",
+    "boardCountFull": "Already {{count}} people on {{object}} – excluded for everyone else.",
+    "boardCountFull_one": "Already {{count}} person on {{object}} – excluded for everyone else.",
     "boardCountConfine": "Only {{name}} can be on {{object}} – so must go there.",
     "emptyRoomsAllOccupied": "Enough rooms are already occupied that the rest must stay empty (exactly {{count}} empty) – nobody can be here.",
     "emptyRoomsConfine": "The allowed empty rooms are already fixed ({{count}}) – so {{room}} must be occupied, and only {{name}} can be there.",
@@ -1174,10 +1183,12 @@
     "forcing": "Assuming {{name}} on {{cell}} leads to a contradiction – cell excluded.",
     "satPlace": "{{name}} must be on {{cell}} – every other cell leads to a contradiction.",
     "satExclude": "{{count}} cells lead to a contradiction for {{name}} – excluded.",
+    "satExclude_one": "{{count}} cell leads to a contradiction for {{name}} – excluded.",
     "victim": "The victim {{name}} remains on the last free cell {{cell}}.",
     "murderer": "Murderer: {{name}} was alone with the victim in the {{room}}.",
     "murdererAmbiguous": "No unique murderer: {{count}} suspects in the {{room}}.",
-    "stuck": "Stuck: {{count}} person(s) unresolved (technique not yet implemented)."
+    "stuck": "Stuck: {{count}} people unresolved (technique not yet implemented).",
+    "stuck_one": "Stuck: {{count}} person unresolved (technique not yet implemented)."
   },
   "contra": {
     "empty": "{{name}} would then have no possible cell left.",

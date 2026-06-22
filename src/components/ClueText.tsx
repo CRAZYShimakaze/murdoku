@@ -102,8 +102,9 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
       }
       return exp.children.flatMap((c, i) => (i > 0 ? [' ', ...renderExp(c, extra)] : renderExp(c, extra)))
     }
-    const tmpl = renderer.lookup(exp.key) ?? exp.key
-    return parseTemplate(tmpl, { ...extra, ...(exp.params ?? {}) })
+    const params = { ...extra, ...(exp.params ?? {}) }
+    const tmpl = renderer.lookup(renderer.pluralKey(exp.key, params)) ?? exp.key
+    return parseTemplate(tmpl, params)
   }
 
   if (clues.length === 0) return null
@@ -118,7 +119,13 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
   if (typeof nodes[0] === 'string' && nodes[0].trim()) {
     nodes[0] = nodes[0].charAt(0).toUpperCase() + nodes[0].slice(1)
   }
-  nodes.push('.')
+  // Close with a period — unless the clue already ends in sentence punctuation
+  // (the two-sentence "beside the same object" wording carries its own), which
+  // would otherwise read as a doubled "..".
+  const tail = nodes[nodes.length - 1]
+  if (!(typeof tail === 'string' && /[.!?]$/.test(tail.trimEnd()))) {
+    nodes.push('.')
+  }
 
   return (
     <>
