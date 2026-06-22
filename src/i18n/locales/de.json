@@ -395,7 +395,7 @@
     "suspects": "Verdächtige",
     "selectPrompt": "Antippen zum Auswählen · lang drücken zum Setzen",
     "outsideLabel": "Draußen",
-    "waterWalkable": "Auch im See kann jemand stehen – der See ist begehbar.",
+    "waterWalkable": "Wasserflächen sind begehbar – auch dort kann jemand stehen.",
     "victim": "Das Opfer",
     "victimStatement": "war allein mit dem Mörder.",
     "tools": "Werkzeuge",

@@ -395,7 +395,7 @@
     "suspects": "Suspects",
     "selectPrompt": "Tap to select · long-press to place",
     "outsideLabel": "Outside",
-    "waterWalkable": "Someone can stand in the lake too – the lake is walkable.",
+    "waterWalkable": "Water areas are walkable – someone can stand there too.",
     "victim": "The Victim",
     "victimStatement": "was alone with the murderer.",
     "tools": "Tools",
