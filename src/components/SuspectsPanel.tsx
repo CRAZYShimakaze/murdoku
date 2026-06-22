@@ -4,6 +4,7 @@ import Avatar from './Avatar.tsx'
 import AppearanceInfo from './AppearanceInfo.tsx'
 import InfoTip from './InfoTip.tsx'
 import ClueBuilder, { type ClueCtx } from './ClueBuilder.tsx'
+import ClueText from './ClueText.tsx'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
 import { useSettings } from '../game/settings.ts'
@@ -19,7 +20,7 @@ import {
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
-import { isWaterRoom, loadLevel } from '../engine/index.ts'
+import { isWaterRoom, loadLevel, type Puzzle } from '../engine/index.ts'
 
 interface Props {
   state: EditorState
@@ -30,22 +31,21 @@ interface Props {
   randomizing: boolean
 }
 
-/** Render a suspect's clue group to a single readable line (best effort). */
-function useCluePreview(state: EditorState) {
+/** Build the editor state into a playable puzzle + a renderer for the active
+ *  language — the basis for previews (board rules, suspect clue text). Returns null
+ *  while the board can't be built yet. Memoised so it rebuilds live as the state edits. */
+function useEditorBuild(state: EditorState): { puzzle: Puzzle; renderer: Renderer } | null {
   const { i18n } = useTranslation()
   const lang = i18n.resolvedLanguage ?? i18n.language
-  return (index: number): string | null => {
+  return useMemo(() => {
     try {
-      const level = buildPlayableLevel(state, 'preview')
-      const puzzle = loadLevel(level)
+      const puzzle = loadLevel(buildPlayableLevel(state, 'preview'))
       const renderer = new Renderer(i18n.getResourceBundle(lang, 'translation'), puzzle)
-      const s = puzzle.suspects[index]
-      if (!s || s.clues.length === 0) return null
-      return s.clues.map((c) => renderer.clue(c.describe(), s.id)).join(' · ')
+      return { puzzle, renderer }
     } catch {
       return null
     }
-  }
+  }, [state, lang, i18n])
 }
 
 export default function SuspectsPanel({
@@ -55,28 +55,23 @@ export default function SuspectsPanel({
   onRandom,
   randomizing,
 }: Props) {
-  const { t, i18n } = useTranslation()
-  const lang = i18n.resolvedLanguage ?? i18n.language
+  const { t } = useTranslation()
   const { genderColors } = useSettings()
   const [editing, setEditing] = useState<number | 'victim' | null>(null)
-  const preview = useCluePreview(state)
+  const built = useEditorBuild(state)
 
   // Global (board) rules, rendered exactly like the game's clue panel, so the editor
   // shows at a glance which ones are set. Best effort — skipped if the board won't build.
   const boardNotes = useMemo(() => {
-    try {
-      const puzzle = loadLevel(buildPlayableLevel(state, 'preview'))
-      const renderer = new Renderer(i18n.getResourceBundle(lang, 'translation'), puzzle)
-      const notes = puzzle.boardClues.map((c) => renderer.render(c.describe()))
-      // Same global rule as the game: a water room is drawn as a lake but is walkable.
-      if ([...puzzle.board.rooms.values()].some((r) => isWaterRoom(r.nameKey))) {
-        notes.unshift(t('game.waterWalkable'))
-      }
-      return notes
-    } catch {
-      return []
+    if (!built) return []
+    const { puzzle, renderer } = built
+    const notes = puzzle.boardClues.map((c) => renderer.render(c.describe()))
+    // Same global rule as the game: a water room is drawn as a lake but is walkable.
+    if ([...puzzle.board.rooms.values()].some((r) => isWaterRoom(r.nameKey))) {
+      notes.unshift(t('game.waterWalkable'))
     }
-  }, [state, lang, i18n, t])
+    return notes
+  }, [built, t])
 
   return (
     <div className="mk-clues mk-editor__left">
@@ -94,7 +89,10 @@ export default function SuspectsPanel({
       )}
 
       {state.suspects.map((s, i) => {
-        const line = preview(i)
+        // Reuse the game's clue renderer (bold objects/rooms + concept tooltips). Only
+        // the click differs: here it opens the editor instead of selecting the suspect.
+        const built_s = built?.puzzle.suspects[i]
+        const hasClues = !!built_s && built_s.clues.length > 0
         return (
           <button
             key={s.id}
@@ -123,7 +121,13 @@ export default function SuspectsPanel({
                   {s.gender === 'm' ? '♂' : '♀'}
                 </span>
               </span>
-              <span className="mk-clue__text">{line ?? t('editor.noClue')}</span>
+              <span className="mk-clue__text">
+                {hasClues && built ? (
+                  <ClueText renderer={built.renderer} clues={built_s!.clues} subjectId={s.id} />
+                ) : (
+                  t('editor.noClue')
+                )}
+              </span>
             </span>
           </button>
         )
@@ -206,7 +210,9 @@ interface EditorProps {
 function SuspectEditor({ state, index, onChange, onClose }: EditorProps) {
   const { t } = useTranslation()
   const s = state.suspects[index]
-  const preview = useCluePreview(state)(index)
+  // Live preview rebuilds as the clue is edited; same renderer as the game.
+  const built = useEditorBuild(state)
+  const previewSuspect = built?.puzzle.suspects[index]
 
   const ctx: ClueCtx = useMemo(() => {
     const rooms = usedRooms(state)
@@ -338,7 +344,14 @@ function SuspectEditor({ state, index, onChange, onClose }: EditorProps) {
         />
 
         <p className="mk-suspedit__preview">
-          <span>{t('editor.cluePreview')}</span> {preview ?? t('editor.noClue')}
+          <span>{t('editor.cluePreview')}</span>{' '}
+          <span className="mk-clue__text">
+            {built && previewSuspect && previewSuspect.clues.length > 0 ? (
+              <ClueText renderer={built.renderer} clues={previewSuspect.clues} subjectId={s.id} />
+            ) : (
+              t('editor.noClue')
+            )}
+          </span>
         </p>
 
         <button type="button" className="mk-btn mk-btn--primary mk-btn--block" onClick={onClose}>

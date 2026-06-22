@@ -82,7 +82,7 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
           const negTmpl = renderer.lookup(`${child.key}Neg`)
           if (negTmpl !== undefined) {
             const params: Record<string, string | number> = { ...extra, ...(child.params ?? {}) }
-            if (typeof params.who === 'string') params.whoNeg = `${params.who}_neg`
+            if (typeof params.who === 'string') params.whoNeg = renderer.negWhoToken(params.who, params)
             if (typeof params.mate === 'string') params.mateLc = params.mate
             return parseTemplate(negTmpl, params)
           }

@@ -720,6 +720,8 @@
     "f_nom": "eine Frau",
     "m_nom_neg": "kein Mann",
     "f_nom_neg": "keine Frau",
+    "m_nom_neg_other": "kein anderer Mann",
+    "f_nom_neg_other": "keine andere Frau",
     "any": "jemand",
     "withTraitPre": "jemand, der",
     "withTraitPost": "hatte,"

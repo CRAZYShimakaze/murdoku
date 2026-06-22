@@ -51,6 +51,20 @@ export class Renderer {
     return String(this.puzzle.attributesOf(id).gender) === 'm' ? 'm' : 'f'
   }
 
+  /**
+   * The negated `who` token for a "no man/woman in the room" clue. Reads "kein
+   * anderer Mann" / "keine andere Frau" (the `<token>_neg_other` variant) ONLY when
+   * the subject shares that gender — so "another" is genuine; a subject of the other
+   * gender (or a missing variant) keeps the plain "kein Mann". `who` is e.g. "m_nom".
+   */
+  negWhoToken(who: string, params: Record<string, string | number>): string {
+    const subj = params.subject ?? params.name
+    if (subj !== undefined && this.lookup(`who.${who}_neg_other`) !== undefined) {
+      if (this.genderOf(String(subj)) === who.split('_')[0]) return `${who}_neg_other`
+    }
+    return `${who}_neg`
+  }
+
   resolveParam(name: string, value: string | number, nameSubject = false): string {
     switch (name) {
       case 'name':
@@ -215,7 +229,7 @@ export class Renderer {
         // Expose a negated `who` ("keine Frau") ALONGSIDE the positive one, so the
         // Neg template picks whichever its quantifier needs (none→positive, some→neg).
         const params = { ...(child.params ?? {}) }
-        if (typeof params.who === 'string') params.whoNeg = `${params.who}_neg`
+        if (typeof params.who === 'string') params.whoNeg = this.negWhoToken(params.who, extra)
         // Mid-sentence lower-case mate ("… und jemand waren nicht …").
         if (typeof params.mate === 'string') params.mateLc = params.mate
         return this.render({ key: negKey, params }, extra, nameSubject)

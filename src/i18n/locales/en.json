@@ -632,6 +632,8 @@
     "f_nom": "a woman",
     "m_nom_neg": "no man",
     "f_nom_neg": "no woman",
+    "m_nom_neg_other": "no other man",
+    "f_nom_neg_other": "no other woman",
     "any": "someone",
     "withTraitPre": "someone who had",
     "withTraitPost": ""
