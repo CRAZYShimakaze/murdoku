@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-in-den-eigenen-vier-w-nden",
   "title": "In den eigenen vier Wänden",
+  "titles": { "de": "In den eigenen vier Wänden", "en": "Behind Closed Doors" },
   "size": {
     "width": 7,
     "height": 7

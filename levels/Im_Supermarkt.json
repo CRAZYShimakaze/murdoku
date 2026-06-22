@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-im-supermarkt",
-  "title": "Im Supermarkt",
+  "title": "Der letzte Einkauf",
+  "titles": { "de": "Der letzte Einkauf", "en": "The Final Checkout" },
   "size": {
     "width": 8,
     "height": 8

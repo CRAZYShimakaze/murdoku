@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-das-neue-haus",
-  "title": "Das neue Haus",
+  "title": "Einzug mit Leiche",
+  "titles": { "de": "Einzug mit Leiche", "en": "Moving In with Murder" },
   "size": {
     "width": 9,
     "height": 9

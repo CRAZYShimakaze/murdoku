@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-brettspielmord",
-  "title": "Der Brettspielmord",
+  "title": "Letzter Spielzug",
+  "titles": { "de": "Letzter Spielzug", "en": "The Final Move" },
   "size": {
     "width": 9,
     "height": 9

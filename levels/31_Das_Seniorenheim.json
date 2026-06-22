@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-31-das-seniorenheim",
   "title": "31. Das Seniorenheim",
+  "titles": { "de": "31. Das Seniorenheim", "en": "31. The Retirement Home" },
   "author": "Manuel Garand",
   "size": {
     "width": 9,

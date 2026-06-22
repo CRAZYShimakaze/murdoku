@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-fall-im-hotel",
-  "title": "Der Fall im Hotel",
+  "title": "Zimmer ohne Ausblick",
+  "titles": { "de": "Zimmer ohne Ausblick", "en": "Room with No View" },
   "size": {
     "width": 9,
     "height": 9

@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-restaurantbesuch",
-  "title": "Der Restaurantbesuch",
+  "title": "Die letzte Bestellung",
+  "titles": { "de": "Die letzte Bestellung", "en": "The Last Order" },
   "size": {
     "width": 7,
     "height": 7

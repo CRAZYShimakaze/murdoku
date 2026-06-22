@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-einfache-wohnungsmord-teil-2",
-  "title": "Der einfache Wohnungsmord Teil 2",
+  "title": "Viola, der zweite Akt",
+  "titles": { "de": "Viola, der zweite Akt", "en": "Viola, Act Two" },
   "size": {
     "width": 8,
     "height": 8

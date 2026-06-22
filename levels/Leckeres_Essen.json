@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-leckeres-essen",
-  "title": "Leckeres Essen",
+  "title": "Das Henkersmahl",
+  "titles": { "de": "Das Henkersmahl", "en": "The Last Supper" },
   "size": {
     "width": 9,
     "height": 9

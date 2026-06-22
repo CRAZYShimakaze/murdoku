@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-mord-im-polizeirevier",
-  "title": "Mord im Polizeirevier",
+  "title": "Dienstschluss",
+  "titles": { "de": "Dienstschluss", "en": "End of Watch" },
   "size": {
     "width": 8,
     "height": 8

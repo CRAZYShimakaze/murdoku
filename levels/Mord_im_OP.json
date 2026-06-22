@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-mord-im-op",
   "title": "Mord im OP",
+  "titles": { "de": "Mord im OP", "en": "Murder in the OR" },
   "size": {
     "width": 7,
     "height": 7

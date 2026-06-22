@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-fall-beim-autoh-ndler",
-  "title": "Der Fall beim Autohändler",
+  "title": "Die letzte Probefahrt",
+  "titles": { "de": "Die letzte Probefahrt", "en": "The Last Test Drive" },
   "size": {
     "width": 8,
     "height": 8

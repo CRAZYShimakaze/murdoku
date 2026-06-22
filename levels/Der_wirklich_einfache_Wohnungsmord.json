@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-wirklich-einfache-wohnungsmord",
-  "title": "Der wirklich einfache Wohnungsmord",
+  "title": "Valentins letzte Adresse",
+  "titles": { "de": "Valentins letzte Adresse", "en": "Valentin's Last Address" },
   "size": {
     "width": 8,
     "height": 8

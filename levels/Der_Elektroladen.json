@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-elektroladen",
-  "title": "Der Elektroladen",
+  "title": "Kurzschluss",
+  "titles": { "de": "Kurzschluss", "en": "Short Circuit" },
   "size": {
     "width": 8,
     "height": 8

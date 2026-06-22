@@ -14,6 +14,7 @@ import {
   effectiveFilter,
   filterLevels,
   levelMetaFromJson,
+  titleOf,
   type LevelFilter,
   type LevelMeta,
 } from '../game/levels.ts'
@@ -42,7 +43,8 @@ const TOAST_MS = 1800
 const DIFF_ORDER = new Map<string, number>(DIFFICULTIES.map((d, i) => [d, i]))
 
 export default function LevelSelect({ onPick, onBack }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const lang = i18n.resolvedLanguage ?? i18n.language
   // Filter is persisted so it survives leaving for a level and coming back.
   const [filter, setFilter] = useState<LevelFilter>(() => loadFilter(DEFAULT_FILTER))
   const [solved] = useState(() => loadSolved())
@@ -247,7 +249,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
                         <span className="mk-card__titlewrap">
                           <BloodSplatter className="mk-card__splatter" />
                           <span className="mk-card__title">
-                            <BloodText text={l.title} />
+                            <BloodText text={titleOf(l, lang)} />
                           </span>
                         </span>
                         {l.author && <span className="mk-card__author">— {l.author}</span>}

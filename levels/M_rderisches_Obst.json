@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-m-rderisches-obst",
   "title": "Mörderisches Obst",
+  "titles": { "de": "Mörderisches Obst", "en": "Murderous Fruit" },
   "size": {
     "width": 8,
     "height": 8

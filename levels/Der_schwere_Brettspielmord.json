@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-schwere-brettspielmord",
-  "title": "Der schwere Brettspielmord",
+  "title": "Spiel auf Leben und Tod",
+  "titles": { "de": "Spiel auf Leben und Tod", "en": "A Game of Life and Death" },
   "size": {
     "width": 9,
     "height": 9

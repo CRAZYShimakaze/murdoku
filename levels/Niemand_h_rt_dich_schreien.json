@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-niemand-h-rt-dich-schreien",
   "title": "Niemand hört dich schreien",
+  "titles": { "de": "Niemand hört dich schreien", "en": "No One Hears You Scream" },
   "size": {
     "width": 9,
     "height": 9

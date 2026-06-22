@@ -207,5 +207,6 @@
       "bald": false
     }
   },
-  "title": "Der Museumsmord"
+  "title": "Die letzte Ausstellung",
+  "titles": { "de": "Die letzte Ausstellung", "en": "The Final Exhibit" }
 }

@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-33-das-neue-haus",
   "title": "33. Das neue Haus",
+  "titles": { "de": "33. Das neue Haus", "en": "33. The New House" },
   "author": "Manuel Garand",
   "size": {
     "width": 9,

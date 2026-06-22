@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-studentenwohnung",
-  "title": "Studentenwohnung",
+  "title": "WG-Zimmer frei",
+  "titles": { "de": "WG-Zimmer frei", "en": "Roommate Wanted" },
   "size": {
     "width": 6,
     "height": 6

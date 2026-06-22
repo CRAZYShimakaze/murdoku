@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-buchladen",
-  "title": "Der Buchladen",
+  "title": "Zwischen den Zeilen",
+  "titles": { "de": "Zwischen den Zeilen", "en": "Between the Lines" },
   "size": {
     "width": 6,
     "height": 6

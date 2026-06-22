@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-war-es-ein-tier",
   "title": "War es ein Tier?",
+  "titles": { "de": "War es ein Tier?", "en": "Was It an Animal?" },
   "size": {
     "width": 9,
     "height": 9

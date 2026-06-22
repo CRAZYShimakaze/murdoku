@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-wer-war-es",
   "title": "Wer war es?",
+  "titles": { "de": "Wer war es?", "en": "Who Was It?" },
   "size": {
     "width": 7,
     "height": 7

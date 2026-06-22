@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-bauernhofsmord",
-  "title": "Der Bauernhofsmord",
+  "title": "Blut im Stall",
+  "titles": { "de": "Blut im Stall", "en": "Blood in the Barn" },
   "size": {
     "width": 9,
     "height": 9

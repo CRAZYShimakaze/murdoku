@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-16-kingsize-betten",
   "title": "16. Kingsize-Betten",
+  "titles": { "de": "16. Kingsize-Betten", "en": "16. King-Size Beds" },
   "author": "Manuel Garand",
   "size": {
     "width": 9,

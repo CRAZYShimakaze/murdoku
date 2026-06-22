@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-mord-im-herrenhaus",
   "title": "Mord im Herrenhaus",
+  "titles": { "de": "Mord im Herrenhaus", "en": "Murder at the Manor" },
   "size": {
     "width": 9,
     "height": 9

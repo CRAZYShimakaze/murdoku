@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-ach-du-dickes-ei",
   "title": "Ach du dickes Ei",
+  "titles": { "de": "Ach du dickes Ei", "en": "A Cracking Case" },
   "size": {
     "width": 9,
     "height": 9

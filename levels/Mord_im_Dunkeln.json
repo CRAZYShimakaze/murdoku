@@ -187,5 +187,6 @@
       "bald": false
     }
   },
-  "title": "Mord im Dunkeln"
+  "title": "Mord im Dunkeln",
+  "titles": { "de": "Mord im Dunkeln", "en": "Murder in the Dark" }
 }

@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-mord-daheim",
-  "title": "Der Mord daheim",
+  "title": "Trautes Heim, Mord allein",
+  "titles": { "de": "Trautes Heim, Mord allein", "en": "Home Deadly Home" },
   "size": {
     "width": 9,
     "height": 9

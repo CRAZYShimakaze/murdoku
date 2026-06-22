@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-wirklich-andere-supermarkt",
-  "title": "Der wirklich andere Supermarkt",
+  "title": "Sonderangebot: Mord",
+  "titles": { "de": "Sonderangebot: Mord", "en": "Murder on Sale" },
   "size": {
     "width": 9,
     "height": 9

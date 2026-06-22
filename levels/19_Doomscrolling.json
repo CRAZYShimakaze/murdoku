@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-19-doomscrolling",
   "title": "19. Doomscrolling",
+  "titles": { "de": "19. Doomscrolling", "en": "19. Doomscrolling" },
   "author": "Manuel Garand",
   "size": {
     "width": 9,

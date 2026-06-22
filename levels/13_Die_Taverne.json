@@ -3,6 +3,7 @@
   "author": "Manuel Garand",
   "id": "editor-13-die-taverne",
   "title": "13. Die Taverne",
+  "titles": { "de": "13. Die Taverne", "en": "13. The Tavern" },
   "size": {
     "width": 8,
     "height": 8

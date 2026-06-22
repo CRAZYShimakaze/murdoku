@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-arme-valentina",
   "title": "Arme Valentina",
+  "titles": { "de": "Arme Valentina", "en": "Poor Valentina" },
   "size": {
     "width": 8,
     "height": 8

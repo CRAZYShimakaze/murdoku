@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-schwierige-g-ste",
   "title": "Schwierige Gäste",
+  "titles": { "de": "Schwierige Gäste", "en": "Difficult Guests" },
   "size": {
     "width": 6,
     "height": 6

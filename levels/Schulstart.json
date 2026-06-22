@@ -164,5 +164,6 @@
       "bald": false
     }
   },
-  "title": "Schulstart"
+  "title": "Schulstart",
+  "titles": { "de": "Schulstart", "en": "Back to School" }
 }

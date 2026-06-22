@@ -30,7 +30,9 @@ import {
   DEFAULT_FILTER,
   levelMetaFromJson,
   nextLevel,
+  prevLevel,
   pickerLevels,
+  titleOf,
   type LevelMeta,
 } from '../game/levels.ts'
 import BloodText from '../components/BloodText.tsx'
@@ -108,6 +110,8 @@ export default function GameScreen({
     () => new Renderer(i18n.getResourceBundle(lang, 'translation'), puzzle),
     [i18n, lang, puzzle],
   )
+  // The title in the active language (per-language override from the level JSON).
+  const title = titleOf(meta, lang)
 
   // Ctrl+B → log the solved board + full deduction path to the console.
   useDebugSolveKey(() => ({ puzzle, renderer }))
@@ -197,7 +201,7 @@ export default function GameScreen({
       alive = false
       ro.disconnect()
     }
-  }, [meta.title, meta.author, meta.width, meta.height, meta.difficulty, meta.custom])
+  }, [title, meta.author, meta.width, meta.height, meta.difficulty, meta.custom])
 
   // The hint stays on screen (with its highlight) until it's DONE or invalidated:
   //  - PLACING or removing a figure clears it (a different suspect set, or the hinted
@@ -363,37 +367,43 @@ export default function GameScreen({
   // Readable contradiction chain ("if X here → … → impossible"), when the hint has one.
   const hintChain = activeHint?.step.chain?.map((e) => renderer.render(e)) ?? null
 
-  // The level to play next, honouring the saved filter, the hidden-author toggle
-  // and the current solved set — exactly what the picker would offer. Shared by
-  // the post-win "next level" button and the "n" skip shortcut. Null on the last.
-  const computeNext = useCallback((): LevelMeta | null => {
-    const custom = loadCustomLevels().map((j) => levelMetaFromJson(j, true))
-    const filtered = pickerLevels(
-      custom,
-      loadFilter(DEFAULT_FILTER),
-      loadSolved(),
-      loadShowHiddenAuthor(),
-    )
-    return nextLevel(meta, filtered)
-  }, [meta])
+  // The neighbouring level (next/prev) honouring the saved filter, the hidden-author
+  // toggle and the current solved set — exactly what the picker would offer. Shared by
+  // the post-win "next level" button and the n / p skip shortcuts.
+  const neighborLevel = useCallback(
+    (pick: (current: LevelMeta, filtered: LevelMeta[]) => LevelMeta | null): LevelMeta | null => {
+      const custom = loadCustomLevels().map((j) => levelMetaFromJson(j, true))
+      const filtered = pickerLevels(
+        custom,
+        loadFilter(DEFAULT_FILTER),
+        loadSolved(),
+        loadShowHiddenAuthor(),
+      )
+      return pick(meta, filtered)
+    },
+    [meta],
+  )
 
-  // Press "n" to skip straight to the next level — same target as the verdict's
-  // "next level" button. Only where that navigation exists (not tutorial / generated
-  // / editor test-play, where onNext is omitted) and never while typing in a field.
+  // Press "n" / "p" to jump to the next / previous level — same target as the verdict's
+  // "next level" button. Only where that navigation exists (not tutorial / generated /
+  // editor test-play, where onNext is omitted) and never while typing in a field.
   useEffect(() => {
     if (!onNext) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 'n' || e.ctrlKey || e.metaKey || e.altKey) return
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const key = e.key.toLowerCase()
+      const pick = key === 'n' ? nextLevel : key === 'p' ? prevLevel : null
+      if (!pick) return
       const el = e.target as HTMLElement | null
       if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return
-      const next = computeNext()
-      if (!next) return
+      const target = neighborLevel(pick)
+      if (!target) return
       e.preventDefault()
-      onNext(next)
+      onNext(target)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onNext, computeNext])
+  }, [onNext, neighborLevel])
 
   const submit = () => {
     if (!session.allPlaced || !solution) return
@@ -414,8 +424,8 @@ export default function GameScreen({
     setDialogHidden(false) // a fresh verdict always shows the dialog first
     const m = findMurderer(puzzle, solution)
     const room = puzzle.board.rooms.get(m.roomId)
-    // markSolved above already updated the solved set computeNext reads from.
-    const next = onNext ? computeNext() : null
+    // markSolved above already updated the solved set neighborLevel reads from.
+    const next = onNext ? neighborLevel(nextLevel) : null
     setResult({
       win: true,
       murderer: {
@@ -449,7 +459,7 @@ export default function GameScreen({
         </div>
         <div className="mk-game__heading" ref={headingRef}>
           <div className="mk-game__titlewrap">
-            <h2 className="mk-game__title" ref={titleRef}><BloodText text={meta.title} /></h2>
+            <h2 className="mk-game__title" ref={titleRef}><BloodText text={title} /></h2>
             {meta.author && (
               <span className="mk-game__author">{t('game.author', { name: meta.author })}</span>
             )}

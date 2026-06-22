@@ -26,6 +26,10 @@ export interface LevelJson {
   id: string
   /** Optional display name (e.g. a player-given name for a saved level). */
   title?: string
+  /** Optional per-language title overrides ({ de, en, … }); the active language is
+   *  looked up here first, falling back to `title`. Lets one level read in any UI
+   *  language without separate files. */
+  titles?: Record<string, string>
   /** Optional credit shown while playing ("A case by …"); omitted when unset. */
   author?: string
   size: { width: number; height: number }

@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-schwere-brettspielmord-teil-2",
-  "title": "Der schwere Brettspielmord Teil 2",
+  "title": "Spiel auf Leben und Tod II",
+  "titles": { "de": "Spiel auf Leben und Tod II", "en": "A Game of Life and Death II" },
   "size": {
     "width": 9,
     "height": 9

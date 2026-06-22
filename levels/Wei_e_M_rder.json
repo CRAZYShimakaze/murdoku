@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-wei-e-m-rder",
   "title": "Weiße Mörder",
+  "titles": { "de": "Weiße Mörder", "en": "Killers in White" },
   "size": {
     "width": 6,
     "height": 6

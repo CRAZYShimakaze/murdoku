@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-mord-in-bester-gesellschaft",
   "title": "Mord in bester Gesellschaft",
+  "titles": { "de": "Mord in bester Gesellschaft", "en": "Murder in High Society" },
   "size": {
     "width": 5,
     "height": 5

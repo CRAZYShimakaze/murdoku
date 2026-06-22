@@ -3,6 +3,7 @@
   "author": "Mika Aporius",
   "id": "editor-pferd-auf-dem-flur",
   "title": "Pferd auf dem Flur",
+  "titles": { "de": "Pferd auf dem Flur", "en": "A Horse in the Hallway" },
   "size": {
     "width": 8,
     "height": 8

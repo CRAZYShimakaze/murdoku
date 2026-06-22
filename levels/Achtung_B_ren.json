@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-achtung-b-ren",
   "title": "Achtung Bären",
+  "titles": { "de": "Achtung Bären", "en": "Beware of Bears" },
   "size": {
     "width": 8,
     "height": 8

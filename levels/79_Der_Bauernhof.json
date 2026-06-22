@@ -3,6 +3,7 @@
   "author": "Manuel Garand",
   "id": "79_Der_Bauernhof",
   "title": "Der Bauernhof",
+  "titles": { "de": "Der Bauernhof", "en": "The Farm" },
   "difficulty": "original",
   "size": { "width": 12, "height": 12 },
   "rooms": {

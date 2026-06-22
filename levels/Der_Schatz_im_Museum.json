@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-der-schatz-im-museum",
   "title": "Der Schatz im Museum",
+  "titles": { "de": "Der Schatz im Museum", "en": "Treasure at the Museum" },
   "size": {
     "width": 7,
     "height": 7

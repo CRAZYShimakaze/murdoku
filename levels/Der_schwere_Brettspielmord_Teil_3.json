@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-schwere-brettspielmord-teil-3",
-  "title": "Der schwere Brettspielmord Teil 3",
+  "title": "Spiel auf Leben und Tod III",
+  "titles": { "de": "Spiel auf Leben und Tod III", "en": "A Game of Life and Death III" },
   "size": {
     "width": 9,
     "height": 9

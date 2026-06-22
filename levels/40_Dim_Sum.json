@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-40-dim-sum",
   "title": "40. Dim Sum",
+  "titles": { "de": "40. Dim Sum", "en": "40. Dim Sum" },
   "author": "Manuel Garand",
   "size": {
     "width": 9,

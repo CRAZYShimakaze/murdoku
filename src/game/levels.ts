@@ -14,8 +14,11 @@ const DIFF_ORDER: Record<Difficulty, number> = {
 
 export interface LevelMeta {
   id: string
-  /** Display name derived from the id (no title field in the JSON yet). */
+  /** Base display name (the level's original-language title / id-derived fallback). */
   title: string
+  /** Per-language title overrides from the JSON (e.g. { en: "…" }); resolved by
+   *  {@link titleOf}, falling back to `title`. */
+  titles?: Record<string, string>
   /** Optional level author, surfaced as a byline while playing (if set). */
   author?: string
   difficulty: Difficulty
@@ -151,11 +154,21 @@ export function nextLevel(current: LevelMeta, filtered: LevelMeta[]): LevelMeta 
   return others.find((l) => compareLevels(current, l) < 0) ?? others[0]
 }
 
+/** The level to play before `current` within a (sorted) filtered list. Wraps
+ *  around at the start; null when no other level matches the filter. */
+export function prevLevel(current: LevelMeta, filtered: LevelMeta[]): LevelMeta | null {
+  const others = filtered.filter((l) => l.id !== current.id)
+  if (others.length === 0) return null
+  // Closest level sorting BEFORE current (scan from the end); wrap to the last one.
+  return [...others].reverse().find((l) => compareLevels(l, current) < 0) ?? others[others.length - 1]
+}
+
 /** Build a LevelMeta from a raw level (e.g. a freshly generated / saved one). */
 export function levelMetaFromJson(json: LevelJson, custom = false): LevelMeta {
   return {
     id: json.id,
     title: json.title ?? titleFromId(json.id),
+    titles: json.titles,
     author: json.author,
     difficulty: asDifficulty(json.difficulty),
     width: json.size.width,
@@ -163,6 +176,13 @@ export function levelMetaFromJson(json: LevelJson, custom = false): LevelMeta {
     json,
     custom,
   }
+}
+
+/** The level's display title in the active language: a per-language override from the
+ *  JSON's `titles` map when present, else the base `title`. `lang` may be a full locale
+ *  ("en-US") — its base subtag is tried too. */
+export function titleOf(meta: LevelMeta, lang: string): string {
+  return meta.titles?.[lang] ?? meta.titles?.[lang.split('-')[0]] ?? meta.title
 }
 
 /** All bundled levels, eagerly imported from the project's /levels folder. */
@@ -194,6 +214,7 @@ export const LEVELS: LevelMeta[] = Object.values(modules)
   .map((json) => ({
     id: json.id,
     title: json.title ?? humanize(json.id),
+    titles: json.titles,
     author: json.author,
     difficulty: asDifficulty(json.difficulty),
     width: json.size.width,

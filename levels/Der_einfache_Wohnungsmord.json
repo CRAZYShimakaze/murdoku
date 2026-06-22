@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-einfache-wohnungsmord",
-  "title": "Der fast einfache Wohnungsmord",
+  "title": "Fast der perfekte Mord",
+  "titles": { "de": "Fast der perfekte Mord", "en": "Almost the Perfect Murder" },
   "size": {
     "width": 8,
     "height": 8

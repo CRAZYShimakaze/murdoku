@@ -3,6 +3,7 @@
   "author": "Manuel Garand",
   "id": "editor-15-der-supermarkt",
   "title": "15. Der Supermarkt",
+  "titles": { "de": "15. Der Supermarkt", "en": "15. The Supermarket" },
   "size": {
     "width": 9,
     "height": 9

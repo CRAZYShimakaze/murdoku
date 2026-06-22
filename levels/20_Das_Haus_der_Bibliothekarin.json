@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-20-das-haus-der-bibliothekarin",
   "title": "20. Das Haus der Bibliothekarin",
+  "titles": { "de": "20. Das Haus der Bibliothekarin", "en": "20. The Librarian's House" },
   "author": "Manuel Garand",
   "size": {
     "width": 9,

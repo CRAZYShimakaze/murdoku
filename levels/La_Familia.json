@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-la-familia",
   "title": "La Familia",
+  "titles": { "de": "La Familia", "en": "La Familia" },
   "size": {
     "width": 9,
     "height": 9

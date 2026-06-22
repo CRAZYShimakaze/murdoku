@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-b-rofall",
-  "title": "Der Bürofall",
+  "title": "Tod nach Feierabend",
+  "titles": { "de": "Tod nach Feierabend", "en": "Death After Hours" },
   "size": {
     "width": 6,
     "height": 6

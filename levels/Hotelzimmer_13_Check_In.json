@@ -3,6 +3,7 @@
   "author": "Mika Aporius",
   "id": "editor-hotelzimmer-13-check-in",
   "title": "Hotelzimmer 13 Check In",
+  "titles": { "de": "Hotelzimmer 13 Check In", "en": "Room 13: Check-In" },
   "size": {
     "width": 4,
     "height": 4

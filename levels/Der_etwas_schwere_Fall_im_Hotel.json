@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-der-etwas-schwere-fall-im-hotel",
-  "title": "Der etwas schwere Fall im Hotel",
+  "title": "Bitte nicht stören",
+  "titles": { "de": "Bitte nicht stören", "en": "Do Not Disturb" },
   "size": {
     "width": 9,
     "height": 9

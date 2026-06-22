@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-kleiner-mord-unter-freunden",
   "title": "Kleiner Mord unter Freunden",
+  "titles": { "de": "Kleiner Mord unter Freunden", "en": "A Little Murder Among Friends" },
   "size": {
     "width": 4,
     "height": 4

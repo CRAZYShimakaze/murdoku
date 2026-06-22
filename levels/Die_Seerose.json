@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-die-seerose",
   "title": "Die Seerose",
+  "titles": { "de": "Die Seerose", "en": "The Water Lily" },
   "size": {
     "width": 8,
     "height": 8

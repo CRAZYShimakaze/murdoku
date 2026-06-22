@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-bademord",
   "title": "Bademord",
+  "titles": { "de": "Bademord", "en": "Murder in the Bath" },
   "size": {
     "width": 12,
     "height": 12

@@ -3,6 +3,7 @@
   "author": "Manuel Garand",
   "id": "editor-02-ferienwohnung",
   "title": "02. Ferienwohnung",
+  "titles": { "de": "02. Ferienwohnung", "en": "02. The Holiday Flat" },
   "size": {
     "width": 6,
     "height": 6

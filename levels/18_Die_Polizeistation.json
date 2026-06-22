@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-18-die-polizeistation",
   "title": "18. Die Polizeistation",
+  "titles": { "de": "18. Die Polizeistation", "en": "18. The Police Station" },
   "author": "Manuel Garand",
   "size": {
     "width": 9,

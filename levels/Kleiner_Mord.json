@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-kleiner-mord",
-  "title": "Kleiner Mord",
+  "title": "Nur ein kleiner Mord",
+  "titles": { "de": "Nur ein kleiner Mord", "en": "Just a Little Murder" },
   "size": {
     "width": 4,
     "height": 4

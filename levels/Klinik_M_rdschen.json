@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-klinik-m-rdschen",
   "title": "Klinik Mördschen",
+  "titles": { "de": "Klinik Mördschen", "en": "The Killing Clinic" },
   "author": "Mika Aporius",
   "size": {
     "width": 7,

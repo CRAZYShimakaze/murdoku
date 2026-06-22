@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-die-fernsehjunkies",
   "title": "Die Fernsehjunkies",
+  "titles": { "de": "Die Fernsehjunkies", "en": "The TV Junkies" },
   "size": {
     "width": 8,
     "height": 8
