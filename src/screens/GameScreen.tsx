@@ -118,6 +118,9 @@ export default function GameScreen({
   const [hoveredSuspect, setHoveredSuspect] = useState<PersonId | null>(null)
   const [xTool, setXTool] = useState(false)
   const [result, setResult] = useState<Result | null>(null)
+  // Header "solved" mark: already in the solved set on entry (re-checked per level),
+  // OR just won this session (result.win) — the difficulty stamp then shows a check.
+  const alreadySolved = useMemo(() => loadSolved().has(storageId), [storageId])
   // After a win the verdict can be tucked away to study the solved board; a tap on the
   // board brings it back (see the review layer below).
   const [dialogHidden, setDialogHidden] = useState(false)
@@ -158,8 +161,9 @@ export default function GameScreen({
   }, [tut.active, tut.settingsPhase])
 
   // Header title fit (mostly mobile): the title slot sits between the back/edit
-  // buttons and the timer. If the title + size tag overflow it, drop the tag first;
-  // if the title alone still doesn't fit, CSS clips it with an ellipsis.
+  // buttons and the timer. If the title + the tag cluster (difficulty stamp + size)
+  // overflow it, drop the cluster first; if the title alone still doesn't fit, CSS
+  // clips it with an ellipsis.
   const headingRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const badgeRef = useRef<HTMLSpanElement>(null)
@@ -193,7 +197,7 @@ export default function GameScreen({
       alive = false
       ro.disconnect()
     }
-  }, [meta.title, meta.author, meta.width, meta.height])
+  }, [meta.title, meta.author, meta.width, meta.height, meta.difficulty, meta.custom])
 
   // The hint stays on screen (with its highlight) until it's DONE or invalidated:
   //  - PLACING or removing a figure clears it (a different suspect set, or the hinted
@@ -451,7 +455,17 @@ export default function GameScreen({
             )}
           </div>
           {!hideBadge && (
-            <span className="mk-game__sz" ref={badgeRef}>{meta.width}×{meta.height}</span>
+            <span className="mk-game__tags" ref={badgeRef}>
+              <span
+                className="mk-game__case"
+                data-d={meta.difficulty}
+                data-solved={alreadySolved || result?.win ? 'true' : undefined}
+              >
+                <span className="mk-game__case-diff">{t(`difficulty.${meta.difficulty}`)}</span>
+                {meta.custom && <span className="mk-game__case-own">{t('select.custom')}</span>}
+              </span>
+              <span className="mk-game__sz">{meta.width}×{meta.height}</span>
+            </span>
           )}
         </div>
         <div className="mk-game__corner">

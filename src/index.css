@@ -1163,6 +1163,90 @@ button {
   letter-spacing: 0;
   color: var(--brass-dim);
 }
+/* Difficulty + size grouped as one evidence cluster, measured & dropped together
+   on narrow (mobile) headers (see the overflow effect) — desktop keeps them. */
+.mk-game__tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: none;
+}
+/* The difficulty as an inked classification stamp: the ink colour encodes the level
+   (same scale as the picker's .mk-pill), typewriter caps boxed and faintly rotated
+   like a hand-stamp on the dossier. A custom level adds a small dashed "Eigen" mark. */
+.mk-game__case {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+.mk-game__case-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42em;
+  font-family: var(--font-type);
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
+  padding: 0.18rem 0.6rem 0.16rem;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 9%, transparent);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+  transform: rotate(-2deg);
+}
+.mk-game__case-diff::before {
+  content: '';
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 99px;
+  background: currentColor;
+  flex: none;
+}
+.mk-game__case[data-d='tutorial'] .mk-game__case-diff {
+  color: var(--diff-tutorial);
+}
+.mk-game__case[data-d='easy'] .mk-game__case-diff {
+  color: var(--diff-easy);
+}
+.mk-game__case[data-d='medium'] .mk-game__case-diff {
+  color: var(--diff-medium);
+}
+.mk-game__case[data-d='hard'] .mk-game__case-diff {
+  color: var(--diff-hard);
+}
+.mk-game__case[data-d='original'] .mk-game__case-diff {
+  color: var(--diff-original);
+}
+/* Solved level: the stamp's lead dot becomes a green check and the inner ink greens
+   up slightly. The difficulty colour (border + label) still reads underneath. */
+.mk-game__case[data-solved='true'] .mk-game__case-diff {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--diff-easy) 24%, transparent);
+}
+.mk-game__case[data-solved='true'] .mk-game__case-diff::before {
+  content: '✓';
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  color: var(--diff-easy);
+  font-size: 0.92em;
+  font-weight: 700;
+  line-height: 1;
+}
+.mk-game__case-own {
+  font-family: var(--font-type);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  padding: 0.1rem 0.4rem;
+  border: 1px dashed var(--brass-dim);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.14);
+  transform: rotate(2deg);
+}
 .mk-game > .mk-game__head .mk-timer {
   justify-self: end;
 }

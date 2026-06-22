@@ -115,6 +115,9 @@ export function useGameSession(
     (cell: Cell, personId: PersonId) =>
       apply((next) => {
         if (!board.isOccupiable(cell)) return false
+        // An X'd cell is ruled out — no pencil notes on it (crossing already cleared
+        // any, and you can't add new ones until it's un-crossed).
+        if (next.crosses.has(cell)) return false
         for (const c of next.placements.values()) if (c === cell) return false
         const set = next.marks.get(cell) ?? new Set<PersonId>()
         if (set.has(personId)) set.delete(personId)
