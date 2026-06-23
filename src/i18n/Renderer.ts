@@ -65,7 +65,7 @@ export class Renderer {
     return `${who}_neg`
   }
 
-  resolveParam(name: string, value: string | number, nameSubject = false): string {
+  resolveParam(name: string, value: string | number, nameSubject = false, subject?: string | number): string {
     switch (name) {
       case 'name':
       case 'target':
@@ -132,6 +132,22 @@ export class Renderer {
       case 'who':
       case 'whoNeg':
         return this.lookup(`who.${value}`) ?? String(value)
+      // Gender phrase that becomes "another/other" only when the SUBJECT shares that
+      // gender (so "other" is genuine) — "ein anderer Mann" / "eine Frau" (whoOther,
+      // singular nominative) and "anderen Männern" / "Frauen" (whoOtherPl, plural
+      // dative). `value` is the bare gender letter ("m"/"f").
+      case 'whoOther':
+      case 'whoOtherPl':
+      case 'whoBare': {
+        const g = String(value)
+        const suffix = name === 'whoOtherPl' ? 'datpl' : name === 'whoBare' ? 'bare' : 'nom'
+        const same = subject !== undefined && this.genderOf(String(subject)) === g
+        return (
+          this.lookup(`who.${g}_${suffix}${same ? '_other' : ''}`) ??
+          this.lookup(`who.${g}_${suffix}`) ??
+          String(value)
+        )
+      }
       // The "mate" of a "beside the same object" clue: anyone / a named person / a
       // trait-bearer. Encoded as "any" | "person:<id>" | "attr:<token>". `mate` is
       // capitalised (it starts its own sentence: "Jemand war …"); `mateLc` stays
@@ -144,18 +160,37 @@ export class Renderer {
           : s.startsWith('attr:')
             ? (() => {
                 const token = s.slice(5)
-                if (token.startsWith('gender_')) return this.lookup(`who.${token.slice(7)}_nom`) ?? token
+                if (token.startsWith('gender_')) {
+                  const g = token.slice(7)
+                  // "eine andere Frau" / "ein anderer Mann" only when the subject shares
+                  // that gender (so "other" is genuine) — else plain "eine Frau".
+                  if (subject !== undefined && this.genderOf(String(subject)) === g) {
+                    const other = this.lookup(`who.${g}_nom_other`)
+                    if (other !== undefined) return other
+                  }
+                  return this.lookup(`who.${g}_nom`) ?? token
+                }
                 const pre = this.lookup('who.withTraitPre') ?? ''
                 const post = this.lookup('who.withTraitPost') ?? ''
                 return `${pre} ${this.lookup(`attr.${token}`) ?? token} ${post}`.replace(/\s+/g, ' ').trim()
               })()
-            : (this.lookup('who.any') ?? s)
+            : (this.lookup(`who.${s}`) ?? this.lookup('who.any') ?? s)
         if (name === 'mateLc') return phrase
         return phrase ? phrase.charAt(0).toUpperCase() + phrase.slice(1) : phrase
       }
       case 'room': {
         const room = this.puzzle.board.rooms.get(String(value))
         return room ? (this.lookup(room.nameKey) ?? room.nameKey) : String(value)
+      }
+      // A "room-exists" position phrase ("auf einem Tisch" / "in einer Ecke" / …),
+      // encoded "<relation>" or "<relation>:<object>". Used by the solver step texts.
+      case 'pos': {
+        const s = String(value)
+        const sep = s.indexOf(':')
+        const rel = sep >= 0 ? s.slice(0, sep) : s
+        const obj = sep >= 0 ? s.slice(sep + 1) : ''
+        const tmpl = this.lookup(`roomPos.${rel}`) ?? rel
+        return tmpl.replace('{{object}}', this.resolveParam('object', obj))
       }
       case 'direction':
         return this.lookup(`dir.${value}`) ?? String(value)
@@ -277,7 +312,7 @@ export class Renderer {
           .replace(/\{\{child\}\}/g, childText)
           .replace(/\[\[([^\]]+?):[^\]]+?\]\]/g, '$1')
           .replace(/\{\{(\w+)\}\}/g, (_match, key: string) =>
-            this.resolveParam(key, params[key] ?? '', nameSubject),
+            this.resolveParam(key, params[key] ?? '', nameSubject, params.subject),
           )
       }
       const parts = exp.children.map((child) => this.render(child, extra, nameSubject))
@@ -293,7 +328,7 @@ export class Renderer {
       '$1',
     )
     return template.replace(/\{\{(\w+)\}\}/g, (_match, key: string) =>
-      this.resolveParam(key, params[key] ?? '', nameSubject),
+      this.resolveParam(key, params[key] ?? '', nameSubject, params.subject),
     )
   }
 }

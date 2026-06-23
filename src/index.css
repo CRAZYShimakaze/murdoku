@@ -2263,6 +2263,17 @@ button {
   letter-spacing: 0.1em;
   margin-right: 0.35rem;
 }
+/* "Vorgaben" dialog: a touch wider than the suspect editor (template rows are dense)
+   and an explanatory intro line. Collapses to full width on phones via min(). */
+.mk-constraints {
+  width: min(42rem, 100%);
+}
+.mk-constraints__intro {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--bone-dim);
+}
 .mk-cb {
   display: flex;
   flex-direction: column;

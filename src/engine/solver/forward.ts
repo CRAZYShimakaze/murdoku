@@ -5,6 +5,7 @@ import { ForcedCellTechnique } from './techniques/ForcedCellTechnique.ts'
 import { RelationalTechnique } from './techniques/RelationalTechnique.ts'
 import { SameObjectTechnique } from './techniques/SameObjectTechnique.ts'
 import { NakedGroupTechnique } from './techniques/NakedGroupTechnique.ts'
+import { CrossCenterTechnique } from './techniques/CrossCenterTechnique.ts'
 import { RectangleTechnique } from './techniques/RectangleTechnique.ts'
 import { InsideXorTechnique } from './techniques/InsideXorTechnique.ts'
 import { BoardCountTechnique } from './techniques/BoardCountTechnique.ts'
@@ -68,6 +69,7 @@ export function createForwardTechniques(puzzle: Puzzle, opts: TechniqueOptions =
     new SameObjectTechnique(),
     new NakedGroupTechnique('row'),
     new NakedGroupTechnique('col'),
+    new CrossCenterTechnique(),
     new RectangleTechnique(),
     new InsideXorTechnique(),
     new BoardCountTechnique(),

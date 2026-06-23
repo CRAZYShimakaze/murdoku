@@ -12,6 +12,7 @@ export type Technique =
   | 'sameObject'
   | 'nakedGroupRows'
   | 'nakedGroupCols'
+  | 'crossCenter'
   | 'rectangle'
   | 'insideXor'
   | 'boardCount'
@@ -92,6 +93,7 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   sameObject: 3,
   nakedGroupRows: 3,
   nakedGroupCols: 3,
+  crossCenter: 3,
   rectangle: 3,
   insideXor: 3,
   boardCount: 4,

@@ -7,6 +7,7 @@ import ObjectIcon from '../components/ObjectIcon.tsx'
 import { OBJECT_GLYPHS } from '../game/glyphs.ts'
 import { THEME_IDS, themeRooms, themeOutdoor, themeFromRoomKeys, themeDefaultObjects } from '../engine/generator/index.ts'
 import { fillBoardCluesAsync, generateLevelAsync, type GenHandle } from '../game/generatorClient.ts'
+import type { Condition } from '../game/editorClues.ts'
 import { LEVELS, levelMetaFromJson, type Difficulty, type LevelMeta } from '../game/levels.ts'
 import {
   saveCustomLevel,
@@ -41,7 +42,7 @@ type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
 /** The four board layers shown as tabs; windows & doors live inside 'top' (Objekte). */
 const LAYERS: Mode[] = ['rooms', 'ground', 'top', 'global']
 type CheckResult = {
-  kind: 'ok' | 'multi' | 'none' | 'error' | 'saved' | 'exported' | 'genfail'
+  kind: 'ok' | 'multi' | 'none' | 'error' | 'saved' | 'exported' | 'genfail' | 'genfailVorgaben'
   murderer?: string
   /** For a solvable level: did pure forward deduction crack it ('pure'), or were
    *  proof-by-contradiction steps (forcing/SAT search) required ('contradiction')? */
@@ -224,7 +225,7 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
    * drawn and let the generator fill the PEOPLE: fresh names, traits and clues so the
    * case is uniquely solvable at the chosen difficulty. Runs in the worker.
    */
-  const randomize = () => {
+  const randomize = (palette?: Condition[]) => {
     setResult(null)
     setRandomizing(true)
     const boardLevel = buildEditorLevel(
@@ -234,7 +235,8 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
       name.trim() || undefined,
       themeOutdoor(theme),
     )
-    const handle = fillBoardCluesAsync(boardLevel, { difficulty })
+    const constrained = !!palette && palette.length > 0
+    const handle = fillBoardCluesAsync(boardLevel, { difficulty }, constrained ? palette : undefined)
     randomHandle.current = handle
     handle.promise
       .then((level) => {
@@ -246,7 +248,8 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
       .catch((err: Error) => {
         randomHandle.current = null
         setRandomizing(false)
-        if (err.message !== 'cancelled') setResult({ kind: 'genfail' })
+        // Strict constraints can be unsatisfiable on this board → a tailored hint.
+        if (err.message !== 'cancelled') setResult({ kind: constrained ? 'genfailVorgaben' : 'genfail' })
       })
   }
 
@@ -342,11 +345,13 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
     }
   }
 
-  // Open the save dialog only once the level is verified solvable & unique.
+  // Open the save dialog. A non-unique / unsolvable board still opens it (with a
+  // warning shown), so a draft can be kept or exported as JSON — e.g. to share a
+  // level that the solver rejects.
   const openSave = () => {
     try {
       const count = new SearchSolver(loadLevel(build('editor-check'))).countSolutions(2)
-      if (count !== 1) return setResult({ kind: count === 0 ? 'none' : 'multi' })
+      if (count !== 1) setResult({ kind: count === 0 ? 'none' : 'multi' })
       setShowSave(true)
     } catch {
       setResult({ kind: 'error' })

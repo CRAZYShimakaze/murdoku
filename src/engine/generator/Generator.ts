@@ -568,6 +568,11 @@ export interface FillBoardOptions {
   seed?: number
   /** Search budget (see GenBudget). Omitted → historical defaults. */
   budget?: GenBudget
+  /** "Zufällig setzen mit Vorgaben": one predicate PER required clue type. Each must be
+   *  satisfied by at least one suspect — that suspect is restricted to the matching shape,
+   *  everyone else keeps the full vocabulary (the generator fills the rest). Built in the
+   *  game layer from the editor's constraint palette. */
+  requiredClues?: ((json: ClueJson) => boolean)[]
 }
 
 /** Translate a caller budget into pickBestLevel's knobs. */
@@ -595,7 +600,7 @@ export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {})
   if (options.difficulty === 'easy') {
     const deadline = performance.now() + (options.budget?.hardMs ?? 20000)
     for (let a = 0; a < 200000 && performance.now() < deadline; a++) {
-      const result = fillAttempt(board, suspectIds, new Rng(baseSeed + a * 7919), 'easy')
+      const result = fillAttempt(board, suspectIds, new Rng(baseSeed + a * 7919), 'easy', options.requiredClues)
       if (result) {
         result.level.difficulty = rateTier(result.level)
         return result.level
@@ -610,7 +615,7 @@ export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {})
     ? pickOptsFrom(options.budget)
     : { maxAttempts: 400, timeBudgetMs: 5000, hardTimeBudgetMs: 20000 }
   return pickBestLevel(
-    (rng) => fillAttempt(board, suspectIds, rng, options.difficulty),
+    (rng) => fillAttempt(board, suspectIds, rng, options.difficulty, options.requiredClues),
     baseSeed,
     options.difficulty,
     pick,
@@ -624,6 +629,7 @@ function fillAttempt(
   suspectIds: PersonId[],
   rng: Rng,
   difficulty?: GenDifficulty,
+  requiredClues?: ((json: ClueJson) => boolean)[],
 ): { level: LevelJson; pins: number } | null {
   const usedName = new Set<string>()
   const suspectMeta: SuspectJson[] = suspectIds.map((id, i) => {
@@ -644,6 +650,28 @@ function fillAttempt(
   for (const id of suspectIds) {
     const others = suspectIds.filter((o) => o !== id)
     candidates.set(id, candidatesFor(id, solution, basePuzzle, others, true))
+  }
+
+  // "Vorgaben": every required clue type must be USED by at least one suspect. Assign each
+  // required type to a DISTINCT suspect whose placement supports it (restricting that
+  // suspect to the matching shape); all other suspects keep the full vocabulary, so the
+  // generator fills the rest and a unique solution stays reachable. If a type fits nobody
+  // in this layout, abandon the attempt — a fresh placement may work.
+  if (requiredClues && requiredClues.length > 0) {
+    if (requiredClues.length > suspectIds.length) return null
+    const taken = new Set<PersonId>()
+    // Most-constrained type first (fewest possible hosts) → better greedy matching.
+    const byScarcity = requiredClues
+      .map((pred) => ({ pred, hosts: suspectIds.filter((id) => candidates.get(id)!.some(pred)) }))
+      .sort((a, b) => a.hosts.length - b.hosts.length)
+    for (const { pred, hosts } of byScarcity) {
+      // Pick a RANDOM qualifying suspect (not always the first), so the constraint isn't
+      // always pinned to suspect A — any eligible suspect may carry it.
+      const host = rng.shuffle(hosts.filter((id) => !taken.has(id)))[0]
+      if (host === undefined) return null
+      taken.add(host)
+      candidates.set(host, candidates.get(host)!.filter(pred))
+    }
   }
 
   // EASY is built by forward construction (place + pin each suspect in the shrinking board).
@@ -1120,6 +1148,16 @@ function candidatesFor(
   const room = board.roomIdOf(cell)
   const out: ClueJson[] = []
 
+  // A trait may only appear in a clue if a SUSPECT actually carries it (the player can see
+  // suspects' looks). For NON-gender traits the VICTIM must NOT carry it either: its
+  // beard/glasses/bald/hair are random and hidden, so a clue must never silently hinge on
+  // them. (Gender is shown for the victim too, so it may count.) Without this, "east of
+  // everyone bald" could appear with no bald suspect — only a bald victim.
+  const victimAttrs = puzzle.attributesOf(VICTIM_ID)
+  const usableTrait = (attribute: string, value: AttributeValue): boolean =>
+    puzzle.suspects.some((s) => puzzle.attributesOf(s.id)[attribute] === value) &&
+    (attribute === 'gender' || victimAttrs[attribute] !== value)
+
   // --- object: on / beside ---
   for (const obj of board.tileAt(cell).objects()) {
     if (obj.occupiable) {
@@ -1191,6 +1229,7 @@ function candidatesFor(
         { attribute: 'glasses', value: true as const },
         { attribute: 'bald', value: true as const },
       ]) {
+        if (!usableTrait(av.attribute, av.value)) continue
         out.push({ type: 'besideSameObject', object: def.type, mate: { kind: 'attr', ...av } })
       }
     }
@@ -1275,6 +1314,7 @@ function candidatesFor(
     { attribute: 'bald', value: true },
   ]
   for (const { attribute, value } of attrDirPairs) {
+    if (!usableTrait(attribute, value)) continue
     const matchers = puzzle
       .allIds()
       .filter((id) => id !== suspectId && puzzle.attributesOf(id)[attribute] === value)
@@ -1298,30 +1338,59 @@ function candidatesFor(
     { attribute: 'bald', value: true },
   ]
   for (const { attribute, value } of attrPairs) {
+    if (!usableTrait(attribute, value)) continue
     for (const quantifier of ['none', 'some', 'all'] as const) {
       out.push({ type: 'roomAttribute', quantifier, attribute, value, excludeSelf: editorSafe })
     }
   }
-  // "alone with a <attribute>" — about the single OTHER suspect sharing the room (never
-  // the subject, never the victim). Editor-representable via "alone with" + a trait.
+  // Counted variants of "some": "in a room with ≥N / exactly N matching others" — only
+  // editor-safe (excludeSelf, so the subject never counts), matching the flat builder.
+  // The test-filter keeps the ones true for the solution; we cap counts at the actual
+  // number present in the room so we never offer a clue that can't hold.
+  if (editorSafe) {
+    for (const { attribute, value } of attrPairs) {
+      if (!usableTrait(attribute, value)) continue
+      const matching = inRoomAll.filter(
+        (id) => id !== suspectId && puzzle.attributesOf(id)[attribute] === value,
+      ).length
+      // "at least N" for N ≥ 2 (N = 1 is the plain 'some' above).
+      for (let n = 2; n <= matching; n++) {
+        out.push({ type: 'roomAttribute', quantifier: 'some', attribute, value, excludeSelf: true, count: n })
+      }
+      // "exactly N" — only the real count is true, so offer just that one.
+      if (matching >= 1) {
+        out.push({ type: 'roomAttribute', quantifier: 'some', attribute, value, excludeSelf: true, count: matching, exact: true })
+      }
+    }
+  }
+  // "alone with N <attribute>" — about the OTHER suspects sharing the room (never the
+  // subject, never the victim). Editor-representable via "alone with" + a trait + count.
+  // A trait is usable only if EVERY co-occupant shares it (else "alone with only matching"
+  // fails); the count is how many co-occupants there are.
   const othersInRoom = otherSuspects.filter((id) => board.roomIdOf(solution.cellOf(id)) === room)
-  if (othersInRoom.length === 1) {
-    const a = puzzle.attributesOf(othersInRoom[0])
-    const companion: { attribute: string; value: AttributeValue }[] = [
-      { attribute: 'gender', value: a.gender },
-    ]
-    if (a.beard === true) companion.push({ attribute: 'beard', value: true })
-    if (a.glasses === true) companion.push({ attribute: 'glasses', value: true })
-    if (a.bald === true) companion.push({ attribute: 'bald', value: true })
-    if (typeof a.hair === 'string') companion.push({ attribute: 'hair', value: a.hair })
+  if (othersInRoom.length >= 1) {
+    const n = othersInRoom.length
+    const attrs = othersInRoom.map((id) => puzzle.attributesOf(id))
+    const companion: { attribute: string; value: AttributeValue }[] = []
+    const g = attrs[0].gender
+    if (attrs.every((a) => a.gender === g)) companion.push({ attribute: 'gender', value: g })
+    if (attrs.every((a) => a.beard === true)) companion.push({ attribute: 'beard', value: true })
+    if (attrs.every((a) => a.glasses === true)) companion.push({ attribute: 'glasses', value: true })
+    if (attrs.every((a) => a.bald === true)) companion.push({ attribute: 'bald', value: true })
+    const hair = attrs[0].hair
+    if (typeof hair === 'string' && attrs.every((a) => a.hair === hair)) {
+      companion.push({ attribute: 'hair', value: hair })
+    }
     for (const { attribute, value } of companion) {
-      out.push({ type: 'roomCompanion', count: 1, attribute, value })
+      out.push({ type: 'roomCompanion', count: n, attribute, value })
     }
   }
   // "in his room someone (anyone / a man / someone with a beard …) was ON or BESIDE
   // an object" — round-trips to the editor's "Im Raum mit jemandem" builder.
   for (const id of othersInRoom) {
     const a = puzzle.attributesOf(id)
+    // Every trait this co-occupant actually carries (so the clue is true), the full
+    // editor palette: gender, the boolean traits, and the valued styles.
     const whoVariants: ({ attribute: string; value: AttributeValue } | null)[] = [
       null, // anyone
       { attribute: 'gender', value: a.gender },
@@ -1329,7 +1398,9 @@ function candidatesFor(
     if (a.beard === true) whoVariants.push({ attribute: 'beard', value: true })
     if (a.glasses === true) whoVariants.push({ attribute: 'glasses', value: true })
     if (a.bald === true) whoVariants.push({ attribute: 'bald', value: true })
-    if (typeof a.hair === 'string') whoVariants.push({ attribute: 'hair', value: a.hair })
+    for (const attr of ['hair', 'hairstyle', 'beardStyle', 'glassesShape', 'glassesColor'] as const) {
+      if (typeof a[attr] === 'string') whoVariants.push({ attribute: attr, value: a[attr] })
+    }
 
     const idCell = solution.cellOf(id)
     const idRoom = board.roomIdOf(idCell)
@@ -1344,15 +1415,22 @@ function candidatesFor(
         if (!board.tileAt(idCell).hasObjectType(obj.type)) nearTypes.add(obj.type)
       }
     }
-    for (const who of whoVariants) {
-      const attr = who ? { attribute: who.attribute, value: who.value } : {}
-      for (const type of onTypes) {
-        out.push({ type: 'roomExists', ...attr, object: type, relation: 'on' })
-      }
-      for (const type of nearTypes) {
-        out.push({ type: 'roomExists', ...attr, object: type, relation: 'near' })
-      }
+    // Board positions this co-occupant stands on (corner ⊂ wall, so both can hold).
+    const posList: ('corner' | 'wall' | 'window' | 'door')[] = []
+    if (board.cornerCells().has(idCell)) posList.push('corner')
+    if (board.cellsAtWall().has(idCell)) posList.push('wall')
+    if (board.cellsNearWindow().has(idCell)) posList.push('window')
+    if (board.cellsNearDoor().has(idCell)) posList.push('door')
+
+    // Each "who" — anyone / a trait / a gender AND the specific NAMED co-occupant —
+    // across every place they satisfy: on/beside an object, or a board position.
+    const emit = (who: { attribute?: string; value?: AttributeValue; person?: PersonId }) => {
+      for (const type of onTypes) out.push({ type: 'roomExists', ...who, object: type, relation: 'on' })
+      for (const type of nearTypes) out.push({ type: 'roomExists', ...who, object: type, relation: 'near' })
+      for (const relation of posList) out.push({ type: 'roomExists', ...who, relation })
     }
+    for (const who of whoVariants) emit(who ? { attribute: who.attribute, value: who.value } : {})
+    emit({ person: id })
   }
 
   // --- negations ("NICHT neben einem Regal / an der Wand / im Garten …") — broad,

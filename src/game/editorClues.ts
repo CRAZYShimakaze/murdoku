@@ -120,6 +120,13 @@ export interface Condition {
   dir?: Direction8 // direction — 8 compass directions
   at?: number // direction(object) — cell index of ONE object tile (undefined = any)
   quantifier?: Quantifier // room(with-trait) — none / some / all
+  count?: number // room(with-trait, some) — how many matching companions (≥1, default 1)
+  exact?: boolean // room(with-trait, some) — exactly `count` (true) vs at least `count` (false)
+  /** Generator-constraint mode only: names of target fields the GENERATOR may choose
+   *  freely (e.g. ['of'] = any person, ['object'] = any object, ['attribute','value'] =
+   *  any trait). Empty/absent = the picked concrete values must match. Ignored when a
+   *  condition is turned into a real clue. */
+  wild?: string[]
   /** room(with-trait) / sameObject / room(onObject); 'any' = "irgendjemand". */
   attribute?: AttrKind | 'any' | 'object'
   value?: string // valued attribute (gender, hair, hairstyle, …)
@@ -138,7 +145,7 @@ export interface Condition {
   aloneDir?: 'none' | Direction // aloneWith — one extra is in this cardinal direction
   objTarget?: 'any' | 'person' | 'attr' // sameObject — who else is beside the same object
   objDir?: 'none' | Direction8 // sameObject — optional direction of the mate from subject
-  objRel?: 'on' | 'near' // room(onObject) — the companion is ON or BESIDE the object
+  objRel?: 'on' | 'near' | 'corner' | 'wall' | 'window' | 'door' // room(onObject) — where the companion stood (on/beside object, or a board position)
   roomMode?: 'alone' | 'in' | 'with' | 'onObject' // room — which kind of room statement
   dirTarget?: 'person' | 'object' | 'attr' // direction — relative to a person, an object or a trait-bearer
   pos?: 'corner' | 'wall' // boardPos — in a corner or at a wall
@@ -180,13 +187,26 @@ function baseJson(c: Condition): ClueJson | null {
         return { type: 'inRoom', room: c.room }
       }
       if (mode === 'onObject') {
-        if (!c.object) return null
+        // "In seinem Raum war <wer> <wo>": who = anyone / a named person / a trait;
+        // where = on/beside an object, or a board position (corner/wall/window/door).
         const relation = c.objRel ?? 'on'
-        if (c.attribute === 'any' || c.attribute === 'object' || !c.attribute) {
-          return { type: 'roomExists', object: c.object, relation }
+        const needsObject = relation === 'on' || relation === 'near'
+        if (needsObject && !c.object) return null
+        const objField = needsObject ? { object: c.object } : {}
+        const target =
+          c.roomTarget === 'person' || c.roomTarget === 'attr' || c.roomTarget === 'anyone'
+            ? c.roomTarget
+            : !c.attribute || c.attribute === 'any' || c.attribute === 'object'
+              ? 'anyone'
+              : 'attr'
+        if (target === 'person') {
+          return c.of ? { type: 'roomExists', person: c.of, relation, ...objField } : null
         }
-        const { attribute, value } = attrValue(c)
-        return { type: 'roomExists', attribute, value, object: c.object, relation }
+        if (target === 'attr') {
+          const { attribute, value } = attrValue(c)
+          return { type: 'roomExists', attribute, value, relation, ...objField }
+        }
+        return { type: 'roomExists', relation, ...objField }
       }
       // mode === 'with' — same room as a person / object / trait / anyone.
       const alone = c.alone ? { alone: true as const } : {}
@@ -196,8 +216,23 @@ function baseJson(c: Condition): ClueJson | null {
       if (target === 'attr') {
         const { attribute, value } = attrValue(c)
         const quantifier = c.quantifier ?? 'some'
-        // "jemand mit Merkmal" + allein = exactly one matching companion.
-        if (quantifier === 'some' && c.alone) return { type: 'roomCompanion', count: 1, attribute, value }
+        if (quantifier === 'some') {
+          const count = Math.max(1, c.count ?? 1)
+          // "jemand mit Merkmal" + allein = exactly `count` matching companions, room
+          // otherwise empty.
+          if (c.alone) return { type: 'roomCompanion', count, attribute, value }
+          // "≥ count" by default, "exactly count" when the genau/mindestens toggle is set.
+          // Omit the defaults (count 1, at-least) so unchanged levels keep their old JSON.
+          return {
+            type: 'roomAttribute',
+            quantifier: 'some',
+            attribute,
+            value,
+            excludeSelf: true,
+            ...(count > 1 ? { count } : {}),
+            ...(c.exact ? { exact: true } : {}),
+          }
+        }
         return { type: 'roomAttribute', quantifier, attribute, value, excludeSelf: true }
       }
       if (target === 'object') {
@@ -340,6 +375,8 @@ function jsonToCondition(json: ClueJson): Condition | null {
     line: 'col',
     roomRel: 'any',
     quantifier: 'some',
+    count: 1,
+    exact: false,
     attribute: 'beard',
     value: 'blond',
     index: 0,
@@ -429,13 +466,13 @@ function jsonToCondition(json: ClueJson): Condition | null {
     case 'sameRoom':
       return make('room', { roomMode: 'with', roomTarget: 'person', of: c.as, alone: c.alone })
     case 'roomCompanion':
-      // "alone with one matching person" → the trait target + allein in the room hub.
-      if (c.count !== 1) return null
+      // "alone with `count` matching people" → the trait target + allein in the room hub.
       return make('room', {
         roomMode: 'with',
         roomTarget: 'attr',
         quantifier: 'some',
         alone: true,
+        count: Math.max(1, c.count),
         attribute: c.attribute as AttrKind,
         value: typeof c.value === 'string' ? c.value : undefined,
       })
@@ -458,15 +495,19 @@ function jsonToCondition(json: ClueJson): Condition | null {
         roomMode: 'with',
         roomTarget: 'attr',
         quantifier: c.quantifier,
+        count: c.count ?? 1,
+        exact: c.exact ?? false,
         attribute: c.attribute as AttrKind,
         value: typeof c.value === 'string' ? c.value : undefined,
       })
     case 'roomExists':
       return make('room', {
         roomMode: 'onObject',
+        roomTarget: c.person ? 'person' : c.attribute ? 'attr' : 'anyone',
+        of: c.person ?? undefined,
         attribute: (c.attribute ?? 'any') as AttrKind | 'any',
         value: typeof c.value === 'string' ? c.value : undefined,
-        object: c.object,
+        ...(c.object ? { object: c.object } : {}),
         objRel: c.relation ?? 'on',
       })
     case 'aloneWith':
@@ -522,6 +563,8 @@ export function defaultCondition(
     of: ctx.others[0]?.id,
     dir: 'north',
     quantifier: 'some',
+    count: 1,
+    exact: false,
     attribute: 'beard',
     value: 'blond',
     line: 'col',
@@ -543,4 +586,62 @@ export function defaultCondition(
     objDir: 'none',
     objRel: 'on',
   }
+}
+
+/* ---------------------------------------------------------------------------
+ * Generator constraints ("Zufällig setzen mit Vorgaben")
+ *
+ * A palette is a list of conditions used as TEMPLATES: the generator may only emit
+ * clues whose shape matches one of them. A template's `wild` names the target fields
+ * the generator chooses freely; all other (structural) fields must match exactly.
+ * ------------------------------------------------------------------------- */
+
+/** Target fields the "Generator wählt" toggle frees (besides `of`, which is always
+ *  free in the editor — the suspects don't exist yet, so no concrete person to pick). */
+export const TEMPLATE_TARGET_FIELDS = [
+  'object',
+  'objects',
+  'attribute',
+  'value',
+  'room',
+  'index',
+  'dir',
+  'at',
+] as const
+
+/** Deterministic, key-sorted JSON so two clues compare equal regardless of key order. */
+function stableStringify(v: unknown): string {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v) ?? 'null'
+  if (Array.isArray(v)) return `[${v.map(stableStringify).join(',')}]`
+  const o = v as Record<string, unknown>
+  return `{${Object.keys(o)
+    .sort()
+    .map((k) => `${JSON.stringify(k)}:${stableStringify(o[k])}`)
+    .join(',')}}`
+}
+
+/** Does a concrete candidate clue match a palette template? Same kind, all NON-wild
+ *  fields equal. We reuse the round-trip-safe `jsonToCondition`/`condJson`: convert the
+ *  candidate to a condition, copy the template's WILD fields from it (so they always
+ *  agree), then compare the re-emitted JSON. Concrete fields therefore must match, wild
+ *  fields match anything. */
+function condMatchesTemplate(json: ClueJson, tmpl: Condition): boolean {
+  const cc = jsonToCondition(json)
+  if (!cc || cc.kind !== tmpl.kind) return false
+  const filledRec = { ...tmpl } as unknown as Record<string, unknown>
+  const ccRec = cc as unknown as Record<string, unknown>
+  for (const f of tmpl.wild ?? []) filledRec[f] = ccRec[f]
+  const a = condJson(filledRec as unknown as Condition)
+  const b = condJson(cc)
+  return a !== null && b !== null && stableStringify(a) === stableStringify(b)
+}
+
+/** One matcher PER template: each must be satisfied by at least one clue in the
+ *  generated level ("use these clue types"); the generator fills the rest freely.
+ *  Returns undefined for an empty palette (= no constraints). */
+export function makeClueMatchers(
+  palette: Condition[] | undefined,
+): ((json: ClueJson) => boolean)[] | undefined {
+  if (!palette || palette.length === 0) return undefined
+  return palette.map((t) => (json: ClueJson) => condMatchesTemplate(json, t))
 }

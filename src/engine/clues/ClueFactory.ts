@@ -81,6 +81,10 @@ export type ClueJson =
       attribute: string
       value: AttributeValue
       excludeSelf?: boolean
+      /** 'some' only: required number of matching others (default 1). */
+      count?: number
+      /** 'some' only: `count` is exact, not a lower bound. */
+      exact?: boolean
     }
   | { type: 'direction'; of: PersonId; dir: Direction8 }
   | { type: 'directionFromAttr'; attribute: string; value: AttributeValue; dir: Direction8; quantifier?: 'some' | 'all' }
@@ -95,11 +99,14 @@ export type ClueJson =
   | { type: 'roomCompanion'; count: number; attribute: string; value: AttributeValue }
   | {
       type: 'roomExists'
-      /** Omitted/null = anyone ("someone else was on/beside the object"). */
+      /** Omitted/null = anyone (unless `person` is set). */
       attribute?: string | null
       value?: AttributeValue
-      object: string
-      /** Companion on the object (default) or beside it. */
+      /** A specific named suspect as the "someone" — overrides attribute/value. */
+      person?: PersonId | null
+      /** Required for 'on'/'near'; ignored for the board-position relations. */
+      object?: string
+      /** Where the companion stood: on/beside an object, or a board position. */
       relation?: RoomExistsRelation
     }
   | { type: 'not'; clue: ClueJson }
@@ -165,6 +172,8 @@ export function createClue(json: ClueJson): Clue {
         json.attribute,
         json.value,
         json.excludeSelf ?? false,
+        json.count ?? 1,
+        json.exact ?? false,
       )
     case 'direction':
       return new DirectionClue(json.of, json.dir)
@@ -188,8 +197,9 @@ export function createClue(json: ClueJson): Clue {
       return new RoomExistsClue(
         json.attribute ?? null,
         json.value ?? true,
-        json.object,
+        json.object ?? '',
         json.relation ?? 'on',
+        json.person ?? null,
       )
     case 'not':
       return new NotClue(createClue(json.clue))

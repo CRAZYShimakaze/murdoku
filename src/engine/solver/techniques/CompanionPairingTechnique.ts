@@ -127,7 +127,13 @@ export class CompanionPairingTechnique extends Technique {
     }
     for (const s of ctx.puzzle.suspects) {
       for (const c of s.clues) {
-        for (const comp of clueList(c, isCompanion)) get(comp.attribute, comp.value).exclusive.push(s.id)
+        // Only single-companion demands ("alone with exactly ONE matching person") fit the
+        // one-supplier-per-room pigeonhole below; an "alone with N" demand needs N suppliers
+        // in the SAME room, which this technique doesn't model, so skip it (CompanionRoomFit
+        // and the room-reasoning force/reserve rules handle counted companions soundly).
+        for (const comp of clueList(c, isCompanion)) {
+          if (comp.count === 1) get(comp.attribute, comp.value).exclusive.push(s.id)
+        }
         for (const ex of clueList(c, isExists)) {
           if (ex.attribute) get(ex.attribute, ex.value).shared.push(s.id)
         }

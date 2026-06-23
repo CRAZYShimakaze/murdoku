@@ -11,3 +11,5 @@ coverage
 .claude/
 
 scripts/migrate-rooms.mjs
+
+levels/Debug.json

@@ -8,6 +8,7 @@ import {
   LINE_KINDS,
   QUANTIFIERS,
   ROOM_RELS,
+  TEMPLATE_TARGET_FIELDS,
   VALUED_ATTRS,
   defaultCondition,
   type AttrKind,
@@ -45,10 +46,17 @@ interface Props {
   group: ClueGroup
   ctx: ClueCtx
   onChange: (group: ClueGroup) => void
+  /** Generator-constraint mode ("Vorgaben"): each row is a TEMPLATE, not a real clue.
+   *  Hides the AND/OR connector and shows a per-row "Generator wählt" toggle that frees
+   *  the target fields (object/trait/room/…); the person is always generator-chosen. */
+  templateMode?: boolean
 }
 
+/** Free targets a brand-new / re-kinded template starts with (chip ON). */
+const ALL_WILD = ['of', ...TEMPLATE_TARGET_FIELDS]
+
 /** Flat clue builder: a list of conditions joined by one connector, each with NICHT. */
-export default function ClueBuilder({ group, ctx, onChange }: Props) {
+export default function ClueBuilder({ group, ctx, onChange, templateMode = false }: Props) {
   const { t } = useTranslation()
 
   const update = (i: number, patch: Partial<Condition>) =>
@@ -60,8 +68,18 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
   const remove = (i: number) =>
     onChange({ ...group, conditions: group.conditions.filter((_, j) => j !== i) })
 
-  const add = () =>
-    onChange({ ...group, conditions: [...group.conditions, defaultCondition('room', ctx)] })
+  const add = () => {
+    const c = defaultCondition('room', ctx)
+    onChange({
+      ...group,
+      conditions: [...group.conditions, templateMode ? { ...c, wild: [...ALL_WILD] } : c],
+    })
+  }
+
+  // Template rows: is the generator free to choose the targets (object/trait/room/…)?
+  const targetsFree = (c: Condition) => TEMPLATE_TARGET_FIELDS.some((f) => (c.wild ?? []).includes(f))
+  const toggleTargetsFree = (c: Condition, i: number) =>
+    update(i, { wild: targetsFree(c) ? ['of'] : [...ALL_WILD] })
 
   const objName = (type: string) => t(`objName.${type}`)
 
@@ -258,6 +276,7 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
               if (m === 'onObject') {
                 patch.attribute = 'any'
                 patch.objRel = c.objRel ?? 'on'
+                if (c.roomTarget !== 'person' && c.roomTarget !== 'attr') patch.roomTarget = 'anyone'
                 if (!c.object || !OCCUPIABLE_OBJECT_TYPES.includes(c.object)) patch.object = occupiableObj()
               }
               update(i, patch)
@@ -289,27 +308,114 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
             </>
           )
         if (mode === 'onObject') {
+          // "In seinem Raum war <wer> <wo>": who = anyone / a named person / a trait;
+          // where = on/beside an object, or a board position (corner/wall/window/door).
           const rel = c.objRel ?? 'on'
+          const needsObject = rel === 'on' || rel === 'near'
+          const target =
+            c.roomTarget === 'person' || c.roomTarget === 'attr' ? c.roomTarget : 'anyone'
+          const whoValue =
+            target === 'person'
+              ? c.of
+                ? `person:${c.of}`
+                : 'anyone'
+              : target === 'attr'
+                ? c.attribute === 'gender'
+                  ? `attr:gender:${c.value ?? 'f'}`
+                  : `attr:${c.attribute}`
+                : 'anyone'
+          const valuedAttr =
+            target === 'attr' && c.attribute && c.attribute !== 'gender'
+              ? VALUED_ATTRS[c.attribute]
+              : undefined
+          const positions = [
+            { v: 'on', label: t('cond.relOn') },
+            { v: 'near', label: t('cond.relNear') },
+            { v: 'corner', label: t('cond.posCorner') },
+            { v: 'wall', label: t('cond.posWall') },
+            ...(ctx.hasWindows ? [{ v: 'window', label: t('cond.posWindow') }] : []),
+            ...(ctx.hasDoors ? [{ v: 'door', label: t('cond.posDoor') }] : []),
+          ] as const
           return (
             <>
               {modeSelect}
               <select
                 className="mk-select-input mk-cond__val"
+                value={whoValue}
+                onChange={(e) => {
+                  const v = e.target.value
+                  if (v === 'anyone') update(i, { roomTarget: 'anyone', of: undefined })
+                  else if (v.startsWith('person:'))
+                    update(i, { roomTarget: 'person', of: v.slice(7) })
+                  else {
+                    const [attribute, value] = v.slice(5).split(':')
+                    const valued = VALUED_ATTRS[attribute]
+                    update(i, {
+                      roomTarget: 'attr',
+                      attribute: attribute as AttrKind,
+                      value: value ?? (valued && attribute !== 'gender' ? valued.values[0] : undefined),
+                      of: undefined,
+                    })
+                  }
+                }}
+              >
+                <option value="anyone">{t('cond.anyone')}</option>
+                <optgroup label={t('cond.grpPeople')}>
+                  {ctx.others.map((o) => (
+                    <option key={o.id} value={`person:${o.id}`}>
+                      {o.name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label={t('cond.grpAttrs')}>
+                  <option value="attr:gender:m">{t('genderVal.m')}</option>
+                  <option value="attr:gender:f">{t('genderVal.f')}</option>
+                  {BOOL_ATTRS.map((a) => (
+                    <option key={a} value={`attr:${a}`}>
+                      {`${t('cond.companionWith')} ${t(`attrKind.${a}`)}`}
+                    </option>
+                  ))}
+                  {ATTR_KINDS.filter((a) => a !== 'gender' && VALUED_ATTRS[a]).map((a) => (
+                    <option key={a} value={`attr:${a}`}>
+                      {`${t('cond.companionWith')} ${t(`attrKind.${a}`)} …`}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+              {valuedAttr && (
+                <select
+                  className="mk-select-input mk-cond__val"
+                  value={c.value ?? valuedAttr.values[0]}
+                  onChange={(e) => update(i, { value: e.target.value })}
+                >
+                  {valuedAttr.values.map((val) => (
+                    <option key={val} value={val}>
+                      {t(`${valuedAttr.labelKey}.${val}`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <select
+                className="mk-select-input mk-cond__val"
                 value={rel}
                 onChange={(e) => {
-                  const objRel = e.target.value as 'on' | 'near'
+                  const objRel = e.target.value as 'on' | 'near' | 'corner' | 'wall' | 'window' | 'door'
                   const patch: Partial<Condition> = { objRel }
                   if (objRel === 'on' && c.object && !OCCUPIABLE_OBJECT_TYPES.includes(c.object)) {
                     patch.object = occupiableObj()
+                  } else if ((objRel === 'on' || objRel === 'near') && !c.object) {
+                    patch.object = objRel === 'on' ? occupiableObj() : ctx.objects[0]
                   }
                   update(i, patch)
                 }}
               >
-                <option value="on">{t('cond.relOn')}</option>
-                <option value="near">{t('cond.relNear')}</option>
+                {positions.map((p) => (
+                  <option key={p.v} value={p.v}>
+                    {p.label}
+                  </option>
+                ))}
               </select>
-              {attrSelect(c, i, true)}
-              {objectSelect(c, i, rel === 'on')}
+              {needsObject && objectSelect(c, i, rel === 'on')}
             </>
           )
         }
@@ -405,6 +511,29 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
                   </option>
                 ))}
               </select>
+            )}
+            {/* "some": how many matching companions, and (unless "allein") at-least vs exact. */}
+            {c.roomTarget === 'attr' && quantifier === 'some' && (
+              <>
+                <input
+                  className="mk-input mk-cond__val mk-cond__num"
+                  type="number"
+                  min={1}
+                  value={c.count ?? 1}
+                  onChange={(e) => update(i, { count: Math.max(1, Number(e.target.value)) })}
+                />
+                <span className="mk-cond__unit">{t('cond.people')}</span>
+                {!c.alone && (
+                  <select
+                    className="mk-select-input mk-cond__val"
+                    value={c.exact ? 'exact' : 'min'}
+                    onChange={(e) => update(i, { exact: e.target.value === 'exact' })}
+                  >
+                    <option value="min">{t('cond.countMin')}</option>
+                    <option value="exact">{t('cond.countExact')}</option>
+                  </select>
+                )}
+              </>
             )}
             {valuedAttr && (
               <select
@@ -778,7 +907,7 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
 
   return (
     <div className="mk-cb">
-      {group.conditions.length >= 2 && (
+      {!templateMode && group.conditions.length >= 2 && (
         <div className="mk-cb__conn">
           {(['and', 'or'] as const).map((conn) => (
             <button
@@ -813,7 +942,14 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
                 onChange({
                   ...group,
                   conditions: group.conditions.map((cc, j) =>
-                    j === i ? { ...defaultCondition(e.target.value as CondKind, ctx), not: cc.not } : cc,
+                    j === i
+                      ? {
+                          ...defaultCondition(e.target.value as CondKind, ctx),
+                          not: cc.not,
+                          // Keep the row's "Generator wählt" state across a kind change.
+                          ...(templateMode ? { wild: cc.wild ?? [...ALL_WILD] } : {}),
+                        }
+                      : cc,
                   ),
                 })
               }
@@ -834,6 +970,13 @@ export default function ClueBuilder({ group, ctx, onChange }: Props) {
               })}
             </select>
             {valueControls(c, i)}
+            {templateMode &&
+              flagChip(
+                targetsFree(c),
+                () => toggleTargetsFree(c, i),
+                t('cond.genFree'),
+                t('cond.genFreeHint'),
+              )}
             <button
               type="button"
               className="mk-cond__del"

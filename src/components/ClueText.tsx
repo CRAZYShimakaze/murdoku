@@ -5,7 +5,7 @@ import type { Clue, Explanation, PersonId } from '../engine/index.ts'
 import InfoTip from './InfoTip.tsx'
 
 /** Params rendered bold (objects/rooms etc. — also shown on the board). */
-const BOLD_PARAMS = new Set(['object', 'objectNom', 'objectEvery', 'objects', 'room', 'attribute', 'who', 'whoNeg', 'mate', 'mateLc', 'row', 'col', 'n', 'line', 'roomRel', 'target', 'people', 'atCell'])
+const BOLD_PARAMS = new Set(['object', 'objectNom', 'objectEvery', 'objects', 'room', 'attribute', 'who', 'whoNeg', 'whoOther', 'whoOtherPl', 'whoBare', 'mate', 'mateLc', 'row', 'col', 'n', 'line', 'roomRel', 'target', 'people', 'atCell'])
 
 interface Props {
   renderer: Renderer
@@ -39,7 +39,7 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
         if (name === 'child' && childNodes) {
           out.push(...childNodes)
         } else {
-          const val = renderer.resolveParam(name, params[name] ?? '')
+          const val = renderer.resolveParam(name, params[name] ?? '', false, params.subject)
           // The negation word ("nicht"/"not") is bold + tooltipped like the concept
           // words; the trailing space stays outside the bold span so spacing is unchanged.
           if (name === 'neg') {

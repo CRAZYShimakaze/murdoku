@@ -146,6 +146,11 @@ export class RoomAttributeClue extends Clue {
     readonly attribute: string,
     readonly value: AttributeValue,
     readonly excludeSelf = false,
+    /** For the 'some' quantifier: how many matching others are required
+     *  ("≥ count" by default, "exactly count" when `exact`). Ignored by none/all. */
+    readonly count = 1,
+    /** 'some' only: `count` is an EXACT count, not a lower bound. */
+    readonly exact = false,
   ) {
     super()
   }
@@ -165,7 +170,7 @@ export class RoomAttributeClue extends Clue {
       case 'none':
         return matches === 0
       case 'some':
-        return matches >= 1
+        return this.exact ? matches === this.count : matches >= this.count
       case 'all':
         return total > 0 && matches === total
     }
@@ -196,16 +201,40 @@ export class RoomAttributeClue extends Clue {
     // Gender is categorical ("a man/woman"), not a "with <trait>" attribute, so it
     // gets its own wording (none/some/all) via the nominative who-token.
     if (this.attribute === 'gender') {
-      return { key: `clue.roomGender.${this.quantifier}`, params: { who: `${this.value}_nom` } }
+      const g = String(this.value)
+      if (this.quantifier === 'some') {
+        if (this.exact) {
+          return this.count >= 2
+            ? { key: 'clue.roomGender.someExact', params: { count: this.count, whoOtherPl: g } }
+            // `whoOther` carries the article for German ("ein anderer Mann"); `whoBare`
+            // the article-free noun for English ("one other man").
+            : { key: 'clue.roomGender.someExactOne', params: { count: this.count, whoOther: g, whoBare: g } }
+        }
+        if (this.count >= 2) {
+          return { key: 'clue.roomGender.someMin', params: { count: this.count, whoOtherPl: g } }
+        }
+        // "≥ 1 other" — the original wording, now "_other"-aware via `whoOther`; keep
+        // `who` so the negated ("kein …") form still resolves.
+        return { key: 'clue.roomGender.some', params: { who: `${g}_nom`, whoOther: g } }
+      }
+      return { key: `clue.roomGender.${this.quantifier}`, params: { who: `${g}_nom` } }
     }
     // Boolean traits read as the attribute itself ("a beard"); valued traits
     // (hair colour, …) fold the value into the token so the wording can
     // distinguish "blond hair" from "brown hair" via `attr.<attribute>_<value>`.
     const token = this.value === true ? this.attribute : `${this.attribute}_${this.value}`
-    return {
-      key: `clue.roomAttribute.${this.quantifier}`,
-      params: { attribute: token },
+    if (this.quantifier === 'some') {
+      if (this.exact) {
+        return this.count >= 2
+          ? { key: 'clue.roomAttribute.someExact', params: { count: this.count, attribute: token } }
+          : { key: 'clue.roomAttribute.someExactOne', params: { count: this.count, attribute: token } }
+      }
+      if (this.count >= 2) {
+        return { key: 'clue.roomAttribute.someMin', params: { count: this.count, attribute: token } }
+      }
+      return { key: 'clue.roomAttribute.some', params: { attribute: token } }
     }
+    return { key: `clue.roomAttribute.${this.quantifier}`, params: { attribute: token } }
   }
 }
 
@@ -254,25 +283,47 @@ export class RoomCompanionClue extends Clue {
 
   describe(): Explanation {
     // Gender reads as "alone with a man/woman"; other traits as "alone with a person
-    // who had <trait>" (the trait token reuses the attr.* wordings).
+    // who had <trait>" (the trait token reuses the attr.* wordings). ≥2 companions get
+    // the plural "alone with N (other) men / N people who had …" wording.
     if (this.attribute === 'gender') {
-      return { key: 'clue.aloneWith', params: { who: `${this.value}_dat` } }
+      const g = String(this.value)
+      return this.count >= 2
+        ? { key: 'clue.aloneWithMany', params: { count: this.count, whoOtherPl: g } }
+        : { key: 'clue.aloneWith', params: { who: `${g}_dat` } }
     }
     const token = this.value === true ? this.attribute : `${this.attribute}_${this.value}`
-    return { key: 'clue.aloneWithTrait', params: { attribute: token } }
+    return this.count >= 2
+      ? { key: 'clue.aloneWithTraitMany', params: { count: this.count, attribute: token } }
+      : { key: 'clue.aloneWithTrait', params: { attribute: token } }
   }
 }
 
-/** How the companion of a roomExists clue relates to the object: standing ON it,
- *  or BESIDE it (orthogonally adjacent, object in the same room — like "neben"). */
-export type RoomExistsRelation = 'on' | 'near'
+/**
+ * Where the "someone" of a roomExists clue stood, within the subject's room:
+ *  - 'on'     — standing ON an object of the given type;
+ *  - 'near'   — BESIDE one in the same room (orthogonal, not on it — the game's "neben");
+ *  - 'corner' — on a corner cell;  'wall' — on a cell touching a wall;
+ *  - 'window' — on a cell beside a window;  'door' — beside a door.
+ * 'on'/'near' use `object`; the board-position relations ignore it.
+ */
+export type RoomExistsRelation = 'on' | 'near' | 'corner' | 'wall' | 'window' | 'door'
+
+const ROOM_EXISTS_REL_KEY: Record<RoomExistsRelation, string> = {
+  on: 'On',
+  near: 'Near',
+  corner: 'Corner',
+  wall: 'Wall',
+  window: 'Window',
+  door: 'Door',
+}
 
 /**
- * "Someone (else) was on/beside a {object} in {name}'s area." — some OTHER person
- * in the subject's room (never the subject, never the victim) stands on the given
- * object (`relation` 'on') or beside one lying in the same room ('near'), and —
- * when `attribute` is set — matches attribute == value. `attribute: null` means
- * anyone qualifies ("jemand anders saß auf einem Stuhl in seinem Raum").
+ * "Someone (else) was {on/beside an object | in a corner | …} in {name}'s area." —
+ * some OTHER person in the subject's room (never the subject, never the victim)
+ * stands somewhere matching `relation`, and matches the "who":
+ *  - `person` set → it must be that specific named suspect;
+ *  - else `attribute` set → attribute == value (e.g. a woman, someone with a beard);
+ *  - else (attribute null, no person) → anyone qualifies.
  */
 export class RoomExistsClue extends Clue {
   constructor(
@@ -280,35 +331,61 @@ export class RoomExistsClue extends Clue {
     readonly value: AttributeValue,
     readonly object: string,
     readonly relation: RoomExistsRelation = 'on',
+    /** A specific named suspect as the "someone" (overrides attribute/value). */
+    readonly person: PersonId | null = null,
   ) {
     super()
   }
 
-  /** Whether `id` can play the "someone" role (anyone when no attribute is set). */
+  private get usesObject(): boolean {
+    return this.relation === 'on' || this.relation === 'near'
+  }
+
+  /** Cells where a companion would satisfy the board-position part (room-independent). */
+  private positionCells(board: Board): Set<Cell> {
+    switch (this.relation) {
+      case 'corner':
+        return board.cornerCells()
+      case 'wall':
+        return board.cellsAtWall()
+      case 'window':
+        return board.cellsNearWindow()
+      case 'door':
+        return board.cellsNearDoor()
+      default:
+        return new Set()
+    }
+  }
+
+  /** Whether `id` can play the "someone" role (named person, trait/gender, or anyone). */
   matchesPerson(puzzle: Puzzle, id: PersonId): boolean {
+    if (this.person !== null) return id === this.person
     return this.attribute === null || puzzle.attributesOf(id)[this.attribute] === this.value
   }
 
-  /** Whether a person standing on `cell` satisfies the object part within `room`:
-   *  ON an object of the type, or BESIDE one in the same room (mirrors the game's
-   *  "neben": orthogonal neighbour, same room, not standing on the object itself). */
+  /** Whether a person standing on `cell` satisfies the position part within `room`. */
   qualifies(board: Board, cell: Cell, room: string): boolean {
     if (board.roomIdOf(cell) !== room) return false
     if (this.relation === 'on') return board.tileAt(cell).hasObjectType(this.object)
-    if (board.tileAt(cell).hasObjectType(this.object)) return false
-    for (const nb of board.neighbors4(cell)) {
-      if (board.roomIdOf(nb) === room && board.tileAt(nb).hasObjectType(this.object)) return true
+    if (this.relation === 'near') {
+      if (board.tileAt(cell).hasObjectType(this.object)) return false
+      for (const nb of board.neighbors4(cell)) {
+        if (board.roomIdOf(nb) === room && board.tileAt(nb).hasObjectType(this.object)) return true
+      }
+      return false
     }
-    return false
+    // Board-position relations (corner/wall/window/door): the cell itself qualifies.
+    return this.positionCells(board).has(cell)
   }
 
-  /** The subject's room must at least offer a spot for the companion — an
-   *  occupiable object cell ('on') or a cell beside an in-room object ('near'). */
+  /** The subject's room must at least offer an occupiable spot where the companion
+   *  could satisfy the clue — else the subject can't be there. */
   override candidateCells(board: Board): Set<Cell> {
-    const spots =
-      this.relation === 'on'
+    const spots = this.usesObject
+      ? this.relation === 'on'
         ? [...board.objectCells(this.object)].filter((c) => board.isOccupiable(c))
         : [...board.cellsNearObject(this.object)]
+      : [...this.positionCells(board)].filter((c) => board.isOccupiable(c))
     const rooms = new Set(spots.map((c) => board.roomIdOf(c)))
     const out = new Set<Cell>()
     for (const cell of board.occupiableCells()) {
@@ -329,18 +406,24 @@ export class RoomExistsClue extends Clue {
     return false
   }
 
-  describe(): Explanation {
-    const rel = this.relation === 'on' ? 'On' : 'Near'
-    if (this.attribute === null) {
-      return { key: `clue.roomExistsAny${rel}`, params: { object: this.object } }
-    }
-    if (this.attribute === 'gender') {
-      return {
-        key: this.relation === 'on' ? 'clue.roomExistsOnObject' : 'clue.roomExistsNearObject',
-        params: { who: `${this.value}_nom`, object: this.object },
-      }
-    }
+  /** The "who" encoded for the `mate` renderer param: a named person, a gender, a
+   *  trait, or anyone — so one set of templates renders every variant. */
+  whoToken(): string {
+    if (this.person !== null) return `person:${this.person}`
+    if (this.attribute === null) return 'anyElse'
+    if (this.attribute === 'gender') return `attr:gender_${this.value}`
     const token = this.value === true ? this.attribute : `${this.attribute}_${this.value}`
-    return { key: `clue.roomExistsTrait${rel}`, params: { attribute: token, object: this.object } }
+    return `attr:${token}`
+  }
+
+  /** The position encoded for the `pos` renderer param (solver step texts). */
+  posToken(): string {
+    return this.usesObject ? `${this.relation}:${this.object}` : this.relation
+  }
+
+  describe(): Explanation {
+    const params: Record<string, string> = { mateLc: this.whoToken() }
+    if (this.usesObject) params.object = this.object
+    return { key: `clue.roomExists${ROOM_EXISTS_REL_KEY[this.relation]}`, params }
   }
 }

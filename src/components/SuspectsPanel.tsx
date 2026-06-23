@@ -8,7 +8,14 @@ import ClueText from './ClueText.tsx'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
 import { useSettings } from '../game/settings.ts'
-import { HAIR_COLORS, type ClueGroup } from '../game/editorClues.ts'
+import {
+  HAIR_COLORS,
+  TEMPLATE_TARGET_FIELDS,
+  defaultCondition,
+  emptyClueGroup,
+  type ClueGroup,
+  type Condition,
+} from '../game/editorClues.ts'
 import { BEARD_STYLES, GLASSES_COLORS, GLASSES_SHAPES, hairstylesFor } from '../game/avatar.ts'
 import {
   ROOM_IDS,
@@ -26,8 +33,9 @@ interface Props {
   state: EditorState
   onChangeSuspect: (index: number, suspect: EditorSuspect) => void
   onChangeVictim: (name: string, gender: 'm' | 'f') => void
-  /** Generate people + clues onto the current board (kept as-is). */
-  onRandom: () => void
+  /** Generate people + clues onto the current board (kept as-is). With a `palette`
+   *  (the "Vorgaben" templates) only matching clue shapes are used. */
+  onRandom: (palette?: Condition[]) => void
   randomizing: boolean
 }
 
@@ -58,7 +66,54 @@ export default function SuspectsPanel({
   const { t } = useTranslation()
   const { genderColors } = useSettings()
   const [editing, setEditing] = useState<number | 'victim' | null>(null)
+  const [showConstraints, setShowConstraints] = useState(false)
+  // The "Vorgaben" palette: clue-shape templates the generator may use. Kept here so it
+  // survives closing/reopening the dialog within an editing session.
+  const [constraints, setConstraints] = useState<ClueGroup>(() => emptyClueGroup())
   const built = useEditorBuild(state)
+
+  // Builder context for the constraint templates: the board's rooms/objects, but with a
+  // single synthetic "(Generator wählt)" person — the suspects don't exist yet, so a
+  // concrete person can't be fixed (the generator always picks it).
+  const templateCtx: ClueCtx = useMemo(
+    () => ({
+      rooms: usedRooms(state).length ? usedRooms(state) : ['1'],
+      objects: presentObjectTypes(state),
+      others: [{ id: '*', name: t('cond.genPicks') }],
+      size: state.size,
+      objectCells: (type) => objectCellsOf(state, type),
+      hasWindows: state.windows.length > 0,
+      hasDoors: state.doors.length > 0,
+      roomLabel: (id) => {
+        const idx = ROOM_IDS.indexOf(id)
+        return t(state.roomNames[idx] ?? `room.editor${id}`)
+      },
+    }),
+    [state, t],
+  )
+
+  const openConstraints = () => {
+    // Seed with one ready-to-tweak template (the "same room as a trait" case, which best
+    // shows the depth: count + exact/at-least) so the dialog isn't empty.
+    if (constraints.conditions.length === 0) {
+      setConstraints({
+        connector: 'and',
+        conditions: [
+          {
+            ...defaultCondition('room', templateCtx),
+            roomMode: 'with',
+            roomTarget: 'attr',
+            wild: ['of', ...TEMPLATE_TARGET_FIELDS],
+          },
+        ],
+      })
+    }
+    setShowConstraints(true)
+  }
+  const runConstraints = () => {
+    setShowConstraints(false)
+    onRandom(constraints.conditions)
+  }
 
   // Global (board) rules, rendered exactly like the game's clue panel, so the editor
   // shows at a glance which ones are set. Best effort — skipped if the board won't build.
@@ -170,13 +225,26 @@ export default function SuspectsPanel({
       <button
         type="button"
         className="mk-clue mk-clue--random"
-        onClick={onRandom}
+        onClick={() => onRandom()}
         disabled={randomizing}
       >
         <span className="mk-token mk-token--random">🎲</span>
         <span className="mk-clue__main">
           <span className="mk-clue__name">{t('editor.random')}</span>
           <span className="mk-clue__text">{t('editor.randomHint')}</span>
+        </span>
+      </button>
+
+      <button
+        type="button"
+        className="mk-clue mk-clue--random"
+        onClick={openConstraints}
+        disabled={randomizing}
+      >
+        <span className="mk-token mk-token--random">🎯</span>
+        <span className="mk-clue__main">
+          <span className="mk-clue__name">{t('editor.randomConstrained')}</span>
+          <span className="mk-clue__text">{t('editor.randomConstrainedHint')}</span>
         </span>
       </button>
 
@@ -195,6 +263,23 @@ export default function SuspectsPanel({
           onChange={onChangeVictim}
           onClose={() => setEditing(null)}
         />
+      )}
+      {showConstraints && (
+        <div className="mk-overlay" onClick={() => setShowConstraints(false)}>
+          <div className="mk-dialog mk-suspedit mk-constraints" onClick={(e) => e.stopPropagation()}>
+            <p className="mk-suspedit__label">{t('editor.constraintsTitle')}</p>
+            <p className="mk-constraints__intro">{t('editor.constraintsIntro')}</p>
+            <ClueBuilder group={constraints} ctx={templateCtx} onChange={setConstraints} templateMode />
+            <button
+              type="button"
+              className="mk-btn mk-btn--primary mk-btn--block"
+              onClick={runConstraints}
+              disabled={randomizing || constraints.conditions.length === 0}
+            >
+              {t('editor.constraintsRun')}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )

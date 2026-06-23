@@ -35,7 +35,10 @@ function aloneClues(clue: Clue): { companion: PersonId | null }[] {
  *  quantifier — it just means ≥1 non-matching other — so it yields nothing here.) */
 function negateRoomAttribute(inner: Clue): RoomAttributeClue | null {
   if (!(inner instanceof RoomAttributeClue)) return null
-  if (inner.quantifier === 'some')
+  // Only the plain "≥1" some folds cleanly to none. not(≥N) is "≤N−1" and not(exactly N)
+  // is "≠N" — neither is a single quantifier, so a counted/exact clue yields no forward
+  // rule here (it still evaluates correctly via the generic NotClue's test()).
+  if (inner.quantifier === 'some' && inner.count === 1 && !inner.exact)
     return new RoomAttributeClue('none', inner.attribute, inner.value, inner.excludeSelf)
   if (inner.quantifier === 'none')
     return new RoomAttributeClue('some', inner.attribute, inner.value, inner.excludeSelf)
@@ -106,6 +109,8 @@ export class RoomReasoningTechnique extends Technique {
       for (const re of suspect.clues.flatMap(roomExistsList)) {
         const step = this.applyRoomExists(ctx, suspect.id, re)
         if (step) return step
+        const only = this.applyRoomExistsMatcher(ctx, suspect.id, re)
+        if (only) return only
       }
       // The positive "not alone" rules hold even once the subject is PLACED (their room
       // is then certain), so run them before the placed-skip. Occupancy first (it can
@@ -124,20 +129,31 @@ export class RoomReasoningTechnique extends Technique {
           const pigeon = this.applyAttrPigeonhole(ctx, suspect.id, rc)
           if (pigeon) return pigeon
         } else if (rc.excludeSelf) {
-          // 'some' → the room must hold ≥1 matching other; 'all' → no non-matching
-          // other. (Only when excludeSelf, so the subject themselves never counts —
-          // otherwise a matching subject could satisfy it trivially.)
+          // 'some' → the room must hold ≥ count matching others (= count when `exact`);
+          // 'all' → no non-matching other. (Only when excludeSelf, so the subject never
+          // counts — otherwise a matching subject could satisfy it trivially.)
           const match = (other: PersonId) => ctx.puzzle.attributesOf(other)[rc.attribute] === rc.value
+          const some = rc.quantifier === 'some'
           const step = this.applyComposition(ctx, suspect.id, {
             match,
             includeVictim: true,
-            min: rc.quantifier === 'some' ? 1 : null,
-            max: null,
+            min: some ? rc.count : null,
+            max: some && rc.exact ? rc.count : null,
             forbidNonMatching: rc.quantifier === 'all',
-            key: rc.quantifier === 'some' ? 'step.attrSomeRoom' : 'step.attrAllRoom',
+            key: some ? (rc.exact ? 'step.attrExactRoom' : 'step.attrSomeRoom') : 'step.attrAllRoom',
             attribute: rc.attribute,
+            count: rc.count,
           })
           if (step) return step
+          // Mirror of the companion-force rule for "≥/= N matching others": once the
+          // subject's room is certain and exactly N matching SUSPECTS can fill it, every
+          // free one is forced in. (G needs 2 men in room 4; only A and B can be — A is
+          // certain, so B must join.) Count ≥ 2 only, so the victim never counts (it
+          // shares its room with one suspect, so it can't be a second matching person).
+          if (some && rc.count >= 2) {
+            const force = this.applyAttrForce(ctx, suspect.id, rc)
+            if (force) return force
+          }
         }
       }
       for (const rcomp of suspect.clues.flatMap(roomCompanions)) {
@@ -152,6 +168,7 @@ export class RoomReasoningTechnique extends Technique {
           forbidNonMatching: true,
           key: 'step.companionRoom',
           attribute: rcomp.attribute,
+          count: rcomp.count,
         })
         if (step) return step
         const force = this.applyCompanionForce(ctx, suspect.id, rcomp)
@@ -307,8 +324,8 @@ export class RoomReasoningTechnique extends Technique {
           personId: id,
           eliminated: [{ personId: id, cells: removed }],
           explanation: {
-            key: clue.relation === 'on' ? 'step.roomExistsRoom' : 'step.roomExistsRoomNear',
-            params: { name: id, room, object: clue.object },
+            key: 'step.roomExistsRoom',
+            params: { name: id, room, pos: clue.posToken() },
           },
         }
       }
@@ -342,7 +359,6 @@ export class RoomReasoningTechnique extends Technique {
     if (spots.size !== 1) return null
     const spot = [...spots][0]
     const { row, col } = ctx.board.rc(spot)
-    const onOrNear = clue.relation === 'on' ? 'On' : 'Near'
 
     // (a) the spot is occupied → the rest of its row/column is dead for everyone,
     //     and the cell itself only fits the possible companions.
@@ -361,8 +377,8 @@ export class RoomReasoningTechnique extends Technique {
         personId: id,
         eliminated,
         explanation: {
-          key: `step.roomExistsSpot${onOrNear}`,
-          params: { name: id, room, object: clue.object, cell: spot },
+          key: 'step.roomExistsSpot',
+          params: { name: id, room, pos: clue.posToken(), cell: spot },
         },
       }
     }
@@ -380,13 +396,83 @@ export class RoomReasoningTechnique extends Technique {
           personId: id,
           eliminated: [{ personId: m, cells: removed }],
           explanation: {
-            key: `step.roomExistsOccupant${onOrNear}`,
-            params: { name: id, target: m, room, object: clue.object, cell: spot },
+            key: 'step.roomExistsOccupant',
+            params: { name: id, target: m, room, pos: clue.posToken(), cell: spot },
           },
         }
       }
     }
     return null
+  }
+
+  /**
+   * roomExists with a UNIQUE possible matcher (subject's room still open): if exactly
+   * ONE other person can play the "someone (with X) at <spot>" role — everyone else is
+   * ruled out by their own clue (an "alone (with someone else)" person can't share the
+   * subject's room) or can't reach a qualifying cell in a room the subject can be in —
+   * then that matcher must stand with the subject. Confines the subject to the rooms
+   * where the matcher qualifies, and the matcher to its qualifying cells there. Pure
+   * forward logic (no trial): the clue NEEDS a matcher, and only this one can be it.
+   */
+  private applyRoomExistsMatcher(
+    ctx: SolveContext,
+    id: PersonId,
+    clue: RoomExistsClue,
+  ): DeductionStep | null {
+    if (ctx.state.placed.has(id)) return null // room known → the spot rules handle it
+    const victim = ctx.puzzle.victim.id
+    const subjectRooms = ctx.roomsOf(id)
+    // Rooms (within the subject's still-possible rooms) where `m` could stand on a
+    // qualifying cell — the rooms in which m could play the matcher beside the subject.
+    const qualRooms = (m: PersonId): Set<string> => {
+      const rooms = new Set<string>()
+      for (const cell of ctx.cellsOf(m)) {
+        const room = ctx.roomOf(cell)
+        if (subjectRooms.has(room) && clue.qualifies(ctx.board, cell, room)) rooms.add(room)
+      }
+      return rooms
+    }
+    let only: { m: PersonId; rooms: Set<string> } | null = null
+    for (const suspect of ctx.puzzle.suspects) {
+      const m = suspect.id
+      if (m === id || m === victim || !clue.matchesPerson(ctx.puzzle, m)) continue
+      // An "alone" / "alone with someone other than the subject" matcher can't share
+      // the subject's room, so it can never be the someone there.
+      if (suspect.clues.flatMap(aloneClues).some((a) => a.companion !== id)) continue
+      // A PLACED matcher has no domain to confine. If it already qualifies in a room the
+      // subject could share, the clue may be met by it, so the "unique matcher" inference
+      // is unsafe → bail; otherwise it's irrelevant here → skip it.
+      const placedCell = ctx.state.placed.get(m)
+      if (placedCell !== undefined) {
+        const room = ctx.roomOf(placedCell)
+        if (subjectRooms.has(room) && clue.qualifies(ctx.board, placedCell, room)) return null
+        continue
+      }
+      const rooms = qualRooms(m)
+      if (rooms.size === 0) continue
+      if (only) return null // ≥2 possible matchers → can't pin
+      only = { m, rooms }
+    }
+    if (!only) return null
+
+    const eliminated: Elimination[] = []
+    const removedSubj = ctx.removeWhere(id, (c) => !only!.rooms.has(ctx.roomOf(c)))
+    if (removedSubj.length > 0) eliminated.push({ personId: id, cells: removedSubj })
+    const removedMate = ctx.removeWhere(only.m, (c) => {
+      const room = ctx.roomOf(c)
+      return !(only!.rooms.has(room) && clue.qualifies(ctx.board, c, room))
+    })
+    if (removedMate.length > 0) eliminated.push({ personId: only.m, cells: removedMate })
+    if (eliminated.length === 0) return null
+    return {
+      technique: 'roomReasoning',
+      personId: id,
+      eliminated,
+      explanation: {
+        key: 'step.roomExistsOnlyMatcher',
+        params: { name: id, target: only.m, pos: clue.posToken() },
+      },
+    }
   }
 
   /**
@@ -481,7 +567,57 @@ export class RoomReasoningTechnique extends Technique {
           technique: 'roomReasoning',
           personId: o,
           eliminated: [{ personId: o, cells: removed }],
-          explanation: { key: 'step.companionForce', params: { name: id, target: o, room } },
+          explanation: { key: 'step.companionForce', params: { name: id, target: o, room, count: rcomp.count } },
+        }
+      }
+    }
+    return null
+  }
+
+  /**
+   * Force rule for "≥/= `count` matching others in my room" (count ≥ 2): once the subject
+   * is confined to room R, count the matching SUSPECTS already certain in R and those that
+   * could still be there. If together they exactly meet `count`, every still-free one MUST
+   * be in R (losing any would drop below the required count) — so confine them to R. The
+   * victim is never counted (it shares its room with exactly one suspect).
+   */
+  private applyAttrForce(
+    ctx: SolveContext,
+    id: PersonId,
+    rc: RoomAttributeClue,
+  ): DeductionStep | null {
+    const room = ctx.guaranteedRoomOf(id)
+    if (!room) return null
+    const victim = ctx.puzzle.victim.id
+    const matches = (o: PersonId): boolean =>
+      o !== id && o !== victim && ctx.puzzle.attributesOf(o)[rc.attribute] === rc.value
+
+    let already = 0
+    const free: PersonId[] = []
+    for (const s of ctx.puzzle.suspects) {
+      const o = s.id
+      if (!matches(o)) continue
+      const placed = ctx.state.placed.get(o)
+      if (placed !== undefined) {
+        if (ctx.roomOf(placed) === room) already++
+        continue
+      }
+      if (![...ctx.state.domain(o)].some((c) => ctx.roomOf(c) === room)) continue
+      if (ctx.guaranteedRoomOf(o) === room) already++
+      else free.push(o)
+    }
+    if (already + free.length !== rc.count || free.length === 0) return null
+    for (const o of free) {
+      const removed = ctx.removeWhere(o, (c) => ctx.roomOf(c) !== room)
+      if (removed.length > 0) {
+        return {
+          technique: 'roomReasoning',
+          personId: o,
+          eliminated: [{ personId: o, cells: removed }],
+          explanation: {
+            key: 'step.attrForce',
+            params: { name: id, target: o, room, count: rc.count },
+          },
         }
       }
     }
@@ -572,6 +708,7 @@ export class RoomReasoningTechnique extends Technique {
       forbidNonMatching: boolean
       key: string
       attribute: string
+      count?: number
     },
   ): DeductionStep | null {
     const victim = ctx.puzzle.victim.id
@@ -601,7 +738,10 @@ export class RoomReasoningTechnique extends Technique {
           technique: 'roomReasoning',
           personId: id,
           eliminated: [{ personId: id, cells: removed }],
-          explanation: { key: opts.key, params: { name: id, room, attribute: opts.attribute } },
+          explanation: {
+            key: opts.key,
+            params: { name: id, room, attribute: opts.attribute, count: opts.count ?? 1 },
+          },
         }
       }
     }

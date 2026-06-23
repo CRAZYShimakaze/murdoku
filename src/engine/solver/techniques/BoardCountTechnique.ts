@@ -70,6 +70,35 @@ export class BoardCountTechnique extends Technique {
         }
       }
     }
+
+    // (3) the object's cells all lie in ONE row (or column) and someone MUST be on it
+    //   (n ≥ 1): each row/column holds at most one person, so that line's single occupant
+    //   IS the on-object person — every NON-object cell of the line is therefore empty.
+    //   ("Beds exist only in row 2 + exactly one person on a bed ⇒ the row-2 person sits
+    //    on a bed; cross out the rest of row 2.")
+    if (n >= 1) {
+      const rc = [...cells].map((c) => ctx.board.rc(c))
+      for (const axis of ['row', 'col'] as const) {
+        const lines = new Set(rc.map((p) => p[axis]))
+        if (lines.size !== 1) continue
+        const line = [...lines][0]
+        const eliminated: Elimination[] = []
+        for (const id of unplaced) {
+          const removed = ctx.removeWhere(id, (c) => ctx.board.rc(c)[axis] === line && !cells.has(c))
+          if (removed.length > 0) eliminated.push({ personId: id, cells: removed })
+        }
+        if (eliminated.length > 0) {
+          return {
+            technique: 'boardCount',
+            eliminated,
+            explanation: {
+              key: 'step.boardCountLine',
+              params: { object, line: axis, num: line + 1 },
+            },
+          }
+        }
+      }
+    }
     return null
   }
 }

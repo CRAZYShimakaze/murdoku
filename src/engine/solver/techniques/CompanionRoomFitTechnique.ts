@@ -1,5 +1,5 @@
 import { Technique } from './Technique.ts'
-import { RoomCompanionClue, RoomExistsClue } from '../../clues/socialClues.ts'
+import { RoomAttributeClue, RoomCompanionClue, RoomExistsClue } from '../../clues/socialClues.ts'
 import { AndClue } from '../../clues/compositeClues.ts'
 import type { Clue } from '../../clues/Clue.ts'
 import type { SolveContext } from '../SolveContext.ts'
@@ -38,6 +38,31 @@ function demandsOf(clue: Clue): ((ctx: SolveContext, subject: PersonId) => Deman
         count: 1,
         matches: (id) => id !== subject && clue.matchesPerson(ctx.puzzle, id),
         cellOk: (cell, room) => clue.qualifies(ctx.board, cell, room),
+        key: 'step.companionFit',
+      }),
+    ]
+  }
+  // "≥ N matching others in my room" (count ≥ 2): the N matches must be SUSPECTS that
+  // physically fit alongside the subject — the victim can't be among them, because the
+  // victim shares its room with exactly ONE suspect, so its presence allows no second
+  // matching person at all (and N ≥ 2 needs ≥ 2). Confines the subject out of rooms that
+  // can't seat N matching suspects. (Count 1 is left to the room-attribute room rule,
+  // where the victim CAN be the single match.)
+  if (
+    clue instanceof RoomAttributeClue &&
+    clue.quantifier === 'some' &&
+    clue.excludeSelf &&
+    clue.count >= 2
+  ) {
+    const { count, attribute, value } = clue
+    return [
+      (ctx, subject) => ({
+        count,
+        matches: (id) =>
+          id !== subject &&
+          id !== ctx.puzzle.victim.id &&
+          ctx.puzzle.attributesOf(id)[attribute] === value,
+        cellOk: () => true,
         key: 'step.companionFit',
       }),
     ]

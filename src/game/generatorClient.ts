@@ -1,6 +1,7 @@
 import { fillBoardClues, generateLevel } from '../engine/generator/index.ts'
 import type { FillBoardOptions, GenBudget, GenerateOptions } from '../engine/generator/index.ts'
 import type { LevelJson } from '../engine/index.ts'
+import { makeClueMatchers, type Condition } from './editorClues.ts'
 
 export interface GenHandle {
   promise: Promise<LevelJson>
@@ -10,7 +11,7 @@ export interface GenHandle {
 
 type WorkerRequest =
   | { kind: 'generate'; opts: GenerateOptions }
-  | { kind: 'fill'; board: LevelJson; opts: FillBoardOptions }
+  | { kind: 'fill'; board: LevelJson; opts: FillBoardOptions; palette?: Condition[] }
 
 // In the WORKER, Cancel = worker.terminate(), which kills the thread instantly at any
 // point — so we don't need tight time limits, just a high safety wall in case a config
@@ -44,8 +45,13 @@ function runInline(request: WorkerRequest): GenHandle {
   const promise = (async () => {
     await new Promise((r) => setTimeout(r, 0))
     if (cancelled) throw new Error('cancelled')
-    const level =
-      req.kind === 'fill' ? fillBoardClues(req.board, req.opts) : generateLevel(req.opts)
+    let level: LevelJson | null
+    if (req.kind === 'fill') {
+      const requiredClues = makeClueMatchers(req.palette)
+      level = fillBoardClues(req.board, requiredClues ? { ...req.opts, requiredClues } : req.opts)
+    } else {
+      level = generateLevel(req.opts)
+    }
     if (cancelled) throw new Error('cancelled')
     if (!level) throw new Error('generation failed')
     return level
@@ -108,7 +114,13 @@ export function generateLevelAsync(opts: GenerateOptions): GenHandle {
   return runWorker({ kind: 'generate', opts })
 }
 
-/** Keep the given board, (re)generate its people + clues at the chosen difficulty. */
-export function fillBoardCluesAsync(board: LevelJson, opts: FillBoardOptions): GenHandle {
-  return runWorker({ kind: 'fill', board, opts })
+/** Keep the given board, (re)generate its people + clues at the chosen difficulty.
+ *  An optional `palette` restricts which clue shapes may be used (the editor's
+ *  "Zufällig setzen mit Vorgaben"). */
+export function fillBoardCluesAsync(
+  board: LevelJson,
+  opts: FillBoardOptions,
+  palette?: Condition[],
+): GenHandle {
+  return runWorker({ kind: 'fill', board, opts, palette })
 }

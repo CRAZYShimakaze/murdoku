@@ -1,0 +1,420 @@
+{
+  "schema": 1,
+  "id": "editor-t-dliche-werkstatt",
+  "title": "Tödliche Werkstatt",
+  "titles": { "de": "Tödliche Werkstatt", "en": "Murder Under the Hood" },
+  "size": {
+    "width": 7,
+    "height": 7
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.workshop",
+      "color": "#e8d8b0",
+      "outside": true
+    },
+    "2": {
+      "nameKey": "room.storage",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.office",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.waiting",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.yard",
+      "color": "#e6cda0",
+      "outside": true
+    },
+    "6": {
+      "nameKey": "room.washbay",
+      "color": "#e6c0d2",
+      "outside": true
+    },
+    "7": {
+      "nameKey": "room.partsstore",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.tirestore",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.reception",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.paintshop",
+      "color": "#a8c8e0",
+      "outside": true
+    },
+    "B": {
+      "nameKey": "room.assembly",
+      "color": "#d8e0a8",
+      "outside": true
+    },
+    "C": {
+      "nameKey": "room.testbay",
+      "color": "#e0b0a8",
+      "outside": true
+    },
+    "D": {
+      "nameKey": "room.breakroom",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.checkout",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.gasstation",
+      "color": "#ded0e6",
+      "outside": true
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "R": {
+      "type": "street",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "S": {
+      "type": "shower",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "O": {
+      "type": "boat",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "Z": {
+      "type": "tent",
+      "occupiable": true
+    },
+    "Y": {
+      "type": "waterlily",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "P": {
+      "type": "piano",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "B": {
+      "type": "bear",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "G": {
+      "type": "campfire",
+      "occupiable": false
+    },
+    "M": {
+      "type": "grill",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "3337777",
+    "3337777",
+    "3331177",
+    "1311111",
+    "1111111",
+    "1111199",
+    "1111199"
+  ],
+  "groundMap": [
+    ".......",
+    ".......",
+    ".r.....",
+    ".r.....",
+    ".......",
+    ".....rr",
+    "......."
+  ],
+  "topMap": [
+    ".s..n..",
+    ".td...n",
+    "....j..",
+    "......c",
+    "j..cc.c",
+    ".c.j...",
+    ".c...st"
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alex",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "curly",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "roomExists",
+          "attribute": "hair",
+          "value": "brown",
+          "relation": "corner"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "braids",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "inCol",
+          "col": 1
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Cyrus",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "caesar",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "9"
+            },
+            {
+              "type": "nearObject",
+              "object": "table"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "updo",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "car"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "manbun",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "roomExists",
+          "attribute": "gender",
+          "value": "m",
+          "relation": "on",
+          "object": "car"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Floyd",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "mohawk",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "7"
+            },
+            {
+              "type": "alone"
+            },
+            {
+              "type": "corner"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Valentin",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [
+    {
+      "type": "countOnObject",
+      "object": "carpet",
+      "count": 1
+    },
+    {
+      "type": "emptyRooms",
+      "count": 0
+    }
+  ],
+  "difficulty": "hard"
+}
