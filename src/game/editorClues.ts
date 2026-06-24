@@ -605,7 +605,6 @@ export const TEMPLATE_TARGET_FIELDS = [
   'value',
   'room',
   'index',
-  'dir',
   'at',
 ] as const
 

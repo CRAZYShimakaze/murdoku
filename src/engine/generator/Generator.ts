@@ -17,6 +17,7 @@ import type { Board } from '../model/Board.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
 import type { BoardClueJson, LevelJson, SuspectJson } from '../io/LevelSchema.ts'
 import type { ClueJson } from '../clues/ClueFactory.ts'
+import type { ObjectMate } from '../clues/objectClues.ts'
 
 interface Theme {
   id: string
@@ -1158,6 +1159,12 @@ function candidatesFor(
     puzzle.suspects.some((s) => puzzle.attributesOf(s.id)[attribute] === value) &&
     (attribute === 'gender' || victimAttrs[attribute] !== value)
 
+  // All eight compass directions and the three room qualifiers the editor offers — the
+  // generator now emits the full set (the test-filter at the end keeps only the true ones),
+  // so diagonals and "same/other room" variants reach generated levels too.
+  const DIRS8 = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'] as const
+  const ROOM_RELS = ['any', 'same', 'other'] as const
+
   // --- object: on / beside ---
   for (const obj of board.tileAt(cell).objects()) {
     if (obj.occupiable) {
@@ -1176,6 +1183,16 @@ function candidatesFor(
     out.push({ type: 'nearObject', object: type })
     out.push({ type: 'uniqueNearObject', object: type }) // "only one beside it" (test-filtered)
   }
+  // "beside one of several object types" (nearObjectAny) — the editor's multi-select. Offer
+  // every pair of nearby types (and the full set); all are true since the subject is beside
+  // each member.
+  const near = [...nearTypes]
+  for (let i = 0; i < near.length; i++) {
+    for (let j = i + 1; j < near.length; j++) {
+      out.push({ type: 'nearObjectAny', objects: [near[i], near[j]] })
+    }
+  }
+  if (near.length >= 3) out.push({ type: 'nearObjectAny', objects: near })
 
   // --- object: same line / direction (objects are fixed → deducible) ---
   // A clue whose candidates already lie in ONE row or column is just a disguised line
@@ -1198,39 +1215,56 @@ function candidatesFor(
     // Object line/direction clues ONLY for a UNIQUE object tile — a repeated object
     // would need a "(Z7/S6)" anchor coordinate, which reads badly. And skip the ones
     // that collapse to a single line (those become the plain inRow/inCol clue).
-    if (objCells.length === 1) {
-      for (const line of ['col', 'row', 'either'] as const) {
-        const json: ClueJson = { type: 'sameLineAsObject', object: def.type, line, room: 'any' }
-        if (!collapsesToLine(json)) out.push(json)
-      }
-      for (const dir of ['north', 'south', 'east', 'west'] as const) {
-        const json: ClueJson = { type: 'directionFromObject', object: def.type, dir, room: 'any' }
-        if (!collapsesToLine(json)) out.push(json)
-      }
-    } else {
-      // Several tiles → "{dir} of EVERY {object}" (universal): unambiguous and deducible
-      // (the intersection of the per-tile direction sets). The test-filter keeps only
-      // the cardinal that actually holds for the solution.
-      for (const dir of ['north', 'south', 'east', 'west'] as const) {
-        const json: ClueJson = { type: 'directionFromObject', object: def.type, dir, room: 'any', all: true }
-        if (!collapsesToLine(json)) out.push(json)
+    // "same row/column as a {object}" — for ANY object (several tiles = "as SOME tile").
+    // collapsesToLine drops the degenerate single-tile col/row (which is just a line clue).
+    // The disguised-line check only matters for the unrestricted ("any room") form; the
+    // same/other variants already carry a room constraint, so they're never a bare line.
+    const keep = (room: string, json: ClueJson) => room !== 'any' || !collapsesToLine(json)
+    for (const line of ['col', 'row', 'either'] as const) {
+      for (const room of ROOM_RELS) {
+        const json: ClueJson = { type: 'sameLineAsObject', object: def.type, line, room }
+        if (keep(room, json)) out.push(json)
       }
     }
-    // "beside the SAME object instance as …" — only when the subject is beside one.
-    if (board.cellsNearObject(def.type).has(cell)) {
-      out.push({ type: 'besideSameObject', object: def.type, mate: { kind: 'any' } })
-      for (const id of otherSuspects) {
-        out.push({ type: 'besideSameObject', object: def.type, mate: { kind: 'person', of: id } })
+    // "{dir} of a {object}" — 8-way, any/same/other room. A single tile is ∃≡∀; several
+    // tiles also get ∀ ("every {object}", all:true) and a per-tile anchor.
+    for (const dir of DIRS8) {
+      for (const room of ROOM_RELS) {
+        const some: ClueJson = { type: 'directionFromObject', object: def.type, dir, room }
+        if (keep(room, some)) out.push(some)
+        if (objCells.length > 1) {
+          const all: ClueJson = { type: 'directionFromObject', object: def.type, dir, room, all: true }
+          if (keep(room, all)) out.push(all)
+        }
       }
-      for (const av of [
-        { attribute: 'gender', value: 'm' as const },
-        { attribute: 'gender', value: 'f' as const },
-        { attribute: 'beard', value: true as const },
-        { attribute: 'glasses', value: true as const },
-        { attribute: 'bald', value: true as const },
-      ]) {
-        if (!usableTrait(av.attribute, av.value)) continue
-        out.push({ type: 'besideSameObject', object: def.type, mate: { kind: 'attr', ...av } })
+      if (objCells.length > 1) {
+        for (const at of objCells) {
+          out.push({ type: 'directionFromObject', object: def.type, dir, room: 'any', at })
+        }
+      }
+    }
+    // "beside the SAME object instance as …" — only when the subject is beside one. Each
+    // mate is offered with no direction AND with the mate's 8-way direction from the
+    // subject (the filter keeps the true direction).
+    if (board.cellsNearObject(def.type).has(cell)) {
+      const mates: ObjectMate[] = [
+        { kind: 'any' },
+        ...otherSuspects.map((id): ObjectMate => ({ kind: 'person', of: id })),
+        ...(
+          [
+            { attribute: 'gender', value: 'm' as const },
+            { attribute: 'gender', value: 'f' as const },
+            { attribute: 'beard', value: true as const },
+            { attribute: 'glasses', value: true as const },
+            { attribute: 'bald', value: true as const },
+          ]
+            .filter((av) => usableTrait(av.attribute, av.value))
+            .map((av): ObjectMate => ({ kind: 'attr', ...av }))
+        ),
+      ]
+      for (const mate of mates) {
+        out.push({ type: 'besideSameObject', object: def.type, mate })
+        for (const dir of DIRS8) out.push({ type: 'besideSameObject', object: def.type, mate, dir })
       }
     }
   }
@@ -1295,11 +1329,17 @@ function candidatesFor(
   out.push({ type: 'inRoom', room, occupancy: aloneInRoom ? 'alone' : 'notAlone' })
 
   for (const id of otherSuspects) {
+    // 8-way direction relative to another suspect — emit all; the filter keeps the true
+    // ones, so diagonals ("northeast of X") appear too, not just the four cardinals.
+    for (const dir of DIRS8) out.push({ type: 'direction', of: id, dir })
+    // "exactly N cells {cardinal} of X" (offset) — measures ONE axis only (column for
+    // east/west, row for north/south); the other axis is free. So every other suspect at a
+    // different column gives an east/west offset, and a different row a north/south one.
     const o = board.rc(solution.cellOf(id))
-    if (row < o.row) out.push({ type: 'direction', of: id, dir: 'north' })
-    else if (row > o.row) out.push({ type: 'direction', of: id, dir: 'south' })
-    else if (col < o.col) out.push({ type: 'direction', of: id, dir: 'west' })
-    else if (col > o.col) out.push({ type: 'direction', of: id, dir: 'east' })
+    const dc = col - o.col
+    if (dc !== 0) out.push({ type: 'offset', of: id, dir: dc > 0 ? 'east' : 'west', distance: Math.abs(dc) })
+    const dr = row - o.row
+    if (dr !== 0) out.push({ type: 'offset', of: id, dir: dr < 0 ? 'north' : 'south', distance: Math.abs(dr) })
   }
 
   // "{dir} of {at least one | every} person with a trait" (victim counts) — offer the
@@ -1319,7 +1359,7 @@ function candidatesFor(
       .allIds()
       .filter((id) => id !== suspectId && puzzle.attributesOf(id)[attribute] === value)
     if (matchers.length === 0) continue
-    for (const dir of ['north', 'south', 'east', 'west'] as const) {
+    for (const dir of DIRS8) {
       const inDir = (id: PersonId) => inDirection8(dir, { row, col }, board.rc(solution.cellOf(id)))
       if (matchers.some(inDir)) out.push({ type: 'directionFromAttr', attribute, value, dir, quantifier: 'some' })
       if (matchers.every(inDir)) out.push({ type: 'directionFromAttr', attribute, value, dir, quantifier: 'all' })
@@ -1383,6 +1423,42 @@ function candidatesFor(
     }
     for (const { attribute, value } of companion) {
       out.push({ type: 'roomCompanion', count: n, attribute, value })
+    }
+  }
+  // "alone with a named suspect AND N others sharing a trait" (editor: "Allein mit Person
+  // + weiteren"). Only when the victim is NOT in the room — a named co-suspect means ≥2
+  // suspects, and the victim shares its room with exactly one suspect, so it can't be
+  // here. One room mate is the named person, the rest are the matching extras (extraCount
+  // = their number), optionally one of them in a cardinal direction from the subject.
+  if (board.roomIdOf(solution.cellOf(VICTIM_ID)) !== room && othersInRoom.length >= 2) {
+    const extraInDir = (dir: 'north' | 'south' | 'east' | 'west', ids: PersonId[]): boolean =>
+      ids.some((id) => {
+        const p = board.rc(solution.cellOf(id))
+        return dir === 'north' ? p.row < row : dir === 'south' ? p.row > row : dir === 'east' ? p.col > col : p.col < col
+      })
+    for (const named of othersInRoom) {
+      const extras = othersInRoom.filter((id) => id !== named)
+      if (extras.length === 0) continue
+      const eAttrs = extras.map((id) => puzzle.attributesOf(id))
+      const traits: { attribute: string; value: AttributeValue }[] = []
+      const eg = eAttrs[0].gender
+      if (eAttrs.every((a) => a.gender === eg)) traits.push({ attribute: 'gender', value: eg })
+      if (eAttrs.every((a) => a.beard === true)) traits.push({ attribute: 'beard', value: true })
+      if (eAttrs.every((a) => a.glasses === true)) traits.push({ attribute: 'glasses', value: true })
+      if (eAttrs.every((a) => a.bald === true)) traits.push({ attribute: 'bald', value: true })
+      const eHair = eAttrs[0].hair
+      if (typeof eHair === 'string' && eAttrs.every((a) => a.hair === eHair)) {
+        traits.push({ attribute: 'hair', value: eHair })
+      }
+      for (const { attribute, value } of traits) {
+        if (!usableTrait(attribute, value)) continue
+        out.push({ type: 'aloneWith', people: [named], attribute, value, extraCount: extras.length })
+        for (const dir of ['north', 'south', 'east', 'west'] as const) {
+          if (extraInDir(dir, extras)) {
+            out.push({ type: 'aloneWith', people: [named], attribute, value, extraCount: extras.length, dir })
+          }
+        }
+      }
     }
   }
   // "in his room someone (anyone / a man / someone with a beard …) was ON or BESIDE
@@ -1478,7 +1554,7 @@ function candidatesFor(
       const inner: ClueJson = { type: 'sameLineAsObject', object: def.type, line, room: 'any' }
       if (!collapsesToLine(inner)) out.push({ type: 'not', clue: inner })
     }
-    for (const dir of ['north', 'south', 'east', 'west'] as const) {
+    for (const dir of DIRS8) {
       const inner: ClueJson = { type: 'directionFromObject', object: def.type, dir, room: 'any' }
       if (!collapsesToLine(inner)) out.push({ type: 'not', clue: inner })
     }

@@ -35,6 +35,8 @@ interface Props {
   suspectIndex: Map<PersonId, number>
   placements: Map<PersonId, Cell>
   selectedSuspect: PersonId | null
+  /** Other suspects the selected one's clues are "about" — their cards pulse with a ring. */
+  related?: Set<PersonId> | null
   onSelect: (id: PersonId) => void
   onHoverSuspect?: (id: PersonId | null) => void
   hint: string | null
@@ -58,6 +60,7 @@ export default function CluePanel({
   suspectIndex,
   placements,
   selectedSuspect,
+  related,
   onSelect,
   onHoverSuspect,
   hint,
@@ -149,6 +152,7 @@ export default function CluePanel({
             data-suspect={s.id}
             data-gender={genderColors ? (s.attributes.gender === 'f' ? 'f' : 'm') : undefined}
             data-selected={selectedSuspect === s.id}
+            data-related={related?.has(s.id) ? true : undefined}
             data-placed={placed}
             onClick={() => onSelect(s.id)}
             onPointerEnter={() => onHoverSuspect?.(s.id)}

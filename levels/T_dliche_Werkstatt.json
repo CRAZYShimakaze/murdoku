@@ -2,7 +2,6 @@
   "schema": 1,
   "id": "editor-t-dliche-werkstatt",
   "title": "Tödliche Werkstatt",
-  "titles": { "de": "Tödliche Werkstatt", "en": "Murder Under the Hood" },
   "size": {
     "width": 7,
     "height": 7
@@ -386,10 +385,8 @@
           "clues": [
             {
               "type": "inRoom",
-              "room": "7"
-            },
-            {
-              "type": "alone"
+              "room": "7",
+              "occupancy": "alone"
             },
             {
               "type": "corner"

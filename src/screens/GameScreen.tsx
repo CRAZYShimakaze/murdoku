@@ -5,6 +5,7 @@ import {
   SearchSolver,
   findMurderer,
   loadLevel,
+  relatedSuspects,
   unsatisfiedClues,
   VICTIM_ID,
   type Cell,
@@ -252,6 +253,17 @@ export default function GameScreen({
     return hasMarks(marks) ? marks : null
   }, [selected, puzzle, settings.helpMode])
 
+  // Selecting a suspect pulses the OTHER suspect cards their clues are "about" — everyone
+  // sharing a mentioned trait (e.g. brown hair) plus any named person. Pure reading of the
+  // visible suspects (no positions revealed), so it's shown regardless of help mode.
+  const relatedCards = useMemo<Set<PersonId> | null>(() => {
+    if (!selected) return null
+    const suspect = puzzle.suspects.find((s) => s.id === selected)
+    if (!suspect) return null
+    const set = relatedSuspects(suspect.clues, selected, puzzle)
+    return set.size > 0 ? set : null
+  }, [selected, puzzle])
+
   const reveal =
     result?.win && result.victimCell !== null
       ? { victimCell: result.victimCell, murdererId: result.murderer?.id ?? null }
@@ -495,6 +507,7 @@ export default function GameScreen({
         suspectIndex={suspectIndex}
         placements={session.state.placements}
         selectedSuspect={selected}
+        related={relatedCards}
         onSelect={tut.active ? tut.onSelect : selectFromCard}
         onHoverSuspect={setHoveredSuspect}
         hint={hintText}

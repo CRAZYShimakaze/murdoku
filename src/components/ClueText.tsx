@@ -52,7 +52,15 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
           // "demselben Tisch" carries the "same instance" concept — bold + its tooltip,
           // like a concept word (the article is gendered, so it stays a param).
           else if (name === 'objectSame') out.push(term(m.index, val, 'besideSameObject'))
-          else if (BOLD_PARAMS.has(name)) out.push(<strong key={m.index}>{val}</strong>)
+          // Hair-colour traits are tinted in the actual colour ("braune Haare" in brown)
+          // so the colour is unmistakable; the token is "hair_<colour>".
+          else if (name === 'attribute' && String(params.attribute ?? '').startsWith('hair_')) {
+            out.push(
+              <strong key={m.index} className={`mk-hair mk-hair--${String(params.attribute).slice(5)}`}>
+                {val}
+              </strong>,
+            )
+          } else if (BOLD_PARAMS.has(name)) out.push(<strong key={m.index}>{val}</strong>)
           else out.push(val)
         }
       } else {
