@@ -1,7 +1,7 @@
 import { fillBoardClues, generateLevel } from '../engine/generator/index.ts'
 import type { FillBoardOptions, GenBudget, GenerateOptions } from '../engine/generator/index.ts'
 import type { LevelJson } from '../engine/index.ts'
-import { makeClueMatchers, type Condition } from './editorClues.ts'
+import { makeClueMatchers, requiredAttrSeeds, type Condition } from './editorClues.ts'
 
 export interface GenHandle {
   promise: Promise<LevelJson>
@@ -48,7 +48,12 @@ function runInline(request: WorkerRequest): GenHandle {
     let level: LevelJson | null
     if (req.kind === 'fill') {
       const requiredClues = makeClueMatchers(req.palette)
-      level = fillBoardClues(req.board, requiredClues ? { ...req.opts, requiredClues } : req.opts)
+      const requiredAttributes = requiredAttrSeeds(req.palette)
+      level = fillBoardClues(req.board, {
+        ...req.opts,
+        ...(requiredClues ? { requiredClues } : {}),
+        ...(requiredAttributes.length ? { requiredAttributes } : {}),
+      })
     } else {
       level = generateLevel(req.opts)
     }

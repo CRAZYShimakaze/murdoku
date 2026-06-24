@@ -60,6 +60,22 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
                 {val}
               </strong>,
             )
+          }
+          // The "someone who had <hair>" mate phrase (roomExists / beside-same-object):
+          // rebuild it so only the hair-colour word carries the colour outline.
+          else if ((name === 'mate' || name === 'mateLc') && String(params[name] ?? '').startsWith('attr:hair_')) {
+            const token = String(params[name]).slice(5) // "hair_<colour>"
+            const pre = renderer.lookup('who.withTraitPre') ?? ''
+            const post = renderer.lookup('who.withTraitPost') ?? ''
+            const word = renderer.lookup(`attr.${token}`) ?? token
+            const preText = name === 'mate' && pre ? pre.charAt(0).toUpperCase() + pre.slice(1) : pre
+            out.push(<strong key={`${m.index}p`}>{preText} </strong>)
+            out.push(
+              <strong key={`${m.index}h`} className={`mk-hair mk-hair--${token.slice(5)}`}>
+                {word}
+              </strong>,
+            )
+            if (post) out.push(<strong key={`${m.index}s`}> {post}</strong>)
           } else if (BOLD_PARAMS.has(name)) out.push(<strong key={m.index}>{val}</strong>)
           else out.push(val)
         }

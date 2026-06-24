@@ -31,6 +31,7 @@ export type Technique =
   | 'victim'
   | 'murderer'
   | 'stuck'
+  | 'playerError'
 
 /** Cells removed from a person's domain as a consequence of a step. */
 export interface Elimination {
@@ -55,9 +56,11 @@ export interface DeductionStep {
  * How a hint's highlighted cells should be read:
  * - `place`   the single cell a person is forced onto;
  * - `narrow`  every cell that person can still occupy after the deduction;
- * - `exclude` cells that can now be ruled out (crossed) for someone.
+ * - `exclude` cells that can now be ruled out (crossed) for someone;
+ * - `unplace` a figure the player put where it provably can't be — remove it;
+ * - `unmark`  pencil notes the player set where that person provably can't be — erase them.
  */
-export type HintKind = 'place' | 'narrow' | 'exclude'
+export type HintKind = 'place' | 'narrow' | 'exclude' | 'unplace' | 'unmark'
 
 /** A hint = the next deduction plus the cells to highlight for it on the board. */
 export interface HintResult {
@@ -83,6 +86,7 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   clueCandidates: 0,
   murderer: 0,
   stuck: 0,
+  playerError: 0,
   nakedSingle: 1,
   forcedCell: 1,
   uniqueConstraint: 1,

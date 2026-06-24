@@ -227,7 +227,11 @@ export default function GameScreen({
   // than cleared via state, so no effect is needed; the stale state resets with
   // the next hint request or placement change anyway.
   const hintDone =
-    hint?.kind === 'exclude' && hint.focus.every((c) => session.state.crosses.has(c))
+    (hint?.kind === 'exclude' && hint.focus.every((c) => session.state.crosses.has(c))) ||
+    // A "remove your notes" hint is done once those marks are erased; a "remove your figure"
+    // hint clears via the placement-change effect above when the figure is taken off.
+    (hint?.kind === 'unmark' &&
+      hint.focus.every((c) => !session.state.marks.get(c)?.has(hint.step.personId!)))
   const activeHint = hintDone ? null : hint
 
   const highlight = useMemo<Set<Cell> | null>(() => {
@@ -343,7 +347,7 @@ export default function GameScreen({
   const showHint = () => {
     setSelected(null) // the black hint highlight replaces the blue selection
     setXTool(false)
-    setHint(engine.nextHint(session.state.placements, session.state.crosses))
+    setHint(engine.nextHint(session.state.placements, session.state.crosses, session.state.marks))
     setHintShown(true)
     setHintRequestId((n) => n + 1) // re-scroll even when the same hint is requested again
   }
@@ -357,7 +361,9 @@ export default function GameScreen({
       ? new Set(
           activeHint.kind === 'exclude'
             ? activeHint.focus.filter((c) => !session.state.crosses.has(c))
-            : activeHint.focus,
+            : activeHint.kind === 'unmark'
+              ? activeHint.focus.filter((c) => session.state.marks.get(c)?.has(activeHint.step.personId!) ?? false)
+              : activeHint.focus,
         )
       : null
   const selectHL = tut.active ? tut.highlight : highlight
@@ -512,6 +518,7 @@ export default function GameScreen({
         onHoverSuspect={setHoveredSuspect}
         hint={hintText}
         hintChain={hintChain}
+        hintPlain={activeHint?.kind === 'unmark' || activeHint?.kind === 'unplace'}
         hintRequestId={hintRequestId}
       />
 
@@ -537,6 +544,7 @@ export default function GameScreen({
           onCommit={tut.active ? tut.onCommit : commitAndClear}
           onRemove={tut.active ? NOOP : session.remove}
           onSetCross={tut.active ? tut.onSetCross : session.setCross}
+          onSetMark={tut.active ? NOOP : session.setMark}
           onSelectSuspect={tut.active ? (id) => id && tut.onSelect(id) : selectFromBoard}
         />
         {result?.win && dialogHidden && (

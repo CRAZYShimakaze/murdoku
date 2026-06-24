@@ -5,7 +5,7 @@ import {
   type FillBoardOptions,
 } from '../engine/generator/index.ts'
 import type { LevelJson } from '../engine/index.ts'
-import { makeClueMatchers, type Condition } from './editorClues.ts'
+import { makeClueMatchers, requiredAttrSeeds, type Condition } from './editorClues.ts'
 
 // Minimal worker-scope typing (avoids pulling in the WebWorker lib, which clashes
 // with the DOM lib used by the rest of the app).
@@ -28,7 +28,12 @@ ctx.onmessage = (e: MessageEvent) => {
     let level: LevelJson | null
     if (req.kind === 'fill') {
       const requiredClues = makeClueMatchers(req.palette)
-      level = fillBoardClues(req.board, requiredClues ? { ...req.opts, requiredClues } : req.opts)
+      const requiredAttributes = requiredAttrSeeds(req.palette)
+      level = fillBoardClues(req.board, {
+        ...req.opts,
+        ...(requiredClues ? { requiredClues } : {}),
+        ...(requiredAttributes.length ? { requiredAttributes } : {}),
+      })
     } else {
       level = generateLevel(req.opts)
     }

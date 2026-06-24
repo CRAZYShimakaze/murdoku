@@ -1,4 +1,4 @@
-import { OCCUPIABLE_OBJECT_TYPES } from '../engine/index.ts'
+import { OCCUPIABLE_OBJECT_TYPES, HAIR_COLORS } from '../engine/index.ts'
 import type { ClueJson } from '../engine/index.ts'
 import type { AttributeValue, Direction, Direction8, LineKind, RoomRel } from '../engine/index.ts'
 import { BEARD_STYLES, GLASSES_COLORS, GLASSES_SHAPES, HAIRSTYLE_IDS } from './avatar.ts'
@@ -91,7 +91,9 @@ export const ATTR_KINDS: AttrKind[] = [
   'hair',
   'hairstyle',
 ]
-export const HAIR_COLORS = ['blond', 'brown', 'black', 'red', 'grey', 'white']
+// Re-export the canonical list (defined in the engine) so editor-side consumers keep
+// their import path, while editor and generator share ONE source of truth.
+export { HAIR_COLORS }
 /** Boolean traits (no value to pick — they're either present or not). */
 export const BOOL_ATTRS: AttrKind[] = ['beard', 'glasses', 'bald']
 
@@ -102,7 +104,7 @@ export const BOOL_ATTRS: AttrKind[] = ['beard', 'glasses', 'bald']
  */
 export const VALUED_ATTRS: Record<string, { values: string[]; labelKey: string }> = {
   gender: { values: ['m', 'f'], labelKey: 'genderVal' },
-  hair: { values: HAIR_COLORS, labelKey: 'hairColor' },
+  hair: { values: [...HAIR_COLORS], labelKey: 'hairColor' },
   hairstyle: { values: [...HAIRSTYLE_IDS], labelKey: 'hairstyle' },
   beardStyle: { values: [...BEARD_STYLES], labelKey: 'beardStyle' },
   glassesShape: { values: [...GLASSES_SHAPES], labelKey: 'glassesShape' },
@@ -643,4 +645,30 @@ export function makeClueMatchers(
 ): ((json: ClueJson) => boolean)[] | undefined {
   if (!palette || palette.length === 0) return undefined
   return palette.map((t) => (json: ClueJson) => condMatchesTemplate(json, t))
+}
+
+/** Pinned trait values from a "Vorgaben" palette: for each condition that names a CONCRETE
+ *  trait value (not freed via `wild`, not negated, not a 'none' shape), its (attribute,
+ *  value) and how many companions it needs. The generator biases its random trait
+ *  assignment with these so enough suspects carry the value — otherwise an existence clue
+ *  like "≥1 other with hair=white in the room" can never become true. Free ("Generator
+ *  wählt") values are skipped; those already work. */
+export function requiredAttrSeeds(
+  palette: Condition[] | undefined,
+): { attribute: string; value: AttributeValue; count: number }[] {
+  if (!palette) return []
+  const merged = new Map<string, { attribute: string; value: AttributeValue; count: number }>()
+  for (const c of palette) {
+    if (c.not) continue // negated → wants FEWER carriers, never seed
+    if (c.quantifier === 'none') continue // "no one with X" → don't seed X
+    const attr = c.attribute
+    if (!attr || attr === 'any' || attr === 'object') continue // not a concrete trait
+    if (c.wild?.includes('value') || c.wild?.includes('attribute')) continue // generator picks freely
+    const { attribute, value } = attrValue(c)
+    const count = c.count ?? c.extraCount ?? 1
+    const key = `${attribute}=${String(value)}`
+    const prev = merged.get(key)
+    if (!prev || count > prev.count) merged.set(key, { attribute, value, count })
+  }
+  return [...merged.values()]
 }

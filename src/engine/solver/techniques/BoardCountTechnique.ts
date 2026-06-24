@@ -64,7 +64,7 @@ export class BoardCountTechnique extends Technique {
               technique: 'boardCount',
               personId: id,
               eliminated: [{ personId: id, cells: removed }],
-              explanation: { key: 'step.boardCountConfine', params: { name: id, object } },
+              explanation: { key: 'step.boardCountConfine', params: { name: id, object, count: need } },
             }
           }
         }

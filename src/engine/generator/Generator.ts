@@ -9,7 +9,7 @@ import { difficultyOf } from '../solver/DeductionStep.ts'
 import { startCoverage } from '../solver/coverage.ts'
 import { createClue } from '../clues/ClueFactory.ts'
 import { createBoardClue } from '../clues/boardClues.ts'
-import { VICTIM_ID, inDirection8 } from '../model/types.ts'
+import { VICTIM_ID, inDirection8, HAIR_COLORS } from '../model/types.ts'
 import type { AttributeValue, Cell, PersonId, Side } from '../model/types.ts'
 import { OBJECT_CATALOG, EDITOR_ONLY_TYPES, type ObjectDef } from '../model/objects.ts'
 import { furnishRooms, kitFor } from './furnishing.ts'
@@ -205,16 +205,50 @@ export interface GenerateOptions {
   budget?: GenBudget
 }
 
-const HAIR_COLORS: AttributeValue[] = ['blond', 'brown', 'black', 'white']
-
 /** Random traits: gender; men beard/bald; everyone glasses + hair colour. */
 function makeAttributes(gender: 'm' | 'f', rng: Rng): Record<string, AttributeValue> {
   const attrs: Record<string, AttributeValue> = { gender }
   attrs.glasses = rng.chance(0.4)
-  attrs.hair = rng.pick(HAIR_COLORS)
   attrs.beard = gender === 'm' && rng.chance(0.5)
   attrs.bald = gender === 'm' && rng.chance(0.3)
+  // A bald person has no hair → no hair colour (the avatar draws none), so hair clues
+  // never hinge on them. They can still be asked about via the `bald` trait.
+  if (attrs.bald !== true) attrs.hair = rng.pick(HAIR_COLORS)
   return attrs
+}
+
+/** Bias the random traits so each pinned "Vorgabe" value has ≥ count+1 carriers among
+ *  the suspects: an existence clue ("≥count others with hair=white in the room") can only
+ *  be generated if enough suspects actually wear it. Respects gender for beard/bald (men
+ *  only). The +1 buffer gives the placement room to put `count` of them with a host.
+ *  Raises the odds only — placement still has to co-locate them (the retry loop handles
+ *  the rest). */
+function seedRequiredAttributes(
+  suspects: SuspectJson[],
+  reqs: { attribute: string; value: AttributeValue; count: number }[],
+  rng: Rng,
+): void {
+  for (const { attribute, value, count } of reqs) {
+    const need = count + 1
+    const has = (s: SuspectJson): boolean => s.attributes?.[attribute] === value
+    const eligible = (s: SuspectJson): boolean =>
+      attribute === 'beard' || attribute === 'bald' ? s.attributes?.gender === 'm' : true
+    let carriers = suspects.filter(has).length
+    if (carriers >= need) continue
+    for (const s of rng.shuffle(suspects.filter((s) => !has(s) && eligible(s)))) {
+      if (carriers >= need) break
+      const attrs = { ...(s.attributes ?? {}), [attribute]: value }
+      // Changing someone to female drops the men-only traits so the suspect stays consistent.
+      if (attribute === 'gender' && value === 'f') {
+        attrs.beard = false
+        attrs.bald = false
+      }
+      // A hair colour means visible hair → the carrier can't be bald.
+      if (attribute === 'hair') attrs.bald = false
+      s.attributes = attrs
+      carriers++
+    }
+  }
 }
 
 /** Honest tier from the human-logic engine (forward + convergent). Only ever called on
@@ -324,11 +358,16 @@ const UNCAPPED_TYPES = new Set<string>([
   'nearDoor', 'uniqueNearDoor',
 ])
 /** The capped families of a clue (the ones the variety limit counts). Row and column
- *  clues collapse to one "line" family, so at most 2 line clues total. */
+ *  clues collapse to one "line" family. */
 const cappedFamilies = (clue: ClueJson): string[] =>
   leafTypes(clue)
     .filter((t) => !UNCAPPED_TYPES.has(t))
     .map((t) => (t === 'inRow' || t === 'inCol' ? 'line' : t))
+
+/** Per-family variety limit: at most ONE "line" (row/column) clue per level — the user
+ *  finds two "in row/column X" clues poor puzzling — and at most two of every other
+ *  capped family. */
+const familyCap = (family: string): number => (family === 'line' ? 1 : 2)
 
 /** Does a suspect's clue use a HARD (relational/social) family? */
 const isHardClue = (clue: ClueJson): boolean => leafTypes(clue).some((t) => HARD_CLUE_TYPES.has(t))
@@ -401,7 +440,7 @@ function isIdeal(level: LevelJson, target: GenDifficulty | undefined, maxRank: n
 
 /** Cap on "was in row X / column Y" clues per level (rows + columns combined) — they are
  *  coordinate-y and dull, so keep them scarce. */
-const MAX_LINE_CLUES = 2
+const MAX_LINE_CLUES = 1
 
 /** One generation attempt → a candidate level (with its pin count), or null. */
 type Attempt = (rng: Rng, seedIndex: number) => { level: LevelJson; pins: number } | null
@@ -574,6 +613,11 @@ export interface FillBoardOptions {
    *  everyone else keeps the full vocabulary (the generator fills the rest). Built in the
    *  game layer from the editor's constraint palette. */
   requiredClues?: ((json: ClueJson) => boolean)[]
+  /** "Vorgaben" pinned trait values (built in the game layer). The generator seeds the
+   *  random trait assignment so ≥ count+1 suspects carry each value — an existence clue
+   *  like "≥count others with hair=white in the room" can only hold if enough suspects
+   *  actually wear it; pure random assignment over many colours rarely produces enough. */
+  requiredAttributes?: { attribute: string; value: AttributeValue; count: number }[]
 }
 
 /** Translate a caller budget into pickBestLevel's knobs. */
@@ -601,7 +645,7 @@ export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {})
   if (options.difficulty === 'easy') {
     const deadline = performance.now() + (options.budget?.hardMs ?? 20000)
     for (let a = 0; a < 200000 && performance.now() < deadline; a++) {
-      const result = fillAttempt(board, suspectIds, new Rng(baseSeed + a * 7919), 'easy', options.requiredClues)
+      const result = fillAttempt(board, suspectIds, new Rng(baseSeed + a * 7919), 'easy', options.requiredClues, options.requiredAttributes)
       if (result) {
         result.level.difficulty = rateTier(result.level)
         return result.level
@@ -616,7 +660,7 @@ export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {})
     ? pickOptsFrom(options.budget)
     : { maxAttempts: 400, timeBudgetMs: 5000, hardTimeBudgetMs: 20000 }
   return pickBestLevel(
-    (rng) => fillAttempt(board, suspectIds, rng, options.difficulty, options.requiredClues),
+    (rng) => fillAttempt(board, suspectIds, rng, options.difficulty, options.requiredClues, options.requiredAttributes),
     baseSeed,
     options.difficulty,
     pick,
@@ -631,6 +675,7 @@ function fillAttempt(
   rng: Rng,
   difficulty?: GenDifficulty,
   requiredClues?: ((json: ClueJson) => boolean)[],
+  requiredAttributes?: { attribute: string; value: AttributeValue; count: number }[],
 ): { level: LevelJson; pins: number } | null {
   const usedName = new Set<string>()
   const suspectMeta: SuspectJson[] = suspectIds.map((id, i) => {
@@ -638,6 +683,9 @@ function fillAttempt(
     const person = suspectPerson(i, gender, usedName)
     return { id, name: person.name, attributes: makeAttributes(gender, rng), clues: [] }
   })
+  if (requiredAttributes && requiredAttributes.length > 0) {
+    seedRequiredAttributes(suspectMeta, requiredAttributes, rng)
+  }
   const victim = victimPerson(rng)
   const victimMeta = { name: victim.name, attributes: makeAttributes(victim.gender, rng) }
   const base: LevelJson = { ...board, suspects: suspectMeta, victim: victimMeta }
@@ -1226,20 +1274,19 @@ function candidatesFor(
         if (keep(room, json)) out.push(json)
       }
     }
-    // "{dir} of a {object}" — 8-way, any/same/other room. A single tile is ∃≡∀; several
-    // tiles also get ∀ ("every {object}", all:true) and a per-tile anchor.
+    // "{dir} of a {object}" — 8-way, any/same/other room. A SINGLE tile is ∃≡∀ and
+    // unambiguous → offered. For SEVERAL tiles (a multi-cell object like a car, or a
+    // repeated object) ONLY the ∀ form "{dir} of EVERY {object}" is offered: "{dir} of A
+    // {object}" and the per-tile "(Z/S)" anchor leave it unclear WHICH tile is meant —
+    // bad puzzling — so neither is ever generated.
     for (const dir of DIRS8) {
       for (const room of ROOM_RELS) {
-        const some: ClueJson = { type: 'directionFromObject', object: def.type, dir, room }
-        if (keep(room, some)) out.push(some)
-        if (objCells.length > 1) {
+        if (objCells.length === 1) {
+          const some: ClueJson = { type: 'directionFromObject', object: def.type, dir, room }
+          if (keep(room, some)) out.push(some)
+        } else {
           const all: ClueJson = { type: 'directionFromObject', object: def.type, dir, room, all: true }
           if (keep(room, all)) out.push(all)
-        }
-      }
-      if (objCells.length > 1) {
-        for (const at of objCells) {
-          out.push({ type: 'directionFromObject', object: def.type, dir, room: 'any', at })
         }
       }
     }
@@ -1377,6 +1424,17 @@ function candidatesFor(
     { attribute: 'glasses', value: true },
     { attribute: 'bald', value: true },
   ]
+  // Hair is a valued trait the editor offers for "same room as someone with hair X"
+  // (roomAttribute). Add every hair colour a suspect actually wears so this whole block
+  // (none/some/all + counted) AND the negation loop below emit hair variants too; the
+  // test-filter + usableTrait keep only the valid ones. Without it, the editor's hair
+  // "Vorgaben" could never be generated. See [[editor-generator-deduction-parity]].
+  const hairValues = new Set<AttributeValue>()
+  for (const s of puzzle.suspects) {
+    const h = puzzle.attributesOf(s.id).hair
+    if (typeof h === 'string') hairValues.add(h)
+  }
+  for (const v of hairValues) attrPairs.push({ attribute: 'hair', value: v })
   for (const { attribute, value } of attrPairs) {
     if (!usableTrait(attribute, value)) continue
     for (const quantifier of ['none', 'some', 'all'] as const) {
@@ -1743,9 +1801,9 @@ function constructEasyClues(
     }
   }
 
-  // VARIETY cap (all difficulties): at most 2 clues of the same family (line clues
-  // exempt). Switch an offender to another easy clue that keeps the short chain
-  // solvable; give up on this layout if it can't be met.
+  // VARIETY cap (all difficulties): per `familyCap` — at most ONE line (row/column) clue,
+  // at most two of every other capped family. Switch an offender to another easy clue that
+  // keeps the short chain solvable; give up on this layout if it can't be met.
   const capTypes = cappedFamilies
   const famCounts = (): Map<string, number> => {
     const m = new Map<string, number>()
@@ -1753,7 +1811,7 @@ function constructEasyClues(
     return m
   }
   for (let guard = 0; guard < 200; guard++) {
-    const over = [...famCounts().entries()].find(([, n]) => n > 2)?.[0]
+    const over = [...famCounts().entries()].find(([fam, n]) => n > familyCap(fam))?.[0]
     if (over === undefined) break
     let fixed = false
     for (const id of rng.shuffle([...suspectIds])) {
@@ -1762,7 +1820,7 @@ function constructEasyClues(
       for (const e of cand.get(id)!) {
         if (e.json === cur || capTypes(e.json).includes(over)) continue
         chosen.set(id, e.json)
-        if ([...famCounts().values()].every((n) => n <= 2) && solvableChain()) {
+        if ([...famCounts().entries()].every(([fam, n]) => n <= familyCap(fam)) && solvableChain()) {
           fixed = true
           break
         }
@@ -1793,7 +1851,7 @@ function constructEasyClues(
       })
     for (const e of opts) {
       chosen.set(id, e.json)
-      if ([...famCounts().values()].every((n) => n <= 2) && solvableChain()) break
+      if ([...famCounts().entries()].every(([fam, n]) => n <= familyCap(fam)) && solvableChain()) break
       chosen.set(id, cur)
     }
   }
@@ -1923,17 +1981,17 @@ function constructLogicClues(
   const hasHardClue = (id: PersonId): boolean =>
     used.get(id)!.some((i) => isHardClue(list(id)[i]))
 
-  // VARIETY: at most 2 clues of the same family (positive and negated count together),
-  // across all difficulties — so a level can't lean on one type (e.g. a chain of
-  // "north of …"). Object / room / window-door / line families are EXEMPT (they read as
-  // different clues per target); see `UNCAPPED_TYPES`.
+  // VARIETY: per `familyCap` — at most ONE line clue, at most two of every other capped
+  // family (positive and negated count together), across all difficulties — so a level
+  // can't lean on one type (e.g. a chain of "north of …"). Object / room / window-door
+  // families are EXEMPT (they read as different clues per target); see `UNCAPPED_TYPES`.
   const cappedTypes = cappedFamilies
   const typeCounts = (): Map<string, number> => {
     const m = new Map<string, number>()
     for (const id of suspectIds) for (const t of cappedTypes(clueOf(id))) m.set(t, (m.get(t) ?? 0) + 1)
     return m
   }
-  const capOk = (): boolean => [...typeCounts().values()].every((n) => n <= 2)
+  const capOk = (): boolean => [...typeCounts().entries()].every(([fam, n]) => n <= familyCap(fam))
 
   // Fallback tightener: AND another part onto the suspect with the fewest (the old
   // construction) — used once single-clue tightening alone doesn't get there.
@@ -2034,7 +2092,7 @@ function constructLogicClues(
   //    switch an offending single-clue suspect to a different family that keeps the level
   //    solvable and within the cap; give up on the board if it can't be met.
   for (let guard = 0; guard < 200 && !capOk(); guard++) {
-    const overType = [...typeCounts().entries()].find(([, n]) => n > 2)?.[0]
+    const overType = [...typeCounts().entries()].find(([fam, n]) => n > familyCap(fam))?.[0]
     if (overType === undefined) break
     let fixed = false
     for (const id of rng.shuffle([...suspectIds])) {

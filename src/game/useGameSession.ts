@@ -65,6 +65,8 @@ export interface GameSession {
   placeMark: (cell: Cell, personId: PersonId) => void
   commit: (cell: Cell, personId: PersonId) => void
   setCross: (cell: Cell, value: boolean) => void
+  /** Add (`on`) or remove a single pencil note explicitly — for drag-painting notes. */
+  setMark: (cell: Cell, personId: PersonId, on: boolean) => void
   /** Remove a committed person from the board (long-press on their cell). */
   remove: (personId: PersonId) => void
   /** Full restart: clear all placements, marks and crosses (eraser "hold"). */
@@ -182,6 +184,26 @@ export function useGameSession(
     [apply, board, autoVictim],
   )
 
+  const setMark = useCallback(
+    (cell: Cell, personId: PersonId, on: boolean) =>
+      apply((next) => {
+        const set = next.marks.get(cell) ?? new Set<PersonId>()
+        if (on) {
+          // Can't note on a non-occupiable, crossed, or occupied cell; already there = no-op.
+          if (!board.isOccupiable(cell) || next.crosses.has(cell)) return false
+          for (const c of next.placements.values()) if (c === cell) return false
+          if (set.has(personId)) return false
+          set.add(personId)
+        } else {
+          if (!set.has(personId)) return false
+          set.delete(personId)
+        }
+        if (set.size === 0) next.marks.delete(cell)
+        else next.marks.set(cell, set)
+      }),
+    [apply, board],
+  )
+
   const remove = useCallback(
     (personId: PersonId) =>
       apply((next) => {
@@ -248,6 +270,7 @@ export function useGameSession(
     placeMark,
     commit,
     setCross,
+    setMark,
     remove,
     resetAll,
     undo,

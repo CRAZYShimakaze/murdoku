@@ -1338,30 +1338,35 @@ button {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 3px rgba(226, 183, 94, 0.75);
   }
 }
-/* Hair-colour words in clue text, tinted in the actual colour (with an outline for the
-   light ones) so "brown hair" etc. is unmistakable on the light card. */
-.mk-hair--blond {
-  color: #a9781a;
+/* Hair-colour words in clue text: the dark, readable colours (brown / black / red) tint
+   the WORD itself; the light ones (blond / grey / white) keep dark text with a very thin,
+   crisp outline in the colour (drawn behind the fill) so they stay legible on the card. */
+.mk-hair {
+  color: #18140f;
 }
 .mk-hair--brown {
-  color: #6a3f24;
+  color: #5e3618;
 }
 .mk-hair--black {
-  color: #14100b;
-}
-.mk-hair--grey {
-  color: #5c5c5c;
+  color: #18140f;
 }
 .mk-hair--red {
-  color: #9f2f27;
+  color: #c62222;
+}
+.mk-hair--blond,
+.mk-hair--grey,
+.mk-hair--white {
+  -webkit-text-stroke-width: 0.7px;
+  paint-order: stroke fill;
+}
+.mk-hair--blond {
+  -webkit-text-stroke-color: #c98f12;
+}
+.mk-hair--grey {
+  -webkit-text-stroke-color: #6e6e6e;
 }
 .mk-hair--white {
-  color: #f7f5ef;
-  text-shadow:
-    -0.5px -0.5px 0 #4a4438,
-    0.5px -0.5px 0 #4a4438,
-    -0.5px 0.5px 0 #4a4438,
-    0.5px 0.5px 0 #4a4438;
+  -webkit-text-stroke-color: #cfd3d8;
 }
 .mk-token {
   width: 34px;
@@ -2822,6 +2827,12 @@ button {
   margin-top: 0.1rem;
   font-weight: 600;
   color: var(--brass);
+}
+/* Player-error hints ("remove your note"): the chain lines are equal reasons, not a
+ * numbered deduction — plain text, no number, no gold "conclusion" styling. */
+.mk-hintreason {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
 }
 
 /* Board-wide clues (outdoor rooms, "exactly one on a mud puddle", …) — each is

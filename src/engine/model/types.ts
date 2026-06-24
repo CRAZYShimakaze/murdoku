@@ -73,6 +73,13 @@ export const MULTI_CELL_TYPES: ReadonlySet<string> = new Set(['bed', 'car', 'boa
 export type AttributeValue = string | number | boolean
 
 /**
+ * Hair colours a suspect can have. Single source of truth for BOTH the editor
+ * dropdowns AND the generator's random assignment — they must agree, otherwise an
+ * editor clue can demand a colour the generator never produces (→ no solution).
+ */
+export const HAIR_COLORS: readonly string[] = ['blond', 'brown', 'black', 'red', 'grey', 'white']
+
+/**
  * A renderable, language-independent description.
  * `key` is an i18n key; `params` are interpolated into the template.
  * Never contains hard-coded display text — the UI/runner resolves it.

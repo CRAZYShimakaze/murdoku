@@ -15,6 +15,9 @@ import type { PlayState } from '../game/useGameSession.ts'
 const LONGPRESS_MS = 1000
 /** The progress ring only appears after this hold, so a quick tap shows no ring. */
 const RING_DELAY_MS = 200
+/** Pointer travel (px) that turns a note press into a drag-paint — small, so it feels
+ *  immediate, but enough to ignore tremor while holding still for a long-press. */
+const DRAG_THRESHOLD = 6
 
 interface Props {
   puzzle: Puzzle
@@ -42,6 +45,7 @@ interface Props {
   onCommit: (cell: Cell, suspectId: PersonId) => void
   onRemove: (personId: PersonId) => void
   onSetCross: (cell: Cell, value: boolean) => void
+  onSetMark: (cell: Cell, suspectId: PersonId, on: boolean) => void
   onSelectSuspect: (id: PersonId | null) => void
 }
 
@@ -81,11 +85,14 @@ export default function BoardCanvas(props: Props) {
   const pressRef = useRef<{
     cell: Cell
     start: number
+    x: number
+    y: number
     mode: 'commit' | 'remove'
     personId?: PersonId
   } | null>(null)
   const rafRef = useRef<number | null>(null)
   const paintRef = useRef<{ value: boolean; visited: Set<Cell> } | null>(null)
+  const markPaintRef = useRef<{ personId: PersonId; on: boolean; visited: Set<Cell> } | null>(null)
   const hoverRef = useRef<Cell | null>(null)
   const avatarsRef = useRef<Map<PersonId, HTMLImageElement>>(new Map())
   const emphPulseRef = useRef(0)
@@ -281,12 +288,12 @@ export default function BoardCanvas(props: Props) {
     const occ = props.occupantAt(cell)
     if (occ !== undefined) {
       // occupied cell → tap selects the occupant, hold removes them
-      pressRef.current = { cell, start: e.timeStamp, mode: 'remove', personId: occ }
+      pressRef.current = { cell, start: e.timeStamp, x: e.clientX, y: e.clientY, mode: 'remove', personId: occ }
       rafRef.current = requestAnimationFrame(tick)
       return
     }
     if (props.selectedSuspect && props.puzzle.board.isOccupiable(cell)) {
-      pressRef.current = { cell, start: e.timeStamp, mode: 'commit' }
+      pressRef.current = { cell, start: e.timeStamp, x: e.clientX, y: e.clientY, mode: 'commit' }
       rafRef.current = requestAnimationFrame(tick)
       return
     }
@@ -302,9 +309,40 @@ export default function BoardCanvas(props: Props) {
       }
       return
     }
-    if (pressRef.current) {
+    if (markPaintRef.current) {
       const cell = cellAt(e)
-      if (cell !== pressRef.current.cell) {
+      if (cell !== null && !markPaintRef.current.visited.has(cell)) {
+        markPaintRef.current.visited.add(cell)
+        props.onSetMark(cell, markPaintRef.current.personId, markPaintRef.current.on)
+      }
+      return
+    }
+    if (pressRef.current) {
+      const press = pressRef.current
+      const cell = cellAt(e)
+      if (press.mode === 'commit' && props.selectedSuspect) {
+        // A note press becomes a drag-paint as soon as the pointer moves a little — even
+        // while still over the START cell — so its note flips immediately. The start cell
+        // decides the mode (had no note → ADD, had one → REMOVE). Moving means it's not a
+        // long-press, so the figure is NOT placed.
+        const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y)
+        if (moved > DRAG_THRESHOLD || (cell !== null && cell !== press.cell)) {
+          const suspect = props.selectedSuspect
+          const on = !(props.state.marks.get(press.cell)?.has(suspect) ?? false)
+          cancelPress()
+          const visited = new Set<Cell>([press.cell])
+          markPaintRef.current = { personId: suspect, on, visited }
+          props.onSetMark(press.cell, suspect, on)
+          if (cell !== null && cell !== press.cell) {
+            visited.add(cell)
+            props.onSetMark(cell, suspect, on)
+          }
+          redraw(null)
+        }
+        return // small movement within the start cell → keep the long-press alive
+      }
+      // Occupied-cell press: moving off the cell cancels the select/remove gesture.
+      if (cell !== press.cell) {
         cancelPress()
         redraw(null)
       }
@@ -322,6 +360,8 @@ export default function BoardCanvas(props: Props) {
   function endPointer(e: ReactPointerEvent<HTMLCanvasElement>) {
     if (paintRef.current) {
       paintRef.current = null
+    } else if (markPaintRef.current) {
+      markPaintRef.current = null
     } else {
       const press = pressRef.current
       if (press) {

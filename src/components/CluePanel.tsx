@@ -42,6 +42,9 @@ interface Props {
   hint: string | null
   /** Optional step-by-step reasoning chain shown under the hint. */
   hintChain?: string[] | null
+  /** Render the chain as plain reason lines (no numbering, no gold "conclusion" line) — for
+   *  player-error hints, whose lines are equal reasons, not a numbered deduction. */
+  hintPlain?: boolean
   /** Bumped each time the player requests a hint — scrolls it into view. */
   hintRequestId?: number
 }
@@ -65,6 +68,7 @@ export default function CluePanel({
   onHoverSuspect,
   hint,
   hintChain,
+  hintPlain,
   hintRequestId,
 }: Props) {
   const { t, i18n } = useTranslation()
@@ -132,11 +136,19 @@ export default function CluePanel({
           <strong>{t('tool.hint')}</strong>
           {hint}
           {hintChain && hintChain.length > 0 && (
-            <ol className="mk-hintchain">
-              {hintChain.map((line, i) => (
-                <li key={i}>{line}</li>
-              ))}
-            </ol>
+            hintPlain ? (
+              hintChain.map((line, i) => (
+                <p key={i} className="mk-hintreason">
+                  {line}
+                </p>
+              ))
+            ) : (
+              <ol className="mk-hintchain">
+                {hintChain.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ol>
+            )
           )}
         </div>
       )}
