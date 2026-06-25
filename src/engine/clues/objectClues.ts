@@ -224,7 +224,19 @@ export class BesideSameObjectClue extends Clue {
   }
 
   override candidateCells(board: Board): Set<Cell> {
-    return board.cellsNearObject(this.object) // necessary: beside an object of this type
+    // Every occupiable cell beside SOME instance of this object — the exact positional
+    // precondition `test`/`besideCells` use. It MUST be derived from `besideCells` (not
+    // `board.cellsNearObject`, which additionally drops cells that themselves carry an
+    // object of this type): a person sitting ON a chair that sits beside ANOTHER chair IS
+    // "beside that chair" for `test`, so excluding such a cell here would hide a legitimate
+    // placement — and with it a second solution, letting a non-unique level pass as unique.
+    const out = new Set<Cell>()
+    for (const comp of this.instances(board)) {
+      for (const cell of this.besideCells(board, comp)) {
+        if (board.isOccupiable(cell)) out.add(cell)
+      }
+    }
+    return out
   }
   // definiteCells stays null (default): negation depends on others, so it prunes nothing.
 

@@ -66,8 +66,9 @@
     "logic_pure": "Solvable by pure logic",
     "logic_contradiction": "Needs contradictions",
     "coverage": "Cell coverage: {{percent}}% · avg breadth: {{avg}}%",
-    "result_multi": "Ambiguous — more than one solution.",
-    "result_none": "Not solvable — no valid arrangement.",
+    "result_multi": "Ambiguous — more than one solution. It can't be saved like this.",
+    "result_none": "Not solvable — no valid arrangement. It can't be saved like this.",
+    "result_contradiction": "Only solvable via contradictions — make it solvable by pure logic before saving.",
     "result_error": "Error — check the board & clues.",
     "noClue": "No clue",
     "clueTitle": "Clue",
@@ -949,7 +950,8 @@
     "everyRoomCount_one": "Every room has exactly {{count}} person."
   },
   "rule": {
-    "aloneWithVictim": "The victim must be alone in a room with exactly one suspect."
+    "aloneWithVictim": "The victim must be alone in a room with exactly one suspect.",
+    "oneEachLine": "Each person must stand in their own row and column."
   },
   "tip": {
     "negation": "Negation – flips the condition to its opposite: what follows is exactly NOT the case.",

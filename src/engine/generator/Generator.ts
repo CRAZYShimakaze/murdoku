@@ -563,6 +563,31 @@ function pruneClues(level: LevelJson, target: GenDifficulty | undefined): LevelJ
   return work
 }
 
+/** Is this the EXACT level safe to hand to a player: uniquely solvable AND crackable by
+ *  straight forward deduction (no case split — the generator's fairness bar)? Every stage
+ *  already enforces this, so this is the final independent re-check of what actually ships. */
+function isShippable(level: LevelJson): boolean {
+  const puzzle = loadLevel(level)
+  return (
+    new DeductionEngine(puzzle, { noCaseSplit: true }).solve().solved &&
+    new SearchSolver(puzzle).countSolutions(2) === 1
+  )
+}
+
+/** Final gate before a generated level is returned: re-verify the EXACT level being shipped
+ *  is unique AND forward-solvable, and REFUSE (throw) otherwise — a generation failure is
+ *  always better than handing a player an ambiguous or unsolvable case. Should never fire
+ *  (earlier stages guarantee it); it exists so a future regression can't ship a broken level. */
+function assertShippable(level: LevelJson): LevelJson {
+  if (!isShippable(level)) {
+    const puzzle = loadLevel(level)
+    const solved = new DeductionEngine(puzzle, { noCaseSplit: true }).solve().solved
+    const unique = new SearchSolver(puzzle).countSolutions(2) === 1
+    throw new Error(`Generated level failed final validation (forwardSolvable=${solved}, unique=${unique})`)
+  }
+  return level
+}
+
 /** Generate a uniquely-solvable level. Throws if no seed yields one. */
 export function generateLevel(options: GenerateOptions): LevelJson {
   const { width, height, suspects } = options
@@ -580,7 +605,7 @@ export function generateLevel(options: GenerateOptions): LevelJson {
       const result = tryGenerate(options, new Rng(baseSeed + a * 7919), baseSeed + a)
       if (result) {
         result.level.difficulty = rateTier(result.level)
-        return pruneClues(result.level, 'easy')
+        return assertShippable(pruneClues(result.level, 'easy'))
       }
     }
     const fallback = pickBestLevel(
@@ -589,7 +614,7 @@ export function generateLevel(options: GenerateOptions): LevelJson {
       'easy',
       pick,
     )
-    if (fallback) return pruneClues(fallback, 'easy')
+    if (fallback) return assertShippable(pruneClues(fallback, 'easy'))
     throw new Error(`Could not generate an easy ${width}x${height} level for ${suspects} suspects`)
   }
 
@@ -600,7 +625,7 @@ export function generateLevel(options: GenerateOptions): LevelJson {
     pick,
   )
   if (!level) throw new Error(`Could not generate a ${width}x${height} level for ${suspects} suspects`)
-  return pruneClues(level, options.difficulty)
+  return assertShippable(pruneClues(level, options.difficulty))
 }
 
 export interface FillBoardOptions {
@@ -646,7 +671,7 @@ export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {})
     const deadline = performance.now() + (options.budget?.hardMs ?? 20000)
     for (let a = 0; a < 200000 && performance.now() < deadline; a++) {
       const result = fillAttempt(board, suspectIds, new Rng(baseSeed + a * 7919), 'easy', options.requiredClues, options.requiredAttributes)
-      if (result) {
+      if (result && isShippable(result.level)) {
         result.level.difficulty = rateTier(result.level)
         return result.level
       }
@@ -659,12 +684,14 @@ export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {})
   const pick = options.budget
     ? pickOptsFrom(options.budget)
     : { maxAttempts: 400, timeBudgetMs: 5000, hardTimeBudgetMs: 20000 }
-  return pickBestLevel(
+  const filled = pickBestLevel(
     (rng) => fillAttempt(board, suspectIds, rng, options.difficulty, options.requiredClues, options.requiredAttributes),
     baseSeed,
     options.difficulty,
     pick,
   )
+  // Final gate: only return a fill that is genuinely unique & forward-solvable.
+  return filled && isShippable(filled) ? filled : null
 }
 
 /** One people-fill attempt on the fixed board: fresh identities, a valid hidden

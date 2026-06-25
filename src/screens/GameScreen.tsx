@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import {
   DeductionEngine,
   SearchSolver,
+  Solution,
   findMurderer,
   loadLevel,
   relatedSuspects,
@@ -424,23 +425,39 @@ export default function GameScreen({
   }, [onNext, neighborLevel])
 
   const submit = () => {
-    if (!session.allPlaced || !solution) return
-    const win =
-      puzzle.suspects.every((s) => session.state.placements.get(s.id) === solution.cellOf(s.id)) &&
-      session.state.placements.get(VICTIM_ID) === solution.cellOf(VICTIM_ID)
-    if (!win) {
-      // Pinpoint which clue(s) the placement breaks — suspects, the "alone with
-      // the victim" rule, and global/board clues — so it's not just "wrong".
-      const failures = unsatisfiedClues(puzzle, session.state.placements).map((f) =>
-        f.personId ? renderer.namedClue(f.explanation, f.personId) : renderer.render(f.explanation),
-      )
+    if (!session.allPlaced) return
+    const placements = session.state.placements
+    // A win is a GENUINELY valid solution, checked directly on the placement (not against
+    // one precomputed `solution`): everyone on a distinct row AND column, every suspect clue
+    // satisfied, the victim alone with exactly one suspect, and all board clues. Checking the
+    // placement itself means the verdict is correct even for a non-unique or unsolvable
+    // test-play board — pressing "Lösen" always explains WHY it doesn't work (e.g. "the
+    // victim must be alone with exactly one suspect") instead of silently doing nothing.
+    const board = puzzle.board
+    const rows = new Set<number>()
+    const cols = new Set<number>()
+    let lineClash = false
+    for (const cell of placements.values()) {
+      const { row, col } = board.rc(cell)
+      if (rows.has(row) || cols.has(col)) lineClash = true
+      rows.add(row)
+      cols.add(col)
+    }
+    const failures = unsatisfiedClues(puzzle, placements).map((f) =>
+      f.personId ? renderer.namedClue(f.explanation, f.personId) : renderer.render(f.explanation),
+    )
+    // Two people sharing a row/column breaks the core one-per-line rule (the player can force
+    // this onto an X'd cell), so name it too — else a clash that happens to satisfy every clue
+    // would be wrongly accepted.
+    if (lineClash) failures.unshift(renderer.render({ key: 'rule.oneEachLine' }))
+    if (failures.length > 0) {
       setResult({ win: false, murderer: null, victimCell: null, failures })
       return
     }
     markSolved(storageId)
     session.clearSaved()
     setDialogHidden(false) // a fresh verdict always shows the dialog first
-    const m = findMurderer(puzzle, solution)
+    const m = findMurderer(puzzle, new Solution(placements))
     const room = puzzle.board.rooms.get(m.roomId)
     // markSolved above already updated the solved set neighborLevel reads from.
     const next = onNext ? neighborLevel(nextLevel) : null
@@ -451,7 +468,7 @@ export default function GameScreen({
         room: room ? t(room.nameKey) : m.roomId,
         id: m.suspectId,
       },
-      victimCell: solution.cellOf(VICTIM_ID),
+      victimCell: placements.get(VICTIM_ID)!,
       next,
     })
   }

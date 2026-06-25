@@ -42,7 +42,7 @@ type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
 /** The four board layers shown as tabs; windows & doors live inside 'top' (Objekte). */
 const LAYERS: Mode[] = ['rooms', 'ground', 'top', 'global']
 type CheckResult = {
-  kind: 'ok' | 'multi' | 'none' | 'error' | 'saved' | 'exported' | 'genfail' | 'genfailVorgaben'
+  kind: 'ok' | 'multi' | 'none' | 'contradiction' | 'error' | 'saved' | 'exported' | 'genfail' | 'genfailVorgaben'
   murderer?: string
   /** For a solvable level: did pure forward deduction crack it ('pure'), or were
    *  proof-by-contradiction steps (forcing/SAT search) required ('contradiction')? */
@@ -335,23 +335,36 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   const play = () => {
     try {
       const level = build(levelId())
-      // Only a truly unsolvable board (no valid arrangement) can't be played; an
-      // ambiguous one (several solutions) is still playable — it just can't be saved.
-      const count = new SearchSolver(loadLevel(level)).countSolutions(2)
-      if (count === 0) return setResult({ kind: 'none' })
+      // Test-play is ALWAYS allowed — even an unsolvable, ambiguous, or contradiction-only
+      // board may be played to try it out (the game tolerates a solution-less board: you
+      // simply can't "win" it). Only SAVING/exporting requires a genuinely valid level.
+      // loadLevel still runs so a structurally broken board shows an error instead of
+      // navigating into a crash.
+      loadLevel(level)
       onPlay(levelMetaFromJson(level, true))
     } catch {
       setResult({ kind: 'error' })
     }
   }
 
-  // Open the save dialog. A non-unique / unsolvable board still opens it (with a
-  // warning shown), so a draft can be kept or exported as JSON — e.g. to share a
-  // level that the solver rejects.
+  // A level may only be SAVED/EXPORTED when it is genuinely fair: uniquely solvable AND
+  // crackable by pure human logic (the default forward + convergent engine — never a
+  // proof-by-contradiction). This is the same verdict the result banner shows, so saving
+  // can never publish an ambiguous, unsolvable, or trial-and-error level (the bug that let
+  // a co-player receive an unsolvable case).
+  const validity = (level: LevelJson): 'ok' | 'multi' | 'none' | 'contradiction' => {
+    const puzzle = loadLevel(level)
+    const count = new SearchSolver(puzzle).countSolutions(2)
+    if (count === 0) return 'none'
+    if (count >= 2) return 'multi'
+    return new DeductionEngine(puzzle).solve().solved ? 'ok' : 'contradiction'
+  }
+
+  // Open the save dialog ONLY for a fully valid level; otherwise show why it can't be saved.
   const openSave = () => {
     try {
-      const count = new SearchSolver(loadLevel(build('editor-check'))).countSolutions(2)
-      if (count !== 1) setResult({ kind: count === 0 ? 'none' : 'multi' })
+      const v = validity(build('editor-check'))
+      if (v !== 'ok') return setResult({ kind: v })
       setShowSave(true)
     } catch {
       setResult({ kind: 'error' })
@@ -359,15 +372,37 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   }
 
   const keep = () => {
-    saveCustomLevel(build(levelId()))
-    setShowSave(false)
-    setResult({ kind: 'saved' })
+    try {
+      const level = build(levelId())
+      const v = validity(level)
+      if (v !== 'ok') {
+        setShowSave(false)
+        return setResult({ kind: v })
+      }
+      saveCustomLevel(level)
+      setShowSave(false)
+      setResult({ kind: 'saved' })
+    } catch {
+      setShowSave(false)
+      setResult({ kind: 'error' })
+    }
   }
 
   const exportJson = () => {
-    exportLevelJson(build(levelId()))
-    setShowSave(false)
-    setResult({ kind: 'exported' })
+    try {
+      const level = build(levelId())
+      const v = validity(level)
+      if (v !== 'ok') {
+        setShowSave(false)
+        return setResult({ kind: v })
+      }
+      exportLevelJson(level)
+      setShowSave(false)
+      setResult({ kind: 'exported' })
+    } catch {
+      setShowSave(false)
+      setResult({ kind: 'error' })
+    }
   }
 
   const paint = (cell: Cell) => {

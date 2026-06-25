@@ -66,8 +66,9 @@
     "logic_pure": "Rein logisch lösbar",
     "logic_contradiction": "Nur mit Widersprüchen lösbar",
     "coverage": "Feld-Abdeckung: {{percent}} % · Ø-Breite: {{avg}} %",
-    "result_multi": "Mehrdeutig — es gibt mehrere Lösungen.",
-    "result_none": "Nicht lösbar — kein gültiges Arrangement.",
+    "result_multi": "Mehrdeutig — es gibt mehrere Lösungen. So kann es nicht gespeichert werden.",
+    "result_none": "Nicht lösbar — kein gültiges Arrangement. So kann es nicht gespeichert werden.",
+    "result_contradiction": "Nur mit Widersprüchen lösbar — bitte rein logisch lösbar machen, bevor du speicherst.",
     "result_error": "Fehler — bitte Feld & Hinweise prüfen.",
     "noClue": "Kein Hinweis",
     "clueTitle": "Hinweis",
@@ -1038,7 +1039,8 @@
     "everyRoomCount_one": "In jedem Raum ist genau {{count}} Person."
   },
   "rule": {
-    "aloneWithVictim": "Das Opfer muss mit genau einer verdächtigen Person allein in einem Raum sein."
+    "aloneWithVictim": "Das Opfer muss mit genau einer verdächtigen Person allein in einem Raum sein.",
+    "oneEachLine": "Jede Person muss in einer eigenen Zeile und Spalte stehen."
   },
   "tip": {
     "negation": "Verneinung – kehrt die Bedingung ins Gegenteil: Das danach Genannte trifft genau NICHT zu.",
