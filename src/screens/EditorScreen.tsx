@@ -34,7 +34,7 @@ import {
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
-import { DeductionEngine, SearchSolver, findMurderer, loadLevel, startCoverage, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
+import { checkLevel, findMurderer, loadLevel, startCoverage, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
 import { Renderer } from '../i18n/Renderer.ts'
 import { useDebugSolveKey } from '../game/debugSolve.ts'
 
@@ -140,6 +140,9 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   const [paintObj, setPaintObj] = useState<string>('s') // top object char, or '' to erase
   const [result, setResult] = useState<CheckResult | null>(null)
   const [showSave, setShowSave] = useState(false)
+  // Validity shown as a WARNING in the save dialog (saving stays allowed — the user must be
+  // able to keep/export a level for testing/sharing even when it's not yet fair).
+  const [saveWarn, setSaveWarn] = useState<'ok' | 'multi' | 'none' | 'contradiction'>('ok')
   // Stable per-session fallback id; a named level uses a slug so re-saving overwrites.
   const [sessionId] = useState(() => `editor-${Date.now()}`)
   const [randomizing, setRandomizing] = useState(false)
@@ -308,22 +311,18 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   const check = () => {
     try {
       const puzzle = loadLevel(build('editor-check'))
-      const solver = new SearchSolver(puzzle)
-      const count = solver.countSolutions(2)
-      if (count === 0) return setResult({ kind: 'none' })
-      if (count >= 2) return setResult({ kind: 'multi' })
-      const solution = solver.firstSolution()!
-      const m = findMurderer(puzzle, solution)
-      // How "fair" is the case? The default engine is PURE human logic (forward +
-      // convergent "egal wo X → raus"), never proof-by-contradiction. If it fully
-      // solves, the case is crackable by clean logic; if it gets stuck, cracking it
-      // would need trial-and-error ("assume X → contradiction") — flagged as unfair.
-      const logic = new DeductionEngine(puzzle).solve().solved ? 'pure' : 'contradiction'
+      const c = checkLevel(puzzle)
+      if (c.solutions === 0) return setResult({ kind: 'none' })
+      if (c.solutions >= 2) return setResult({ kind: 'multi' })
+      const m = findMurderer(puzzle, c.solution!)
+      // `c.solvable` is the SAME human-logic verdict the save gate uses: forward +
+      // convergent ("egal wo X → raus"), never proof-by-contradiction. Solved ⇒ crackable
+      // by clean logic; stuck ⇒ would need trial-and-error → flagged "Nur mit Widersprüchen".
       const cov = startCoverage(puzzle)
       setResult({
         kind: 'ok',
         murderer: m.suspectId ? puzzle.nameOf(m.suspectId) : undefined,
-        logic,
+        logic: c.solvable ? 'pure' : 'contradiction',
         coverage: Math.round(cov.constrainedRatio * 100),
         breadth: Math.round(cov.avgBreadth * 100),
       })
@@ -347,24 +346,21 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
     }
   }
 
-  // A level may only be SAVED/EXPORTED when it is genuinely fair: uniquely solvable AND
-  // crackable by pure human logic (the default forward + convergent engine — never a
-  // proof-by-contradiction). This is the same verdict the result banner shows, so saving
-  // can never publish an ambiguous, unsolvable, or trial-and-error level (the bug that let
-  // a co-player receive an unsolvable case).
+  // The save-dialog warning uses the EXACT same `checkLevel` as the Check button above —
+  // one source of truth (DRY), so "Prüfen" and "Speichern" can never disagree.
   const validity = (level: LevelJson): 'ok' | 'multi' | 'none' | 'contradiction' => {
-    const puzzle = loadLevel(level)
-    const count = new SearchSolver(puzzle).countSolutions(2)
-    if (count === 0) return 'none'
-    if (count >= 2) return 'multi'
-    return new DeductionEngine(puzzle).solve().solved ? 'ok' : 'contradiction'
+    const c = checkLevel(loadLevel(level))
+    if (c.solutions === 0) return 'none'
+    if (c.solutions >= 2) return 'multi'
+    return c.solvable ? 'ok' : 'contradiction'
   }
 
-  // Open the save dialog ONLY for a fully valid level; otherwise show why it can't be saved.
+  // Open the save dialog ALWAYS; if the level isn't fully valid, surface it as a warning
+  // inside the dialog but still let the user keep/export it (e.g. to test or to share a
+  // case for debugging). The real guard against shipping a bad level is the GENERATOR.
   const openSave = () => {
     try {
-      const v = validity(build('editor-check'))
-      if (v !== 'ok') return setResult({ kind: v })
+      setSaveWarn(validity(build('editor-check')))
       setShowSave(true)
     } catch {
       setResult({ kind: 'error' })
@@ -373,13 +369,7 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
 
   const keep = () => {
     try {
-      const level = build(levelId())
-      const v = validity(level)
-      if (v !== 'ok') {
-        setShowSave(false)
-        return setResult({ kind: v })
-      }
-      saveCustomLevel(level)
+      saveCustomLevel(build(levelId()))
       setShowSave(false)
       setResult({ kind: 'saved' })
     } catch {
@@ -390,13 +380,7 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
 
   const exportJson = () => {
     try {
-      const level = build(levelId())
-      const v = validity(level)
-      if (v !== 'ok') {
-        setShowSave(false)
-        return setResult({ kind: v })
-      }
-      exportLevelJson(level)
+      exportLevelJson(build(levelId()))
       setShowSave(false)
       setResult({ kind: 'exported' })
     } catch {
@@ -1004,6 +988,9 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
               ))}
             </div>
             <p className="mk-savedlg__hint">{t('editor.saveHint')}</p>
+            {saveWarn !== 'ok' && (
+              <p className="mk-savedlg__warn">⚠ {t(`editor.result_${saveWarn}`)}</p>
+            )}
             {contentExists ? (
               <>
                 <p className="mk-savedlg__exists">{t('editor.levelExists')}</p>

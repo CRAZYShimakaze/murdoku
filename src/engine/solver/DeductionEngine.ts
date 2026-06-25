@@ -1,6 +1,7 @@
 import { Solution } from '../model/Solution.ts'
 import { SolveContext } from './SolveContext.ts'
 import { findMurderer } from './murderer.ts'
+import { unsatisfiedClues } from './diagnose.ts'
 import { createForwardTechniques, propagate, type TechniqueOptions } from './forward.ts'
 import { TECHNIQUE_RANK, difficultyOf } from './DeductionStep.ts'
 import type { Cell, Explanation, PersonId } from '../model/types.ts'
@@ -193,6 +194,16 @@ export class DeductionEngine {
     }
 
     const solution = new Solution(new Map(ctx.state.placed))
+    // A COMPLETE placement is only genuinely SOLVED if it actually satisfies every clue and
+    // the murder rule. Some clues — notably existence clues like "another <trait> in my room"
+    // — are not fully enforced by any forward technique, so the techniques can drive the board
+    // to a complete BUT INVALID arrangement (the SearchSolver would then find 0 solutions). If
+    // so, this is not a solution: report `solved: false` so the engine never disagrees with
+    // whether a valid arrangement actually exists.
+    if (unsatisfiedClues(this.puzzle, ctx.state.placed).length > 0) {
+      steps.push({ technique: 'stuck', explanation: { key: 'step.contradiction' } })
+      return this.finish(steps, null, false)
+    }
     steps.push(this.identifyMurderer(solution))
     return this.finish(steps, solution, true)
   }

@@ -1240,7 +1240,8 @@
     "murderer": "Murderer: {{name}} was alone with the victim in the {{room}}.",
     "murdererAmbiguous": "No unique murderer: {{count}} suspects in the {{room}}.",
     "stuck": "Stuck: {{count}} people unresolved (technique not yet implemented).",
-    "stuck_one": "Stuck: {{count}} person unresolved (technique not yet implemented)."
+    "stuck_one": "Stuck: {{count}} person unresolved (technique not yet implemented).",
+    "contradiction": "Dead end: this arrangement breaks a clue — there is no valid solution."
   },
   "contra": {
     "empty": "{{name}} would then have no possible cell left.",

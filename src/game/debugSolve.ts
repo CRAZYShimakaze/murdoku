@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import {
   DeductionEngine,
-  SearchSolver,
+  checkLevel,
   findMurderer,
   VICTIM_ID,
   type Puzzle,
@@ -58,9 +58,8 @@ export function logSolution(puzzle: Puzzle, renderer: Renderer): void {
   )
   console.groupEnd()
 
-  const searcher = new SearchSolver(puzzle)
-  const solution = searcher.firstSolution()
-  const count = searcher.countSolutions(2)
+  // Same `checkLevel` the editor's Check / Save and the generator's ship-gate use.
+  const { solutions: count, solution } = checkLevel(puzzle)
   console.group('Lösung')
   console.log(
     `Eindeutig: ${count === 1 ? 'ja' : count >= 2 ? 'nein (mehrere Lösungen)' : 'nein (keine Lösung)'}`,

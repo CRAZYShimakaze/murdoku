@@ -5,6 +5,7 @@ import { Solution } from '../model/Solution.ts'
 import { SearchSolver } from '../solver/SearchSolver.ts'
 import { findMurderer } from '../solver/murderer.ts'
 import { DeductionEngine } from '../solver/DeductionEngine.ts'
+import { checkLevel } from '../solver/validate.ts'
 import { difficultyOf } from '../solver/DeductionStep.ts'
 import { startCoverage } from '../solver/coverage.ts'
 import { createClue } from '../clues/ClueFactory.ts'
@@ -277,13 +278,19 @@ const CHAIN_TECHNIQUES = [
   'boardCount', 'emptyRooms', 'roomCapacity', 'roomCoverage', 'companionPairing', 'companionFit',
 ] as const
 
-function logicRating(level: LevelJson): { solved: boolean; maxRank: number; chainSteps: number } {
+function logicRating(level: LevelJson): { solved: boolean; unique: boolean; maxRank: number; chainSteps: number } {
   // Accept ONLY levels solvable by straight forward deduction — NO case split. The user
   // found auto-generated case-splits ("Fallunterscheidung") too frequent and too deep to
   // solve by hand. Players/hints still get the full pipeline for hand-made levels.
-  const result = new DeductionEngine(loadLevel(level), { noCaseSplit: true }).solve()
+  const puzzle = loadLevel(level)
+  const result = new DeductionEngine(puzzle, { noCaseSplit: true }).solve()
   const chainSteps = CHAIN_TECHNIQUES.reduce((n, t) => n + (result.techniqueCounts[t] ?? 0), 0)
-  return { solved: result.solved, maxRank: result.maxRank, chainSteps }
+  // Same uniqueness primitive `checkLevel` uses — but only when the level is forward-solvable
+  // (counting solutions on a dead candidate would needlessly exhaust the board, and the
+  // search tries hundreds of candidates under a <1-min budget). This folds the scattered
+  // inline `countSolutions(2) === 1` checks into ONE place the whole generator search reuses.
+  const unique = result.solved && new SearchSolver(puzzle).isUnique()
+  return { solved: result.solved, unique, maxRank: result.maxRank, chainSteps }
 }
 
 /** The hardest forward-deduction rank that DEFINES each tier (see TECHNIQUE_RANK):
@@ -482,10 +489,10 @@ function pickBestLevel(
       // Only human-solvable levels are eligible — the player must be able to solve by a
       // clean forward/convergent chain, never "assume X → contradiction". For hard the
       // score then maximises hard relational clues + breadth (rank only a floor); for
-      // easy/medium it prefers the exact target rank. The extra countSolutions guarantees
-      // UNIQUENESS independent of engine soundness — a dense object layout can shift the
-      // solution space, and a non-unique level must never slip through.
-      if (rating.solved && new SearchSolver(loadLevel(result.level)).countSolutions(2) === 1) {
+      // easy/medium it prefers the exact target rank. `rating.unique` is the SearchSolver
+      // uniqueness check (guarantees uniqueness independent of engine soundness — a dense
+      // object layout can shift the solution space, and a non-unique level must never slip).
+      if (rating.solved && rating.unique) {
         result.level.difficulty = tierFor(result.level, target, rating.maxRank)
         const score = scoreLevel(result.level, target, rating.maxRank, result.pins, rating.chainSteps)
         if (score < bestScore) {
@@ -518,8 +525,7 @@ function pruneClues(level: LevelJson, target: GenDifficulty | undefined): LevelJ
   // easy: still solvable by the simple rank-≤2 steps that define easy).
   const accepts = (lv: LevelJson): boolean => {
     const r = logicRating(lv)
-    if (!r.solved) return false
-    if (new SearchSolver(loadLevel(lv)).countSolutions(2) !== 1) return false
+    if (!r.solved || !r.unique) return false
     if (tierFor(lv, target, r.maxRank) !== tier) return false
     return tier !== 'easy' || r.maxRank <= 2
   }
@@ -564,14 +570,11 @@ function pruneClues(level: LevelJson, target: GenDifficulty | undefined): LevelJ
 }
 
 /** Is this the EXACT level safe to hand to a player: uniquely solvable AND crackable by
- *  straight forward deduction (no case split — the generator's fairness bar)? Every stage
- *  already enforces this, so this is the final independent re-check of what actually ships. */
+ *  straight forward deduction (no case split — the generator's fairness bar)? Uses the SAME
+ *  `checkLevel` the editor's Check/Save use (DRY) — only `forwardOnly` tightens the bar. */
 function isShippable(level: LevelJson): boolean {
-  const puzzle = loadLevel(level)
-  return (
-    new DeductionEngine(puzzle, { noCaseSplit: true }).solve().solved &&
-    new SearchSolver(puzzle).countSolutions(2) === 1
-  )
+  const c = checkLevel(loadLevel(level), { forwardOnly: true })
+  return c.unique && c.solvable
 }
 
 /** Final gate before a generated level is returned: re-verify the EXACT level being shipped
@@ -579,11 +582,9 @@ function isShippable(level: LevelJson): boolean {
  *  always better than handing a player an ambiguous or unsolvable case. Should never fire
  *  (earlier stages guarantee it); it exists so a future regression can't ship a broken level. */
 function assertShippable(level: LevelJson): LevelJson {
-  if (!isShippable(level)) {
-    const puzzle = loadLevel(level)
-    const solved = new DeductionEngine(puzzle, { noCaseSplit: true }).solve().solved
-    const unique = new SearchSolver(puzzle).countSolutions(2) === 1
-    throw new Error(`Generated level failed final validation (forwardSolvable=${solved}, unique=${unique})`)
+  const c = checkLevel(loadLevel(level), { forwardOnly: true })
+  if (!c.unique || !c.solvable) {
+    throw new Error(`Generated level failed final validation (forwardSolvable=${c.solvable}, unique=${c.unique})`)
   }
   return level
 }
@@ -775,10 +776,9 @@ function fillAttempt(
   if (difficulty === 'easy') {
     // Confirm the construction is genuinely unique and solvable by SHORT, simple steps —
     // hidden singles / "only one on X" / row-column cross-out (rank ≤ 2), no harder
-    // technique and never a contradiction.
-    if (new SearchSolver(finalPuzzle).countSolutions(2) !== 1) return null
-    const ded = new DeductionEngine(finalPuzzle).solve()
-    if (!ded.solved || ded.maxRank > 2) return null
+    // technique and never a contradiction. Same `checkLevel` the editor / ship-gate use.
+    const c = checkLevel(finalPuzzle)
+    if (!c.unique || !c.solvable || c.deduction.maxRank > 2) return null
   }
   return { level, pins: countPins(chosen) }
 }
@@ -942,9 +942,8 @@ function tryGenerate(
   // (hidden singles / "only one on X" / row-column cross-out — rank ≤ 2, never a
   // contradiction), exactly like the editor's easy fill.
   if (easyConstruct) {
-    if (new SearchSolver(finalPuzzle).countSolutions(2) !== 1) return null
-    const ded = new DeductionEngine(finalPuzzle).solve()
-    if (!ded.solved || ded.maxRank > 2) return null
+    const c = checkLevel(finalPuzzle)
+    if (!c.unique || !c.solvable || c.deduction.maxRank > 2) return null
   }
 
   // Medium: now and then add ONE board-wide clue as bonus flavour (hard already got a set
@@ -1442,8 +1441,12 @@ function candidatesFor(
 
   // --- room-attribute clues: "no one / some / everyone else in the room had X" ---
   // Boolean traits AND gender now round-trip to the editor (gender via the "same room
-  // as a man/woman" target), so they're offered in BOTH modes — with excludeSelf in
-  // editor-safe mode to match the editor's flat builder.
+  // as a man/woman" target). excludeSelf is ALWAYS true: the rendered wording is "ein
+  // ANDERER Mann / kein anderer …" (about the OTHERS in the room), the editor's flat
+  // builder always sets it, and the editor round-trip forces it — so generating it as
+  // false produced a clue whose stored meaning (counts the subject itself) contradicted
+  // its own displayed text and flipped under a round-trip. Always true keeps all three
+  // (generator / renderer / editor) in agreement.
   const attrPairs: { attribute: string; value: AttributeValue }[] = [
     { attribute: 'gender', value: 'm' },
     { attribute: 'gender', value: 'f' },
@@ -1465,7 +1468,7 @@ function candidatesFor(
   for (const { attribute, value } of attrPairs) {
     if (!usableTrait(attribute, value)) continue
     for (const quantifier of ['none', 'some', 'all'] as const) {
-      out.push({ type: 'roomAttribute', quantifier, attribute, value, excludeSelf: editorSafe })
+      out.push({ type: 'roomAttribute', quantifier, attribute, value, excludeSelf: true })
     }
   }
   // Counted variants of "some": "in a room with ≥N / exactly N matching others" — only
@@ -1627,7 +1630,7 @@ function candidatesFor(
   for (const { attribute, value } of attrPairs) {
     out.push({
       type: 'not',
-      clue: { type: 'roomAttribute', quantifier: 'some', attribute, value, excludeSelf: editorSafe },
+      clue: { type: 'roomAttribute', quantifier: 'some', attribute, value, excludeSelf: true },
     })
   }
   for (const def of ALL_OBJECTS) {

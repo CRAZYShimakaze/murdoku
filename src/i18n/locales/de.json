@@ -1329,7 +1329,8 @@
     "murderer": "Mörder: {{name}} war allein mit dem Opfer im Raum {{room}}.",
     "murdererAmbiguous": "Kein eindeutiger Mörder: {{count}} Verdächtige im Raum {{room}}.",
     "stuck": "Stecken geblieben: {{count}} Personen offen (Technik noch nicht implementiert).",
-    "stuck_one": "Stecken geblieben: {{count}} Person offen (Technik noch nicht implementiert)."
+    "stuck_one": "Stecken geblieben: {{count}} Person offen (Technik noch nicht implementiert).",
+    "contradiction": "Sackgasse: Diese Anordnung verletzt einen Hinweis – es gibt keine gültige Lösung."
   },
   "contra": {
     "empty": "{{name}} hätte dann kein mögliches Feld mehr.",
