@@ -379,6 +379,41 @@ const familyCap = (family: string): number => (family === 'line' ? 1 : 2)
 /** Does a suspect's clue use a HARD (relational/social) family? */
 const isHardClue = (clue: ClueJson): boolean => leafTypes(clue).some((t) => HARD_CLUE_TYPES.has(t))
 
+/** Canonical signature of a clue, independent of `and`-part order and key order. Two
+ *  suspects whose clue has the same signature show the IDENTICAL hint — which the user
+ *  rejects: never the exact same clue twice in one level. The subject ("he/she") is NOT
+ *  part of the clue, so "he was not beside a locker" and "she was not beside a locker"
+ *  count as the same. */
+function clueSig(clue: ClueJson): string {
+  if (clue.type === 'and') return `and(${clue.clues.map(clueSig).sort().join('|')})`
+  if (clue.type === 'not') return `not(${clueSig(clue.clue)})`
+  const params = Object.keys(clue)
+    .filter((k) => k !== 'type')
+    .sort()
+    .map((k) => `${k}=${JSON.stringify((clue as Record<string, unknown>)[k])}`)
+  return `${clue.type}(${params.join(',')})`
+}
+
+/** How many of these clues are an exact repeat of an earlier one (0 ⇒ all distinct). */
+function duplicateClueCount(clues: ClueJson[]): number {
+  const seen = new Set<string>()
+  let dup = 0
+  for (const c of clues) {
+    const sig = clueSig(c)
+    if (seen.has(sig)) dup++
+    else seen.add(sig)
+  }
+  return dup
+}
+
+/** An EXACT-coordinate clue: it pins ONE axis precisely — a fixed row/column, or an exact
+ *  cell-distance offset from someone. TWO of them together reveal the exact cell, which the
+ *  user forbids ("one offset is great, but never two that give away the direct spot"). */
+function isExactAxisClue(clue: ClueJson): boolean {
+  const t = clue.type === 'not' ? clue.clue.type : clue.type
+  return t === 'offset' || t === 'inRow' || t === 'inCol'
+}
+
 /** How many suspects carry a hard relational/social clue. */
 function hardClueCount(level: LevelJson): number {
   let n = 0
@@ -527,6 +562,9 @@ function pruneClues(level: LevelJson, target: GenDifficulty | undefined): LevelJ
     const r = logicRating(lv)
     if (!r.solved || !r.unique) return false
     if (tierFor(lv, target, r.maxRank) !== tier) return false
+    // Shedding an ANDed part must not collapse a clue onto another suspect's clue — the
+    // user forbids two identical hints (the dedup is enforced in construction; keep it here).
+    if (duplicateClueCount(lv.suspects.flatMap((s) => s.clues ?? [])) > 0) return false
     return tier !== 'easy' || r.maxRank <= 2
   }
 
@@ -1886,6 +1924,35 @@ function constructEasyClues(
     }
   }
 
+  // No two suspects may show the IDENTICAL clue (the "he/she" subject is not part of the
+  // clue). Switch an offender to another easy clue that keeps the short chain solvable and
+  // within the cap, lowering the duplicate count each round; give up on this layout if a
+  // duplicate can't be cleared.
+  const chosenList = (): ClueJson[] => suspectIds.map((id) => chosen.get(id)!)
+  for (let guard = 0; guard < 200; guard++) {
+    const before = duplicateClueCount(chosenList())
+    if (before === 0) break
+    let fixed = false
+    for (const id of rng.shuffle([...suspectIds])) {
+      const cur = chosen.get(id)!
+      for (const e of cand.get(id)!) {
+        if (e.json === cur) continue
+        chosen.set(id, e.json)
+        if (
+          duplicateClueCount(chosenList()) < before &&
+          [...famCounts().entries()].every(([fam, n]) => n <= familyCap(fam)) &&
+          solvableChain()
+        ) {
+          fixed = true
+          break
+        }
+        chosen.set(id, cur)
+      }
+      if (fixed) break
+    }
+    if (!fixed) return null
+  }
+
   // EASY: the victim must be placed LAST — ALL suspects pin from their own clues first,
   // then the victim is simply the last free cell. The user dislikes the mid-solve "this
   // lone cell can only be the victim ⇒ now the rest follows" (fine at medium/hard, not
@@ -2002,10 +2069,14 @@ function constructLogicClues(
   const rate = () =>
     logicRating({ ...base, suspects: base.suspects.map((s) => ({ ...s, clues: [clueOf(s.id)] })) })
 
-  const hasCoordPair = (id: PersonId): boolean => {
-    const types = used.get(id)!.map((i) => list(id)[i].type)
-    return types.includes('inRow') && types.includes('inCol')
-  }
+  // A suspect must carry at most ONE exact-coordinate clue (fixed row/column OR an exact
+  // offset from someone): two of them pin the exact cell, which the user forbids
+  // ("don't give the direct spot away"). Generalises the old inRow+inCol ban to offsets.
+  const tooManyExactPins = (id: PersonId): boolean =>
+    used.get(id)!.filter((i) => isExactAxisClue(list(id)[i])).length >= 2
+  // No two suspects may show the IDENTICAL clue (same predicate, regardless of who it is
+  // about) — the user dislikes e.g. two "was not beside a locker".
+  const noDuplicateClues = (): boolean => duplicateClueCount(suspectIds.map(clueOf)) === 0
   const lineSuspects = (): number =>
     suspectIds.filter((id) => used.get(id)!.some((i) => isLine(list(id)[i]))).length
   const hasHardClue = (id: PersonId): boolean =>
@@ -2034,7 +2105,7 @@ function constructLogicClues(
       for (let i = 0; i < list(id).length; i++) {
         if (u.includes(i)) continue
         u.push(i)
-        if (hasCoordPair(id) || lineSuspects() > maxLineClues) {
+        if (tooManyExactPins(id) || lineSuspects() > maxLineClues || !noDuplicateClues()) {
           u.pop()
           continue
         }
@@ -2083,7 +2154,15 @@ function constructLogicClues(
         .sort((a, b) => breadthAt(id, b.i) - breadthAt(id, a.i))
       for (const { i } of hardIdx) {
         u[0] = i
-        if (rate().solved && !hasCoordPair(id) && lineSuspects() <= maxLineClues && capOk()) break
+        if (
+          rate().solved &&
+          !tooManyExactPins(id) &&
+          lineSuspects() <= maxLineClues &&
+          capOk() &&
+          noDuplicateClues()
+        ) {
+          break
+        }
         u[0] = current
       }
     }
@@ -2107,9 +2186,10 @@ function constructLogicClues(
         if (
           st.solved &&
           st.maxRank <= target &&
-          !hasCoordPair(id) &&
+          !tooManyExactPins(id) &&
           lineSuspects() <= maxLineClues &&
-          capOk()
+          capOk() &&
+          noDuplicateClues()
         ) {
           break
         }
@@ -2136,9 +2216,43 @@ function constructLogicClues(
         if (
           st.solved &&
           st.maxRank <= target &&
-          !hasCoordPair(id) &&
+          !tooManyExactPins(id) &&
           lineSuspects() <= maxLineClues &&
           capOk()
+        ) {
+          fixed = true
+          break
+        }
+        u[0] = current
+      }
+      if (fixed) break
+    }
+    if (!fixed) return null
+  }
+
+  // 4) DEDUPE repair: remove any duplicate clue (two suspects showing the identical hint).
+  //    Switch one of the clashing single-clue suspects to a different clue that keeps the
+  //    level solvable and within every cap, lowering the duplicate count each round; give up
+  //    on the board if the duplicate can't be cleared.
+  for (let guard = 0; guard < 300; guard++) {
+    const before = duplicateClueCount(suspectIds.map(clueOf))
+    if (before === 0) break
+    let fixed = false
+    for (const id of rng.shuffle([...suspectIds])) {
+      const u = used.get(id)!
+      if (u.length !== 1) continue
+      const current = u[0]
+      for (let i = 0; i < list(id).length; i++) {
+        if (i === current) continue
+        u[0] = i
+        const st = rate()
+        if (
+          st.solved &&
+          st.maxRank <= target &&
+          !tooManyExactPins(id) &&
+          lineSuspects() <= maxLineClues &&
+          capOk() &&
+          duplicateClueCount(suspectIds.map(clueOf)) < before
         ) {
           fixed = true
           break

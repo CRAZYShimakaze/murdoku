@@ -1418,6 +1418,14 @@ button {
   padding: 0.05rem 0.45rem;
   line-height: 1.5;
 }
+.mk-attr--icon {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.34rem;
+}
+.mk-attr--icon svg {
+  display: block;
+}
 .mk-clue--victim .mk-attr {
   /* lighter chip so the ♂/♀ reads on the dark victim card */
   background: rgba(236, 230, 218, 0.12);

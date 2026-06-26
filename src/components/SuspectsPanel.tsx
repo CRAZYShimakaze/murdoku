@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Avatar from './Avatar.tsx'
+import AttrIcons from './AttrIcons.tsx'
 import AppearanceInfo from './AppearanceInfo.tsx'
 import InfoTip from './InfoTip.tsx'
 import ClueBuilder, { type ClueCtx } from './ClueBuilder.tsx'
@@ -172,9 +173,7 @@ export default function SuspectsPanel({
             <span className="mk-clue__main">
               <span className="mk-clue__name">
                 {s.name || s.id}
-                <span className="mk-attr" title={t(s.gender === 'm' ? 'info.male' : 'info.female')}>
-                  {s.gender === 'm' ? '♂' : '♀'}
-                </span>
+                <AttrIcons attrs={suspectAttributes(s)} />
               </span>
               <span className="mk-clue__text">
                 {hasClues && built ? (

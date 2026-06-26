@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
 import { useSettings } from '../game/settings.ts'
-import { ATTR_CHIPS } from '../game/glyphs.ts'
+import AttrIcons from './AttrIcons.tsx'
 import Avatar from './Avatar.tsx'
 import AppearanceInfo from './AppearanceInfo.tsx'
 import ClueText from './ClueText.tsx'
@@ -47,15 +47,6 @@ interface Props {
   hintPlain?: boolean
   /** Bumped each time the player requests a hint — scrolls it into view. */
   hintRequestId?: number
-}
-
-function attrChips(attributes: Readonly<Record<string, unknown>>): string[] {
-  const chips: string[] = []
-  for (const [key, value] of Object.entries(attributes)) {
-    const chip = ATTR_CHIPS[key]?.(value)
-    if (chip) chips.push(chip.trim())
-  }
-  return chips
 }
 
 export default function CluePanel({
@@ -186,11 +177,7 @@ export default function CluePanel({
               <span className="mk-clue__name">
                 {s.name}
                 {placed && <span className="mk-clue__check">✓</span>}
-                {attrChips(s.attributes).map((chip, i) => (
-                  <span key={i} className="mk-attr">
-                    {chip}
-                  </span>
-                ))}
+                <AttrIcons attrs={s.attributes} />
               </span>
               <span className="mk-clue__text">
                 <ClueText renderer={renderer} clues={s.clues} subjectId={s.id} />
