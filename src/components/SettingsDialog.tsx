@@ -109,6 +109,12 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
           checked={settings.genderColors}
           onChange={(genderColors) => updateSettings({ genderColors })}
         />
+        <ToggleRow
+          label={t('settings.objectBadges')}
+          sub={t('settings.objectBadgesSub')}
+          checked={settings.objectBadges}
+          onChange={(objectBadges) => updateSettings({ objectBadges })}
+        />
 
         <button type="button" className="mk-btn mk-settings__close" onClick={onClose}>
           {t('settings.close')}

@@ -389,6 +389,8 @@
     "timerSub": "The investigation time ticks along in the header.",
     "genderColors": "Files by gender",
     "genderColorsSub": "Tints suspect cards softly rosé (♀) and blue (♂).",
+    "objectBadges": "Object tags",
+    "objectBadgesSub": "Small corner icons show what a placed figure stands/sits on.",
     "close": "Close the file"
   },
   "difficulty": {

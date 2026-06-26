@@ -389,6 +389,8 @@
     "timerSub": "Die Ermittlungszeit läuft oben sichtbar mit.",
     "genderColors": "Akten nach Geschlecht",
     "genderColorsSub": "Karten der Verdächtigen dezent in Rosé (♀) und Blau (♂).",
+    "objectBadges": "Objekt-Marken",
+    "objectBadgesSub": "Kleine Ecksymbole zeigen, worauf eine gesetzte Figur steht/sitzt.",
     "close": "Akte schließen"
   },
   "difficulty": {

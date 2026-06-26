@@ -19,12 +19,15 @@ export interface AppSettings {
   helpMode: HelpMode
   /** Tint suspect cards (and the victim's name) by gender. */
   genderColors: boolean
+  /** Show the small corner badges revealing the object a placed figure stands/sits on. */
+  objectBadges: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   timer: true,
   helpMode: 'full',
   genderColors: true,
+  objectBadges: true,
 }
 
 let current: AppSettings = loadAppSettings(DEFAULT_SETTINGS)

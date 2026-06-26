@@ -9,6 +9,7 @@ import type { HelpMarks } from '../game/helpMarks.ts'
 import { onArtReady } from '../game/objectArt.ts'
 import { avatarDataUri } from '../game/avatar.ts'
 import { suspectColor } from '../game/palette.ts'
+import { useSettings } from '../game/settings.ts'
 import type { PlayState } from '../game/useGameSession.ts'
 
 /** Hold duration to commit a person (ms). Tune here. */
@@ -58,6 +59,7 @@ interface Layout {
 export default function BoardCanvas(props: Props) {
   const { puzzle } = props
   const { t } = useTranslation()
+  const { objectBadges } = useSettings()
   const W = puzzle.board.width
   const H = puzzle.board.height
 
@@ -81,6 +83,9 @@ export default function BoardCanvas(props: Props) {
   propsRef.current = props
   const layoutRef = useRef<Layout | null>(layout)
   layoutRef.current = layout
+  // Mirrored so the rAF/async redraws also see the current setting value.
+  const badgesRef = useRef(objectBadges)
+  badgesRef.current = objectBadges
 
   const pressRef = useRef<{
     cell: Cell
@@ -123,6 +128,7 @@ export default function BoardCanvas(props: Props) {
       highlightAlpha: p.highlightAlpha,
       highlightAlpha2: p.highlightAlpha2,
       helpMarks: p.helpMarks,
+      objectBadges: badgesRef.current,
       press,
       reveal: p.reveal,
       avatars: avatarsRef.current,
@@ -175,7 +181,7 @@ export default function BoardCanvas(props: Props) {
     cv.style.height = `${layout.h}px`
     redraw(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout, props.state, props.selectedSuspect, props.highlight, props.highlightAlpha, props.helpMarks, props.reveal])
+  }, [layout, props.state, props.selectedSuspect, props.highlight, props.highlightAlpha, props.helpMarks, props.reveal, objectBadges])
 
   useEffect(() => () => cancelPress(), [])
 

@@ -3630,6 +3630,27 @@ button {
   justify-self: center;
 }
 
+/* Mobile: the dialog grows with every toggle, so on narrow screens drop the helper
+   sub-texts (the labels read clearly on their own) and tighten the spacing. This keeps
+   the whole list visible with little or no scrolling instead of a long scroll. */
+@media (max-width: 640px) {
+  .mk-settings {
+    gap: 0.5rem;
+  }
+  .mk-settings__row {
+    padding: 0.5rem 0.65rem;
+  }
+  .mk-settings__sub {
+    display: none;
+  }
+  .mk-settings__modes {
+    gap: 0.35rem;
+  }
+  .mk-settings__mode {
+    padding: 0.5rem 0.65rem;
+  }
+}
+
 /* Gender-tinted dossier cards (settings option): soft pastel rose / blue. */
 .mk-clue[data-gender='f'] {
   background: linear-gradient(180deg, #f0dade, #e6c6cd);

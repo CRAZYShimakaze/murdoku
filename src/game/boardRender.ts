@@ -79,6 +79,8 @@ export interface BoardView {
   highlightAlpha2?: number
   /** Reduced-help reference marks (object rings, room outlines, window/door glow). */
   helpMarks?: HelpMarks | null
+  /** Draw the corner badges revealing what a placed figure stands/sits on (a setting). */
+  objectBadges?: boolean
   /** Thumbnail mode: rooms + walls + object dots only. */
   preview?: boolean
 }
@@ -377,63 +379,6 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
 
   if (preview) return
 
-  // --- room name plates: a small white rounded pill sitting ON the room's
-  //     bottom wall, placed in the widest window-free gap so it covers nothing.
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  for (const [id, run] of roomBottomRuns(puzzle)) {
-    const room = board.rooms.get(id)
-    if (!room || run.c1 < run.c0) continue
-    // A column is blocked if its bottom wall carries a window (either side).
-    const windowed = (col: number): boolean =>
-      board.windowSides(board.idx(run.row, col)).includes('S') ||
-      (run.row + 1 < H && board.windowSides(board.idx(run.row + 1, col)).includes('N'))
-    // widest window-free sub-run within [c0, c1]
-    let bc0 = run.c0
-    let bc1 = run.c0 - 1
-    let start = -1
-    const close = (end: number): void => {
-      if (start >= 0 && end - start > bc1 - bc0) {
-        bc0 = start
-        bc1 = end
-      }
-    }
-    for (let col = run.c0; col <= run.c1; col++) {
-      if (!windowed(col)) {
-        if (start < 0) start = col
-      } else {
-        close(col - 1)
-        start = -1
-      }
-    }
-    close(run.c1)
-    if (bc1 < bc0) continue // no window-free spot → skip rather than cover a window
-
-    const label = view.roomName(room.nameKey).toUpperCase()
-    const maxW = (bc1 - bc0 + 1) * S - S * 0.12
-    // Fit the font to the gap (text width scales ~linearly, so one rescale lands it).
-    let font = S * 0.155
-    const required = (f: number): number => {
-      ctx.font = `700 ${f}px 'Spline Sans', system-ui, sans-serif`
-      return ctx.measureText(label).width + 2 * f * 0.5
-    }
-    if (required(font) > maxW) font = Math.max(6, (font * maxW) / required(font))
-    ctx.font = `700 ${font}px 'Spline Sans', system-ui, sans-serif`
-    const pillW = Math.min(maxW, ctx.measureText(label).width + 2 * font * 0.5)
-    const pillH = font * 1.55
-    const cx = ox + ((bc0 + bc1 + 1) / 2) * S
-    const pillY = oy + (run.row + 1) * S - pillH // bottom edge sits on the wall
-    ctx.fillStyle = '#fff'
-    ctx.strokeStyle = '#1c1822'
-    ctx.lineWidth = Math.max(1.4, S * 0.022)
-    ctx.beginPath()
-    ctx.roundRect(cx - pillW / 2, pillY, pillW, pillH, pillH / 2)
-    ctx.fill()
-    ctx.stroke()
-    ctx.fillStyle = '#1c1822'
-    ctx.fillText(label, cx, pillY + pillH / 2)
-  }
-
   // --- highlight rings on candidate cells (secondary under primary) ------
   // `outline` adds a THIN white line hugging the INSIDE of the coloured ring so the
   // candidate rectangles stay legible on dark surfaces (e.g. the lake water). On a
@@ -572,6 +517,72 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     if (m.redDoors) glowWalls(doorSides, S * 0.2, S * 0.13, REF_RED.ring)
   }
 
+  // --- hover: outline the whole room (blue, inside the walls). Drawn HERE — BEFORE the
+  //     crosses, pencil marks and placed figures — so those all sit ON TOP of it and the
+  //     soft enclosure never cuts across an X or a figure near the room edge. -----------
+  if (view.hover != null && !board.isVoid(view.hover)) {
+    traceRoom(board.roomIdOf(view.hover), ROOM_HL, S * 0.11, Math.max(1.5, S * 0.04))
+  }
+
+  // --- room name plates: a small white rounded pill sitting ON the room's bottom wall,
+  //     placed in the widest window-free gap so it covers nothing. Drawn AFTER the hover
+  //     outline so the blue room enclosure never runs across a name pill (still before the
+  //     crosses/figures, which may sit on top of a pill as before). ----------------------
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  for (const [id, run] of roomBottomRuns(puzzle)) {
+    const room = board.rooms.get(id)
+    if (!room || run.c1 < run.c0) continue
+    // A column is blocked if its bottom wall carries a window (either side).
+    const windowed = (col: number): boolean =>
+      board.windowSides(board.idx(run.row, col)).includes('S') ||
+      (run.row + 1 < H && board.windowSides(board.idx(run.row + 1, col)).includes('N'))
+    // widest window-free sub-run within [c0, c1]
+    let bc0 = run.c0
+    let bc1 = run.c0 - 1
+    let start = -1
+    const close = (end: number): void => {
+      if (start >= 0 && end - start > bc1 - bc0) {
+        bc0 = start
+        bc1 = end
+      }
+    }
+    for (let col = run.c0; col <= run.c1; col++) {
+      if (!windowed(col)) {
+        if (start < 0) start = col
+      } else {
+        close(col - 1)
+        start = -1
+      }
+    }
+    close(run.c1)
+    if (bc1 < bc0) continue // no window-free spot → skip rather than cover a window
+
+    const label = view.roomName(room.nameKey).toUpperCase()
+    const maxW = (bc1 - bc0 + 1) * S - S * 0.12
+    // Fit the font to the gap (text width scales ~linearly, so one rescale lands it).
+    let font = S * 0.155
+    const required = (f: number): number => {
+      ctx.font = `700 ${f}px 'Spline Sans', system-ui, sans-serif`
+      return ctx.measureText(label).width + 2 * f * 0.5
+    }
+    if (required(font) > maxW) font = Math.max(6, (font * maxW) / required(font))
+    ctx.font = `700 ${font}px 'Spline Sans', system-ui, sans-serif`
+    const pillW = Math.min(maxW, ctx.measureText(label).width + 2 * font * 0.5)
+    const pillH = font * 1.55
+    const cx = ox + ((bc0 + bc1 + 1) / 2) * S
+    const pillY = oy + (run.row + 1) * S - pillH // bottom edge sits on the wall
+    ctx.fillStyle = '#fff'
+    ctx.strokeStyle = '#1c1822'
+    ctx.lineWidth = Math.max(1.4, S * 0.022)
+    ctx.beginPath()
+    ctx.roundRect(cx - pillW / 2, pillY, pillW, pillH, pillH / 2)
+    ctx.fill()
+    ctx.stroke()
+    ctx.fillStyle = '#1c1822'
+    ctx.fillText(label, cx, pillY + pillH / 2)
+  }
+
   // --- crosses (dark X drawn over a wider white halo so it stays legible on
   //     dark rooms — stroke the white rim first, then the dark X on top) -----
   ctx.lineCap = 'round'
@@ -652,14 +663,26 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     }
   }
 
-  // --- hover: outline the whole room (blue, inside the walls) -----------
-  if (view.hover != null && !board.isVoid(view.hover)) {
-    traceRoom(board.roomIdOf(view.hover), ROOM_HL, S * 0.11, Math.max(1.5, S * 0.04))
+  // --- object badges on each placed token: small icons in the TOP corners so you can
+  //     still tell what they stand/sit on (chair/bed/car, carpet/street). The hover tooltip
+  //     said this; the badges make it permanent — crucial on touch. Drawn AFTER every token
+  //     so they sit on top of the avatar that covers the object. Bottom-right stays free for
+  //     the avatar's own a/b/c letter. A tile carries at most two layers, so at most two
+  //     badges: the occupiable piece they're ON (top → top-right), the floor (ground →
+  //     top-left). Bare floor has neither → no badge. Can be turned off in the settings.
+  if (view.objectBadges) for (const [, c] of view.placements) {
+    const tile = board.tileAt(c)
+    if (!tile.top && !tile.ground) continue
+    const { x, y } = xy(c)
+    const b = S * 0.24
+    const pad = S * 0.05
+    if (tile.top) drawObjectBadge(ctx, tile.top.type, x + S - pad - b, y + pad, b)
+    if (tile.ground) drawObjectBadge(ctx, tile.ground.type, x + pad, y + pad, b)
   }
 
-  // --- candidate-hint rings (blue rounded rectangles) — drawn AFTER the room hover
-  //     outline so they always sit ON TOP of it. The selection ring sits a touch further
-  //     in, so where a hint cell IS also a candidate both rings stay visible. ----------
+  // --- candidate-hint rings (blue rounded rectangles) — drawn last (above the figures and
+  //     the room hover outline) so they always stay visible. The selection ring sits a touch
+  //     further in, so where a hint cell IS also a candidate both rings stay visible. ----
   if (view.highlight2) drawRings(view.highlight2, view.highlightColor2?.ring ?? BOARD.highlightRing, S * 0.13, true, view.highlightAlpha2 ?? 1)
   if (view.highlight) drawRings(view.highlight, view.highlightColor?.ring ?? BOARD.highlightRing, S * 0.07, true, view.highlightAlpha ?? 1)
 
@@ -782,6 +805,39 @@ export function drawObjectIcon(
   ctx.textBaseline = 'middle'
   ctx.font = `${S * (preview ? 0.72 : 0.66)}px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif`
   ctx.fillText(glyph, x + S / 2, y + S * 0.56)
+}
+
+/**
+ * A small white "evidence chip" showing one object's icon, drawn over a placed token's
+ * corner so the surface under the figure stays readable on touch. Reuses drawObjectIcon
+ * (preview mode → clean icon, no big blocked card) clipped into a rounded card, so the
+ * chip matches the board/legend art exactly. `S` here is the chip's box size.
+ */
+function drawObjectBadge(ctx: CanvasRenderingContext2D, type: string, x: number, y: number, S: number): void {
+  const r = S * 0.22
+  // white card with a soft shadow so it separates from the avatar underneath
+  ctx.save()
+  ctx.beginPath()
+  ctx.roundRect(x, y, S, S, r)
+  ctx.shadowColor = 'rgba(0,0,0,0.38)'
+  ctx.shadowBlur = S * 0.2
+  ctx.shadowOffsetY = S * 0.05
+  ctx.fillStyle = '#fff'
+  ctx.fill()
+  ctx.restore()
+  // icon clipped to the rounded card (carpet/street fill edge-to-edge, glyphs sit inside)
+  ctx.save()
+  ctx.beginPath()
+  ctx.roundRect(x, y, S, S, r)
+  ctx.clip()
+  drawObjectIcon(ctx, type, x, y, S, true, true)
+  ctx.restore()
+  // crisp dark rim
+  ctx.beginPath()
+  ctx.roundRect(x, y, S, S, r)
+  ctx.strokeStyle = 'rgba(28,24,34,0.85)'
+  ctx.lineWidth = Math.max(1, S * 0.05)
+  ctx.stroke()
 }
 
 /** The rectangle a wall fixture (window/door) of thickness `t`, inset `inset`
