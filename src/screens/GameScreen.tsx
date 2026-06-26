@@ -598,6 +598,9 @@ export default function GameScreen({
         }
         onSubmit={submit}
         allPlaced={session.allPlaced}
+        // Level already solved this session and now being reviewed → lock the editing tools
+        // (X / reset / undo / hint); replaying happens via the verdict's Restart button.
+        locked={!tut.active && !!result?.win}
         legend={<Legend puzzle={puzzle} />}
       />
 

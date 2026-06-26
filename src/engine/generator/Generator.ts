@@ -1640,12 +1640,19 @@ function candidatesFor(
   // use them for elimination, and the broad-first construction starts suspects on
   // them. All of these round-trip into the editor. ---
   const allObjTypes = new Set<string>()
+  const standableTypes = new Set<string>() // types one can actually stand ON (occupiable)
   for (let c = 0; c < board.width * board.height; c++) {
-    for (const obj of board.tileAt(c).objects()) allObjTypes.add(obj.type)
+    for (const obj of board.tileAt(c).objects()) {
+      allObjTypes.add(obj.type)
+      if (obj.occupiable) standableTypes.add(obj.type)
+    }
   }
   for (const t of allObjTypes) {
     out.push({ type: 'not', clue: { type: 'nearObject', object: t } })
-    out.push({ type: 'not', clue: { type: 'onObject', object: t } })
+    // "NOT on X" is only meaningful for an object one can stand on. A non-occupiable
+    // object (e.g. a checkout / shelf) is never occupied, so "not on it" is true on EVERY
+    // cell — a vacuous clue. Mirror the positive `onObject` guard (occupiable only).
+    if (standableTypes.has(t)) out.push({ type: 'not', clue: { type: 'onObject', object: t } })
   }
   for (const r of puzzle.board.rooms.keys()) {
     if (r !== room) out.push({ type: 'not', clue: { type: 'inRoom', room: r } })

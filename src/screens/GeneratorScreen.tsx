@@ -25,7 +25,8 @@ const GEN_DIFFS: GenDifficulty[] = ['easy', 'medium', 'hard']
 /** Short codes for the faux case reference shown on the dossier (pure flavour). */
 const DIFF_CODE: Record<GenDifficulty, string> = { easy: 'E', medium: 'M', hard: 'H' }
 const MIN = 4
-const MAX = 16
+// Cap generation at 12×12 — anything larger currently takes too long to generate.
+const MAX = 12
 
 /** Form defaults for a first-time visitor (windows on, doors off, no trash bin). */
 const DEFAULT_SETTINGS = {
@@ -47,7 +48,8 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
   const { t } = useTranslation()
   // Restore the last form selection (size, difficulty, theme, objects, openings).
   const [saved] = useState(() => loadGenSettings(DEFAULT_SETTINGS))
-  const [size, setSize] = useState(saved.size)
+  // Clamp a previously-saved larger size (e.g. 16) down to the new 12×12 cap.
+  const [size, setSize] = useState(Math.min(saved.size, MAX))
   const [difficulty, setDifficulty] = useState<GenDifficulty>(saved.difficulty as GenDifficulty)
   const [objects, setObjects] = useState<Set<string>>(() => new Set(saved.objects))
   const [windows, setWindows] = useState(saved.windows)

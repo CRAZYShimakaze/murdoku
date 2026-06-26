@@ -10,6 +10,9 @@ interface Props {
   onHint: () => void
   onSubmit: () => void
   allPlaced: boolean
+  /** Level already finished and being reviewed: the editing tools (X, reset, undo, hint)
+   *  are disabled — there's nothing left to solve. */
+  locked?: boolean
   legend?: React.ReactNode
 }
 
@@ -19,10 +22,12 @@ const HOLD_MS = 700
 function HoldButton({
   onComplete,
   className,
+  disabled,
   children,
 }: {
   onComplete: () => void
   className: string
+  disabled?: boolean
   children: React.ReactNode
 }) {
   const [progress, setProgress] = useState(0)
@@ -48,6 +53,7 @@ function HoldButton({
     }
   }
   const begin = () => {
+    if (disabled) return
     start.current = 0
     raf.current = requestAnimationFrame(tick)
   }
@@ -56,6 +62,7 @@ function HoldButton({
     <button
       type="button"
       className={className}
+      disabled={disabled}
       onPointerDown={begin}
       onPointerUp={stop}
       onPointerLeave={stop}
@@ -78,6 +85,7 @@ export default function Toolbar({
   onHint,
   onSubmit,
   allPlaced,
+  locked = false,
   legend,
 }: Props) {
   const { t } = useTranslation()
@@ -86,24 +94,30 @@ export default function Toolbar({
     <aside className="mk-tools">
       <span className="mk-tools__label">{t('game.tools')}</span>
 
-      <button type="button" className="mk-tool mk-tool--x" data-active={xTool} onClick={onToggleX}>
+      <button
+        type="button"
+        className="mk-tool mk-tool--x"
+        data-active={xTool}
+        onClick={onToggleX}
+        disabled={locked}
+      >
         <span className="mk-tool__icon">✕</span>
         <span>{t('tool.x')}</span>
         <span className="mk-tool__sub">{t('tool.xSub')}</span>
       </button>
 
-      <HoldButton className="mk-tool" onComplete={onReset}>
+      <HoldButton className="mk-tool" onComplete={onReset} disabled={locked}>
         <span className="mk-tool__icon">↺</span>
         <span>{t('tool.reset')}</span>
         <span className="mk-tool__sub">{t('tool.eraseSub')}</span>
       </HoldButton>
 
-      <button type="button" className="mk-tool" onClick={onUndo} disabled={!canUndo}>
+      <button type="button" className="mk-tool" onClick={onUndo} disabled={locked || !canUndo}>
         <span className="mk-tool__icon">↶</span>
         <span>{t('tool.undo')}</span>
       </button>
 
-      <button type="button" className="mk-tool mk-tool--hint" onClick={onHint}>
+      <button type="button" className="mk-tool mk-tool--hint" onClick={onHint} disabled={locked}>
         <span className="mk-tool__icon">💡</span>
         <span>{t('tool.hint')}</span>
       </button>
