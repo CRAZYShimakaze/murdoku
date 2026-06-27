@@ -54,11 +54,14 @@ export default function StartScreen({
   onGenerate,
   onTutorial,
   onEditor,
+  onQuit,
 }: {
   onPlay: () => void
   onGenerate: () => void
   onTutorial: () => void
   onEditor: () => void
+  /** Native app only: quit Murdoku (no system back bar in immersive mode). */
+  onQuit?: () => void
 }) {
   const { t } = useTranslation()
 
@@ -132,6 +135,11 @@ export default function StartScreen({
           <div className="mk-start__lang">
             <LanguageToggle />
           </div>
+          {onQuit && (
+            <button type="button" className="mk-start__quit" onClick={onQuit}>
+              {t('start.quit')}
+            </button>
+          )}
         </div>
       </main>
       <p className="mk-start__credit">{t('start.credit')}</p>

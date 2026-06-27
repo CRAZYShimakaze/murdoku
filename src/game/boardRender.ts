@@ -563,11 +563,11 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     // Fit the font to the gap (text width scales ~linearly, so one rescale lands it).
     let font = S * 0.155
     const required = (f: number): number => {
-      ctx.font = `700 ${f}px 'Spline Sans', system-ui, sans-serif`
+      ctx.font = `700 ${f}px 'Spline Sans Variable', system-ui, sans-serif`
       return ctx.measureText(label).width + 2 * f * 0.5
     }
     if (required(font) > maxW) font = Math.max(6, (font * maxW) / required(font))
-    ctx.font = `700 ${font}px 'Spline Sans', system-ui, sans-serif`
+    ctx.font = `700 ${font}px 'Spline Sans Variable', system-ui, sans-serif`
     const pillW = Math.min(maxW, ctx.measureText(label).width + 2 * font * 0.5)
     const pillH = font * 1.55
     const cx = ox + ((bc0 + bc1 + 1) / 2) * S
@@ -630,7 +630,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       // Hovered suspect's letter: same base size as always, with a noticeable size pulse.
       const emph = view.emphasizeMarks === id
       const scale = emph ? 1 + 0.35 * pulse : 1
-      ctx.font = `${emph ? 800 : 700} ${S * 0.27 * scale}px 'Spline Sans', sans-serif`
+      ctx.font = `${emph ? 800 : 700} ${S * 0.27 * scale}px 'Spline Sans Variable', sans-serif`
       ctx.lineWidth = Math.max(1.2, S * 0.04 * scale)
       ctx.fillStyle = suspectColor(view.suspectIndex.get(id) ?? 0)
       const label = markLabel(id)
@@ -965,6 +965,6 @@ function drawToken(
   ctx.fillStyle = '#fff'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.font = `800 ${S * 0.42}px 'Fraunces', Georgia, serif`
+  ctx.font = `800 ${S * 0.42}px 'Fraunces Variable', Georgia, serif`
   ctx.fillText(letter, cx, cy + S * 0.02)
 }

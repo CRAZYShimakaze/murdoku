@@ -1,4 +1,7 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
+import { App as CapApp } from '@capacitor/app'
+import { consumeBack } from './game/backHandler.ts'
 import StartScreen from './screens/StartScreen.tsx'
 import LevelSelect from './screens/LevelSelect.tsx'
 import GameScreen from './screens/GameScreen.tsx'
@@ -38,6 +41,55 @@ function initialScreen(): Screen {
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>(initialScreen)
+  // Latest screen for the back handler (registered once, must not go stale).
+  const screenRef = useRef(screen)
+  screenRef.current = screen
+
+  // One source of "go back" for both the on-screen ← buttons and Android's
+  // hardware/gesture back: each screen returns to its logical parent; the root
+  // (start) quits the native app. Open dialogs are handled first via the
+  // back-interceptor stack (see the listener below), so this only navigates
+  // between screens.
+  const back = useCallback(() => {
+    const cur = screenRef.current
+    if (cur.name === 'game') {
+      setScreen(
+        cur.fromEditor
+          ? { name: 'editor' }
+          : cur.generated
+            ? { name: 'generate' }
+            : { name: 'select' },
+      )
+    } else if (cur.name === 'start') {
+      if (Capacitor.isNativePlatform()) void CapApp.exitApp()
+    } else {
+      setScreen({ name: 'start' })
+    }
+  }, [])
+
+  // Android back button / gesture: close the top open dialog if any, else go up.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    const handle = CapApp.addListener('backButton', () => {
+      if (!consumeBack()) back()
+    })
+    return () => {
+      void handle.then((h) => h.remove())
+    }
+  }, [back])
+
+  // Desktop: Escape mirrors the back button — close the top open dialog, else go up.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (!consumeBack()) back()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [back])
+
+  // Only the native app offers an in-app quit (no system back bar in immersive mode).
+  const onQuit = Capacitor.isNativePlatform() ? () => void CapApp.exitApp() : undefined
 
   switch (screen.name) {
     case 'start':
@@ -47,30 +99,28 @@ export default function App() {
           onGenerate={() => setScreen({ name: 'generate' })}
           onTutorial={() => setScreen({ name: 'tutorial' })}
           onEditor={() => setScreen({ name: 'editor' })}
+          onQuit={onQuit}
         />
       )
     case 'tutorial':
-      return <TutorialScreen onExit={() => setScreen({ name: 'start' })} />
+      return <TutorialScreen onExit={back} />
     case 'editor':
       return (
         <EditorScreen
           initialLevel={screen.initial?.json}
-          onBack={() => setScreen({ name: 'start' })}
+          onBack={back}
           onPlay={(level) => setScreen({ name: 'game', level, fromEditor: true })}
         />
       )
     case 'select':
       return (
-        <LevelSelect
-          onPick={(level) => setScreen({ name: 'game', level })}
-          onBack={() => setScreen({ name: 'start' })}
-        />
+        <LevelSelect onPick={(level) => setScreen({ name: 'game', level })} onBack={back} />
       )
     case 'generate':
       return (
         <GeneratorScreen
           onPlay={(level) => setScreen({ name: 'game', level, generated: true })}
-          onBack={() => setScreen({ name: 'start' })}
+          onBack={back}
         />
       )
     case 'game':
@@ -79,15 +129,7 @@ export default function App() {
           key={screen.level.id}
           meta={screen.level}
           generated={screen.generated}
-          onBack={() =>
-            setScreen(
-              screen.fromEditor
-                ? { name: 'editor' }
-                : screen.generated
-                  ? { name: 'generate' }
-                  : { name: 'select' },
-            )
-          }
+          onBack={back}
           onNew={() => setScreen({ name: 'generate' })}
           onEdit={() => setScreen({ name: 'editor', initial: screen.level })}
           onNext={

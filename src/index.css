@@ -39,9 +39,9 @@
   --diff-original: #b294d6;
 
   /* Type */
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
   --font-type: 'Special Elite', 'Courier New', monospace;
-  --font-ui: 'Spline Sans', system-ui, -apple-system, sans-serif;
+  --font-ui: 'Spline Sans Variable', system-ui, -apple-system, sans-serif;
 
   /* Geometry */
   --r-sm: 6px;
@@ -236,6 +236,34 @@ button {
   inset: 0;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+/* Native Android runs edge-to-edge (immersive full-screen). Reserve the device
+   safe area (camera cutout, rounded corners, gesture inset) so nothing sits under
+   it. Gated to .native (set in main.tsx) — the browser builds keep the full
+   viewport. box-sizing is border-box globally, so padding a 100dvh root keeps it
+   on-screen instead of overflowing. */
+.native .mk-screen,
+.native .mk-game {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+/* Fill the now-padded parent instead of the raw viewport (no overflow), and
+   reserve bottom space for the fixed quit button so the vertically centered
+   content (incl. the language toggle) never overlaps it. */
+.native .mk-start {
+  min-height: 100%;
+  padding-bottom: 5.5rem;
+}
+/* Android: drop the centered credit line entirely, and drop the quit button to
+   the very bottom (above the gesture safe-area). */
+.native .mk-start__credit {
+  display: none;
+}
+.native .mk-start__quit {
+  bottom: calc(1.2rem + env(safe-area-inset-bottom));
 }
 
 .mk-start {
@@ -509,6 +537,69 @@ button {
 .mk-start__lang {
   opacity: 0;
   animation: fade-up 0.8s ease 0.6s forwards;
+}
+/* Native-only "Beenden": a quiet case-file action. Speaks the dossier's typewriter
+   language (like the № stamps / credit line) and carries the crimson accent used
+   for the tiles' blood-red file-tab — so it reads as "close the file" without
+   competing with the brass "Fall öffnen" CTA above. Centered by the grid parent. */
+.mk-start__quit {
+  /* Pinned low, centered, and ABOVE the fixed credit line so it never covers it.
+     Centered via auto margins (not transform) so the hover/fade transform is free. */
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 3.4rem;
+  margin-inline: auto;
+  width: fit-content;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-type);
+  font-size: 0.92rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bone-dim);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  /* Taller, not wider (mehr Höhe, gleiche Breite): bigger vertical padding,
+     restrained horizontal padding. */
+  padding: 1.05rem 1.4rem;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.12s ease;
+  opacity: 0;
+  animation: fade-up 0.8s ease 0.7s forwards;
+}
+/* small crimson "close" mark — the same blood accent as the tile spine */
+.mk-start__quit::before {
+  content: '✕';
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--crimson);
+  opacity: 0.85;
+  transition: opacity 0.18s ease;
+}
+.mk-start__quit:hover {
+  color: var(--bone);
+  border-color: var(--crimson);
+  box-shadow: 0 6px 20px rgba(207, 70, 60, 0.18);
+  transform: translateY(-1px);
+}
+.mk-start__quit:hover::before {
+  opacity: 1;
+}
+.mk-start__quit:active {
+  transform: translateY(0);
+}
+.mk-start__quit:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
 }
 .mk-start__credit {
   position: fixed;

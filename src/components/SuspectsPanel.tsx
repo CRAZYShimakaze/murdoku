@@ -9,6 +9,7 @@ import ClueText from './ClueText.tsx'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
 import { useSettings } from '../game/settings.ts'
+import { useBackInterceptor } from '../game/backHandler.ts'
 import {
   HAIR_COLORS,
   TEMPLATE_TARGET_FIELDS,
@@ -72,6 +73,11 @@ export default function SuspectsPanel({
   // survives closing/reopening the dialog within an editing session.
   const [constraints, setConstraints] = useState<ClueGroup>(() => emptyClueGroup())
   const built = useEditorBuild(state)
+
+  // Android back / desktop ESC: close the suspect (or victim) editor and the
+  // constraints dialog first — so you return to the editor, not out of it.
+  useBackInterceptor(editing !== null, () => setEditing(null))
+  useBackInterceptor(showConstraints, () => setShowConstraints(false))
 
   // Builder context for the constraint templates: the board's rooms/objects, but with a
   // single synthetic "(Generator wählt)" person — the suspects don't exist yet, so a

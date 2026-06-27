@@ -13,3 +13,16 @@ coverage
 scripts/migrate-rooms.mjs
 
 levels/Debug.json
+
+.idea/
+
+# Capacitor / Android — natives Projekt (android/) wird versioniert,
+# aber Build-Artefakte und Signing-Geheimnisse NICHT.
+android/app/build/
+android/build/
+android/.gradle/
+android/app/src/main/assets/public/
+android/capacitor-cordova-android-plugins/
+android/key.properties
+*.keystore
+*.jks

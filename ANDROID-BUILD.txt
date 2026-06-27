@@ -1,0 +1,204 @@
+==============================================================
+ MURDOKU – Android / Play Store (Capacitor)   — Spickzettel
+==============================================================
+appId:   com.apogames.murdoku
+appName: Murdoku
+Web-Build:  dist/   (von `npm run build`)
+Engine:  React 19 + Vite + Capacitor (WebView, KEIN libGDX)
+
+Fonts (Fraunces / Spline Sans / Special Elite) sind self-hosted
+ueber Fontsource (src/main.tsx) -> laeuft offline, kein Google-CDN.
+
+==============================================================
+ DIE GOLDENE REGEL
+==============================================================
+Nach JEDER Code-Aenderung, bevor du auf dem Handy testest oder
+ein AAB baust:
+
+    npm run build
+    npx cap sync android
+
+"sync" kopiert dist/ ins native Android-Projekt. Vergisst du es,
+testest/baust du die ALTE Version.
+
+==============================================================
+ 1) EINMALIGE EINRICHTUNG  -- SCHON ERLEDIGT
+==============================================================
+Capacitor-Deps, capacitor.config.ts, .gitignore, der android/-Ordner
+UND die App-Icons sind bereits erzeugt. Nur falls du android/ mal
+loeschst, neu aufsetzen mit:
+
+    npm run build
+    npx cap add android        # legt den Ordner  android/  an
+    npx tsx scripts/make-icon.ts      # Icon-Quellen -> assets/*.png
+    npx capacitor-assets generate --android   # alle Dichten ins res/
+    npx cap sync android
+
+==============================================================
+ 2) AUFS HANDY DEPLOYEN  (das libGDX-"Run on device"-Aequivalent)
+==============================================================
+Handy vorbereiten:
+  - Entwickleroptionen an, USB-Debugging an
+  - per USB anstecken, am Handy die RSA-Abfrage erlauben
+  - pruefen:   adb devices     (muss dein Geraet listen)
+
+--- Variante A: IntelliJ, GANZES Projekt geladen (dein Fall) ---
+  Das Wurzelprojekt ist ein npm/Vite-Projekt; das nested android/
+  ist ein eigenes Gradle-Projekt. Es muss EINMALIG verlinkt werden:
+  1. Gradle-Tool-Fenster oeffnen (rechte Kante "Elefant" ODER
+     View > Tool Windows > Gradle).
+  2. Auf "+" (Link Gradle Project) klicken ->  android/build.gradle
+     auswaehlen -> OK.  IntelliJ importiert das Modul "app".
+     (Voraussetzung: Android-Plugin aktiv -> IntelliJ ULTIMATE oder
+      Android Studio. Community hat es nicht -> dann Variante A2.)
+  3. Handy per USB anstecken (USB-Debugging an, RSA erlauben).
+  4. Run-Config "app" + dein Handy im Geraete-Dropdown -> gruenes ▶.
+     -> baut Debug-APK, installiert + startet. Wie dein libGDX-:android.
+
+  A2 (ohne Android-Plugin, rein ueber Gradle wie libGDX-Tasks):
+     Gradle-Fenster -> Murdoku(android) > Tasks > install >
+     installDebug  doppelklicken. Installiert die App aufs Handy;
+     dann am Handy starten (oder: adb shell am start -n
+     com.apogames.murdoku/.MainActivity).
+
+  Gradle meckert "SDK location not found"?
+     -> android/local.properties (schon angelegt):
+        sdk.dir=C\:\\Users\\dirka\\AppData\\Local\\Android\\Sdk
+
+  JDK: Capacitor 7 baut gegen Java 21. JAVA_HOME zeigt auf Corretto 17
+  (libGDX) -> wuerde "invalid source release: 21" werfen. Daher ist in
+  android/gradle.properties gesetzt:
+        org.gradle.java.home=C:/Users/dirka/.jdks/jdk21.0.11_10
+  In IntelliJ fuer das ▶: Settings > Build Tools > Gradle >
+  Gradle JDK -> "corretto-21 (21.0.11)" waehlen.
+
+  Geraet wird nicht angezeigt? -> Terminal: adb devices pruefen,
+  USB-Debugging am Handy neu autorisieren (ggf. widerrufen+neu).
+
+--- Variante B: per CLI (ohne IDE, am einfachsten) ---
+    npm run build && npx cap sync android && npx cap run android
+  Listet die Geraete, baut Debug, installiert + startet automatisch.
+
+--- Variante C: Live-Reload (schnellstes UI-Iterieren) ---
+  PC + Handy im SELBEN WLAN, dann:
+    npx cap run android -l --external
+  Das Handy laedt direkt vom Vite-Dev-Server auf dem PC -> Aenderung
+  speichern = sofort am Handy sichtbar, kein Rebuild noetig.
+
+--- KABELLOS verbinden (WLAN-Debugging) statt USB ---
+  Voraussetzung: Handy + PC im selben WLAN; adb im PATH.
+  Sobald per adb verbunden, erscheint das Handy in IntelliJ im
+  Geraete-Dropdown wie ein USB-Geraet -> dann Variante A/B/C nutzen.
+
+  Android 11+ (ganz ohne Kabel):
+    Handy: Entwickleroptionen > Drahtloses Debugging AN >
+           "Geraet mit Pairing-Code koppeln" -> zeigt IP:Port + 6-Code
+    PC:    adb pair <IP>:<PAIRING-Port>     (fragt den 6-Code)
+           adb connect <IP>:<DEBUG-Port>    (Port der HAUPTseite!)
+           adb devices                       (muss <ip>:<port> listen)
+    HINWEIS: Pairing-Port != Verbindungs-Port.
+
+  Aelter / Fallback (einmal Kabel):
+    adb tcpip 5555
+    adb shell ip route            (Handy-IP herausfinden)
+    Kabel abziehen, dann:  adb connect <Handy-IP>:5555
+
+  Android Studio: Geraete-Dropdown > "Pair Devices Using Wi-Fi"
+    -> QR-Code scannen, kein Terminal noetig.
+
+  Verbindung nach Neustart/Toggle weg -> adb connect neu (Port kann
+  wechseln). Gast-/Firmen-WLAN mit Client-Isolation blockiert es.
+
+==============================================================
+ 3) AAB FUER DEN PLAY STORE BAUEN
+==============================================================
+--- Variante A: CLI mit eigenem Keystore (reproduzierbar) ---
+  Datei  android/key.properties  anlegen (NICHT committen, ist
+  schon in .gitignore):
+      storeFile=C:/pfad/zu/deinem.keystore
+      storePassword=****
+      keyAlias=deinAlias
+      keyPassword=****
+
+  In  android/app/build.gradle  ergaenzen (oben + im android{}-Block):
+      def kp = new Properties()
+      file("../key.properties").withInputStream { kp.load(it) }
+      android {
+        signingConfigs {
+          release {
+            storeFile file(kp['storeFile']); storePassword kp['storePassword']
+            keyAlias kp['keyAlias'];          keyPassword kp['keyPassword']
+          }
+        }
+        buildTypes { release { signingConfig signingConfigs.release } }
+      }
+
+  Dann:
+      npm run build && npx cap sync android
+      cd android
+      ./gradlew bundleRelease        (Windows: .\gradlew.bat bundleRelease)
+
+  Ergebnis:
+      android/app/build/outputs/bundle/release/app-release.aab
+
+--- Variante B: Android-Studio-Assistent ---
+      npx cap open android
+  dann:  Build > Generate Signed Bundle / APK > Android App Bundle
+         > Keystore waehlen > fertig.
+
+Vor JEDEM Store-Update in android/app/build.gradle hochzaehlen:
+      versionCode  (Integer, +1)
+      versionName  (z.B. "1.0.1")
+
+==============================================================
+ APP-ICON aendern
+==============================================================
+Das Icon = die Ermittlerin (weiblich, schwarze Zoepfe, schmale
+Brille) als Messing-Medaillon auf Ink-Verlauf. Quelle ist der echte
+Avatar-Generator (src/game/avatar.ts) -> in scripts/make-icon.ts.
+Aendern (z.B. Frisur/Brille/Farben) -> dort die `attrs` anpassen,
+dann:
+    npx tsx scripts/make-icon.ts            # erzeugt assets/*.png
+    npx capacitor-assets generate --android # alle Dichten ins res/
+    npx cap sync android
+Quell-PNGs: assets/icon-only.png (Voll), icon-foreground.png +
+icon-background.png (adaptiv). Play-Store-Listing braucht zusaetzlich
+ein 512x512 PNG (assets/icon-only.png hochskaliert/exportieren).
+
+==============================================================
+ NATIV-VERHALTEN (schon gesetzt)
+==============================================================
+  - VOLLBILD (immersiv): Status- UND Navigationsleiste sind versteckt,
+    damit nichts die UI (v.a. die unteren Buttons) verdeckt. Per Wisch
+    von der Kante kommen die Leisten transient zurueck, dann wieder weg.
+    -> android/.../MainActivity.java (WindowInsetsControllerCompat,
+       BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE).
+  - Bildschirm bleibt AN solange die App vorne ist:
+    FLAG_KEEP_SCREEN_ON in MainActivity.onCreate (kein Plugin).
+  - ZURUECK-Navigation (Android-Back/Geste, Desktop = ESC): geht IMMER
+    einen Schritt zurueck statt die App zu schliessen. Logik zentral in
+    src/App.tsx (back()) + src/game/backHandler.ts (Interceptor-Stack):
+    offener Dialog (z.B. Verdaechtigen-Editor) schliesst zuerst, sonst
+    Screen hoch (Spiel->Menu, Auswahl->Start). Auf Start beendet Back
+    die native App.
+  - BEENDEN-Button: nur in der nativen App sichtbar (Capacitor.
+    isNativePlatform), NICHT im Desktop-/Mobil-Browser. Start-Screen,
+    ruft @capacitor/app App.exitApp(). Im Noir-Stil gestaltet
+    (.mk-start__quit: Schreibmaschinen-Font + crimson Akzent).
+  - SAFE-AREA: nur nativ wird die Geraete-Sichere-Zone (Kamera-Notch,
+    runde Ecken) freigehalten -> main.tsx setzt class "native" auf
+    <html>, CSS padded .mk-screen/.mk-game per env(safe-area-inset-*).
+    Browser (Desktop/Mobil) nutzt weiter das volle Viewport.
+  - OFFLINE: kein Internet noetig. Fonts self-hosted, Levels ins JS
+    gebuendelt, Avatare als SVG im Code, Moebel-Emojis aus Androids
+    System-Emoji-Font. Einzig die 2 Credit-Links (murdoku.com,
+    apo-games.de) oeffnen beim Antippen den Browser.
+
+==============================================================
+ 4) NOCH OFFEN / OPTIONAL  (spaeter)
+==============================================================
+  - Splashscreen setzen (@capacitor/assets kann auch splash erzeugen)
+  - Hardware-Back-Button: standardmaessig schliesst er die App;
+    ggf. mit @capacitor/app abfangen, um in-App zurueck zu navigieren
+  - Hochformat erzwingen: AndroidManifest (screenOrientation="portrait")
+==============================================================

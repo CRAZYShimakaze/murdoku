@@ -15,6 +15,7 @@
     "generate": "Level generieren",
     "tutorial": "Tutorial",
     "editor": "Editor",
+    "quit": "Beenden",
     "credit": "Murdoku · ein Logik-Krimi"
   },
   "editor": {

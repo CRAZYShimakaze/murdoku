@@ -37,6 +37,7 @@ import {
 import { checkLevel, findMurderer, loadLevel, startCoverage, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
 import { Renderer } from '../i18n/Renderer.ts'
 import { useDebugSolveKey } from '../game/debugSolve.ts'
+import { useBackInterceptor } from '../game/backHandler.ts'
 
 type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
 /** The four board layers shown as tabs; windows & doors live inside 'top' (Objekte). */
@@ -307,6 +308,12 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
     regenHandle.current = null
     setRegenBusy(false)
   }
+
+  // Back/ESC inside the editor closes the open dialog/spinner first, so you land
+  // back IN the editor instead of leaving it.
+  useBackInterceptor(showSave, () => setShowSave(false))
+  useBackInterceptor(randomizing, cancelRandom)
+  useBackInterceptor(regenBusy, cancelRegen)
 
   const check = () => {
     try {

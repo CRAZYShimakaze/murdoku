@@ -15,6 +15,7 @@
     "generate": "Generate a level",
     "tutorial": "Tutorial",
     "editor": "Editor",
+    "quit": "Quit",
     "credit": "Murdoku · a logic mystery"
   },
   "editor": {
