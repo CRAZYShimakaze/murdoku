@@ -128,15 +128,18 @@
     },
     "board": {
       "title": "The crime scene",
-      "body": "This is the crime scene — a 4×4 grid with two rooms: Living Room (top) and Bedroom (bottom). Hover over an object to see its name."
+      "body": "This is the crime scene — a 4×4 grid with two rooms: Living Room (top) and Bedroom (bottom). Hover over an object to see its name.",
+      "body_touch": "This is the crime scene — a 4×4 grid with two rooms: Living Room (top) and Bedroom (bottom). Tap an object to see its name."
     },
     "suspects": {
       "title": "The suspects",
-      "body": "Here are the suspects with their statements: Alex was beside a table, Bernd on a bed, Carmen by a window. (On mobile they're below the board.)"
+      "body": "Here are the suspects with their statements: Alex was beside a table, Bernd on a bed, Carmen by a window.",
+      "body_touch": "Below the board are the suspects with their statements: Alex was beside a table, Bernd on a bed, Carmen by a window."
     },
     "terms": {
       "title": "Bold = important",
-      "body": "Objects and key words are bold. Hover over a word like »beside« or »alone« to see exactly what it means."
+      "body": "Objects and key words are bold. Hover over a word like »beside« or »alone« to see exactly what it means.",
+      "body_touch": "Objects and key words are bold. Tap a word like »beside« or »alone« to see exactly what it means."
     },
     "selectA": {
       "title": "Select Alex",
@@ -184,7 +187,8 @@
     },
     "tools": {
       "title": "Your tools",
-      "body": "Quick tour of the tools: X tool (block tiles), Reset (hold), Undo, Hint and Solve. (On mobile they're a bar at the bottom.)"
+      "body": "Quick tour of the tools: X tool (block tiles), Reset (hold), Undo, Hint and Solve.",
+      "body_touch": "Quick tour of the tools in the bar at the bottom: X tool (block tiles), Reset (hold), Undo, Hint and Solve."
     },
     "selectV": {
       "title": "Select the victim",
@@ -208,7 +212,8 @@
     },
     "w_selectE": {
       "title": "Select Emil",
-      "body": "Let's start at the bottom with Emil. (On mobile, scroll down through the suspects.) Tap Emil's card."
+      "body": "Let's start at the bottom with Emil. Tap Emil's card.",
+      "body_touch": "Let's start at the bottom with Emil. Scroll down through the suspects (below the board) and tap Emil's card."
     },
     "w_rowE": {
       "title": "Emil is in row 6",
@@ -216,7 +221,8 @@
     },
     "w_armX": {
       "title": "Activate »Block cell«",
-      "body": "Tap »X« / Block cell at the top right (in the bottom bar on mobile). It lets you mark tiles as impossible yourself."
+      "body": "Tap »X« / Block cell at the top right. It lets you mark tiles as impossible yourself.",
+      "body_touch": "Tap »X« / Block cell in the bar at the bottom. It lets you mark tiles as impossible yourself."
     },
     "w_crossE": {
       "title": "Cross out tiles",
@@ -224,11 +230,12 @@
     },
     "w_selectA": {
       "title": "Select Armin",
-      "body": "Now back up (scroll up on mobile) and select Armin."
+      "body": "Now select Armin — tap his card.",
+      "body_touch": "Now scroll back up through the suspects and select Armin."
     },
     "w_noteA": {
       "title": "Where can Armin be?",
-      "body": "Armin was in the kitchen (top right). Briefly tap the blue-outlined kitchen tiles to note a small A."
+      "body": "Armin was in the kitchen (top right). New trick: press a blue tile and drag — without lifting — across the other blue-outlined kitchen tiles. That drops a small A on all of them at once. (Tapping each one briefly also works.)"
     },
     "w_selectB": {
       "title": "Select Bella",

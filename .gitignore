@@ -26,3 +26,11 @@ android/capacitor-cordova-android-plugins/
 android/key.properties
 *.keystore
 *.jks
+
+assets/feature-graphic-de.png
+
+assets/feature-graphic-en.png
+
+assets/store-icon-512.png
+
+PLAYSTORE-RELEASE.txt

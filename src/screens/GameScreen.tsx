@@ -561,7 +561,7 @@ export default function GameScreen({
           onCommit={tut.active ? tut.onCommit : commitAndClear}
           onRemove={tut.active ? NOOP : session.remove}
           onSetCross={tut.active ? tut.onSetCross : session.setCross}
-          onSetMark={tut.active ? NOOP : session.setMark}
+          onSetMark={tut.active ? tut.onSetMark : session.setMark}
           onSelectSuspect={tut.active ? (id) => id && tut.onSelect(id) : selectFromBoard}
         />
         {result?.win && dialogHidden && (

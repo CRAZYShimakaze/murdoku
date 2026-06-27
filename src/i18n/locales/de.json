@@ -128,15 +128,18 @@
     },
     "board": {
       "title": "Der Tatort",
-      "body": "Das ist der Tatort – ein 4×4-Raster mit zwei Räumen: Wohnzimmer (oben) und Schlafzimmer (unten). Fahre über ein Objekt, um seinen Namen zu sehen."
+      "body": "Das ist der Tatort – ein 4×4-Raster mit zwei Räumen: Wohnzimmer (oben) und Schlafzimmer (unten). Fahre über ein Objekt, um seinen Namen zu sehen.",
+      "body_touch": "Das ist der Tatort – ein 4×4-Raster mit zwei Räumen: Wohnzimmer (oben) und Schlafzimmer (unten). Tippe auf ein Objekt, um seinen Namen zu sehen."
     },
     "suspects": {
       "title": "Die Verdächtigen",
-      "body": "Hier stehen die Verdächtigen mit ihren Aussagen: Alex war neben einem Tisch, Bernd auf einem Bett, Carmen vor einem Fenster. (Am Handy unter dem Spielfeld.)"
+      "body": "Hier stehen die Verdächtigen mit ihren Aussagen: Alex war neben einem Tisch, Bernd auf einem Bett, Carmen vor einem Fenster.",
+      "body_touch": "Unter dem Spielfeld stehen die Verdächtigen mit ihren Aussagen: Alex war neben einem Tisch, Bernd auf einem Bett, Carmen vor einem Fenster."
     },
     "terms": {
       "title": "Fett = wichtig",
-      "body": "Objekte und Schlüsselwörter sind fett. Fahre über ein Wort wie »neben« oder »allein«, um seine genaue Bedeutung zu sehen."
+      "body": "Objekte und Schlüsselwörter sind fett. Fahre über ein Wort wie »neben« oder »allein«, um seine genaue Bedeutung zu sehen.",
+      "body_touch": "Objekte und Schlüsselwörter sind fett. Tippe auf ein Wort wie »neben« oder »allein«, um seine genaue Bedeutung zu sehen."
     },
     "selectA": {
       "title": "Alex auswählen",
@@ -184,7 +187,8 @@
     },
     "tools": {
       "title": "Deine Werkzeuge",
-      "body": "Kurz zu den Werkzeugen: X-Werkzeug (Felder sperren), Reset (gedrückt halten), Rückgängig, Tipp und Lösen. (Am Handy als Leiste unten.)"
+      "body": "Kurz zu den Werkzeugen: X-Werkzeug (Felder sperren), Reset (gedrückt halten), Rückgängig, Tipp und Lösen.",
+      "body_touch": "Kurz zu den Werkzeugen unten in der Leiste: X-Werkzeug (Felder sperren), Reset (gedrückt halten), Rückgängig, Tipp und Lösen."
     },
     "selectV": {
       "title": "Das Opfer wählen",
@@ -208,7 +212,8 @@
     },
     "w_selectE": {
       "title": "Emil auswählen",
-      "body": "Fangen wir unten mit Emil an. (Am Handy bei den Verdächtigen nach unten scrollen.) Tippe auf Emils Karte."
+      "body": "Fangen wir unten mit Emil an. Tippe auf Emils Karte.",
+      "body_touch": "Fangen wir unten mit Emil an. Scrolle bei den Verdächtigen (unter dem Spielfeld) nach unten und tippe auf Emils Karte."
     },
     "w_rowE": {
       "title": "Emil ist in Zeile 6",
@@ -216,7 +221,8 @@
     },
     "w_armX": {
       "title": "»Feld sperren« aktivieren",
-      "body": "Tippe oben rechts auf »X« / Feld sperren (am Handy in der Leiste unten). Damit kannst du Felder selbst als unmöglich markieren."
+      "body": "Tippe oben rechts auf »X« / Feld sperren. Damit kannst du Felder selbst als unmöglich markieren.",
+      "body_touch": "Tippe in der Leiste unten auf »X« / Feld sperren. Damit kannst du Felder selbst als unmöglich markieren."
     },
     "w_crossE": {
       "title": "Felder ausxen",
@@ -224,11 +230,12 @@
     },
     "w_selectA": {
       "title": "Armin auswählen",
-      "body": "Jetzt nach oben (am Handy hochscrollen) und Armin wählen."
+      "body": "Jetzt Armin wählen – tippe auf seine Karte.",
+      "body_touch": "Jetzt bei den Verdächtigen wieder nach oben scrollen und Armin wählen."
     },
     "w_noteA": {
       "title": "Wo kann Armin sein?",
-      "body": "Armin war in der Küche (oben rechts). Markiere die blau umrandeten Küchen-Felder kurz mit einem kleinen A."
+      "body": "Armin war in der Küche (oben rechts). Neuer Trick: Drücke auf ein blaues Feld und ziehe – ohne loszulassen – über die anderen blau umrandeten Küchen-Felder. So setzt du blitzschnell auf allen ein kleines A. (Einzeln kurz antippen geht natürlich auch.)"
     },
     "w_selectB": {
       "title": "Bella auswählen",

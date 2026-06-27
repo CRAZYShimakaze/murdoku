@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { VICTIM_ID, type Cell, type PersonId, type Puzzle, type Solution } from '../engine/index.ts'
 import { CANDIDATE_BLUE, HINT_BLACK } from './palette.ts'
+import { useNarrowLayout } from './useNarrowLayout.ts'
 import type { GameSession } from './useGameSession.ts'
 
 type Kind = 'info' | 'select' | 'note' | 'place' | 'tool' | 'cross' | 'dialog'
@@ -120,6 +121,9 @@ export interface TutorialFlow {
   onCommit: (cell: Cell, id: PersonId) => void
   onToggleX: () => void
   onSetCross: (cell: Cell, value: boolean) => void
+  /** Quick-drag note painting: set/clear the focus suspect's pencil note on a candidate
+   *  cell (other cells are ignored). Works in every step that has a focus suspect. */
+  onSetMark: (cell: Cell, id: PersonId, on: boolean) => void
   onHint: () => void
   onSettingsOpen: () => void
   /** True while the "press Hint" step is active (GameScreen actually fires the hint). */
@@ -157,6 +161,7 @@ export function useTutorialFlow({
   onAdvancePhase,
 }: Params): TutorialFlow {
   const { t } = useTranslation()
+  const narrow = useNarrowLayout()
   const STEPS = phase === 1 ? DEMO_STEPS : WOHNUNG_STEPS
   const [idx, setIdx] = useState(0)
   const [active, setActive] = useState(enabled)
@@ -228,6 +233,22 @@ export function useTutorialFlow({
     return out
   }
 
+  // A note step is done once every one of the focus suspect's candidate cells carries
+  // their pencil note — whether the player tapped the cells one by one OR quick-dragged
+  // across them. Driven by an effect (not the tap/drag handlers) so the marks have settled
+  // before the check, which a fast drag-paint would otherwise race.
+  useEffect(() => {
+    if (!active || step.kind !== 'note' || !step.who) return
+    const cands = liveCandidates(step.who)
+    if (cands.size === 0) return
+    for (const c of cands) if (!session.state.marks.get(c)?.has(step.who)) return
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setError(null)
+    setIdx((i) => Math.min(i + 1, STEPS.length - 1))
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.state.marks, idx, active])
+
   const next = () => {
     setError(null)
     setIdx((i) => Math.min(i + 1, STEPS.length - 1))
@@ -281,18 +302,12 @@ export function useTutorialFlow({
       return
     }
     if (step.kind === 'note' && step.who) {
-      const cands = liveCandidates(step.who)
-      if (!cands.has(cell)) {
+      if (!liveCandidates(step.who).has(cell)) {
         setError(t('tutorial.err.notCandidate', { name: nameOf(step.who) }))
         return
       }
       setError(null)
-      const marked = new Set<Cell>()
-      for (const [c, set] of session.state.marks) if (set.has(step.who)) marked.add(c)
-      if (marked.has(cell)) marked.delete(cell)
-      else marked.add(cell) // placeMark toggles — predict the result
-      session.placeMark(cell, step.who)
-      if ([...cands].every((c) => marked.has(c))) next()
+      session.placeMark(cell, step.who) // the note-completion effect advances the step
       return
     }
     if (step.kind === 'place') setError(t('tutorial.err.holdToPlace'))
@@ -340,6 +355,17 @@ export function useTutorialFlow({
 
   // Crossing a field: only the intended cells are allowed; once they're all crossed the
   // step is done.
+  // Quick-drag note painting (press a candidate cell and drag): only the current focus
+  // suspect's live candidate cells take a note; anything else is ignored, so a drag across
+  // the board never errors out. Allowed in every focused step — the note-completion effect
+  // handles advancing a note step once they're all marked.
+  const onSetMark = (cell: Cell, id: PersonId, on: boolean) => {
+    if (!step.who || id !== step.who) return
+    if (!liveCandidates(step.who).has(cell)) return
+    setError(null)
+    session.setMark(cell, id, on)
+  }
+
   const onSetCross = (cell: Cell, value: boolean) => {
     if (step.kind !== 'cross') return
     const want = cellsOf(step)
@@ -358,7 +384,12 @@ export function useTutorialFlow({
   const coach: CoachView | null = active
     ? {
         title: t(`tutorial.${step.id}.title`),
-        body: t(`tutorial.${step.id}.body`),
+        // On the stacked phone layout, prefer a `_touch` copy when the step has one (e.g.
+        // "tap a word" instead of "hover", "below the board" instead of "on the left");
+        // it falls back to the desktop `body` when no touch variant exists.
+        body: narrow
+          ? t([`tutorial.${step.id}.body_touch`, `tutorial.${step.id}.body`])
+          : t(`tutorial.${step.id}.body`),
         stepLabel: t('tutorial.step', { n: idx + 1, total: STEPS.length }),
         target: step.kind === 'select' ? `[data-suspect="${step.who}"]` : step.target,
         // An info step that highlights board cells stays BRIGHT (like a note/place step)
@@ -400,6 +431,7 @@ export function useTutorialFlow({
     onCommit,
     onToggleX,
     onSetCross,
+    onSetMark,
     onHint,
     onSettingsOpen,
     hintPhase: active && step.id === 'w_hintBtn',

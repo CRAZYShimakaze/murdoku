@@ -37,6 +37,7 @@ import {
 import { checkLevel, findMurderer, loadLevel, startCoverage, VOID_ROOM, type BoardClueJson, type Cell, type LevelJson } from '../engine/index.ts'
 import { Renderer } from '../i18n/Renderer.ts'
 import { useDebugSolveKey } from '../game/debugSolve.ts'
+import { useNarrowLayout } from '../game/useNarrowLayout.ts'
 import { useBackInterceptor } from '../game/backHandler.ts'
 
 type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
@@ -68,22 +69,6 @@ function caseNumber(name: string): string {
   let h = 2166136261
   for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619)
   return String(((h >>> 0) % 9000) + 1000)
-}
-
-/** True on the narrow/portrait layout (same breakpoint the editor CSS uses to
- *  switch the tools into a horizontal bar) — drives the mobile object dropdown. */
-function useNarrowLayout(): boolean {
-  const query = '(orientation: portrait), (max-width: 860px)'
-  const [narrow, setNarrow] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia(query).matches,
-  )
-  useEffect(() => {
-    const mq = window.matchMedia(query)
-    const onChange = () => setNarrow(mq.matches)
-    mq.addEventListener('change', onChange)
-    return () => mq.removeEventListener('change', onChange)
-  }, [])
-  return narrow
 }
 
 interface Props {
