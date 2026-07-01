@@ -9,6 +9,7 @@ import {
   type Side,
 } from '../engine/index.ts'
 import { BOARD, CANDIDATE_BLUE, HIGHLIGHT_DIM, REF_RED, ROOM_HL, suspectColor } from './palette.ts'
+import { drawFloorTile, floorPatternOf } from './floorArt.ts'
 import { OBJECT_GLYPHS } from './glyphs.ts'
 import type { HelpMarks } from './helpMarks.ts'
 import { drawBigObject, drawSingleObject } from './bigObjects.ts'
@@ -218,6 +219,14 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.fillStyle = water ? BOARD.grass : (room?.color ?? '#cfcfcf')
     ctx.fillRect(x, y, S, S)
     if (water) drawWaterTile(ctx, x, y, S, roomConnOf(c))
+    else if (!view.preview && room) {
+      // Subtle per-room-type floor texture (kitchen checker, floorboards, grass, …).
+      const pattern = floorPatternOf(room.nameKey)
+      if (pattern) {
+        const { row, col } = board.rc(c)
+        drawFloorTile(ctx, x, y, S, row, col, pattern)
+      }
+    }
     // Secondary layer (selection) under the primary (hint), so the hint wins on overlap.
     // A ruled-out candidate — crossed off OR already taken by another figure — fades its
     // wash by HIGHLIGHT_DIM (same as its ring). Capped, never stacked: a placed suspect's
