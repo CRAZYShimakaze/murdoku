@@ -162,13 +162,14 @@ export class Renderer {
                 const token = s.slice(5)
                 if (token.startsWith('gender_')) {
                   const g = token.slice(7)
-                  // "eine andere Frau" / "ein anderer Mann" only when the subject shares
-                  // that gender (so "other" is genuine) — else plain "eine Frau".
+                  // The mate of a roomExists/besideSameObject clue is always a SUSPECT
+                  // (never the victim), so it reads "ein verdächtiger Mann" — and turns
+                  // "ein ANDERER verdächtiger Mann" only when the subject shares that gender.
                   if (subject !== undefined && this.genderOf(String(subject)) === g) {
-                    const other = this.lookup(`who.${g}_nom_other`)
+                    const other = this.lookup(`who.${g}_susp_nom_other`)
                     if (other !== undefined) return other
                   }
-                  return this.lookup(`who.${g}_nom`) ?? token
+                  return this.lookup(`who.${g}_susp_nom`) ?? this.lookup(`who.${g}_nom`) ?? token
                 }
                 const pre = this.lookup('who.withTraitPre') ?? ''
                 const post = this.lookup('who.withTraitPost') ?? ''

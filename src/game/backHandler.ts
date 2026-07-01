@@ -24,7 +24,11 @@ export function consumeBack(): boolean {
  */
 export function useBackInterceptor(active: boolean, onBack: () => void): void {
   const ref = useRef(onBack)
-  ref.current = onBack
+  // Refresh after every render (never during render — that trips react-hooks/refs),
+  // so the stacked interceptor always calls the latest onBack.
+  useEffect(() => {
+    ref.current = onBack
+  })
   useEffect(() => {
     if (!active) return
     const fn: Interceptor = () => ref.current()

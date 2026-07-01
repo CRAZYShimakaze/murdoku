@@ -166,6 +166,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
   return (
     <div className="mk-screen">
       <div className="mk-select">
+        <div className="mk-select__head">
         <header className="mk-topbar">
           <button type="button" className="mk-back" onClick={onBack} aria-label="back">
             ←
@@ -210,6 +211,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
               </select>
             </div>
           ))}
+        </div>
         </div>
 
         <div className="mk-level-grid">

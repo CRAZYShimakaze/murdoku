@@ -624,9 +624,29 @@ button {
 
 /* ============================================================ LEVEL SELECT */
 .mk-select {
+  --sel-pad: clamp(1.2rem, 4vw, 2.2rem);
   max-width: 1280px;
   margin: 0 auto;
-  padding: clamp(1.2rem, 4vw, 2.2rem);
+  padding: var(--sel-pad);
+}
+/* Title bar + filter row stay pinned while the case cards scroll beneath them.
+   Sticks to .mk-screen (the scroll container); the negative margins bleed the
+   opaque backdrop over .mk-select's padding so no card peeks above or beside it. */
+.mk-select__head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: calc(-1 * var(--sel-pad)) calc(-1 * var(--sel-pad)) 0;
+  padding: var(--sel-pad) var(--sel-pad) 0;
+  /* Reproduce the body backdrop (colour + the same viewport-anchored gradients) so the
+     pinned band is indistinguishable from the page behind it; the film-grain overlay
+     (body::after, fixed on top) already covers it too. */
+  background-color: var(--ink-900);
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(226, 183, 94, 0.08), transparent 60%),
+    radial-gradient(90% 70% at 85% 110%, rgba(207, 70, 60, 0.07), transparent 55%),
+    radial-gradient(140% 140% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  background-attachment: fixed;
 }
 .mk-topbar {
   display: flex;

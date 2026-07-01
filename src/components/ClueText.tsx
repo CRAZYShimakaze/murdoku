@@ -17,7 +17,7 @@ interface Props {
 export default function ClueText({ renderer, clues, subjectId }: Props) {
   const { t } = useTranslation()
 
-  const term = (key: number, word: ReactNode, tipKey: string): ReactNode => (
+  const term = (key: number | string, word: ReactNode, tipKey: string): ReactNode => (
     <InfoTip key={key} className="mk-term" anchor=".mk-clue" content={t(`tip.${tipKey}`)}>
       <strong>{word}</strong>
     </InfoTip>
@@ -69,13 +69,33 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
             const post = renderer.lookup('who.withTraitPost') ?? ''
             const word = renderer.lookup(`attr.${token}`) ?? token
             const preText = name === 'mate' && pre ? pre.charAt(0).toUpperCase() + pre.slice(1) : pre
-            out.push(<strong key={`${m.index}p`}>{preText} </strong>)
+            // "ein anderer Verdächtiger, der" carries the suspect concept → bold + tooltip.
+            out.push(term(`${m.index}p`, preText, 'suspect'))
+            out.push(' ')
             out.push(
               <strong key={`${m.index}h`} className={`mk-hair mk-hair--${token.slice(5)}`}>
                 {word}
               </strong>,
             )
             if (post) out.push(<strong key={`${m.index}s`}> {post}</strong>)
+          } else if (name === 'mate' || name === 'mateLc') {
+            // The mate of a roomExists / beside-same clue is always a suspect (never the
+            // victim). A named person is that specific suspect (just their name); the
+            // generic / gender / trait phrasings get the "suspect" concept tooltip.
+            const tok = String(params[name] ?? '')
+            if (tok.startsWith('person:')) out.push(<strong key={m.index}>{val}</strong>)
+            else out.push(term(m.index, val, 'suspect'))
+          } else if (
+            name === 'who' ||
+            name === 'whoNeg' ||
+            name === 'whoOther' ||
+            name === 'whoOtherPl' ||
+            name === 'whoBare'
+          ) {
+            // "_susp" gender tokens are suspects (victim excluded → "suspect" tooltip);
+            // plain gender tokens count everyone incl. the victim → the "all people" one.
+            const tok = String(params[name] ?? '')
+            out.push(term(m.index, val, tok.includes('_susp') ? 'suspect' : 'person'))
           } else if (BOLD_PARAMS.has(name)) out.push(<strong key={m.index}>{val}</strong>)
           else out.push(val)
         }

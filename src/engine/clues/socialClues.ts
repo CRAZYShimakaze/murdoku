@@ -287,9 +287,10 @@ export class RoomCompanionClue extends Clue {
     // the plural "alone with N (other) men / N people who had …" wording.
     if (this.attribute === 'gender') {
       const g = String(this.value)
+      // The companions are suspects (never the victim) → "verdächtiger Mann/Männern".
       return this.count >= 2
-        ? { key: 'clue.aloneWithMany', params: { count: this.count, whoOtherPl: g } }
-        : { key: 'clue.aloneWith', params: { who: `${g}_dat` } }
+        ? { key: 'clue.aloneWithMany', params: { count: this.count, who: `${g}_datpl_susp` } }
+        : { key: 'clue.aloneWith', params: { who: `${g}_dat_susp` } }
     }
     const token = this.value === true ? this.attribute : `${this.attribute}_${this.value}`
     return this.count >= 2

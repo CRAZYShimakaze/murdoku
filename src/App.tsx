@@ -41,9 +41,12 @@ function initialScreen(): Screen {
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>(initialScreen)
-  // Latest screen for the back handler (registered once, must not go stale).
+  // Latest screen for the back handler (registered once, must not go stale). Written
+  // after render (not during — that trips react-hooks/refs), read only in `back`.
   const screenRef = useRef(screen)
-  screenRef.current = screen
+  useEffect(() => {
+    screenRef.current = screen
+  })
 
   // One source of "go back" for both the on-screen ← buttons and Android's
   // hardware/gesture back: each screen returns to its logical parent; the root
