@@ -14,6 +14,8 @@ import { RoomReasoningTechnique } from './techniques/RoomReasoningTechnique.ts'
 import { RoomCoverageTechnique } from './techniques/RoomCoverageTechnique.ts'
 import { RoomCapacityTechnique } from './techniques/RoomCapacityTechnique.ts'
 import { RoomBijectionTechnique } from './techniques/RoomBijectionTechnique.ts'
+import { RoomAssignmentTechnique } from './techniques/RoomAssignmentTechnique.ts'
+import { EmptyRoomForcingTechnique } from './techniques/EmptyRoomForcingTechnique.ts'
 import { GroupRoomTechnique } from './techniques/GroupRoomTechnique.ts'
 import { CompanionRoomFitTechnique } from './techniques/CompanionRoomFitTechnique.ts'
 import { CompanionPairingTechnique } from './techniques/CompanionPairingTechnique.ts'
@@ -84,8 +86,23 @@ export function createForwardTechniques(puzzle: Puzzle, opts: TechniqueOptions =
     new CompanionPairingTechnique(),
     new MurderTechnique(),
   ].filter((technique) => technique.relevant(puzzle))
-  // Generator acceptance for hard: straight forward deduction only, NO case split at all.
-  if (opts.noCaseSplit) return base
+  const roomAssignment = new RoomAssignmentTechnique() // pure forward, no look-ahead — shared
+  // GENERATOR acceptance (noCaseSplit): the same forward techniques, but the empty-room
+  // hypothesis may look only ~2 obvious steps ahead. The engine has NO human eye to judge
+  // whether a longer chain is really followable, so an AUTO-generated "this room is empty"
+  // argument must be SHALLOW — nobody thinks 5 steps deep; that would be guessing.
+  if (opts.noCaseSplit) {
+    const gen = [roomAssignment, new EmptyRoomForcingTechnique(base, 2)].filter((t) => t.relevant(puzzle))
+    return [...base, ...gen]
+  }
+  // EDITOR / player / hints: a HAND-MADE level is vouched for by its author, so the (still
+  // single-hypothesis) empty-room check may follow through further — enough for "Der leere
+  // Raum" (~5 obvious steps). This is exactly why the editor can validate levels the
+  // generator itself would never build.
+  const forward = [roomAssignment, new EmptyRoomForcingTechnique(base, 8)].filter(
+    (technique) => technique.relevant(puzzle),
+  )
+  const extended = [...base, ...forward]
   // Convergent case split: "egal wo X (2–3 Möglichkeiten) steht, diese Felder bleiben in
   // JEDEM Fall blockiert" — real deduction, no assumed-then-refuted guess. This is the
   // hardest reasoning a player is ever asked to do.
@@ -93,12 +110,12 @@ export function createForwardTechniques(puzzle: Puzzle, opts: TechniqueOptions =
   // Tight short contradiction (≤3 candidates, ≤3 obvious steps) — the human "if X sits
   // here, someone has no place left" the user explicitly allows; NOT deep trial-and-error.
   const tight = new CaseSplitTechnique(base, { tight: true })
-  if (!opts.contradiction) return [...base, convergent, tight]
+  if (!opts.contradiction) return [...extended, convergent, tight]
   // Diagnostics only: the rejected trial-and-error tail — the contradiction case split,
   // its nested deep variant, and the exhaustive forcing fallback. Used to explain why a
   // board is NOT human-solvable, never for play or for accepting a level.
   return [
-    ...base,
+    ...extended,
     convergent,
     new CaseSplitTechnique(base, { depth: 1 }),
     new CaseSplitTechnique(base, { depth: 2 }),

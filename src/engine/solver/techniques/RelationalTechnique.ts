@@ -124,25 +124,15 @@ export class RelationalTechnique extends Technique {
     subjectId: PersonId,
     clue: DirectionClue,
   ): DeductionStep | null {
-    const axis: Axis =
-      clue.direction === 'north' || clue.direction === 'south' ? 'row' : 'col'
-    const subj = ctx.linesOf(subjectId, axis)
-    const target = ctx.linesOf(clue.target, axis)
-    if (subj.size === 0 || target.size === 0) return null
-
-    const greater = clue.direction === 'south' || clue.direction === 'east'
+    // A Direction8 is up to TWO half-plane constraints, one per axis: a cardinal has one
+    // ("north" = row-less), a diagonal both ("northwest" = row-less AND col-less). Applying
+    // each keeps the propagation complete for diagonals (which used to prune only one axis).
+    const d = clue.direction
     const eliminated: Elimination[] = []
-    if (greater) {
-      const tgtMin = Math.min(...target)
-      const subjMax = Math.max(...subj)
-      this.removeFrom(ctx, subjectId, (c) => ctx.axisOf(c, axis) <= tgtMin, eliminated)
-      this.removeFrom(ctx, clue.target, (c) => ctx.axisOf(c, axis) >= subjMax, eliminated)
-    } else {
-      const tgtMax = Math.max(...target)
-      const subjMin = Math.min(...subj)
-      this.removeFrom(ctx, subjectId, (c) => ctx.axisOf(c, axis) >= tgtMax, eliminated)
-      this.removeFrom(ctx, clue.target, (c) => ctx.axisOf(c, axis) <= subjMin, eliminated)
-    }
+    if (d.includes('north')) this.applyHalfPlane(ctx, subjectId, clue.target, 'row', false, eliminated)
+    if (d.includes('south')) this.applyHalfPlane(ctx, subjectId, clue.target, 'row', true, eliminated)
+    if (d.includes('east')) this.applyHalfPlane(ctx, subjectId, clue.target, 'col', true, eliminated)
+    if (d.includes('west')) this.applyHalfPlane(ctx, subjectId, clue.target, 'col', false, eliminated)
     if (eliminated.length === 0) return null
     return {
       technique: 'relational',
@@ -152,6 +142,33 @@ export class RelationalTechnique extends Technique {
         key: 'step.relationalDirection',
         params: { name: subjectId, direction: clue.direction, target: clue.target },
       },
+    }
+  }
+
+  /** Prune one half-plane of a direction: the subject must beat the target along `axis`
+   *  (`greater` = subject's line is larger, i.e. south/east), and the target must beat the
+   *  subject the other way. Same bound as a plain cardinal, applied per component. */
+  private applyHalfPlane(
+    ctx: SolveContext,
+    subjectId: PersonId,
+    targetId: PersonId,
+    axis: Axis,
+    greater: boolean,
+    eliminated: Elimination[],
+  ): void {
+    const subj = ctx.linesOf(subjectId, axis)
+    const target = ctx.linesOf(targetId, axis)
+    if (subj.size === 0 || target.size === 0) return
+    if (greater) {
+      const tgtMin = Math.min(...target)
+      const subjMax = Math.max(...subj)
+      this.removeFrom(ctx, subjectId, (c) => ctx.axisOf(c, axis) <= tgtMin, eliminated)
+      this.removeFrom(ctx, targetId, (c) => ctx.axisOf(c, axis) >= subjMax, eliminated)
+    } else {
+      const tgtMax = Math.max(...target)
+      const subjMin = Math.min(...subj)
+      this.removeFrom(ctx, subjectId, (c) => ctx.axisOf(c, axis) >= tgtMax, eliminated)
+      this.removeFrom(ctx, targetId, (c) => ctx.axisOf(c, axis) <= subjMin, eliminated)
     }
   }
 

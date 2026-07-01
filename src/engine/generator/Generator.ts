@@ -275,7 +275,8 @@ function rateTier(level: LevelJson): GenDifficulty {
 const CHAIN_TECHNIQUES = [
   'nakedGroupRows', 'nakedGroupCols', 'rectangle',
   'forcedCell',
-  'boardCount', 'emptyRooms', 'roomCapacity', 'roomCoverage', 'companionPairing', 'companionFit',
+  'boardCount', 'emptyRooms', 'emptyRoomForcing', 'roomAssignment',
+  'roomCapacity', 'roomCoverage', 'companionPairing', 'companionFit',
 ] as const
 
 function logicRating(level: LevelJson): { solved: boolean; unique: boolean; maxRank: number; chainSteps: number } {
@@ -365,16 +366,24 @@ const UNCAPPED_TYPES = new Set<string>([
   'nearDoor', 'uniqueNearDoor',
 ])
 /** The capped families of a clue (the ones the variety limit counts). Row and column
- *  clues collapse to one "line" family. */
+ *  clues collapse to one "line" family; the two person/attribute direction clues collapse
+ *  to one "direction" family (so "west of Alex" and "south-west of Alex" — or two
+ *  directions off ANY anchor — count together and can't both appear). */
 const cappedFamilies = (clue: ClueJson): string[] =>
   leafTypes(clue)
     .filter((t) => !UNCAPPED_TYPES.has(t))
-    .map((t) => (t === 'inRow' || t === 'inCol' ? 'line' : t))
+    .map((t) => {
+      if (t === 'inRow' || t === 'inCol') return 'line'
+      if (t === 'direction' || t === 'directionFromAttr') return 'direction'
+      return t
+    })
 
 /** Per-family variety limit: at most ONE "line" (row/column) clue per level — the user
- *  finds two "in row/column X" clues poor puzzling — and at most two of every other
- *  capped family. */
-const familyCap = (family: string): number => (family === 'line' ? 1 : 2)
+ *  finds two "in row/column X" clues poor puzzling — at most ONE person/attribute
+ *  "direction" clue (two directions, e.g. off the same person, read repetitive and pile up
+ *  at hard), and at most two of every other capped family. */
+const familyCap = (family: string): number =>
+  family === 'line' || family === 'direction' ? 1 : 2
 
 /** Does a suspect's clue use a HARD (relational/social) family? */
 const isHardClue = (clue: ClueJson): boolean => leafTypes(clue).some((t) => HARD_CLUE_TYPES.has(t))

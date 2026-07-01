@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "id": "editor-der-appartmentmord",
-  "title": "Der letzte Mieter",
-  "titles": { "de": "Der letzte Mieter", "en": "The Last Tenant" },
+  "id": "editor-der-leere-raum",
+  "title": "Der leere Raum",
+  "author": "Manuel Garand",
   "size": {
     "width": 9,
     "height": 9
@@ -251,240 +251,200 @@
     }
   },
   "roomMap": [
-    "....4444.",
-    "BBBB4444.",
-    "BBBB3333.",
-    "BBBB3333.",
-    "BBBB3333.",
-    ".22AAA111",
-    ".22AAA111",
-    ".22AAA111",
-    ".22AAA..."
+    "4444AAA22",
+    "4444AAA22",
+    "4444AAA22",
+    "333BBBB22",
+    "333BBBB99",
+    "333BBBB99",
+    "111BBBB99",
+    "111888899",
+    "111888899"
   ],
   "groundMap": [
     ".........",
-    ".rr.r....",
     ".........",
     ".........",
-    "rrr......",
-    "....r...r",
-    "..r.r....",
-    "........r",
-    "........."
+    "...r.....",
+    "...r.....",
+    ".........",
+    "r........",
+    "r..rr....",
+    "r........"
   ],
   "topMap": [
-    "....ttt..",
-    "p..s.bb..",
-    ".tt...p..",
-    "pss.pssp.",
-    "...s..f..",
-    "..t..b...",
-    "...s.b..p",
-    "..t..f...",
-    "...ttt..."
+    ".b.s.f.tg",
+    ".bp.p.btp",
+    "......b..",
+    "p.f.....t",
+    "......ssf",
+    "..t..t...",
+    "....pts.t",
+    ".st...g.t",
+    "..t..pg.t"
   ],
-  "windows": [],
+  "windows": [
+    {
+      "r": 5,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 0,
+      "c": 4,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 2,
+      "side": "N"
+    }
+  ],
   "doors": [],
   "suspects": [
     {
       "id": "A",
-      "name": "Alex",
+      "name": "Person A",
       "attributes": {
         "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "hairstyle": "curly",
-        "hair": "black"
+        "hairstyle": "curly"
       },
       "clues": [
         {
-          "type": "roomAttribute",
-          "quantifier": "some",
-          "attribute": "glasses",
-          "value": true,
-          "excludeSelf": true,
-          "exact": true
+          "type": "roomCompanion",
+          "count": 1,
+          "attribute": "gender",
+          "value": "m"
         }
       ]
     },
     {
       "id": "B",
-      "name": "Bella",
+      "name": "Person B",
       "attributes": {
-        "gender": "f",
-        "hairstyle": "braids",
-        "hair": "black"
+        "gender": "m",
+        "hairstyle": "combOver"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "onObject",
-              "object": "chair"
-            },
-            {
-              "type": "roomExists",
-              "attribute": "gender",
-              "value": "m",
-              "relation": "on",
-              "object": "chair"
-            }
-          ]
+          "type": "direction",
+          "of": "D",
+          "dir": "northwest"
         }
       ]
     },
     {
       "id": "C",
-      "name": "Cyrus",
+      "name": "Person C",
       "attributes": {
-        "gender": "m",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "caesar",
-        "hair": "brown"
+        "gender": "f",
+        "hairstyle": "bun"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "directionFromObject",
-              "object": "chair",
-              "dir": "south",
-              "room": "any",
-              "all": true
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "plant"
-              }
-            }
-          ]
+          "type": "nearWindow"
         }
       ]
     },
     {
       "id": "D",
-      "name": "Dalia",
+      "name": "Person D",
       "attributes": {
         "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "updo",
-        "hair": "brown"
+        "hairstyle": "updo"
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "plant"
+          "type": "inRoom",
+          "room": "B"
         }
       ]
     },
     {
       "id": "E",
-      "name": "Edison",
+      "name": "Person E",
       "attributes": {
         "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "hairstyle": "manbun",
+        "hairstyle": "sidePart",
         "hair": "brown"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "inRoom",
-              "room": "2"
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "table"
-              }
-            }
-          ]
+          "type": "uniqueOnObject",
+          "object": "carpet"
         }
       ]
     },
     {
       "id": "F",
-      "name": "Freya",
+      "name": "Person F",
       "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "curly",
-        "hair": "blond"
+        "gender": "m",
+        "hairstyle": "mohawk"
       },
       "clues": [
         {
-          "type": "nearObject",
+          "type": "uniqueOnObject",
           "object": "bed"
         }
       ]
     },
     {
       "id": "G",
-      "name": "Grant",
+      "name": "Person G",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "hime"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Person H",
       "attributes": {
         "gender": "m",
-        "bald": true,
-        "hair": "blond"
+        "hairstyle": "short"
       },
       "clues": [
         {
           "type": "and",
           "clues": [
             {
-              "type": "not",
-              "clue": {
-                "type": "onObject",
-                "object": "bed"
-              }
+              "type": "corner"
             },
             {
-              "type": "alone"
+              "type": "not",
+              "clue": {
+                "type": "sameRoomAsObject",
+                "object": "tv"
+              }
             }
           ]
-        }
-      ]
-    },
-    {
-      "id": "H",
-      "name": "Hana",
-      "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "long",
-        "hair": "white"
-      },
-      "clues": [
-        {
-          "type": "roomExists",
-          "attribute": "beard",
-          "value": true,
-          "relation": "corner"
         }
       ]
     }
   ],
   "victim": {
-    "name": "Viola",
+    "name": "Opfer",
     "attributes": {
       "gender": "f"
     }
   },
-  "boardClues": [],
+  "boardClues": [
+    {
+      "type": "emptyRooms",
+      "count": 1
+    },
+    {
+      "type": "countOnObject",
+      "object": "chair",
+      "count": 1
+    }
+  ],
   "difficulty": "hard"
 }

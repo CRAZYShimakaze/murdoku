@@ -1,7 +1,8 @@
 {
   "schema": 1,
   "id": "editor-alleine-mit-m-rdern",
-  "title": "Alleine mit Mördern",
+  "title": "Geladene Gäste",
+  "titles": { "de": "Geladene Gäste", "en": "The Guest List" },
   "size": {
     "width": 9,
     "height": 9

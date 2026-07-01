@@ -17,6 +17,8 @@ export type Technique =
   | 'insideXor'
   | 'boardCount'
   | 'emptyRooms'
+  | 'emptyRoomForcing'
+  | 'roomAssignment'
   | 'roomReasoning'
   | 'roomCoverage'
   | 'roomCapacity'
@@ -103,6 +105,8 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   insideXor: 3,
   boardCount: 4,
   emptyRooms: 4,
+  roomAssignment: 4,
+  emptyRoomForcing: 5,
   roomReasoning: 4,
   roomCoverage: 4,
   roomCapacity: 4,
