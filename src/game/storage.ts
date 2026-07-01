@@ -1,4 +1,5 @@
 /** localStorage persistence: solved levels, in-progress board, saved levels. */
+import { Capacitor } from '@capacitor/core'
 import type { LevelJson } from '../engine/index.ts'
 import type { LevelFilter } from './levels.ts'
 
@@ -143,14 +144,38 @@ export function clearEditorDraft(): void {
   }
 }
 
-/** Trigger a download of a level as a .json file (named after its title/id). */
-export function exportLevelJson(level: LevelJson): void {
+/**
+ * Save a level as a .json file (named after its title/id). On the web this triggers a
+ * normal browser download; on native (Android) a plain blob download lands in an
+ * unpredictable place, so instead we write the file into the app cache and hand it to
+ * the OS share sheet — the user then picks Files / Drive / … and knows exactly where it
+ * went. Resolves once done; rejects if the native share is dismissed or fails.
+ */
+export async function exportLevelJson(level: LevelJson): Promise<void> {
   const base = (level.title ?? level.id).trim().replace(/[^\w-]+/g, '_') || level.id
-  const blob = new Blob([JSON.stringify(level, null, 2)], { type: 'application/json' })
+  const filename = `${base}.json`
+  const json = JSON.stringify(level, null, 2)
+
+  if (Capacitor.isNativePlatform()) {
+    const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
+    const { Share } = await import('@capacitor/share')
+    const { uri } = await Filesystem.writeFile({
+      path: filename,
+      data: json,
+      directory: Directory.Cache,
+      encoding: Encoding.UTF8,
+    })
+    // `files` (not `url`) shares the actual file — Capacitor converts the cache URI to a
+    // shareable content:// URI via its FileProvider, so Files/Drive/… receive the .json.
+    await Share.share({ title: filename, files: [uri], dialogTitle: filename })
+    return
+  }
+
+  const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${base}.json`
+  a.download = filename
   a.click()
   URL.revokeObjectURL(url)
 }

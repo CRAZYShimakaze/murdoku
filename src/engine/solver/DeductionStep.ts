@@ -20,6 +20,7 @@ export type Technique =
   | 'roomReasoning'
   | 'roomCoverage'
   | 'roomCapacity'
+  | 'roomBijection'
   | 'groupRoom'
   | 'companionFit'
   | 'companionPairing'
@@ -105,6 +106,7 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   roomReasoning: 4,
   roomCoverage: 4,
   roomCapacity: 4,
+  roomBijection: 4,
   groupRoom: 5,
   companionFit: 4,
   companionPairing: 5,

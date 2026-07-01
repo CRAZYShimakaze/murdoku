@@ -1,0 +1,461 @@
+{
+  "schema": 1,
+  "id": "editor-der-fall-zu-hause",
+  "title": "Der Fall zu Hause",
+  "author": "Manuel Garand",
+  "size": {
+    "width": 9,
+    "height": 9
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.living",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "room.dining",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.kitchen",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.hallway",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.balcony",
+      "color": "#e6cda0",
+      "outside": true
+    },
+    "6": {
+      "nameKey": "room.gameroom",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.bar",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.lounge",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.terrace",
+      "color": "#e0c4a0",
+      "outside": true
+    },
+    "A": {
+      "nameKey": "room.library",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.conservatory",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.vestibule",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.pantry",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.guestbath",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.study",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "R": {
+      "type": "street",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "S": {
+      "type": "shower",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "O": {
+      "type": "boat",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "Z": {
+      "type": "tent",
+      "occupiable": true
+    },
+    "Y": {
+      "type": "waterlily",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "P": {
+      "type": "piano",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "B": {
+      "type": "bear",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "G": {
+      "type": "campfire",
+      "occupiable": false
+    },
+    "M": {
+      "type": "grill",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "111111222",
+    "111111222",
+    "111111222",
+    "111111144",
+    "111111144",
+    "111111144",
+    "DDDAAAAAA",
+    "DDDAAAAAA",
+    "DDDAAAAAA"
+  ],
+  "groundMap": [
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    ".........",
+    "........."
+  ],
+  "topMap": [
+    "pst...sps",
+    "ttt..p...",
+    ".ss..s...",
+    "tt...p...",
+    "p..tt....",
+    "..stt....",
+    ".........",
+    "g....ss.s",
+    "g.p..gggg"
+  ],
+  "windows": [
+    {
+      "r": 5,
+      "c": 8,
+      "side": "E"
+    },
+    {
+      "r": 3,
+      "c": 8,
+      "side": "E"
+    },
+    {
+      "r": 0,
+      "c": 4,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    }
+  ],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Apo",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "curly"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "inRoom",
+              "room": "1"
+            },
+            {
+              "type": "direction",
+              "of": "E",
+              "dir": "east"
+            },
+            {
+              "type": "direction",
+              "of": "B",
+              "dir": "south"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Björn",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "combOver"
+      },
+      "clues": [
+        {
+          "type": "besideSameObject",
+          "object": "plant",
+          "mate": {
+            "kind": "any"
+          }
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Clara",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "bun"
+      },
+      "clues": [
+        {
+          "type": "alone"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Diana",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "updo"
+      },
+      "clues": [
+        {
+          "type": "uniqueOnObject",
+          "object": "chair"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Ella",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "pixie"
+      },
+      "clues": [
+        {
+          "type": "inRow",
+          "row": 0
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Franz",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "mohawk"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "shelf"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Guido",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "spiky"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "table"
+            },
+            {
+              "type": "nearObject",
+              "object": "chair"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "H",
+      "name": "Heinz",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "short"
+      },
+      "clues": [
+        {
+          "type": "uniqueNearWindow"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Ozzy",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [
+    {
+      "type": "emptyRooms",
+      "count": 0
+    }
+  ],
+  "difficulty": "medium"
+}

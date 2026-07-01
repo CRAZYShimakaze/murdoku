@@ -13,6 +13,7 @@ import { EmptyRoomsTechnique } from './techniques/EmptyRoomsTechnique.ts'
 import { RoomReasoningTechnique } from './techniques/RoomReasoningTechnique.ts'
 import { RoomCoverageTechnique } from './techniques/RoomCoverageTechnique.ts'
 import { RoomCapacityTechnique } from './techniques/RoomCapacityTechnique.ts'
+import { RoomBijectionTechnique } from './techniques/RoomBijectionTechnique.ts'
 import { GroupRoomTechnique } from './techniques/GroupRoomTechnique.ts'
 import { CompanionRoomFitTechnique } from './techniques/CompanionRoomFitTechnique.ts'
 import { CompanionPairingTechnique } from './techniques/CompanionPairingTechnique.ts'
@@ -77,6 +78,7 @@ export function createForwardTechniques(puzzle: Puzzle, opts: TechniqueOptions =
     new RoomReasoningTechnique(),
     new RoomCoverageTechnique(),
     new RoomCapacityTechnique(),
+    new RoomBijectionTechnique(),
     new GroupRoomTechnique(),
     new CompanionRoomFitTechnique(),
     new CompanionPairingTechnique(),

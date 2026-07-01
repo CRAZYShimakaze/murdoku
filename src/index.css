@@ -250,6 +250,27 @@ button {
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
 }
+/* The reserved safe-area strip at the very top (camera notch) must always show only
+   the page backdrop — never the level cards scrolling underneath it. A fixed bar paints
+   the SAME backdrop as the body (colour + the same viewport-anchored gradients) so it is
+   seamless with the sticky header just below; the film-grain (body::after, z-9999) still
+   overlays it. Height collapses to 0 on notchless devices, so it is inert there. */
+.native body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  z-index: 50;
+  pointer-events: none;
+  background-color: var(--ink-900);
+  background-image:
+    radial-gradient(120% 80% at 50% -10%, rgba(226, 183, 94, 0.08), transparent 60%),
+    radial-gradient(90% 70% at 85% 110%, rgba(207, 70, 60, 0.07), transparent 55%),
+    radial-gradient(140% 140% at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  background-attachment: fixed;
+}
 /* Fill the now-padded parent instead of the raw viewport (no overflow), and
    reserve bottom space for the fixed quit button so the vertically centered
    content (incl. the language toggle) never overlaps it. */
@@ -2020,6 +2041,7 @@ button {
 .mk-editor__lang {
   display: flex;
   align-items: center;
+  gap: 0.5rem;
   padding: 0.5rem 0.95rem;
   border-left: 1px solid var(--line-strong);
 }
@@ -3248,6 +3270,16 @@ button {
   to {
     opacity: 1;
     transform: rotate(-7deg) scale(1);
+  }
+}
+
+/* On NARROW phones the header row can't fit the "Editor" wordmark next to the case
+   fields + load + gear, so drop just the wordmark there — kept on roomier portrait
+   tablets (which also hit the compact-header query below, but have plenty of width).
+   Higher specificity than that rule so it wins regardless of source order. */
+@media (max-width: 560px) {
+  .mk-editor__head .mk-editor__title {
+    display: none;
   }
 }
 

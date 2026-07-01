@@ -640,7 +640,7 @@ export default function GameScreen({
             saveCustomLevel({ ...meta.json, title: name })
             setSaved(true)
           }}
-          onExport={(name) => exportLevelJson({ ...meta.json, title: name })}
+          onExport={(name) => void exportLevelJson({ ...meta.json, title: name }).catch(() => {})}
           onNew={onNew}
         />
       )}

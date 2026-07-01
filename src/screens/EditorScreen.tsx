@@ -44,7 +44,7 @@ type Mode = 'rooms' | 'ground' | 'top' | 'window' | 'door' | 'global'
 /** The four board layers shown as tabs; windows & doors live inside 'top' (Objekte). */
 const LAYERS: Mode[] = ['rooms', 'ground', 'top', 'global']
 type CheckResult = {
-  kind: 'ok' | 'multi' | 'none' | 'contradiction' | 'error' | 'saved' | 'exported' | 'genfail' | 'genfailVorgaben'
+  kind: 'ok' | 'multi' | 'none' | 'contradiction' | 'error' | 'saved' | 'exported' | 'loaded' | 'genfail' | 'genfailVorgaben'
   murderer?: string
   /** For a solvable level: did pure forward deduction crack it ('pure'), or were
    *  proof-by-contradiction steps (forcing/SAT search) required ('contradiction')? */
@@ -135,6 +135,7 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   const randomHandle = useRef<GenHandle | null>(null)
   const [regenBusy, setRegenBusy] = useState(false)
   const regenHandle = useRef<GenHandle | null>(null)
+  const loadInputRef = useRef<HTMLInputElement>(null)
 
   // Every level already in the game (bundled + saved): a content signature to spot an
   // exact duplicate, and the titles to warn about a name clash. Computed once.
@@ -270,11 +271,14 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
         regenHandle.current = null
         setRegenBusy(false)
         const gen = editorStateFromLevel(level)
+        // Keep the THEME's ordered room list (exactly what the theme dropdown gives), NOT
+        // the generator's shuffled subset — so the room list stays stable after a regen.
+        const names = themeRooms(theme)
         // Take only the BOARD (rooms/floor/objects/openings); keep people + global clues.
         setState((s) => ({
           ...s,
           roomMap: gen.roomMap,
-          roomNames: gen.roomNames,
+          roomNames: gen.roomNames.map((n, i) => names[i] ?? n),
           groundMap: gen.groundMap,
           topMap: gen.topMap,
           windows: gen.windows,
@@ -371,12 +375,37 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   }
 
   const exportJson = () => {
+    let level: LevelJson
     try {
-      exportLevelJson(build(levelId()))
-      setShowSave(false)
-      setResult({ kind: 'exported' })
+      level = build(levelId())
     } catch {
       setShowSave(false)
+      setResult({ kind: 'error' })
+      return
+    }
+    setShowSave(false)
+    // Web downloads immediately; native opens the share sheet. Toast only once it
+    // resolves — and stay silent if the user dismisses the share.
+    exportLevelJson(level)
+      .then(() => setResult({ kind: 'exported' }))
+      .catch(() => {})
+  }
+
+  /** Load a level from a picked .json file (works on desktop, mobile web AND Android). */
+  const loadFromFile = async (file: File) => {
+    try {
+      const json = JSON.parse(await file.text()) as LevelJson
+      if (!json || typeof json !== 'object' || !json.rooms || !Array.isArray(json.suspects) || !json.victim) {
+        setResult({ kind: 'error' })
+        return
+      }
+      const d = draftFromLevel(json)
+      setState(d.state)
+      setName(d.name)
+      setDifficulty(d.difficulty)
+      setTheme(d.theme)
+      setResult({ kind: 'loaded' })
+    } catch {
       setResult({ kind: 'error' })
     }
   }
@@ -634,6 +663,42 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
         </div>
 
         <div className="mk-editor__lang">
+          {/* Load a level from a .json file — a hidden native file picker (works on
+              desktop, mobile web AND Android). Sits beside the gear so it stays visible
+              on phones too (unlike the desktop-only regenerate tool). */}
+          <input
+            ref={loadInputRef}
+            type="file"
+            accept="application/json,.json"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              e.target.value = ''
+              if (f) void loadFromFile(f)
+            }}
+          />
+          <button
+            type="button"
+            className="mk-gear mk-gear--board"
+            onClick={() => loadInputRef.current?.click()}
+            title={t('editor.load')}
+            aria-label={t('editor.load')}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 14.5 V18 a1.5 1.5 0 0 0 1.5 1.5 h13 a1.5 1.5 0 0 0 1.5-1.5 V14.5" />
+              <path d="M12 15 V4 M8 8 L12 4 L16 8" />
+            </svg>
+          </button>
           <SettingsButton />
         </div>
       </header>
