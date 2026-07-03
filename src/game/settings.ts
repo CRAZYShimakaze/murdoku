@@ -21,6 +21,8 @@ export interface AppSettings {
   genderColors: boolean
   /** Show the small corner badges revealing the object a placed figure stands/sits on. */
   objectBadges: boolean
+  /** Draw the subtle per-room floor patterns on the board (a taste setting). */
+  floorTextures: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -28,6 +30,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   helpMode: 'full',
   genderColors: true,
   objectBadges: true,
+  floorTextures: true,
 }
 
 let current: AppSettings = loadAppSettings(DEFAULT_SETTINGS)

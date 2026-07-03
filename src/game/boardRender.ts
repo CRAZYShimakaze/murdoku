@@ -18,6 +18,7 @@ import {
   drawBear,
   drawBookshelf,
   drawCampfire,
+  drawCarpetBase,
   drawCarpetTile,
   drawCashRegister,
   drawCrate,
@@ -82,6 +83,8 @@ export interface BoardView {
   helpMarks?: HelpMarks | null
   /** Draw the corner badges revealing what a placed figure stands/sits on (a setting). */
   objectBadges?: boolean
+  /** Draw the subtle per-room floor patterns (a taste setting; default on). */
+  floorTextures?: boolean
   /** Thumbnail mode: rooms + walls + object dots only. */
   preview?: boolean
 }
@@ -219,12 +222,17 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.fillStyle = water ? BOARD.grass : (room?.color ?? '#cfcfcf')
     ctx.fillRect(x, y, S, S)
     if (water) drawWaterTile(ctx, x, y, S, roomConnOf(c))
-    else if (!view.preview && room) {
+    else if (!view.preview && view.floorTextures !== false && room) {
       // Subtle per-room-type floor texture (kitchen checker, floorboards, grass, …).
       const pattern = floorPatternOf(room.nameKey)
       if (pattern) {
         const { row, col } = board.rc(c)
         drawFloorTile(ctx, x, y, S, row, col, pattern)
+        // A rug is translucent so the room colour tints it — but the floor pattern
+        // must not shine through fabric: blank it in the rug's exact shape (the
+        // highlight washes and the rug itself are drawn later, so they stack as before).
+        if (board.tileAt(c).ground?.type === 'carpet')
+          drawCarpetBase(ctx, x, y, S, connOf(c, 'ground', 'carpet'), room.color)
       }
     }
     // Secondary layer (selection) under the primary (hint), so the hint wins on overlap.
@@ -616,8 +624,9 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   //     row, wrapping down) so a busy cell never spills into its neighbour. The hovered
   //     suspect's letter only PULSES GENTLY in size around its normal size — it stays in
   //     its slot and the other letters in the cell remain fully visible. A black outline
-  //     (stroke under the fill) keeps light marks legible on similar-coloured rooms. ---
-  ctx.strokeStyle = BOARD.markOutline
+  //     (stroke under the fill) keeps light marks legible on similar-coloured rooms, and
+  //     a hairline white halo OUTSIDE the black one keeps them visible on dark rooms
+  //     (same trick as the crosses, just much thinner). ---
   ctx.lineJoin = 'round'
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
@@ -640,9 +649,14 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
       const emph = view.emphasizeMarks === id
       const scale = emph ? 1 + 0.35 * pulse : 1
       ctx.font = `${emph ? 800 : 700} ${S * 0.27 * scale}px 'Spline Sans Variable', sans-serif`
-      ctx.lineWidth = Math.max(1.2, S * 0.04 * scale)
+      const outlineW = Math.max(1.2, S * 0.04 * scale)
       ctx.fillStyle = suspectColor(view.suspectIndex.get(id) ?? 0)
       const label = markLabel(id)
+      ctx.strokeStyle = BOARD.markHalo
+      ctx.lineWidth = outlineW + Math.max(1.2, S * 0.028)
+      ctx.strokeText(label, tx, ty)
+      ctx.strokeStyle = BOARD.markOutline
+      ctx.lineWidth = outlineW
       ctx.strokeText(label, tx, ty)
       ctx.fillText(label, tx, ty)
       i++

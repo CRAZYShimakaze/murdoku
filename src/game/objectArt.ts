@@ -161,13 +161,27 @@ export function drawTableTile(ctx: Ctx, x: number, y: number, S: number, conn: C
   }
 }
 
+/** Rug geometry (fractions of S) — shared by the rug and its base blank below. */
+const RUG_PAD = 0.1
+const RUG_R = 0.12
+
+/** Repaint the room colour opaquely in the rug's exact merged shape. Called right after
+ *  the floor pattern: the rug itself is translucent (so the room colour — and any
+ *  candidate wash drawn later — still tints it), but a floor pattern must not shine
+ *  through fabric. Outside the rug the pattern keeps running up to its edge. */
+export function drawCarpetBase(ctx: Ctx, x: number, y: number, S: number, conn: Conn, color: string): void {
+  ctx.fillStyle = color
+  piecePath(ctx, x, y, S, conn, S * RUG_PAD, S * RUG_R, 0)
+  ctx.fill()
+}
+
 /** One cell of a soft rug (auto-tiled, translucent so the room colour shows). Sized so it
  *  reads as a rug yet still peeks out around the smaller furniture sitting on it, with a
  *  small woven motif (a diamond per cell) that tiles across the whole merged rug. */
 export function drawCarpetTile(ctx: Ctx, x: number, y: number, S: number, conn: Conn): void {
-  const pad = S * 0.1
+  const pad = S * RUG_PAD
   ctx.fillStyle = 'rgba(170, 108, 76, 0.55)'
-  piecePath(ctx, x, y, S, conn, pad, S * 0.12, 0)
+  piecePath(ctx, x, y, S, conn, pad, S * RUG_R, 0)
   ctx.fill()
   // a lighter inner field, also merged, for a woven border (its larger inset makes the
   // darker field above line the diagonal notch as an inline, just like the outer edges)

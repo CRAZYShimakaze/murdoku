@@ -3686,14 +3686,6 @@ button {
   text-transform: uppercase;
   color: var(--brass);
 }
-.mk-settings__sub {
-  font-family: var(--font-ui);
-  font-size: 0.8rem;
-  color: var(--bone-dim);
-  line-height: 1.4;
-  text-transform: none;
-  letter-spacing: normal;
-}
 .mk-settings__modes {
   display: grid;
   gap: 0.45rem;
@@ -3734,12 +3726,6 @@ button {
   color: var(--bone);
   cursor: pointer;
 }
-.mk-settings__toggletext {
-  display: grid;
-  gap: 0.2rem;
-  text-align: left;
-  min-width: 0;
-}
 .mk-switch {
   flex: none;
   width: 44px;
@@ -3773,18 +3759,14 @@ button {
   justify-self: center;
 }
 
-/* Mobile: the dialog grows with every toggle, so on narrow screens drop the helper
-   sub-texts (the labels read clearly on their own) and tighten the spacing. This keeps
-   the whole list visible with little or no scrolling instead of a long scroll. */
+/* Mobile: tighten the spacing so the whole list stays visible with little or no
+   scrolling (the toggle rows are label-only everywhere already). */
 @media (max-width: 640px) {
   .mk-settings {
     gap: 0.5rem;
   }
   .mk-settings__row {
     padding: 0.5rem 0.65rem;
-  }
-  .mk-settings__sub {
-    display: none;
   }
   .mk-settings__modes {
     gap: 0.35rem;

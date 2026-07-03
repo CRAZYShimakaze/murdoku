@@ -9,6 +9,7 @@ export const BOARD = {
   cross: 'rgba(20, 16, 26, 0.92)', // eliminated-cell X (dark, drawn over a white halo)
   crossOutline: '#ffffff', // white rim around the X so it pops on dark rooms
   markOutline: '#0d0c12', // black outline behind pencil-mark letters (legibility)
+  markHalo: '#ffffff', // hairline white rim outside the black mark outline (dark rooms)
   highlight: 'rgba(226, 183, 94, 0.34)', // candidate wash
   highlightRing: '#e2b75e',
   window: '#8fc6e0',

@@ -10,6 +10,8 @@
  * - One global mapping nameKey → pattern, so a "Küche" looks the same in every
  *   theme — and within any single theme all 15 rooms stay visually distinct
  *   (guaranteed by floorArt.test.ts).
+ * - Motifs are structural — filled shapes, lattices, weaves — never sprays of
+ *   tiny dots/specks/triangles (those read as rendering noise at board scale).
  * - Water rooms (lake/jetty/…) keep their dedicated water art — no pattern.
  * - Unknown room names simply get no pattern (plain colour, old levels safe).
  * - Editor placeholder rooms (room.editor1..F) rotate through a default set.
@@ -67,7 +69,7 @@ const PATTERN_OF: Record<string, FloorPattern> = {
   cafeteria: 'checker',
   breakfastroom: 'tileGrid',
   breakroom: 'checker',
-  picnicarea: 'checker', // the checkered picnic blanket
+  picnicarea: 'flagstone', // paved slabs under the picnic tables (it's outdoors)
   cafe: 'checker',
   // baths & wet rooms
   bathroom: 'tileSmall',
@@ -87,6 +89,8 @@ const PATTERN_OF: Record<string, FloorPattern> = {
   commonroom: 'planksH',
   gymnasium: 'planksH',
   farmhouse: 'planksH',
+  produce: 'planksH', // supermarket aisle: market-stall wood, not grass (indoors)
+  fruit: 'planksOld', // supermarket aisle: rustic crate wood, not meadow (indoors)
   hallway: 'planksV',
   cloakroom: 'planksV',
   vestibule: 'marble',
@@ -217,10 +221,8 @@ const PATTERN_OF: Record<string, FloorPattern> = {
   garden: 'grass',
   frontyard: 'grass',
   campsite1: 'grass',
-  produce: 'grass',
   pasture: 'meadow',
   clearing: 'meadow',
-  fruit: 'meadow',
   field: 'furrows',
   pigsty: 'dirt',
   campsite2: 'dirt',
@@ -306,7 +308,7 @@ export function drawFloorTile(
   switch (p) {
     case 'checker': {
       // 2×2 alternating shading, phase-continuous across tiles.
-      ctx.fillStyle = INK(0.05)
+      ctx.fillStyle = INK(0.075)
       const h = S / 2
       for (let j = 0; j < 2; j++)
         for (let i = 0; i < 2; i++)
@@ -316,7 +318,7 @@ export function drawFloorTile(
     case 'checkerDiag': {
       // Diamond checker: every tile carries a shaded rhombus; the corners of four
       // neighbours form the complementary diamond.
-      ctx.fillStyle = INK(0.05)
+      ctx.fillStyle = INK(0.07)
       ctx.beginPath()
       ctx.moveTo(x + S / 2, y)
       ctx.lineTo(x + S, y + S / 2)
@@ -328,7 +330,7 @@ export function drawFloorTile(
     }
     case 'tileGrid': {
       // Ceramic 2×2: a grout cross through the middle of the cell.
-      ctx.strokeStyle = INK(0.06)
+      ctx.strokeStyle = INK(0.09)
       ctx.lineWidth = thin
       ctx.beginPath()
       ctx.moveTo(x + S / 2, y)
@@ -340,7 +342,7 @@ export function drawFloorTile(
     }
     case 'tileSmall': {
       // Fine 3×3 tiling.
-      ctx.strokeStyle = INK(0.05)
+      ctx.strokeStyle = INK(0.075)
       ctx.lineWidth = thin
       ctx.beginPath()
       for (let k = 1; k < 3; k++) {
@@ -354,7 +356,7 @@ export function drawFloorTile(
     }
     case 'hexTile': {
       // Honeycomb mosaic, per-tile periodic (two offset rows).
-      ctx.strokeStyle = INK(0.06)
+      ctx.strokeStyle = INK(0.085)
       ctx.lineWidth = thin
       const r = S * 0.21
       const hex = (cx: number, cy: number): void => {
@@ -374,8 +376,25 @@ export function drawFloorTile(
       break
     }
     case 'diamond': {
-      // Diagonal lattice (reads as riffled steel / glazing bars).
-      ctx.strokeStyle = INK(0.06)
+      // Glazing-bar lattice with softly shaded corner panes, so the centre
+      // rhombus stands proud (conservatory glass / riffled steel).
+      ctx.fillStyle = INK(0.05)
+      ctx.beginPath()
+      ctx.moveTo(x, y)
+      ctx.lineTo(x + S / 2, y)
+      ctx.lineTo(x, y + S / 2)
+      ctx.moveTo(x + S, y)
+      ctx.lineTo(x + S, y + S / 2)
+      ctx.lineTo(x + S / 2, y)
+      ctx.moveTo(x + S, y + S)
+      ctx.lineTo(x + S / 2, y + S)
+      ctx.lineTo(x + S, y + S / 2)
+      ctx.moveTo(x, y + S)
+      ctx.lineTo(x, y + S / 2)
+      ctx.lineTo(x + S / 2, y + S)
+      ctx.closePath()
+      ctx.fill()
+      ctx.strokeStyle = INK(0.09)
       ctx.lineWidth = thin
       ctx.beginPath()
       ctx.moveTo(x + S / 2, y)
@@ -390,7 +409,7 @@ export function drawFloorTile(
     case 'planksV': {
       // Three boards per tile with staggered end joints and a grain stroke.
       const horiz = p === 'planksH'
-      ctx.strokeStyle = INK(0.055)
+      ctx.strokeStyle = INK(0.085)
       ctx.lineWidth = thin
       ctx.beginPath()
       for (let k = 1; k < 3; k++) {
@@ -417,7 +436,7 @@ export function drawFloorTile(
     }
     case 'planksOld': {
       // Two wide rustic boards with the occasional knothole.
-      ctx.strokeStyle = INK(0.06)
+      ctx.strokeStyle = INK(0.09)
       ctx.lineWidth = mid
       ctx.beginPath()
       ctx.moveTo(x + S / 2, y)
@@ -428,7 +447,7 @@ export function drawFloorTile(
         const kx = x + S * (0.15 + 0.2 * rnd(row, col, 4)) + (rnd(row, col, 5) < 0.5 ? S / 2 : 0)
         const ky = y + S * (0.2 + 0.6 * rnd(row, col, 6))
         ctx.beginPath()
-        ctx.arc(kx, ky, S * 0.045, 0, Math.PI * 2)
+        ctx.arc(kx, ky, S * 0.055, 0, Math.PI * 2)
         ctx.stroke()
       }
       ctx.beginPath()
@@ -439,7 +458,7 @@ export function drawFloorTile(
     }
     case 'herringbone': {
       // Repeated zigzag rows — the classic parquet weave.
-      ctx.strokeStyle = INK(0.05)
+      ctx.strokeStyle = INK(0.075)
       ctx.lineWidth = thin
       ctx.beginPath()
       for (let k = 0; k <= 4; k++) {
@@ -455,7 +474,7 @@ export function drawFloorTile(
     }
     case 'parquet': {
       // Basket weave: 2×2 blocks of alternating board direction.
-      ctx.strokeStyle = INK(0.05)
+      ctx.strokeStyle = INK(0.075)
       ctx.lineWidth = thin
       const h = S / 2
       ctx.beginPath()
@@ -478,18 +497,25 @@ export function drawFloorTile(
       break
     }
     case 'deck': {
-      // Two wide outdoor boards with a strong gap and dowel dots.
-      ctx.strokeStyle = INK(0.1)
+      // Two wide outdoor boards: bold gap, staggered butt joints, a grain streak.
+      ctx.strokeStyle = INK(0.12)
       ctx.lineWidth = mid
       ctx.beginPath()
       ctx.moveTo(x, y + S / 2)
       ctx.lineTo(x + S, y + S / 2)
+      for (let b = 0; b < 2; b++) {
+        const t = 0.2 + 0.6 * rnd(row, col, b + 11)
+        ctx.moveTo(x + t * S, y + (b * S) / 2)
+        ctx.lineTo(x + t * S, y + ((b + 1) * S) / 2)
+      }
       ctx.stroke()
-      ctx.fillStyle = INK(0.1)
+      ctx.strokeStyle = INK(0.07)
+      ctx.lineWidth = thin
       ctx.beginPath()
-      ctx.arc(x + S * 0.18, y + S * 0.26, Math.max(1, S * 0.022), 0, Math.PI * 2)
-      ctx.arc(x + S * 0.82, y + S * 0.76, Math.max(1, S * 0.022), 0, Math.PI * 2)
-      ctx.fill()
+      const gy = y + S * (0.18 + 0.14 * rnd(row, col, 13))
+      ctx.moveTo(x + S * 0.08, gy)
+      ctx.quadraticCurveTo(x + S * 0.5, gy + S * 0.05, x + S * 0.92, gy)
+      ctx.stroke()
       break
     }
     case 'marble': {
@@ -497,18 +523,18 @@ export function drawFloorTile(
       const y1 = y + S * (0.15 + 0.5 * rnd(row, col, 1))
       const y2 = y + S * (0.25 + 0.55 * rnd(row, col, 2))
       const cy = y + S * (0.1 + 0.7 * rnd(row, col, 3))
-      ctx.strokeStyle = INK(0.09)
+      ctx.strokeStyle = INK(0.12)
       ctx.lineWidth = thin
       ctx.beginPath()
       ctx.moveTo(x, y1)
       ctx.quadraticCurveTo(x + S * 0.5, cy, x + S, y2)
       ctx.stroke()
-      ctx.strokeStyle = LITE(0.28)
+      ctx.strokeStyle = LITE(0.34)
       ctx.beginPath()
       ctx.moveTo(x, y1 + thin * 1.8)
       ctx.quadraticCurveTo(x + S * 0.5, cy + thin * 1.8, x + S, y2 + thin * 1.8)
       ctx.stroke()
-      ctx.strokeStyle = INK(0.07)
+      ctx.strokeStyle = INK(0.1)
       ctx.beginPath()
       const bx = x + S * (0.25 + 0.4 * rnd(row, col, 4))
       const by = (y1 + cy) / 2
@@ -520,7 +546,7 @@ export function drawFloorTile(
     case 'flagstone': {
       // One big slab per cell, rounded, slightly irregular inset.
       const pad = S * (0.05 + 0.02 * rnd(row, col, 1))
-      ctx.strokeStyle = INK(0.06)
+      ctx.strokeStyle = INK(0.09)
       ctx.lineWidth = thin
       ctx.beginPath()
       ctx.roundRect(x + pad, y + pad, S - 2 * pad, S - 2 * pad, S * (0.1 + 0.08 * rnd(row, col, 2)))
@@ -530,7 +556,7 @@ export function drawFloorTile(
     case 'cobble': {
       // Four rounded setts per cell.
       const h = S / 2
-      ctx.strokeStyle = INK(0.055)
+      ctx.strokeStyle = INK(0.08)
       ctx.lineWidth = thin
       for (let j = 0; j < 2; j++)
         for (let i = 0; i < 2; i++) {
@@ -539,24 +565,24 @@ export function drawFloorTile(
           ctx.roundRect(x + i * h + pad, y + j * h + pad, h - 2 * pad, h - 2 * pad, h * 0.3)
           ctx.stroke()
           if ((row * 2 + j + col * 2 + i) % 2 === 0) {
-            ctx.fillStyle = LITE(0.05)
+            ctx.fillStyle = LITE(0.09)
             ctx.fill()
           }
         }
       break
     }
     case 'concrete': {
-      // Fine speckle, sometimes a hairline crack.
-      ctx.fillStyle = INK(0.05)
-      for (let k = 0; k < 5; k++) {
-        const px = x + S * rnd(row, col, k * 2 + 1)
-        const py = y + S * rnd(row, col, k * 2 + 2)
-        ctx.beginPath()
-        ctx.arc(px, py, Math.max(0.6, S * 0.014), 0, Math.PI * 2)
-        ctx.fill()
-      }
-      if (rnd(row, col, 20) < 0.3) {
-        ctx.strokeStyle = INK(0.05)
+      // Burnished slab: a broad filled trowel sweep and the odd hairline crack.
+      ctx.strokeStyle = INK(0.045)
+      ctx.lineWidth = S * 0.15
+      const cx = x + S * (0.25 + 0.5 * rnd(row, col, 1))
+      const cy = y + S * (0.25 + 0.5 * rnd(row, col, 2))
+      const a0 = Math.PI * 2 * rnd(row, col, 3)
+      ctx.beginPath()
+      ctx.arc(cx, cy, S * 0.38, a0, a0 + Math.PI * (0.5 + 0.5 * rnd(row, col, 4)))
+      ctx.stroke()
+      if (rnd(row, col, 20) < 0.35) {
+        ctx.strokeStyle = INK(0.09)
         ctx.lineWidth = thin * 0.8
         ctx.beginPath()
         ctx.moveTo(x + S * rnd(row, col, 21), y)
@@ -567,34 +593,64 @@ export function drawFloorTile(
       break
     }
     case 'asphalt': {
-      // Denser speckle in both light and dark.
-      for (let k = 0; k < 10; k++) {
-        const px = x + S * rnd(row, col, k * 2 + 1)
-        const py = y + S * rnd(row, col, k * 2 + 2)
-        ctx.fillStyle = k % 2 === 0 ? INK(0.09) : LITE(0.11)
+      // Worn blacktop: filled repair patches and meandering tar seams.
+      if (rnd(row, col, 1) < 0.5) {
+        ctx.fillStyle = INK(0.06)
+        const pw = S * (0.3 + 0.25 * rnd(row, col, 2))
+        const ph = S * (0.18 + 0.16 * rnd(row, col, 3))
         ctx.beginPath()
-        ctx.arc(px, py, Math.max(0.8, S * 0.017), 0, Math.PI * 2)
+        ctx.roundRect(
+          x + S * (0.08 + 0.5 * rnd(row, col, 4)),
+          y + S * (0.1 + 0.55 * rnd(row, col, 5)),
+          pw,
+          ph,
+          ph * 0.4,
+        )
         ctx.fill()
+      }
+      if (rnd(row, col, 6) < 0.7) {
+        ctx.strokeStyle = INK(0.11)
+        ctx.lineWidth = thin
+        ctx.beginPath()
+        const x0 = x + S * (0.15 + 0.7 * rnd(row, col, 7))
+        const x1 = x + S * (0.15 + 0.7 * rnd(row, col, 8))
+        ctx.moveTo(x0, y)
+        ctx.bezierCurveTo(
+          x0 + S * (rnd(row, col, 9) - 0.5) * 0.5,
+          y + S * 0.33,
+          x1 + S * (rnd(row, col, 10) - 0.5) * 0.5,
+          y + S * 0.66,
+          x1,
+          y + S,
+        )
+        ctx.stroke()
       }
       break
     }
     case 'gravel': {
-      // Loose pebbles: small outlined stones on a jittered grid.
-      ctx.strokeStyle = INK(0.06)
-      ctx.lineWidth = thin * 0.9
-      for (let k = 0; k < 6; k++) {
-        const gx = x + S * ((k % 3) / 3 + 0.16 + 0.1 * (rnd(row, col, k) - 0.5))
-        const gy = y + S * (Math.floor(k / 3) / 2 + 0.25 + 0.12 * (rnd(row, col, k + 9) - 0.5))
+      // Coarse gravel: fat filled pebbles, light against dark.
+      for (let k = 0; k < 5; k++) {
+        const gx = x + S * ((k % 3) / 3 + 0.17 + 0.14 * (rnd(row, col, k) - 0.5))
+        const gy = y + S * (Math.floor(k / 3) / 2 + 0.26 + 0.16 * (rnd(row, col, k + 9) - 0.5))
+        ctx.fillStyle = k % 2 === 0 ? INK(0.07) : LITE(0.16)
         ctx.beginPath()
-        ctx.arc(gx, gy, S * (0.045 + 0.025 * rnd(row, col, k + 17)), 0, Math.PI * 2)
-        ctx.stroke()
+        ctx.ellipse(
+          gx,
+          gy,
+          S * (0.07 + 0.04 * rnd(row, col, k + 17)),
+          S * (0.05 + 0.03 * rnd(row, col, k + 29)),
+          Math.PI * rnd(row, col, k + 23),
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
       }
       break
     }
     case 'grass':
     case 'meadow': {
       // Little tufts (2 blades each); the meadow adds tiny pale blossoms.
-      ctx.strokeStyle = GREEN(0.22)
+      ctx.strokeStyle = GREEN(0.26)
       ctx.lineWidth = Math.max(1, S * 0.02)
       ctx.lineCap = 'round'
       const tufts = p === 'grass' ? 6 : 4
@@ -610,16 +666,21 @@ export function drawFloorTile(
         ctx.stroke()
       }
       if (p === 'meadow') {
+        // Little daisies: five petals around a golden heart (no lone dots).
         for (let k = 0; k < 2; k++) {
           const fx = x + S * (0.2 + 0.6 * rnd(row, col, k + 41))
           const fy = y + S * (0.2 + 0.6 * rnd(row, col, k + 47))
+          const pr = Math.max(1.2, S * 0.05)
           ctx.fillStyle = LITE(0.5)
+          for (let pk = 0; pk < 5; pk++) {
+            const pa = (pk * Math.PI * 2) / 5 + Math.PI * rnd(row, col, k + 53)
+            ctx.beginPath()
+            ctx.ellipse(fx + Math.cos(pa) * pr, fy + Math.sin(pa) * pr, pr * 0.75, pr * 0.45, pa, 0, Math.PI * 2)
+            ctx.fill()
+          }
+          ctx.fillStyle = 'rgba(214, 172, 60, 0.6)'
           ctx.beginPath()
-          ctx.arc(fx, fy, Math.max(1, S * 0.03), 0, Math.PI * 2)
-          ctx.fill()
-          ctx.fillStyle = 'rgba(214, 172, 60, 0.55)'
-          ctx.beginPath()
-          ctx.arc(fx, fy, Math.max(0.5, S * 0.012), 0, Math.PI * 2)
+          ctx.arc(fx, fy, pr * 0.5, 0, Math.PI * 2)
           ctx.fill()
         }
       }
@@ -627,7 +688,7 @@ export function drawFloorTile(
     }
     case 'furrows': {
       // Ploughed rows: gently waving earth lines.
-      ctx.strokeStyle = EARTH(0.18)
+      ctx.strokeStyle = EARTH(0.22)
       ctx.lineWidth = Math.max(1, S * 0.03)
       ctx.lineCap = 'round'
       ctx.beginPath()
@@ -640,26 +701,20 @@ export function drawFloorTile(
       break
     }
     case 'dirt': {
-      // Mottled trampled ground.
-      ctx.fillStyle = EARTH(0.1)
-      for (let k = 0; k < 3; k++) {
-        const px = x + S * (0.2 + 0.6 * rnd(row, col, k * 3 + 1))
-        const py = y + S * (0.2 + 0.6 * rnd(row, col, k * 3 + 2))
+      // Mottled trampled ground: broad earth patches only.
+      ctx.fillStyle = EARTH(0.12)
+      for (let k = 0; k < 4; k++) {
+        const px = x + S * (0.18 + 0.64 * rnd(row, col, k * 3 + 1))
+        const py = y + S * (0.18 + 0.64 * rnd(row, col, k * 3 + 2))
         ctx.beginPath()
-        ctx.ellipse(px, py, S * 0.13, S * 0.08, Math.PI * rnd(row, col, k * 3 + 3), 0, Math.PI * 2)
-        ctx.fill()
-      }
-      ctx.fillStyle = EARTH(0.14)
-      for (let k = 0; k < 3; k++) {
-        ctx.beginPath()
-        ctx.arc(x + S * rnd(row, col, k + 51), y + S * rnd(row, col, k + 57), Math.max(0.7, S * 0.016), 0, Math.PI * 2)
+        ctx.ellipse(px, py, S * 0.15, S * 0.09, Math.PI * rnd(row, col, k * 3 + 3), 0, Math.PI * 2)
         ctx.fill()
       }
       break
     }
     case 'straw': {
       // Scattered short stalks.
-      ctx.strokeStyle = STRAW(0.32)
+      ctx.strokeStyle = STRAW(0.38)
       ctx.lineWidth = Math.max(1, S * 0.02)
       ctx.lineCap = 'round'
       ctx.beginPath()
@@ -675,62 +730,72 @@ export function drawFloorTile(
       break
     }
     case 'leaves': {
-      // Forest floor: fallen leaves and a little soil.
-      for (let k = 0; k < 3; k++) {
-        const px = x + S * (0.18 + 0.64 * rnd(row, col, k * 3 + 1))
-        const py = y + S * (0.18 + 0.64 * rnd(row, col, k * 3 + 2))
-        ctx.fillStyle = GREEN(0.18)
+      // Forest floor: proper fallen leaves, each with a midrib.
+      for (let k = 0; k < 4; k++) {
+        const px = x + S * (0.16 + 0.68 * rnd(row, col, k * 3 + 1))
+        const py = y + S * (0.16 + 0.68 * rnd(row, col, k * 3 + 2))
+        const a = Math.PI * rnd(row, col, k * 3 + 3)
+        const rx = S * 0.085
+        ctx.fillStyle = k === 3 ? EARTH(0.16) : GREEN(0.2)
         ctx.beginPath()
-        ctx.ellipse(px, py, S * 0.07, S * 0.032, Math.PI * rnd(row, col, k * 3 + 3), 0, Math.PI * 2)
+        ctx.ellipse(px, py, rx, rx * 0.45, a, 0, Math.PI * 2)
         ctx.fill()
-      }
-      ctx.fillStyle = EARTH(0.12)
-      for (let k = 0; k < 2; k++) {
+        ctx.strokeStyle = k === 3 ? EARTH(0.24) : GREEN(0.3)
+        ctx.lineWidth = Math.max(0.7, S * 0.012)
         ctx.beginPath()
-        ctx.arc(x + S * rnd(row, col, k + 81), y + S * rnd(row, col, k + 87), Math.max(0.7, S * 0.015), 0, Math.PI * 2)
-        ctx.fill()
+        ctx.moveTo(px - Math.cos(a) * rx, py - Math.sin(a) * rx)
+        ctx.lineTo(px + Math.cos(a) * rx, py + Math.sin(a) * rx)
+        ctx.stroke()
       }
       break
     }
     case 'sand': {
-      // Fine stipple with a raked ripple.
-      ctx.fillStyle = INK(0.06)
-      for (let k = 0; k < 9; k++) {
+      // Raked sand: alternating light and shaded ripple lines.
+      ctx.lineWidth = Math.max(1, S * 0.028)
+      ctx.lineCap = 'round'
+      for (let k = 0; k < 3; k++) {
+        const yy = y + S * (0.2 + 0.3 * k + 0.06 * (rnd(row, col, k + 91) - 0.5))
+        ctx.strokeStyle = k === 1 ? INK(0.06) : LITE(0.3)
         ctx.beginPath()
-        ctx.arc(
-          x + S * rnd(row, col, k * 2 + 1),
-          y + S * rnd(row, col, k * 2 + 2),
-          Math.max(0.7, S * 0.014),
-          0,
-          Math.PI * 2,
-        )
-        ctx.fill()
+        ctx.moveTo(x, yy)
+        ctx.quadraticCurveTo(x + S * 0.5, yy + S * 0.09 * (k % 2 === 0 ? 1 : -1), x + S, yy)
+        ctx.stroke()
       }
-      ctx.strokeStyle = LITE(0.24)
-      ctx.lineWidth = thin
-      ctx.beginPath()
-      const yy = y + S * (0.3 + 0.4 * rnd(row, col, 91))
-      ctx.moveTo(x, yy)
-      ctx.quadraticCurveTo(x + S * 0.5, yy + S * 0.08, x + S, yy)
-      ctx.stroke()
       break
     }
     case 'carpet': {
-      // Fine woven dot grid (offset rows).
-      ctx.fillStyle = INK(0.07)
-      const step = S / 4
-      for (let j = 0; j < 4; j++)
-        for (let i = 0; i < 4; i++) {
-          const px = x + (i + 0.5) * step + (j % 2 === 0 ? 0 : step / 2)
-          ctx.beginPath()
-          ctx.arc(px, y + (j + 0.5) * step, Math.max(0.9, S * 0.018), 0, Math.PI * 2)
-          ctx.fill()
+      // Carpet tiles: 2×2 quarters of fine diagonal pile, direction alternating
+      // per quarter — the classic office chessboard weave.
+      ctx.strokeStyle = INK(0.07)
+      ctx.lineWidth = thin
+      const h = S / 2
+      ctx.beginPath()
+      for (let j = 0; j < 2; j++)
+        for (let i = 0; i < 2; i++) {
+          const bx = x + i * h
+          const by = y + j * h
+          const flip = (row * 2 + j + col * 2 + i) % 2 === 0
+          for (let k = 1; k < 4; k++) {
+            const t = (k * h) / 2
+            const ax = Math.max(0, t - h)
+            const ay = Math.min(t, h)
+            const ex = Math.min(t, h)
+            const ey = Math.max(0, t - h)
+            if (flip) {
+              ctx.moveTo(bx + ax, by + ay)
+              ctx.lineTo(bx + ex, by + ey)
+            } else {
+              ctx.moveTo(bx + h - ax, by + ay)
+              ctx.lineTo(bx + h - ex, by + ey)
+            }
+          }
         }
+      ctx.stroke()
       break
     }
     case 'carpetDiag': {
       // Soft velvet: one family of diagonal strokes.
-      ctx.strokeStyle = INK(0.04)
+      ctx.strokeStyle = INK(0.06)
       ctx.lineWidth = mid
       ctx.beginPath()
       for (let k = -1; k <= 2; k++) {
@@ -741,69 +806,71 @@ export function drawFloorTile(
       break
     }
     case 'rubber': {
-      // Stud mat: four raised dots.
-      ctx.fillStyle = INK(0.06)
+      // Stud mat: four fat raised studs — big enough to read as structure.
+      ctx.fillStyle = INK(0.07)
       const h = S / 4
       for (let j = 0; j < 2; j++)
         for (let i = 0; i < 2; i++) {
           ctx.beginPath()
-          ctx.arc(x + h + i * 2 * h, y + h + j * 2 * h, Math.max(1.2, S * 0.05), 0, Math.PI * 2)
+          ctx.arc(x + h + i * 2 * h, y + h + j * 2 * h, Math.max(2, S * 0.09), 0, Math.PI * 2)
           ctx.fill()
         }
       break
     }
     case 'lino': {
-      // Sheet floor: clear flecks in light and dark.
-      for (let k = 0; k < 9; k++) {
-        ctx.fillStyle = k % 2 === 0 ? LITE(0.32) : INK(0.09)
-        ctx.beginPath()
-        ctx.arc(
-          x + S * rnd(row, col, k * 2 + 1),
-          y + S * rnd(row, col, k * 2 + 2),
-          Math.max(1, S * 0.022),
-          0,
-          Math.PI * 2,
-        )
-        ctx.fill()
-      }
+      // Classic lino: four filled diamonds, one per quadrant — the fine argyle
+      // counterpart to checkerDiag's single big rhombus.
+      ctx.fillStyle = INK(0.06)
+      const h = S / 2
+      for (let j = 0; j < 2; j++)
+        for (let i = 0; i < 2; i++) {
+          const bx = x + i * h
+          const by = y + j * h
+          ctx.beginPath()
+          ctx.moveTo(bx + h / 2, by)
+          ctx.lineTo(bx + h, by + h / 2)
+          ctx.lineTo(bx + h / 2, by + h)
+          ctx.lineTo(bx, by + h / 2)
+          ctx.closePath()
+          ctx.fill()
+        }
       break
     }
     case 'terrazzo': {
-      // Polished chip floor: angular light chips plus dark specks.
-      for (let k = 0; k < 4; k++) {
-        const px = x + S * (0.12 + 0.7 * rnd(row, col, k * 4 + 1))
-        const py = y + S * (0.12 + 0.7 * rnd(row, col, k * 4 + 2))
-        const r = S * (0.045 + 0.035 * rnd(row, col, k * 4 + 3))
-        const a = Math.PI * 2 * rnd(row, col, k * 4 + 4)
-        ctx.fillStyle = LITE(0.34)
+      // Polished chip floor: a few LARGE angular flakes (filled quads, light
+      // over dark) instead of specks.
+      for (let k = 0; k < 3; k++) {
+        const px = x + S * (0.18 + 0.64 * rnd(row, col, k * 6 + 1))
+        const py = y + S * (0.18 + 0.64 * rnd(row, col, k * 6 + 2))
+        const r = S * (0.1 + 0.06 * rnd(row, col, k * 6 + 3))
+        const a = Math.PI * 2 * rnd(row, col, k * 6 + 4)
+        const sq = 0.55 + 0.35 * rnd(row, col, k * 6 + 5)
+        ctx.fillStyle = k === 2 ? INK(0.07) : LITE(0.32)
         ctx.beginPath()
         ctx.moveTo(px + r * Math.cos(a), py + r * Math.sin(a))
-        ctx.lineTo(px + r * Math.cos(a + 2.3), py + r * Math.sin(a + 2.3))
-        ctx.lineTo(px + r * Math.cos(a + 4.4), py + r * Math.sin(a + 4.4))
+        ctx.lineTo(px + r * sq * Math.cos(a + 1.7), py + r * sq * Math.sin(a + 1.7))
+        ctx.lineTo(px + r * Math.cos(a + 3.1), py + r * Math.sin(a + 3.1))
+        ctx.lineTo(px + r * sq * Math.cos(a + 4.8), py + r * sq * Math.sin(a + 4.8))
         ctx.closePath()
-        ctx.fill()
-      }
-      ctx.fillStyle = INK(0.08)
-      for (let k = 0; k < 4; k++) {
-        ctx.beginPath()
-        ctx.arc(x + S * rnd(row, col, k + 61), y + S * rnd(row, col, k + 67), Math.max(0.8, S * 0.017), 0, Math.PI * 2)
         ctx.fill()
       }
       break
     }
     case 'splatter': {
-      // Paint drips in three muted studio colours (with tiny satellites).
-      const paints = ['rgba(178, 72, 60, 0.16)', 'rgba(64, 98, 160, 0.16)', 'rgba(196, 158, 64, 0.18)']
+      // Paint spills in three muted studio colours: big blobs with a drip tail
+      // (no satellite dots).
+      const paints = ['rgba(178, 72, 60, 0.2)', 'rgba(64, 98, 160, 0.2)', 'rgba(196, 158, 64, 0.22)']
       for (let k = 0; k < 3; k++) {
         const px = x + S * (0.15 + 0.7 * rnd(row, col, k * 4 + 1))
         const py = y + S * (0.15 + 0.7 * rnd(row, col, k * 4 + 2))
-        const r = S * (0.035 + 0.03 * rnd(row, col, k * 4 + 3))
+        const r = S * (0.055 + 0.045 * rnd(row, col, k * 4 + 3))
+        const a = Math.PI * 2 * rnd(row, col, k * 4 + 4)
         ctx.fillStyle = paints[k]
         ctx.beginPath()
         ctx.arc(px, py, r, 0, Math.PI * 2)
         ctx.fill()
         ctx.beginPath()
-        ctx.arc(px + r * 1.8, py + r * (rnd(row, col, k * 4 + 4) - 0.5) * 2, r * 0.35, 0, Math.PI * 2)
+        ctx.ellipse(px + Math.cos(a) * r * 1.4, py + Math.sin(a) * r * 1.4, r * 0.8, r * 0.35, a, 0, Math.PI * 2)
         ctx.fill()
       }
       break

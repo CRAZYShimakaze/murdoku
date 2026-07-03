@@ -59,7 +59,7 @@ interface Layout {
 export default function BoardCanvas(props: Props) {
   const { puzzle } = props
   const { t } = useTranslation()
-  const { objectBadges } = useSettings()
+  const { objectBadges, floorTextures } = useSettings()
   const W = puzzle.board.width
   const H = puzzle.board.height
 
@@ -83,9 +83,11 @@ export default function BoardCanvas(props: Props) {
   propsRef.current = props
   const layoutRef = useRef<Layout | null>(layout)
   layoutRef.current = layout
-  // Mirrored so the rAF/async redraws also see the current setting value.
+  // Mirrored so the rAF/async redraws also see the current setting values.
   const badgesRef = useRef(objectBadges)
   badgesRef.current = objectBadges
+  const texturesRef = useRef(floorTextures)
+  texturesRef.current = floorTextures
 
   const pressRef = useRef<{
     cell: Cell
@@ -129,6 +131,7 @@ export default function BoardCanvas(props: Props) {
       highlightAlpha2: p.highlightAlpha2,
       helpMarks: p.helpMarks,
       objectBadges: badgesRef.current,
+      floorTextures: texturesRef.current,
       press,
       reveal: p.reveal,
       avatars: avatarsRef.current,
@@ -181,7 +184,7 @@ export default function BoardCanvas(props: Props) {
     cv.style.height = `${layout.h}px`
     redraw(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout, props.state, props.selectedSuspect, props.highlight, props.highlightAlpha, props.helpMarks, props.reveal, objectBadges])
+  }, [layout, props.state, props.selectedSuspect, props.highlight, props.highlightAlpha, props.helpMarks, props.reveal, objectBadges, floorTextures])
 
   useEffect(() => () => cancelPress(), [])
 

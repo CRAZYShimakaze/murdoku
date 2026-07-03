@@ -10,14 +10,13 @@ const MODE_KEY: Record<HelpMode, string> = {
   none: 'settings.helpNone',
 }
 
+/** A compact label + switch row — no helper text, so the list stays short. */
 function ToggleRow({
   label,
-  sub,
   checked,
   onChange,
 }: {
   label: string
-  sub: string
   checked: boolean
   onChange: (value: boolean) => void
 }) {
@@ -29,10 +28,7 @@ function ToggleRow({
       aria-checked={checked}
       onClick={() => onChange(!checked)}
     >
-      <span className="mk-settings__toggletext">
-        <span className="mk-settings__label">{label}</span>
-        <span className="mk-settings__sub">{sub}</span>
-      </span>
+      <span className="mk-settings__label">{label}</span>
       <span className="mk-switch" data-on={checked} aria-hidden="true">
         <span className="mk-switch__knob" />
       </span>
@@ -40,7 +36,8 @@ function ToggleRow({
   )
 }
 
-/** The settings "case file": language, help mode, stopwatch, gender tints. */
+/** The settings "case file": language, help mode, stopwatch, gender tints,
+ *  object badges, floor patterns. */
 export default function SettingsDialog({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation()
   const settings = useSettings()
@@ -99,21 +96,23 @@ export default function SettingsDialog({ onClose }: { onClose: () => void }) {
 
         <ToggleRow
           label={t('settings.timer')}
-          sub={t('settings.timerSub')}
           checked={settings.timer}
           onChange={(timer) => updateSettings({ timer })}
         />
         <ToggleRow
           label={t('settings.genderColors')}
-          sub={t('settings.genderColorsSub')}
           checked={settings.genderColors}
           onChange={(genderColors) => updateSettings({ genderColors })}
         />
         <ToggleRow
           label={t('settings.objectBadges')}
-          sub={t('settings.objectBadgesSub')}
           checked={settings.objectBadges}
           onChange={(objectBadges) => updateSettings({ objectBadges })}
+        />
+        <ToggleRow
+          label={t('settings.floorTextures')}
+          checked={settings.floorTextures}
+          onChange={(floorTextures) => updateSettings({ floorTextures })}
         />
 
         <button type="button" className="mk-btn mk-settings__close" onClick={onClose}>
