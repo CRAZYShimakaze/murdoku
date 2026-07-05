@@ -49,6 +49,11 @@ export default function ResultDialog({
   const showGen = win && generated
   const [name, setName] = useState(defaultName ?? '')
   const value = () => name.trim() || (defaultName ?? '')
+  // A touch device pops the on-screen keyboard when the field auto-focuses, which is
+  // annoying right after a generated win (mobile browser AND the Android app). Only
+  // auto-focus where a physical keyboard exists (fine pointer = desktop mouse/trackpad).
+  const autoFocusName =
+    typeof window !== 'undefined' && !window.matchMedia('(pointer: coarse)').matches
 
   return (
     <div
@@ -94,7 +99,7 @@ export default function ResultDialog({
             <input
               id="mk-lvlname"
               type="text"
-              autoFocus
+              autoFocus={autoFocusName}
               value={name}
               maxLength={40}
               placeholder={t('result.namePlaceholder')}

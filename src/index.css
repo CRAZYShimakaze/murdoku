@@ -1732,6 +1732,12 @@ button {
   font-weight: 600;
   letter-spacing: 0.04em;
   transition: all 0.15s ease;
+  /* Hold-to-reset is a long-press: stop mobile from selecting the label text or
+     popping the text/callout menu instead of treating the hold as the gesture. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
 }
 .mk-tool:hover:not(:disabled) {
   border-color: var(--brass-dim);

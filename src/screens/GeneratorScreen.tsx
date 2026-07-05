@@ -42,9 +42,12 @@ const DEFAULT_SETTINGS = {
 interface Props {
   onPlay: (level: LevelMeta) => void
   onBack: () => void
+  /** Skip the form and generate immediately on mount (from the win dialog's
+   *  "Neues Level" — reuses the last-saved settings = same options). */
+  autoStart?: boolean
 }
 
-export default function GeneratorScreen({ onPlay, onBack }: Props) {
+export default function GeneratorScreen({ onPlay, onBack, autoStart }: Props) {
   const { t } = useTranslation()
   // Restore the last form selection (size, difficulty, theme, objects, openings).
   const [saved] = useState(() => loadGenSettings(DEFAULT_SETTINGS))
@@ -135,6 +138,18 @@ export default function GeneratorScreen({ onPlay, onBack }: Props) {
     handleRef.current = null
     setBusy(false)
   }
+
+  // Auto-start (from the win dialog's "Neues Level"): generate once on mount with the
+  // restored settings — the same options that produced the level just solved. The ref
+  // guards against a second run (React StrictMode remounts effects in dev).
+  const autoStarted = useRef(false)
+  useEffect(() => {
+    if (autoStart && !autoStarted.current) {
+      autoStarted.current = true
+      create()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // A faux case reference that updates live as the form changes — dossier flavour only.
   const caseRef = `MD-${String(size).padStart(2, '0')}-${DIFF_CODE[difficulty]}`

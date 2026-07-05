@@ -21,6 +21,13 @@ export interface SavedState {
   manualCrosses?: number[]
 }
 
+/** In-progress game: the current board plus the full undo history, so stepping back
+ *  (Undo) survives a reload. Legacy saves stored just the bare board (no `present`). */
+export interface SavedProgress {
+  present: SavedState
+  past: SavedState[]
+}
+
 function read<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key)
@@ -96,12 +103,17 @@ export function markSolved(id: string): void {
   write(SOLVED_KEY, [...solved])
 }
 
-export function loadProgress(id: string): SavedState | null {
-  return read<SavedState | null>(PROGRESS_PREFIX + id, null)
+export function loadProgress(id: string): SavedProgress | null {
+  const raw = read<unknown>(PROGRESS_PREFIX + id, null)
+  if (!raw || typeof raw !== 'object') return null
+  const obj = raw as Partial<SavedProgress>
+  // New format carries `present` + `past`; a legacy save IS the bare board state.
+  if (obj.present) return { present: obj.present, past: obj.past ?? [] }
+  return { present: raw as SavedState, past: [] }
 }
 
-export function saveProgress(id: string, state: SavedState): void {
-  write(PROGRESS_PREFIX + id, state)
+export function saveProgress(id: string, progress: SavedProgress): void {
+  write(PROGRESS_PREFIX + id, progress)
 }
 
 export function clearProgress(id: string): void {

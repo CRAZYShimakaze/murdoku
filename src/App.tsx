@@ -14,7 +14,9 @@ import { loadCustomLevels } from './game/storage.ts'
 type Screen =
   | { name: 'start' }
   | { name: 'select' }
-  | { name: 'generate' }
+  // `auto`: skip the form and immediately generate with the last-used settings
+  // (from the win dialog's "Neues Level" — same options as the level just solved).
+  | { name: 'generate'; auto?: boolean }
   | { name: 'tutorial' }
   | { name: 'editor'; initial?: LevelMeta }
   | { name: 'game'; level: LevelMeta; generated?: boolean; fromEditor?: boolean }
@@ -122,6 +124,7 @@ export default function App() {
     case 'generate':
       return (
         <GeneratorScreen
+          autoStart={screen.auto}
           onPlay={(level) => setScreen({ name: 'game', level, generated: true })}
           onBack={back}
         />
@@ -133,7 +136,9 @@ export default function App() {
           meta={screen.level}
           generated={screen.generated}
           onBack={back}
-          onNew={() => setScreen({ name: 'generate' })}
+          // "Neues Level": regenerate straight away with the same options (auto-start),
+          // rather than returning to the generator form ("Zur Levelauswahl" does that).
+          onNew={() => setScreen({ name: 'generate', auto: true })}
           onEdit={() => setScreen({ name: 'editor', initial: screen.level })}
           onNext={
             screen.generated || screen.fromEditor

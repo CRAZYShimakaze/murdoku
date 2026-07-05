@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { VICTIM_ID, type Board, type Cell, type PersonId, type Puzzle } from '../engine/index.ts'
 import { clearProgress, loadProgress, saveProgress, type SavedState } from './storage.ts'
+// SavedProgress is the on-disk shape { present, past } — persisted so Undo survives a reload.
 
 /** The player's mutable board state. */
 export interface PlayState {
@@ -89,13 +90,16 @@ export function useGameSession(
   const board = puzzle.board
   const [hist, setHist] = useState<{ present: PlayState; past: PlayState[] }>(() => {
     const saved = fresh ? null : loadProgress(levelId)
-    return { present: saved ? fromSaved(saved) : emptyState(), past: [] }
+    // Restore the undo history too, so step-back keeps working after a reload.
+    return saved
+      ? { present: fromSaved(saved.present), past: saved.past.map(fromSaved) }
+      : { present: emptyState(), past: [] }
   })
 
-  // Persist the current board whenever it changes.
+  // Persist the current board AND the undo stack whenever either changes.
   useEffect(() => {
-    saveProgress(levelId, toSaved(hist.present))
-  }, [levelId, hist.present])
+    saveProgress(levelId, { present: toSaved(hist.present), past: hist.past.map(toSaved) })
+  }, [levelId, hist])
 
   const apply = useCallback((mutate: (next: PlayState) => boolean | void) => {
     setHist((h) => {
