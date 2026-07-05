@@ -47,6 +47,10 @@ export default function ResultDialog({
 }: Props) {
   const { t } = useTranslation()
   const showGen = win && generated
+  // The "back" button is the only secondary when there's no restart sibling and no
+  // generated save/export pair (i.e. a loss) — then it spans the full row instead of
+  // sitting in one half of the 2-column grid.
+  const backAlone = !showGen && !(win && onRestart)
   const [name, setName] = useState(defaultName ?? '')
   const value = () => name.trim() || (defaultName ?? '')
   // A touch device pops the on-screen keyboard when the field auto-focuses, which is
@@ -94,71 +98,123 @@ export default function ResultDialog({
         )}
 
         {showGen && (
-          <div className="mk-nameform">
-            <label htmlFor="mk-lvlname">{t('result.nameLabel')}</label>
-            <input
-              id="mk-lvlname"
-              type="text"
-              autoFocus={autoFocusName}
-              value={name}
-              maxLength={40}
-              placeholder={t('result.namePlaceholder')}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !saved) onSave(value())
-              }}
-            />
-          </div>
-        )}
-
-        <div className="mk-dialog__actions">
-          {!win && (
-            <button type="button" className="mk-btn mk-btn--primary" onClick={onRetry}>
-              {t('result.retry')}
-            </button>
-          )}
-          {win && onNext && (
-            <button type="button" className="mk-btn mk-btn--primary" onClick={onNext}>
-              {t('result.nextLevel')}
-            </button>
-          )}
-          {win && onRestart && (
-            <button type="button" className="mk-btn mk-btn--ghost mk-btn--restart" onClick={onRestart}>
-              <span className="mk-btn__icon" aria-hidden="true">↻</span>
-              {t('result.restart')}
-            </button>
-          )}
-          {showGen && (
-            <>
+          // "Save level" section: the header sits above the name field (naming IS part of
+          // saving), then the name input, then the Keep / As JSON buttons.
+          <div className="mk-savegroup">
+            <div className="mk-divider">
+              <span className="mk-divider__label">{t('result.groupSave')}</span>
+            </div>
+            <div className="mk-nameform">
+              <label htmlFor="mk-lvlname">{t('result.nameLabel')}</label>
+              <input
+                id="mk-lvlname"
+                type="text"
+                autoFocus={autoFocusName}
+                value={name}
+                maxLength={40}
+                placeholder={t('result.namePlaceholder')}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !saved) onSave(value())
+                }}
+              />
+            </div>
+            <div className="mk-actiongrid">
               <button
                 type="button"
-                className="mk-btn mk-btn--primary"
+                className="mk-btn mk-btn--ghost"
                 onClick={() => onSave(value())}
                 disabled={saved}
               >
+                {/* the "saved" label already carries a ✓ — drop the leading icon then */}
+                {!saved && <span className="mk-btn__ic" aria-hidden="true">✓</span>}
                 {saved ? t('result.saved') : t('result.save')}
               </button>
               <button type="button" className="mk-btn mk-btn--ghost" onClick={() => onExport(value())}>
+                <span className="mk-btn__ic" aria-hidden="true">↧</span>
                 {t('result.export')}
               </button>
-              <button type="button" className="mk-btn mk-btn--ghost" onClick={onNew}>
-                {t('result.new')}
+            </div>
+          </div>
+        )}
+
+        {showGen ? (
+          // Generated win, "play on" section (the save section with its own header sits
+          // above, grouped with the name field). New level is the primary action.
+          <div className="mk-actiongrid">
+            <div className="mk-divider">
+              <span className="mk-divider__label">{t('result.groupPlay')}</span>
+            </div>
+            <button type="button" className="mk-btn mk-btn--primary mk-btn--wide" onClick={onNew}>
+              <span className="mk-btn__ic" aria-hidden="true">✦</span>
+              {t('result.new')}
+            </button>
+            {onRestart && (
+              <button
+                type="button"
+                className="mk-btn mk-btn--ghost mk-btn--restart"
+                onClick={onRestart}
+              >
+                <span className="mk-btn__ic" aria-hidden="true">↻</span>
+                {t('result.restart')}
               </button>
-            </>
-          )}
-          <button
-            type="button"
-            className={
-              win && !generated && !onNext ? 'mk-btn mk-btn--primary' : 'mk-btn mk-btn--ghost'
-            }
-            onClick={onBack}
-          >
-            {t('result.back')}
-          </button>
-        </div>
+            )}
+            <button type="button" className="mk-btn mk-btn--ghost" onClick={onBack}>
+              <span className="mk-btn__ic" aria-hidden="true">←</span>
+              {t('result.backGen')}
+            </button>
+          </div>
+        ) : (
+          // Loss / non-generated win: one grid, primary full width on top, the rest 2-column.
+          <div className="mk-actiongrid">
+            {!win && (
+              <button type="button" className="mk-btn mk-btn--primary mk-btn--wide" onClick={onRetry}>
+                <span className="mk-btn__ic" aria-hidden="true">⌕</span>
+                {t('result.retry')}
+              </button>
+            )}
+            {win && onNext && (
+              <button type="button" className="mk-btn mk-btn--primary mk-btn--wide" onClick={onNext}>
+                <span className="mk-btn__ic" aria-hidden="true">→</span>
+                {t('result.nextLevel')}
+              </button>
+            )}
+            {win && onRestart && (
+              <button
+                type="button"
+                className="mk-btn mk-btn--ghost mk-btn--restart"
+                onClick={onRestart}
+              >
+                <span className="mk-btn__ic" aria-hidden="true">↻</span>
+                {t('result.restart')}
+              </button>
+            )}
+            <button
+              type="button"
+              className={[
+                'mk-btn',
+                win && !generated && !onNext ? 'mk-btn--primary' : 'mk-btn--ghost',
+                backAlone ? 'mk-btn--wide' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={onBack}
+            >
+              <span className="mk-btn__ic" aria-hidden="true">←</span>
+              {t('result.back')}
+            </button>
+          </div>
+        )}
 
         {onDismiss && (
-          <button type="button" className="mk-dialog__peek" onClick={onDismiss}>
+          <button
+            type="button"
+            className="mk-dialog__peek"
+            // Only the generated verdict is tall enough to feel cramped on a phone —
+            // drop the footnote there; other verdicts keep it (they have room).
+            data-gen={showGen ? 'true' : undefined}
+            onClick={onDismiss}
+          >
             {t('result.peekHint')}
           </button>
         )}

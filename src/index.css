@@ -730,6 +730,38 @@ button {
   flex-wrap: wrap;
   gap: 0.45rem;
 }
+/* Object-picker chips: an equal-column grid so every chip in a row is the same width,
+   filling the row (auto-fill packs as many columns as fit). Desktop gets many columns
+   (uses the full width); phones drop to a narrower track for ~3 per row (see the media
+   query). Needs .mk-genset > .mk-field { justify-items: stretch } to have a definite
+   width — otherwise the shared .mk-field's justify-items:center collapses it to 1 column.
+   Content centres; long names (e.g. "Waschmaschine") wrap rather than widen their chip. */
+.mk-chips--objects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 0.4rem;
+}
+.mk-chips--objects .mk-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  min-height: 2rem; /* icon and text-only chips share one height → tidy rows */
+}
+.mk-chip__ico {
+  flex: none;
+}
+.mk-chip__label {
+  min-width: 0; /* allow the label to shrink so text-overflow can kick in */
+  white-space: nowrap;
+  line-height: 1.2;
+}
+/* Last resort (name too long even without the icon): truncate on one line with "…". */
+.mk-chips--objects .mk-chip[data-mode='ellipsis'] .mk-chip__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 /* Compact dropdown alternative — hidden on desktop, shown on narrow screens.
    Scoped under .mk-filtergroup to outrank the base .mk-select-input rule that
    is defined later in this file (equal specificity would otherwise win). */
@@ -2679,14 +2711,64 @@ button {
 .mk-dialog__peek:hover {
   color: var(--brass);
 }
-/* "Reopen case" ghost button — the brass arrow spins back on hover. */
-.mk-btn--restart .mk-btn__icon {
-  display: inline-block;
-  margin-right: 0.35rem;
+/* On phones the GENERATED verdict card is tight (name field + two action sections) —
+   drop the "tap aside" footnote there only; other verdicts have room and keep it.
+   (Tapping the dimmed backdrop still tucks the verdict away; the review pill brings it back.) */
+@media (max-width: 640px) {
+  .mk-dialog__peek[data-gen='true'] {
+    display: none;
+  }
+}
+/* Verdict actions: one uniform grid for every state (loss, win, generated win). The
+   primary sits full width on top (.mk-btn--wide); the rest sit in a fixed 2-column grid
+   on every screen size (desktop AND mobile). Labels stay whole and may wrap to two lines
+   in a narrow cell — the grid keeps both cells of a row equal height, so it reads tidy.
+   A lone secondary (e.g. "back" on a loss) is made .mk-btn--wide in the markup so it
+   fills the row instead of sitting in half. */
+.mk-actiongrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.4rem;
+}
+.mk-btn--wide {
+  grid-column: 1 / -1;
+}
+/* Section headers inside the grid ("Level speichern" / "Weiterspielen") span the full
+   width via .mk-divider's own grid-column: 1 / -1; trim their default margins so the
+   grid gap sets the rhythm, with a touch of extra air before a following section. */
+.mk-actiongrid .mk-divider {
+  margin: 0.2rem 0 0;
+}
+.mk-actiongrid .mk-divider:first-child {
+  margin-top: 0;
+}
+.mk-actiongrid .mk-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.66rem 0.6rem;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+/* Leading icon: brass tint, sized off the label, never shrinks. On the brass primary
+   a brass icon would vanish, so it inherits that button's dark text instead. */
+.mk-btn__ic {
+  flex: none;
   color: var(--brass);
+  font-size: 1.1em;
+  line-height: 1;
+}
+.mk-btn--primary .mk-btn__ic {
+  color: inherit;
+}
+/* Keep the restart arrow's spin-on-hover with the new icon slot too. */
+.mk-actiongrid .mk-btn--restart .mk-btn__ic {
   transition: transform 0.45s cubic-bezier(0.3, 1.3, 0.5, 1);
 }
-.mk-btn--restart:hover:not(:disabled) .mk-btn__icon {
+.mk-btn--restart:hover:not(:disabled) .mk-btn__ic {
   transform: rotate(-180deg);
 }
 
@@ -2739,9 +2821,22 @@ button {
   .mk-review__pill {
     animation: none;
   }
-  .mk-btn--restart:hover .mk-btn__icon {
+  .mk-btn--restart:hover .mk-btn__ic {
     transform: none;
   }
+}
+/* "Save level" section wrapper: the header, the name field and the Keep / As JSON
+   buttons stacked as one group (full width so the .mk-divider header stretches). */
+.mk-savegroup {
+  display: grid;
+  gap: 0.6rem;
+  width: 100%;
+}
+.mk-savegroup .mk-divider {
+  margin: 0;
+}
+.mk-savegroup .mk-actiongrid {
+  margin-top: 0;
 }
 .mk-nameform {
   display: grid;
@@ -2858,6 +2953,30 @@ button {
 }
 .mk-genset .mk-field {
   gap: 0.5rem;
+}
+/* The scene section stacks FULL-WIDTH fields — override the shared .mk-field's
+   justify-items:center (that one is meant for the side-by-side case row) so labels sit
+   left and, crucially, the object-chip grid fills the width instead of shrink-wrapping
+   to a single column. Direct-child (`>`) so the case row's inner fields keep their
+   centred layout. */
+.mk-genset > .mk-field {
+  justify-items: stretch;
+  /* also drop the shared fixed row height (1rem + 2.7rem control) so a multi-row chip
+     grid grows to fit instead of overflowing its track. */
+  grid-template-rows: none;
+}
+/* Phones: trim the form's side padding (Dirk doesn't need that much left/right) and use a
+   narrower chip track so ~3 fit per row (desktop keeps the wider track = many per row). */
+@media (max-width: 640px) {
+  .mk-genform {
+    padding: 0.9rem;
+  }
+  .mk-genset {
+    padding: 0.75rem 0.65rem 0.85rem;
+  }
+  .mk-chips--objects {
+    grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr));
+  }
 }
 /* Desktop: size · difficulty · theme share one row so the form stays short (no scroll).
    Fields stretch to equal height and their controls centre, so the thin range slider

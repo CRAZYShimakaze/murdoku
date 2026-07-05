@@ -7,6 +7,7 @@ import BoardAxes, { AXES_H, AXES_W } from './BoardAxes.tsx'
 import { drawBoard, type RevealInfo } from '../game/boardRender.ts'
 import type { HelpMarks } from '../game/helpMarks.ts'
 import { onArtReady } from '../game/objectArt.ts'
+import { hapticTick } from '../game/haptics.ts'
 import { avatarDataUri } from '../game/avatar.ts'
 import { suspectColor } from '../game/palette.ts'
 import { useSettings } from '../game/settings.ts'
@@ -96,6 +97,8 @@ export default function BoardCanvas(props: Props) {
     y: number
     mode: 'commit' | 'remove'
     personId?: PersonId
+    /** Whether the "long-press recognised" haptic has already fired for this press. */
+    buzzed?: boolean
   } | null>(null)
   const rafRef = useRef<number | null>(null)
   const paintRef = useRef<{ value: boolean; visited: Set<Cell> } | null>(null)
@@ -242,6 +245,13 @@ export default function BoardCanvas(props: Props) {
     }
     // Show the progress ring only after a short hold, so a quick tap shows nothing.
     if (elapsed >= RING_DELAY_MS) {
+      // The moment the press reads as a long-press (ring appears), a light haptic tick
+      // confirms "you're placing" — once per press. Fills the gap the Android WebView
+      // leaves (mobile browsers buzz on their own; hapticTick is native-only).
+      if (!press.buzzed) {
+        press.buzzed = true
+        hapticTick()
+      }
       redraw({ cell: press.cell, progress: (elapsed - RING_DELAY_MS) / (LONGPRESS_MS - RING_DELAY_MS) })
     }
     rafRef.current = requestAnimationFrame(tick)

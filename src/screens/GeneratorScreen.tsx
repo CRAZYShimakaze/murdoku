@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next'
 import SettingsButton from '../components/SettingsButton.tsx'
 import BloodText from '../components/BloodText.tsx'
 import BloodSplatter from '../components/BloodSplatter.tsx'
+import ObjectChip from '../components/ObjectChip.tsx'
 import { generateLevelAsync, type GenHandle } from '../game/generatorClient.ts'
 import { levelMetaFromJson, type LevelMeta } from '../game/levels.ts'
 import { loadGenSettings, saveGenSettings } from '../game/storage.ts'
-import { OBJECT_GLYPHS } from '../game/glyphs.ts'
 import {
   OCCUPIABLE_OBJECT_TYPES,
   BLOCKING_OBJECT_TYPES,
@@ -83,25 +83,32 @@ export default function GeneratorScreen({ onPlay, onBack, autoStart }: Props) {
   }
 
   /** One toggle group of object chips (walkable vs blocking). The optional hint is an
-      explanatory suffix shown only on desktop — it would overflow the narrow mobile row. */
-  const objectGroup = (label: string, types: readonly string[], hint?: string) => (
+      explanatory suffix shown only on desktop — it would overflow the narrow mobile row.
+      Chips show the real board icon (ObjectIcon), matching the in-game legend. */
+  const objectGroup = (
+    label: string,
+    types: readonly string[],
+    occupiable: boolean,
+    hint?: string,
+  ) => (
     <div className="mk-field">
       <span className="mk-field__label">
         {label}
         {hint && <span className="mk-fieldhint">{hint}</span>}
       </span>
-      <div className="mk-chips">
+      {/* Equal-width grid (not content-sized flex) so the object chips line up in tidy
+          columns instead of a ragged, restless row — especially on phones. */}
+      <div className="mk-chips mk-chips--objects">
         {types.map((type) => (
-          <button
+          <ObjectChip
             key={type}
-            type="button"
-            className="mk-chip"
-            data-active={objects.has(type)}
+            type={type}
+            name={t(`objName.${type}`)}
+            occupiable={occupiable}
+            active={objects.has(type)}
             disabled={busy}
             onClick={() => toggleObject(type)}
-          >
-            {OBJECT_GLYPHS[type] ?? '▦'} {t(`objName.${type}`)}
-          </button>
+          />
         ))}
       </div>
     </div>
@@ -263,31 +270,32 @@ export default function GeneratorScreen({ onPlay, onBack, autoStart }: Props) {
               objectGroup(
                 t('generate.objectsOccupiable'),
                 occ,
+                true,
                 t('generate.objectsOccupiableHint'),
               )}
-            {blk.length > 0 && objectGroup(t('generate.objectsBlocking'), blk)}
+            {blk.length > 0 && objectGroup(t('generate.objectsBlocking'), blk, false)}
 
             <div className="mk-field">
               <span className="mk-field__label">{t('generate.openings')}</span>
-              <div className="mk-chips">
-                <button
-                  type="button"
-                  className="mk-chip"
-                  data-active={windows}
+              {/* Same grid + chip treatment as the object groups (real window/door icons,
+                  matching widths) so the whole scene section reads as one consistent set. */}
+              <div className="mk-chips mk-chips--objects">
+                <ObjectChip
+                  type="window"
+                  name={t('generate.windows')}
+                  occupiable={false}
+                  active={windows}
                   disabled={busy}
                   onClick={() => setWindows((w) => !w)}
-                >
-                  {OBJECT_GLYPHS.window} {t('generate.windows')}
-                </button>
-                <button
-                  type="button"
-                  className="mk-chip"
-                  data-active={doors}
+                />
+                <ObjectChip
+                  type="door"
+                  name={t('generate.doors')}
+                  occupiable={false}
+                  active={doors}
                   disabled={busy}
                   onClick={() => setDoors((d) => !d)}
-                >
-                  {OBJECT_GLYPHS.door} {t('generate.doors')}
-                </button>
+                />
               </div>
             </div>
           </section>

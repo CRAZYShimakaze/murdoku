@@ -445,10 +445,13 @@
     "peekHint": "Daneben tippen, um den Tatort zu betrachten",
     "nextLevel": "Nächstes Level",
     "back": "Zur Levelauswahl",
+    "backGen": "Zur Generierung",
     "save": "Behalten",
     "saved": "Gespeichert ✓",
     "export": "Als JSON",
     "new": "Neues Level",
+    "groupSave": "Level speichern",
+    "groupPlay": "Weiterspielen",
     "nameLabel": "Wie soll das Level heißen?",
     "namePlaceholder": "Levelname",
     "cancel": "Abbrechen"

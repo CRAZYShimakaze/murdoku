@@ -445,10 +445,13 @@
     "peekHint": "Tap aside to view the scene",
     "nextLevel": "Next level",
     "back": "Back to cases",
+    "backGen": "To generator",
     "save": "Keep it",
     "saved": "Saved ✓",
     "export": "As JSON",
     "new": "New level",
+    "groupSave": "Save level",
+    "groupPlay": "Keep playing",
     "nameLabel": "What should the level be called?",
     "namePlaceholder": "Level name",
     "cancel": "Cancel"
