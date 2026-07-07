@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { Cell, PersonId, Puzzle } from '../engine/index.ts'
 import BoardAxes, { AXES_H, AXES_W } from './BoardAxes.tsx'
-import { drawBoard, type RevealInfo } from '../game/boardRender.ts'
+import { drawBoard, drawBoardOverlay, type RevealInfo } from '../game/boardRender.ts'
 import type { HelpMarks } from '../game/helpMarks.ts'
 import { onArtReady } from '../game/objectArt.ts'
 import { hapticTick } from '../game/haptics.ts'
@@ -66,6 +66,9 @@ export default function BoardCanvas(props: Props) {
 
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Transparent animation layer stacked exactly over the board canvas: pulsing note
+  // letters + the long-press ring repaint ONLY this near-empty canvas per frame.
+  const overlayRef = useRef<HTMLCanvasElement>(null)
   const [layout, setLayout] = useState<Layout | null>(null)
   // Hovered cell mirrored into state so the coordinate margins can light up the
   // matching row/col label (the canvas itself keeps reading hoverRef).
@@ -106,8 +109,10 @@ export default function BoardCanvas(props: Props) {
   const hoverRef = useRef<Cell | null>(null)
   const avatarsRef = useRef<Map<PersonId, HTMLImageElement>>(new Map())
   const emphPulseRef = useRef(0)
+  // The active long-press ring, drawn on the overlay (never on the board canvas).
+  const overlayPressRef = useRef<{ cell: Cell; progress: number } | null>(null)
 
-  function redraw(press: { cell: Cell; progress: number } | null) {
+  function redraw() {
     const cv = canvasRef.current
     const L = layoutRef.current
     if (!cv || !L) return
@@ -135,12 +140,35 @@ export default function BoardCanvas(props: Props) {
       helpMarks: p.helpMarks,
       objectBadges: badgesRef.current,
       floorTextures: texturesRef.current,
-      press,
       reveal: p.reveal,
       avatars: avatarsRef.current,
       hover: hoverRef.current,
       emphasizeMarks: p.emphasize ?? null,
-      emphasizePulse: emphPulseRef.current,
+    })
+  }
+
+  /** Repaint just the animation layer (pulsing letters + press ring). */
+  function redrawOverlay() {
+    const cv = overlayRef.current
+    const L = layoutRef.current
+    if (!cv || !L) return
+    const ctx = cv.getContext('2d')
+    if (!ctx) return
+    const p = propsRef.current
+    const dpr = window.devicePixelRatio || 1
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.clearRect(0, 0, L.cell * W, L.cell * H)
+    if (!p.emphasize && !overlayPressRef.current) return
+    drawBoardOverlay(ctx, {
+      puzzle: p.puzzle,
+      cell: L.cell,
+      origin: { x: 0, y: 0 },
+      suspectIndex: p.suspectIndex,
+      marks: p.state.marks,
+      placements: p.state.placements,
+      emphasize: p.emphasize ?? null,
+      pulse: emphPulseRef.current,
+      press: overlayPressRef.current,
     })
   }
 
@@ -149,12 +177,12 @@ export default function BoardCanvas(props: Props) {
     const map = new Map<PersonId, HTMLImageElement>()
     puzzle.suspects.forEach((s, i) => {
       const img = new Image()
-      img.onload = () => redraw(null)
+      img.onload = () => redraw()
       img.src = avatarDataUri(s.attributes, suspectColor(i), s.id)
       map.set(s.id, img)
     })
     avatarsRef.current = map
-    redraw(null)
+    redraw()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puzzle])
 
@@ -176,43 +204,54 @@ export default function BoardCanvas(props: Props) {
     return () => ro.disconnect()
   }, [W, H])
 
-  // Size the backing store and redraw on any input change.
+  // Size the backing stores (board + overlay) and redraw on any input change.
   useEffect(() => {
     const cv = canvasRef.current
-    if (!cv || !layout) return
+    const ov = overlayRef.current
+    if (!cv || !ov || !layout) return
     const dpr = window.devicePixelRatio || 1
-    cv.width = Math.round(layout.w * dpr)
-    cv.height = Math.round(layout.h * dpr)
-    cv.style.width = `${layout.w}px`
-    cv.style.height = `${layout.h}px`
-    redraw(null)
+    for (const el of [cv, ov]) {
+      el.width = Math.round(layout.w * dpr)
+      el.height = Math.round(layout.h * dpr)
+      el.style.width = `${layout.w}px`
+      el.style.height = `${layout.h}px`
+    }
+    redraw()
+    redrawOverlay()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layout, props.state, props.selectedSuspect, props.highlight, props.highlightAlpha, props.helpMarks, props.reveal, objectBadges, floorTextures])
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => cancelPress(), [])
 
   // Redraw once bundled board art (e.g. the armchair) finishes loading.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => onArtReady(() => redraw(null)), [])
+  useEffect(() => onArtReady(() => redraw()), [])
 
-  // Pulse the hovered suspect's notes while their clue card is hovered.
+  // Pulse the hovered suspect's notes while their clue card is hovered. The rAF loop
+  // repaints ONLY the overlay; the board canvas just hides/shows those letters once.
   useEffect(() => {
+    redraw() // base letters of the emphasized suspect hide (overlay owns them) / return
     if (!props.emphasize) {
       emphPulseRef.current = 0
-      redraw(null)
+      redrawOverlay()
       return
     }
+    // Paint the letters on the overlay right away — without this they'd blink for
+    // one frame (base already hides them, the rAF hasn't drawn them yet).
+    emphPulseRef.current = 0
+    redrawOverlay()
     let raf = 0
     const tick = (now: number) => {
       emphPulseRef.current = Math.sin(now / 350) * 0.5 + 0.5
-      redraw(null)
+      redrawOverlay()
       raf = requestAnimationFrame(tick)
     }
     raf = requestAnimationFrame(tick)
     return () => {
       cancelAnimationFrame(raf)
       emphPulseRef.current = 0
-      redraw(null)
+      redrawOverlay()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.emphasize])
@@ -229,6 +268,11 @@ export default function BoardCanvas(props: Props) {
       cancelAnimationFrame(rafRef.current)
       rafRef.current = null
     }
+    // Drop the ring from the animation layer (the board canvas never carried it).
+    if (overlayPressRef.current) {
+      overlayPressRef.current = null
+      redrawOverlay()
+    }
   }
 
   function tick(now: number) {
@@ -240,7 +284,7 @@ export default function BoardCanvas(props: Props) {
       cancelPress()
       if (press.mode === 'remove' && press.personId) p.onRemove(press.personId)
       else if (press.mode === 'commit' && p.selectedSuspect) p.onCommit(press.cell, p.selectedSuspect)
-      redraw(null)
+      redraw()
       return
     }
     // Show the progress ring only after a short hold, so a quick tap shows nothing.
@@ -252,7 +296,9 @@ export default function BoardCanvas(props: Props) {
         press.buzzed = true
         hapticTick()
       }
-      redraw({ cell: press.cell, progress: (elapsed - RING_DELAY_MS) / (LONGPRESS_MS - RING_DELAY_MS) })
+      // Animate on the overlay only — the board underneath stays untouched.
+      overlayPressRef.current = { cell: press.cell, progress: (elapsed - RING_DELAY_MS) / (LONGPRESS_MS - RING_DELAY_MS) }
+      redrawOverlay()
     }
     rafRef.current = requestAnimationFrame(tick)
   }
@@ -316,7 +362,7 @@ export default function BoardCanvas(props: Props) {
       rafRef.current = requestAnimationFrame(tick)
       return
     }
-    redraw(null) // non-occupiable / empty without selection → just hover feedback
+    redraw() // non-occupiable / empty without selection → just hover feedback
   }
 
   function onPointerMove(e: ReactPointerEvent<HTMLCanvasElement>) {
@@ -356,14 +402,14 @@ export default function BoardCanvas(props: Props) {
             visited.add(cell)
             props.onSetMark(cell, suspect, on)
           }
-          redraw(null)
+          redraw()
         }
         return // small movement within the start cell → keep the long-press alive
       }
       // Occupied-cell press: moving off the cell cancels the select/remove gesture.
       if (cell !== press.cell) {
         cancelPress()
-        redraw(null)
+        redraw()
       }
       return
     }
@@ -371,7 +417,7 @@ export default function BoardCanvas(props: Props) {
     const cell = cellAt(e)
     if (cell !== hoverRef.current) {
       setHover(cell)
-      redraw(null)
+      redraw()
       updateObjTip(cell)
     }
   }
@@ -397,13 +443,13 @@ export default function BoardCanvas(props: Props) {
       setHover(null)
       setObjTip(null)
     }
-    redraw(null)
+    redraw()
   }
 
   function onPointerLeave() {
     setHover(null)
     setObjTip(null)
-    redraw(null)
+    redraw()
   }
 
   return (
@@ -421,6 +467,9 @@ export default function BoardCanvas(props: Props) {
           onPointerCancel={endPointer}
           onPointerLeave={onPointerLeave}
         />
+        {/* Animation layer: same grid slot as the board canvas (`.mk-axes > canvas`
+            stacks them), so it overlays exactly; input passes through to the board. */}
+        <canvas ref={overlayRef} style={{ pointerEvents: 'none' }} aria-hidden="true" />
       </div>
       {objTip &&
         createPortal(

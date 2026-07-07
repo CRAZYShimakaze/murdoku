@@ -88,7 +88,6 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow,
       marks: new Map(),
       crosses: new Set(),
       highlight: null,
-      press: null,
       reveal: null,
       floorTextures,
     })

@@ -76,7 +76,6 @@ export default function BoardPreview({ json }: { json: LevelJson }) {
       marks: new Map(),
       crosses: new Set(),
       highlight: null,
-      press: null,
       reveal: null,
       preview: true,
     })

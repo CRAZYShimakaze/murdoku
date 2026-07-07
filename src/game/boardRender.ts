@@ -37,6 +37,7 @@ import {
   drawWashingMachine,
   drawWaterlily,
   drawWaterTile,
+  onArtReady,
   type Conn,
 } from './objectArt.ts'
 
@@ -59,16 +60,14 @@ export interface BoardView {
   marks: Map<Cell, Set<PersonId>>
   crosses: Set<Cell>
   highlight: Set<Cell> | null
-  press: { cell: Cell; progress: number } | null
   reveal: RevealInfo | null
   /** Committed-suspect head avatars, keyed by id (drawn when loaded). */
   avatars?: Map<PersonId, HTMLImageElement>
   /** Cell under the cursor/finger → outlined yellow (occupiable) or red (blocked). */
   hover?: Cell | null
-  /** Suspect whose pencil notes gently pulse in size on the board (others stay visible). */
+  /** Suspect whose pencil notes are SKIPPED here — the overlay canvas draws them
+   *  pulsing (see drawBoardOverlay), so the base never repaints during the pulse. */
   emphasizeMarks?: PersonId | null
-  /** 0..1 pulse value for the emphasized notes. */
-  emphasizePulse?: number
   /** Override the candidate-highlight colours (default brass; tutorial uses blue). */
   highlightColor?: { wash: string; ring: string }
   /** A SECOND highlight layer, drawn under the primary one — used to show the selected
@@ -262,76 +261,116 @@ function renderFloorLayer(view: BoardView, dpr: number): HTMLCanvasElement {
   return canvas
 }
 
-/** Small LRU keyed by content: the game holds 1 entry per level; editor drags that
- *  don't touch rooms/carpet hit the cache too. Previews bypass it (one-shot, tiny). */
-const FLOOR_CACHE_MAX = 4
-const floorCache = new Map<string, HTMLCanvasElement>()
-
-function cachedFloorLayer(view: BoardView, dpr: number): HTMLCanvasElement {
-  const key = floorSig(view, dpr)
-  const hit = floorCache.get(key)
+/** Content-keyed LRU of pre-rendered canvases: return the cached entry (refreshing
+ *  its position) or render it via `make` and evict the oldest beyond `max`. */
+function lruGet(
+  cache: Map<string, HTMLCanvasElement>,
+  key: string,
+  max: number,
+  make: () => HTMLCanvasElement,
+): HTMLCanvasElement {
+  const hit = cache.get(key)
   if (hit) {
-    floorCache.delete(key) // re-insert → most recently used
-    floorCache.set(key, hit)
+    cache.delete(key) // re-insert → most recently used
+    cache.set(key, hit)
     return hit
   }
-  const canvas = renderFloorLayer(view, dpr)
-  floorCache.set(key, canvas)
-  if (floorCache.size > FLOOR_CACHE_MAX) {
-    floorCache.delete(floorCache.keys().next().value!)
-  }
+  const canvas = make()
+  cache.set(key, canvas)
+  if (cache.size > max) cache.delete(cache.keys().next().value!)
   return canvas
 }
 
-export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void {
-  const { puzzle, cell: S, origin, preview } = view
+/** Small LRUs keyed by content: the game holds 1 entry per level; editor drags that
+ *  don't touch the respective layer hit the cache too. Previews bypass them. */
+const floorCache = new Map<string, HTMLCanvasElement>()
+const furnitureCache = new Map<string, HTMLCanvasElement>()
+
+function cachedFloorLayer(view: BoardView, dpr: number): HTMLCanvasElement {
+  return lruGet(floorCache, floorSig(view, dpr), 4, () => renderFloorLayer(view, dpr))
+}
+
+/** Tiny reusable sprites (victim disk, object badges, pencil-mark letters): these use
+ *  shadowBlur / double text strokes — expensive to redo every frame, cheap to blit. */
+const spriteCache = new Map<string, HTMLCanvasElement>()
+
+function sprite(
+  key: string,
+  w: number,
+  h: number,
+  dpr: number,
+  paint: (ctx: CanvasRenderingContext2D) => void,
+): HTMLCanvasElement {
+  return lruGet(spriteCache, key, 128, () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.ceil(w * dpr))
+    canvas.height = Math.max(1, Math.ceil(h * dpr))
+    const c = canvas.getContext('2d')!
+    c.setTransform(dpr, 0, 0, dpr, 0, 0)
+    paint(c)
+    return canvas
+  })
+}
+
+// Cached pixels can bake in a not-yet-loaded state: object art (armchair image) and
+// the webfont (mark letters) arrive async — drop the caches once, so the next draw
+// re-renders them complete. Callers already redraw on those very events.
+onArtReady(() => {
+  floorCache.clear()
+  furnitureCache.clear()
+  spriteCache.clear()
+})
+if (typeof document !== 'undefined' && 'fonts' in document) {
+  document.fonts.ready.then(() => spriteCache.clear()).catch(() => {})
+}
+
+// ─── Static furniture layer (cached) ─────────────────────────────────────────
+// Street, rugs, grid lines, walls, windows, doors and every object are just as
+// static as the floor beneath them — only the highlight WASH must stay between
+// the two (it tints the floor but never the furniture), hence two layers.
+
+/** Everything the furniture layer's pixels depend on — the cache key. */
+function furnitureSig(view: BoardView, dpr: number): string {
+  const board = view.puzzle.board
+  const parts: string[] = [
+    `${board.width}x${board.height}`,
+    String(view.cell),
+    String(dpr),
+    view.preview ? 'prev' : 'full',
+  ]
+  let cells = ''
+  for (let c = 0; c < board.width * board.height; c++) {
+    const tile = board.tileAt(c)
+    cells += `${board.roomIdOf(c)},${tile.ground?.type ?? ''},${tile.top?.type ?? ''},${board.windowSides(c).join('')}${board.doorSides(c).join('')};`
+  }
+  parts.push(cells)
+  return parts.join('|')
+}
+
+/** Margin around the grid the furniture layer must include: the outer wall stroke
+ *  (round caps) and object shadows overshoot the board edge by a few pixels. */
+function furniturePad(S: number): number {
+  return Math.ceil(S * 0.08) + 2
+}
+
+/** Paint street/rugs, grid, walls, windows/doors and all objects at (ox, oy) —
+ *  the exact passes drawBoard used to run inline, in the exact same order. */
+function paintFurniture(
+  ctx: CanvasRenderingContext2D,
+  view: BoardView,
+  ox: number,
+  oy: number,
+): void {
+  const { puzzle, cell: S, preview } = view
   const board = puzzle.board
   const W = board.width
   const H = board.height
-  const ox = origin.x
-  const oy = origin.y
-
   const xy = (c: Cell) => {
     const { row, col } = board.rc(c)
     return { x: ox + col * S, y: oy + row * S }
   }
-
   const connOf = (c: Cell, layer: 'top' | 'ground', type: string): Conn =>
     objectConn(board, c, layer, type)
-
-  // --- static floor layer (cached image) + highlight washes ---------------
-  // Mortar, void punch-outs, room fills, water and floor patterns come from ONE
-  // pre-rendered image (see renderFloorLayer) — a single drawImage per frame.
-  const dpr = ctx.getTransform().a || 1
-  const layer = preview ? renderFloorLayer(view, dpr) : cachedFloorLayer(view, dpr)
-  ctx.drawImage(layer, ox - 1, oy - 1, W * S + 2, H * S + 2)
-
-  // Cells already taken by a placed figure — a candidate there is no longer possible, so
-  // (like a crossed-off cell) its highlight is faded below. Built once, reused throughout.
-  const occupied = new Set(view.placements.values())
-
-  for (let c = 0; c < W * H; c++) {
-    if (board.isVoid(c)) continue
-    const { x, y } = xy(c)
-    // Secondary layer (selection) under the primary (hint), so the hint wins on overlap.
-    // A ruled-out candidate — crossed off OR already taken by another figure — fades its
-    // wash by HIGHLIGHT_DIM (same as its ring). Capped, never stacked: a placed suspect's
-    // whole layer is already dimmed, so take the STRONGER dim of the two, not dim².
-    const cellDim = view.crosses.has(c) || occupied.has(c) ? HIGHLIGHT_DIM : 1
-    if (view.highlight2?.has(c)) {
-      ctx.globalAlpha = Math.min(view.highlightAlpha2 ?? 1, cellDim)
-      ctx.fillStyle = view.highlightColor2?.wash ?? BOARD.highlight
-      ctx.fillRect(x, y, S, S)
-      ctx.globalAlpha = 1
-    }
-    if (view.highlight?.has(c)) {
-      ctx.globalAlpha = Math.min(view.highlightAlpha ?? 1, cellDim)
-      ctx.fillStyle = view.highlightColor?.wash ?? BOARD.highlight
-      ctx.fillRect(x, y, S, S)
-      ctx.globalAlpha = 1
-    }
-    // Reduced-help area marks are drawn as quiet outlines later — no wash here.
-  }
 
   // --- street (occupiable ground layer) — auto-tiled into one continuous road --
   for (let c = 0; c < W * H; c++) {
@@ -471,6 +510,81 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     }
     drawObjectIcon(ctx, top.type, x, y, S, top.occupiable, preview)
   }
+}
+
+/** Render the furniture layer at device resolution, `furniturePad` around the grid. */
+function renderFurnitureLayer(view: BoardView, dpr: number): HTMLCanvasElement {
+  const board = view.puzzle.board
+  const S = view.cell
+  const pad = furniturePad(S)
+  const w = board.width * S + 2 * pad
+  const h = board.height * S + 2 * pad
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(w * dpr))
+  canvas.height = Math.max(1, Math.round(h * dpr))
+  const ctx = canvas.getContext('2d')!
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  paintFurniture(ctx, view, pad, pad)
+  return canvas
+}
+
+function cachedFurnitureLayer(view: BoardView, dpr: number): HTMLCanvasElement {
+  return lruGet(furnitureCache, furnitureSig(view, dpr), 4, () => renderFurnitureLayer(view, dpr))
+}
+
+export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void {
+  const { puzzle, cell: S, origin, preview } = view
+  const board = puzzle.board
+  const W = board.width
+  const H = board.height
+  const ox = origin.x
+  const oy = origin.y
+
+  const xy = (c: Cell) => {
+    const { row, col } = board.rc(c)
+    return { x: ox + col * S, y: oy + row * S }
+  }
+
+  // --- static floor layer (cached image) + highlight washes ---------------
+  // Mortar, void punch-outs, room fills, water and floor patterns come from ONE
+  // pre-rendered image (see renderFloorLayer) — a single drawImage per frame.
+  const dpr = ctx.getTransform().a || 1
+  const layer = preview ? renderFloorLayer(view, dpr) : cachedFloorLayer(view, dpr)
+  ctx.drawImage(layer, ox - 1, oy - 1, W * S + 2, H * S + 2)
+
+  // Cells already taken by a placed figure — a candidate there is no longer possible, so
+  // (like a crossed-off cell) its highlight is faded below. Built once, reused throughout.
+  const occupied = new Set(view.placements.values())
+
+  for (let c = 0; c < W * H; c++) {
+    if (board.isVoid(c)) continue
+    const { x, y } = xy(c)
+    // Secondary layer (selection) under the primary (hint), so the hint wins on overlap.
+    // A ruled-out candidate — crossed off OR already taken by another figure — fades its
+    // wash by HIGHLIGHT_DIM (same as its ring). Capped, never stacked: a placed suspect's
+    // whole layer is already dimmed, so take the STRONGER dim of the two, not dim².
+    const cellDim = view.crosses.has(c) || occupied.has(c) ? HIGHLIGHT_DIM : 1
+    if (view.highlight2?.has(c)) {
+      ctx.globalAlpha = Math.min(view.highlightAlpha2 ?? 1, cellDim)
+      ctx.fillStyle = view.highlightColor2?.wash ?? BOARD.highlight
+      ctx.fillRect(x, y, S, S)
+      ctx.globalAlpha = 1
+    }
+    if (view.highlight?.has(c)) {
+      ctx.globalAlpha = Math.min(view.highlightAlpha ?? 1, cellDim)
+      ctx.fillStyle = view.highlightColor?.wash ?? BOARD.highlight
+      ctx.fillRect(x, y, S, S)
+      ctx.globalAlpha = 1
+    }
+    // Reduced-help area marks are drawn as quiet outlines later — no wash here.
+  }
+
+  // --- static furniture layer (cached image): street, rugs, grid, walls,
+  //     windows/doors and every object in one blit — drawn AFTER the washes so
+  //     the furniture never gets tinted (exactly the old inline order). --------
+  const fPad = furniturePad(S)
+  const furniture = preview ? renderFurnitureLayer(view, dpr) : cachedFurnitureLayer(view, dpr)
+  ctx.drawImage(furniture, ox - fPad, oy - fPad, W * S + 2 * fPad, H * S + 2 * fPad)
 
   if (preview) return
 
@@ -712,32 +826,42 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   // (first letter of the name, uppercased) just like a suspect's letter.
   const victimLetter = view.puzzle.victim.name.charAt(0).toUpperCase()
   const markLabel = (id: PersonId) => (id === VICTIM_ID ? victimLetter : id)
-  const pulse = view.emphasizePulse ?? 0
   for (const [c, set] of view.marks) {
     if (occupied.has(c) || set.size === 0) continue
     const { x, y } = xy(c)
     // Nudged down & right so they sit clear of the top-left corner.
     let i = 0
     for (const id of set) {
-      const col = i % 3
-      const row = Math.floor(i / 3)
+      const slot = i++
+      // The hovered suspect's letters live on the OVERLAY canvas while they pulse —
+      // skipped here, but their slot stays reserved so the others don't shift.
+      if (id === view.emphasizeMarks) continue
+      const col = slot % 3
+      const row = Math.floor(slot / 3)
       const tx = x + S * 0.13 + col * S * 0.25
       const ty = y + S * 0.12 + row * S * 0.3
-      // Hovered suspect's letter: same base size as always, with a noticeable size pulse.
-      const emph = view.emphasizeMarks === id
-      const scale = emph ? 1 + 0.35 * pulse : 1
-      ctx.font = `${emph ? 800 : 700} ${S * 0.27 * scale}px 'Spline Sans Variable', sans-serif`
-      const outlineW = Math.max(1.2, S * 0.04 * scale)
-      ctx.fillStyle = suspectColor(view.suspectIndex.get(id) ?? 0)
       const label = markLabel(id)
-      ctx.strokeStyle = BOARD.markHalo
-      ctx.lineWidth = outlineW + Math.max(1.2, S * 0.028)
-      ctx.strokeText(label, tx, ty)
-      ctx.strokeStyle = BOARD.markOutline
-      ctx.lineWidth = outlineW
-      ctx.strokeText(label, tx, ty)
-      ctx.fillText(label, tx, ty)
-      i++
+      const color = suspectColor(view.suspectIndex.get(id) ?? 0)
+      // Letters blit from a per-(letter, colour, size) sprite — the double outline
+      // strokes are costly, and notes can cover half the board.
+      const mp = S * 0.12 // sprite margin for the halo/outline bleed
+      const box = S * 0.27 * 1.6 + 2 * mp
+      const img = sprite(`mark|${label}|${color}|${S}|${dpr}`, box, box, dpr, (c2) => {
+        c2.lineJoin = 'round'
+        c2.textAlign = 'left'
+        c2.textBaseline = 'top'
+        c2.font = `700 ${S * 0.27}px 'Spline Sans Variable', sans-serif`
+        const ow = Math.max(1.2, S * 0.04)
+        c2.strokeStyle = BOARD.markHalo
+        c2.lineWidth = ow + Math.max(1.2, S * 0.028)
+        c2.strokeText(label, mp, mp)
+        c2.strokeStyle = BOARD.markOutline
+        c2.lineWidth = ow
+        c2.strokeText(label, mp, mp)
+        c2.fillStyle = color
+        c2.fillText(label, mp, mp)
+      })
+      ctx.drawImage(img, tx - mp, ty - mp, box, box)
     }
   }
 
@@ -745,7 +869,12 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   for (const [id, c] of view.placements) {
     const { x, y } = xy(c)
     if (id === VICTIM_ID) {
-      drawVictim(ctx, { x, y }, S)
+      // Sprite-cached: the disk's shadowBlur is expensive to redo per frame.
+      const vp = S * 0.15 // margin for the drop shadow
+      const img = sprite(`victim|${S}|${dpr}`, S + 2 * vp, S + 2 * vp, dpr, (c2) =>
+        drawVictim(c2, { x: vp, y: vp }, S),
+      )
+      ctx.drawImage(img, x - vp, y - vp, S + 2 * vp, S + 2 * vp)
       continue
     }
     if (view.reveal?.murdererId === id) {
@@ -771,14 +900,25 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
   //     the avatar's own a/b/c letter. A tile carries at most two layers, so at most two
   //     badges: the occupiable piece they're ON (top → top-right), the floor (ground →
   //     top-left). Bare floor has neither → no badge. Can be turned off in the settings.
-  if (view.objectBadges) for (const [, c] of view.placements) {
-    const tile = board.tileAt(c)
-    if (!tile.top && !tile.ground) continue
-    const { x, y } = xy(c)
+  if (view.objectBadges) {
     const b = S * 0.24
     const pad = S * 0.05
-    if (tile.top) drawObjectBadge(ctx, tile.top.type, x + S - pad - b, y + pad, b)
-    if (tile.ground) drawObjectBadge(ctx, tile.ground.type, x + pad, y + pad, b)
+    const bp = b * 0.35 // sprite margin for the badge's drop shadow
+    // Sprite-cached per object type: the badge card uses shadowBlur (expensive) and
+    // repeats for every placed figure on every frame.
+    const blitBadge = (type: string, bx: number, by: number): void => {
+      const img = sprite(`badge|${type}|${b}|${dpr}`, b + 2 * bp, b + 2 * bp, dpr, (c2) =>
+        drawObjectBadge(c2, type, bp, bp, b),
+      )
+      ctx.drawImage(img, bx - bp, by - bp, b + 2 * bp, b + 2 * bp)
+    }
+    for (const [, c] of view.placements) {
+      const tile = board.tileAt(c)
+      if (!tile.top && !tile.ground) continue
+      const { x, y } = xy(c)
+      if (tile.top) blitBadge(tile.top.type, x + S - pad - b, y + pad)
+      if (tile.ground) blitBadge(tile.ground.type, x + pad, y + pad)
+    }
   }
 
   // --- candidate-hint rings (blue rounded rectangles) — drawn last (above the figures and
@@ -801,9 +941,76 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.stroke()
   }
 
+}
+
+// ─── Animation overlay ───────────────────────────────────────────────────────
+// A transparent canvas stacked exactly over the board holds ONLY the per-frame
+// animations (pulsing note letters, long-press progress ring). Their rAF loops
+// clear and repaint just this near-empty layer — the board canvas underneath is
+// not touched at all while they run.
+
+export interface OverlayView {
+  puzzle: Puzzle
+  /** Cell size in CSS pixels (same layout as the board canvas underneath). */
+  cell: number
+  origin: { x: number; y: number }
+  suspectIndex: Map<PersonId, number>
+  marks: Map<Cell, Set<PersonId>>
+  /** Placements — marks on occupied cells aren't drawn (mirrors the base canvas). */
+  placements: Map<PersonId, Cell>
+  /** Suspect whose note letters pulse here (the base canvas skips them). */
+  emphasize: PersonId | null
+  /** 0..1 pulse phase for the emphasized letters. */
+  pulse: number
+  /** Long-press progress ring. */
+  press: { cell: Cell; progress: number } | null
+}
+
+export function drawBoardOverlay(ctx: CanvasRenderingContext2D, o: OverlayView): void {
+  const S = o.cell
+  const board = o.puzzle.board
+  const xy = (c: Cell) => {
+    const { row, col } = board.rc(c)
+    return { x: o.origin.x + col * S, y: o.origin.y + row * S }
+  }
+
+  // --- pulsing note letters of the hovered suspect ------------------------
+  if (o.emphasize) {
+    const occupied = new Set(o.placements.values())
+    const label =
+      o.emphasize === VICTIM_ID ? o.puzzle.victim.name.charAt(0).toUpperCase() : o.emphasize
+    const color = suspectColor(o.suspectIndex.get(o.emphasize) ?? 0)
+    const scale = 1 + 0.35 * o.pulse
+    ctx.lineJoin = 'round'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'top'
+    ctx.font = `800 ${S * 0.27 * scale}px 'Spline Sans Variable', sans-serif`
+    const outlineW = Math.max(1.2, S * 0.04 * scale)
+    for (const [c, set] of o.marks) {
+      if (occupied.has(c) || !set.has(o.emphasize)) continue
+      // The letter's slot within this cell — must match the base canvas layout.
+      let slot = 0
+      for (const id of set) {
+        if (id === o.emphasize) break
+        slot++
+      }
+      const { x, y } = xy(c)
+      const tx = x + S * 0.13 + (slot % 3) * S * 0.25
+      const ty = y + S * 0.12 + Math.floor(slot / 3) * S * 0.3
+      ctx.fillStyle = color
+      ctx.strokeStyle = BOARD.markHalo
+      ctx.lineWidth = outlineW + Math.max(1.2, S * 0.028)
+      ctx.strokeText(label, tx, ty)
+      ctx.strokeStyle = BOARD.markOutline
+      ctx.lineWidth = outlineW
+      ctx.strokeText(label, tx, ty)
+      ctx.fillText(label, tx, ty)
+    }
+  }
+
   // --- long-press progress ring -----------------------------------------
-  if (view.press) {
-    const { x, y } = xy(view.press.cell)
+  if (o.press) {
+    const { x, y } = xy(o.press.cell)
     const cx = x + S / 2
     const cy = y + S / 2
     ctx.fillStyle = BOARD.pressScrim
@@ -817,7 +1024,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     ctx.stroke()
     ctx.strokeStyle = BOARD.press
     ctx.beginPath()
-    ctx.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * view.press.progress)
+    ctx.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * o.press.progress)
     ctx.stroke()
   }
 }
