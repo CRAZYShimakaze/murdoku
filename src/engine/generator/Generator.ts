@@ -6,7 +6,6 @@ import { SearchSolver } from '../solver/SearchSolver.ts'
 import { findMurderer } from '../solver/murderer.ts'
 import { DeductionEngine } from '../solver/DeductionEngine.ts'
 import { checkLevel } from '../solver/validate.ts'
-import { difficultyOf } from '../solver/DeductionStep.ts'
 import { startCoverage } from '../solver/coverage.ts'
 import { createClue } from '../clues/ClueFactory.ts'
 import { createBoardClue } from '../clues/boardClues.ts'
@@ -260,16 +259,6 @@ function seedRequiredAttributes(
       carriers++
     }
   }
-}
-
-/** Honest tier from the human-logic engine (forward + convergent). Only ever called on
- *  levels that ARE human-solvable (easy construction / generic fallback), so the
- *  `!solved` guard is a defensive fallback that shouldn't fire. */
-function rateTier(level: LevelJson): GenDifficulty {
-  const result = new DeductionEngine(loadLevel(level)).solve()
-  if (!result.solved) return 'hard' // not human-solvable (shouldn't happen here)
-  const tier = difficultyOf(result.maxRank)
-  return tier === 'expert' ? 'hard' : tier
 }
 
 /** Human-logic rating — the construction oracle. The DEFAULT engine is PURE forward +
@@ -662,7 +651,11 @@ export function generateLevel(options: GenerateOptions): LevelJson {
     for (let a = 0; a < 200000 && performance.now() < deadline; a++) {
       const result = tryGenerate(options, new Rng(baseSeed + a * 7919), baseSeed + a)
       if (result) {
-        result.level.difficulty = rateTier(result.level)
+        // The construction already guarantees an easy-typical puzzle (rank ≤ 2,
+        // hidden singles at most) — so it IS easy. Label it directly instead of
+        // re-rating: difficultyOf treats a hidden single (rank 2) as "medium",
+        // which would mislabel almost every constructed easy level.
+        result.level.difficulty = 'easy'
         return assertShippable(pruneClues(result.level, 'easy'))
       }
     }
@@ -730,7 +723,9 @@ export function fillBoardClues(board: LevelJson, options: FillBoardOptions = {})
     for (let a = 0; a < 200000 && performance.now() < deadline; a++) {
       const result = fillAttempt(board, suspectIds, new Rng(baseSeed + a * 7919), 'easy', options.requiredClues, options.requiredAttributes)
       if (result && isShippable(result.level)) {
-        result.level.difficulty = rateTier(result.level)
+        // Constructed easy fill (rank ≤ 2, verified in fillAttempt) — label it easy
+        // directly; difficultyOf would mislabel a hidden-single level as "medium".
+        result.level.difficulty = 'easy'
         return result.level
       }
     }
