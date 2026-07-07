@@ -5,6 +5,7 @@ import type { LevelFilter } from './levels.ts'
 
 const SOLVED_KEY = 'murdoku.solved.v1'
 const PROGRESS_PREFIX = 'murdoku.progress.v1.'
+const TIME_PREFIX = 'murdoku.time.v1.'
 const CUSTOM_KEY = 'murdoku.custom.v1'
 const EDITOR_DRAFT_KEY = 'murdoku.editordraft.v1'
 const FILTER_KEY = 'murdoku.filter.v1'
@@ -119,6 +120,25 @@ export function saveProgress(id: string, progress: SavedProgress): void {
 export function clearProgress(id: string): void {
   try {
     localStorage.removeItem(PROGRESS_PREFIX + id)
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Elapsed play time per level (seconds) — persists alongside the board progress, so
+ *  leaving a level and coming back resumes the clock. Cleared only on a win/restart. */
+export function loadElapsed(id: string): number {
+  const s = read<number>(TIME_PREFIX + id, 0)
+  return Number.isFinite(s) && s > 0 ? Math.floor(s) : 0
+}
+
+export function saveElapsed(id: string, seconds: number): void {
+  write(TIME_PREFIX + id, seconds)
+}
+
+export function clearElapsed(id: string): void {
+  try {
+    localStorage.removeItem(TIME_PREFIX + id)
   } catch {
     /* ignore */
   }

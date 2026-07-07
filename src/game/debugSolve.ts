@@ -58,11 +58,14 @@ export function logSolution(puzzle: Puzzle, renderer: Renderer): void {
   )
   console.groupEnd()
 
-  // Same `checkLevel` the editor's Check / Save and the generator's ship-gate use.
-  const { solutions: count, solution } = checkLevel(puzzle)
+  // Same `checkLevel` the editor's Check / Save use — budgeted like there, so a
+  // degenerate board (endless "0 solutions" proof) can't freeze the app via Ctrl+B.
+  const { solutions: count, solution, aborted } = checkLevel(puzzle, { budget: 500_000 })
   console.group('Lösung')
   console.log(
-    `Eindeutig: ${count === 1 ? 'ja' : count >= 2 ? 'nein (mehrere Lösungen)' : 'nein (keine Lösung)'}`,
+    aborted
+      ? 'Eindeutig: unbekannt (Suche abgebrochen — Budget erschöpft)'
+      : `Eindeutig: ${count === 1 ? 'ja' : count >= 2 ? 'nein (mehrere Lösungen)' : 'nein (keine Lösung)'}`,
   )
   if (solution) {
     const m = findMurderer(puzzle, solution)

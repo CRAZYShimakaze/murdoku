@@ -2020,6 +2020,11 @@ button {
   min-width: 0;
   flex-wrap: wrap;
 }
+/* Theme · difficulty · size share this wrapper. On desktop it's transparent (the
+   fields flow exactly as before); the phone layout turns it into a 3-column grid. */
+.mk-editor__meta3 {
+  display: contents;
+}
 /* A fixed 2-row grid: caption row + a control row of the shared height. Because the
    rows are fixed, the control sits at the exact same Y in every group (fields AND
    the layer tabs), so they line up regardless of caption length. */
@@ -2033,7 +2038,9 @@ button {
   min-width: 0;
   border-right: 1px solid var(--line);
 }
-.mk-editor__fields .mk-field:last-child {
+/* Direct child, NOT descendant: the size field is the last child of the (transparent)
+   meta3 wrapper and must keep its divider — only the true last header group drops it. */
+.mk-editor__fields > .mk-field:last-child {
   border-right: 0;
 }
 /* Typewriter field captions — the "police form" labels the user asked for. */
@@ -2285,39 +2292,6 @@ button {
    three distinct states: walkable (green), blocked object (red), wall (blue). */
 .mk-pal--wall .mk-pal__canvas[data-occupiable='false'] {
   box-shadow: 0 0 0 2px var(--diff-tutorial);
-}
-
-/* Mobile-only object picker: a native dropdown (grouped walkable/blocking) plus
-   a live preview tile of the selected object's real icon. Keeps the palette to a
-   single row so the action buttons below stay reachable. Rendered only on the
-   narrow layout (see useNarrowLayout), so no desktop guard is needed here. */
-.mk-objsel {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: 100%;
-}
-.mk-objsel__select {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.mk-objsel__preview {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-}
-.mk-objsel__preview .mk-pal__icon {
-  font-size: 1.4rem;
-}
-.mk-objsel__swatch {
-  flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.35);
 }
 
 .mk-editor__actions {
@@ -3511,9 +3485,9 @@ button {
      Fenster/Tür entries in the 'Platzieren' dropdown — so here we undo the desktop
      header chrome and restore the old compact, label-less single row: no field
      captions, no Akte-stamp, controls flowing inline. */
-  /* The element is `.mk-field.mk-editor__layerfield`; the compound selector beats the
-     `.mk-field { display: flex }` rule below it (same specificity, but later source). */
-  .mk-field.mk-editor__layerfield {
+  /* Must OUT-SPECIFY `.mk-editor .mk-field { display: flex }` below (0,2,0 — and later
+     in source, so equal specificity would lose): three classes make the hide stick. */
+  .mk-editor .mk-field.mk-editor__layerfield {
     display: none;
   }
   .mk-editor__head {
@@ -3532,12 +3506,10 @@ button {
     padding: 0;
     border-right: 0;
   }
-  .mk-editor__mark,
-  .mk-editor__casetag {
+  /* No room for the "Editor" wordmark/case-tag on the phone — row 1 is back
+     button · title input · load · gear. */
+  .mk-editor__ident {
     display: none;
-  }
-  .mk-editor__title {
-    font-size: 1.05rem;
   }
   /* Let the case fields flow as inline header items, like the old controls. */
   .mk-editor__fields {
@@ -3563,13 +3535,30 @@ button {
   .mk-editor .mk-field__label {
     display: none;
   }
-  .mk-editor .mk-field--size .mk-field__label {
-    display: inline; /* keep "Größe 8×8" — its value lives in the caption */
-  }
-  .mk-editor .mk-field--size input[type='range'] {
-    width: 110px;
+  /* Theme · difficulty · size: ONE guaranteed row (3-column grid), each field a
+     column of mini typewriter caption over a full-width control. */
+  .mk-editor__meta3 {
+    display: grid;
+    grid-template-columns: 1.3fr 1.1fr 1fr;
+    gap: 0.45rem;
+    width: 100%;
+    order: 3;
     min-width: 0;
-    height: auto; /* the desktop fixed control height doesn't apply on the phone row */
+  }
+  .mk-editor__meta3 .mk-field {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15rem;
+  }
+  .mk-editor__meta3 .mk-field__label {
+    display: block;
+    font-size: 0.56rem;
+    letter-spacing: 0.14em;
+    color: var(--bone-faint);
+    margin-left: 0.1rem;
+  }
+  .mk-editor__meta3 .mk-select-input {
+    width: 100%;
   }
   /* Generator: undo the desktop two-up pairing so each field stacks full-width again. */
   .mk-genrow {
@@ -3689,36 +3678,192 @@ button {
     border-top: 1px solid var(--line);
   }
 
-  /* Consolidated tool controls (mobile only): a clearly-bordered card holding two
-     labelled dropdown rows (Place / Walls + Global) so they read as THE toolbar. */
+  /* The mobile tool card: a two-tab mode switch (Platzieren / Globale Hinweise) on
+     top, the active panel below — one clearly-bordered card that reads as THE toolbar. */
   .mk-mobtools {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.6rem;
     border: 1px solid var(--line-strong);
     border-radius: var(--r-md);
     background: var(--ink-850);
+    overflow: hidden; /* the segment row sits flush with the card's rounded corners */
   }
-  .mk-mobtools__row {
+  .mk-mobtools__seg {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--ink-800);
+  }
+  .mk-mobtab {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--bone-dim);
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    padding: 0.55rem 0.4rem 0.5rem;
+    border-bottom: 2px solid transparent;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: center;
+    gap: 0.4rem;
     min-width: 0;
   }
-  .mk-mobtools__lbl {
-    flex: 0 0 4.2rem;
+  .mk-mobtab[aria-selected='true'] {
+    color: var(--brass);
+    border-bottom-color: var(--brass);
+    background: var(--ink-850);
+  }
+  .mk-mobtab__badge {
+    min-width: 1.1rem;
+    height: 1.1rem;
+    padding: 0 0.3rem;
+    border-radius: 99px;
+    background: var(--crimson);
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+  }
+  .mk-mobtools__body {
+    padding: 0.6rem;
+  }
+  /* The pick row: current selection (preview + name) — tapping opens the sheet. */
+  .mk-pickrow {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--ink-800);
+    padding: 0.45rem 0.55rem;
+    color: var(--bone);
+    font: inherit;
+    font-size: 0.86rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .mk-pickrow__swatch {
+    flex: none;
+    width: 38px;
+    height: 38px;
+    border-radius: var(--r-sm);
+    border: 1px solid var(--line-strong);
+    background: var(--ink-850);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .mk-pickrow__fill {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: inherit;
+    border: 1px solid rgba(0, 0, 0, 0.35);
+  }
+  .mk-pickrow__what {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .mk-pickrow__what small {
     font-family: var(--font-type);
-    font-size: 0.6rem;
-    letter-spacing: 0.1em;
+    font-size: 0.56rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--bone-faint);
   }
-  .mk-mobtools__global {
-    flex: 0 0 auto;
+  .mk-pickrow__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mk-pickrow__chev {
+    flex: none;
+    color: var(--bone-faint);
+    font-size: 0.68rem;
+    white-space: nowrap;
+  }
+  /* Bottom-sheet picker: grouped chips, scrolls when a theme brings many rooms/objects. */
+  .mk-sheetveil {
+    position: fixed;
+    inset: 0;
+    z-index: 49; /* under .mk-overlay (100) — dialogs stay on top */
+    background: rgba(8, 7, 11, 0.55);
+    animation: fade 0.2s ease;
+  }
+  .mk-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    background: var(--ink-850);
+    border-top: 1px solid var(--line-strong);
+    border-radius: 16px 16px 0 0;
+    padding: 0.4rem 0.8rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+    max-height: 70dvh;
+    overflow-y: auto;
+    box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.55);
+    animation: mk-sheet-in 0.22s ease;
+  }
+  .mk-sheet__grab {
+    width: 42px;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--ink-600);
+    margin: 0.35rem auto;
+  }
+  .mk-sheet__group {
+    font-family: var(--font-type);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+    margin: 0.85rem 0 0.4rem 0.1rem;
+  }
+  .mk-sheet__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .mk-sheetchip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem 0.3rem 0.35rem;
+  }
+  .mk-sheetchip__dot {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 99px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    background: var(--ink-700);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .mk-sheetchip__dot .mk-pal__icon {
+    font-size: 0.8rem;
+    color: var(--crimson);
   }
   .mk-pal__icon--muted {
     color: var(--bone-faint);
+  }
+}
+
+@keyframes mk-sheet-in {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
   }
 }
 

@@ -19,6 +19,9 @@ export interface LevelCheck {
   /** The full deduction result (for `maxRank` / technique counts — e.g. the easy "rank ≤ 2"
    *  bar). `solvable` is just `deduction.solved`. */
   deduction: DeductionResult
+  /** True when the (budgeted) search ran out of nodes — `solutions` is then only a lower
+   *  bound and NO verdict may be drawn. Only set when a `budget` was passed. */
+  aborted: boolean
 }
 
 /**
@@ -28,10 +31,23 @@ export interface LevelCheck {
  * check, used everywhere). `forwardOnly` only tightens the solvability bar; the uniqueness
  * count is identical for every caller.
  */
-export function checkLevel(puzzle: Puzzle, opts: { forwardOnly?: boolean } = {}): LevelCheck {
+export function checkLevel(
+  puzzle: Puzzle,
+  opts: { forwardOnly?: boolean; budget?: number } = {},
+): LevelCheck {
   const solver = new SearchSolver(puzzle)
-  const solutions = solver.countSolutions(2)
-  const solution = solutions > 0 ? solver.firstSolution() : null
+  const budget = opts.budget ?? Infinity
+  const solutions = solver.countSolutions(2, budget)
+  let aborted = solver.aborted
+  const solution = solutions > 0 ? solver.firstSolution(budget) : null
+  aborted ||= solver.aborted
   const deduction = new DeductionEngine(puzzle, opts.forwardOnly ? { noCaseSplit: true } : {}).solve()
-  return { solutions, unique: solutions === 1, solvable: deduction.solved, solution, deduction }
+  return {
+    solutions,
+    unique: solutions === 1 && !aborted,
+    solvable: deduction.solved,
+    solution,
+    deduction,
+    aborted,
+  }
 }

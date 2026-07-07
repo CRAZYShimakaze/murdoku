@@ -19,8 +19,11 @@ import { useGameSession } from '../game/useGameSession.ts'
 import { useTutorialFlow } from '../game/useTutorialFlow.ts'
 import { CANDIDATE_BLUE, HIGHLIGHT_DIM, HINT_BLACK, suspectColor } from '../game/palette.ts'
 import {
+  clearElapsed,
+  loadElapsed,
   markSolved,
   saveCustomLevel,
+  saveElapsed,
   exportLevelJson,
   isCustomSaved,
   loadCustomLevels,
@@ -101,7 +104,13 @@ export default function GameScreen({
   const { t, i18n } = useTranslation()
   const storageId = tutorial ? '__tutorial__' : meta.id
   const puzzle = useMemo(() => loadLevel(meta.json), [meta])
-  const solution = useMemo(() => new SearchSolver(puzzle).firstSolution(), [puzzle])
+  // The precomputed answer key is ONLY needed to steer the tutorial (win/submit check
+  // the placement directly). Skipping it for normal play also keeps degenerate boards
+  // (editor test-plays with no valid solution) from freezing in an endless search.
+  const solution = useMemo(
+    () => (tutorial ? new SearchSolver(puzzle).firstSolution() : null),
+    [puzzle, tutorial],
+  )
   const engine = useMemo(() => new DeductionEngine(puzzle), [puzzle])
   const suspectIndex = useMemo(
     () => new Map(puzzle.suspects.map((s, i) => [s.id, i] as const)),
@@ -144,7 +153,10 @@ export default function GameScreen({
   const [hint, setHint] = useState<HintResult | null>(null)
   const [hintShown, setHintShown] = useState(false) // hint requested (even if none was found)
   const [hintRequestId, setHintRequestId] = useState(0) // bumped per request → scrolls the hint into view
-  const [elapsed, setElapsed] = useState(0)
+  // Elapsed play time — restored from storage so leaving and returning resumes the
+  // clock (it also ticks with the timer display switched off). Reset only on a win
+  // (or an explicit restart), never by just leaving the level. Tutorial: always 0.
+  const [elapsed, setElapsed] = useState(() => (tutorial ? 0 : loadElapsed(storageId)))
   const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
   // The settings dialog is controlled so the tutorial can open it (and explain it).
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -181,6 +193,14 @@ export default function GameScreen({
     const id = setInterval(() => setElapsed((e) => e + 1), 1000)
     return () => clearInterval(id)
   }, [result?.win])
+
+  // Persist the clock on every tick (a tiny write), so it survives leaving the level,
+  // a reload, or the app being killed. On a win the interval above stops and the win
+  // handler clears the slot — nothing rewrites it afterwards.
+  useEffect(() => {
+    if (tutorial || result?.win) return
+    if (elapsed > 0) saveElapsed(storageId, elapsed)
+  }, [elapsed, storageId, tutorial, result?.win])
 
   useEffect(() => {
     const heading = headingRef.current
@@ -320,6 +340,7 @@ export default function GameScreen({
     setResult(null)
     setDialogHidden(false)
     setElapsed(0)
+    if (!tutorial) clearElapsed(storageId)
     // Restarting from the final tutorial verdict means "I'm done learning" — drop the
     // guided overlay and let the level be played freely.
     if (tut.active) tut.end()
@@ -456,6 +477,7 @@ export default function GameScreen({
     }
     markSolved(storageId)
     session.clearSaved()
+    clearElapsed(storageId) // solved — the next visit starts the clock at zero
     setDialogHidden(false) // a fresh verdict always shows the dialog first
     const m = findMurderer(puzzle, new Solution(placements))
     const room = puzzle.board.rooms.get(m.roomId)

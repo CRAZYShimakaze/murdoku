@@ -135,6 +135,11 @@ export class SearchSolver {
   private readonly n: number
   /** Number of search nodes visited by the last search (diagnostics). */
   nodes = 0
+  /** True when the last search stopped on its node budget — the result is then a
+   *  lower bound ("found so far"), NOT a verdict. Degenerate boards (e.g. a single
+   *  room, where the murder rule can never hold) would otherwise search forever
+   *  proving 0 solutions. */
+  aborted = false
 
   constructor(private readonly puzzle: Puzzle) {
     const board = puzzle.board
@@ -201,21 +206,21 @@ export class SearchSolver {
     return found
   }
 
-  countSolutions(limit = 2): number {
+  countSolutions(limit = 2, budget = Infinity): number {
     let count = 0
     this.search(() => {
       count++
       return count >= limit
-    })
+    }, undefined, budget)
     return count
   }
 
-  firstSolution(): Solution | null {
+  firstSolution(budget = Infinity): Solution | null {
     let found: Solution | null = null
     this.search((solution) => {
       found = solution
       return true
-    })
+    }, undefined, budget)
     return found
   }
 
@@ -232,6 +237,7 @@ export class SearchSolver {
   private search(
     onSolution: (solution: Solution) => boolean,
     forced?: ReadonlyMap<PersonId, Cell>,
+    budget = Infinity,
   ): void {
     const people = this.puzzle.people()
     const domains = new Map<PersonId, BitSet>()
@@ -249,6 +255,7 @@ export class SearchSolver {
     }
     const placement = new Map<PersonId, Cell>()
     this.nodes = 0
+    this.aborted = false
 
     const anyViolated = (): boolean => {
       for (const suspect of this.puzzle.suspects) {
@@ -291,6 +298,11 @@ export class SearchSolver {
     }
 
     const recurse = (): boolean => {
+      // Out of budget → unwind the whole search ("stop") without reporting a solution.
+      if (this.nodes >= budget) {
+        this.aborted = true
+        return true
+      }
       this.nodes++
       let pick: PersonId | null = null
       let best = Infinity
