@@ -31,12 +31,15 @@ for (const o of OBJECT_CATALOG) {
   OCC_OF_CHAR[o.char] = o.occupiable
 }
 
-/** Objects that look natural HEAPED together (a stack of boxes); every other fill item is
- *  SPREAD out instead, so we never get "3 lamps / 3 plants in a row". */
-const PILE_TYPES = new Set(['box', 'crate', 'rubble', 'oil', 'mud', 'gift'])
+/** Objects that look natural HEAPED together (a stack of boxes, a couple of haystacks);
+ *  every other fill item is SPREAD out instead, so we never get "3 lamps in a row". */
+const PILE_TYPES = new Set(['box', 'crate', 'rubble', 'oil', 'mud', 'gift', 'hay', 'barrel'])
 /** Per-room cap on decorative FILL ITEMS that look bad in bulk. Racks, clusters and
  *  features are exempt (a shop wall of fridges or a greenhouse of plants is fine). */
-const ITEM_CAP: Record<string, number> = { lamp: 1, tv: 1, plant: 3, statue: 4, campfire: 1, grill: 1 }
+const ITEM_CAP: Record<string, number> = {
+  lamp: 1, tv: 1, plant: 3, statue: 4, campfire: 1, grill: 1,
+  candle: 3, armor: 2, fireplace: 1, parasol: 3, slide: 2, deckchair: 4, hottub: 1, hammock: 2,
+}
 
 /** Room kinds the furnisher knows. Many room nameKeys map to the same archetype. */
 type Archetype =
@@ -44,7 +47,9 @@ type Archetype =
   | 'office' | 'library' | 'auditorium' | 'storage' | 'lockerroom' | 'music'
   | 'shopAisle' | 'shopChilled' | 'checkout' | 'workshop' | 'parking' | 'gym'
   | 'greenhouse' | 'garden' | 'deck' | 'pasture' | 'forest' | 'camp' | 'lake'
-  | 'animalCow' | 'animalPig' | 'animalHen' | 'animalStable'
+  | 'barn' | 'animalCow' | 'animalPig' | 'animalHen' | 'animalStable'
+  | 'throne' | 'greathall' | 'chapel' | 'dungeon' | 'armory' | 'cellar' | 'chamber' | 'oldkitchen' | 'bailey' | 'wallwalk'
+  | 'pool' | 'kidpool' | 'sunlawn' | 'sauna' | 'slidetower' | 'massage' | 'relax' | 'spa' | 'playground'
   | 'gallery' | 'genericIndoor' | 'genericOutdoor'
 
 /** A defining object, placed first. */
@@ -112,7 +117,7 @@ const RECIPES: Record<Archetype, Recipe> = {
   },
   living: {
     features: [ft('tv', 'single', 1, 1), ft('lamp', 'single', 0, 1)],
-    fill: [set('table', 1, 2, 4, 3), it('shelf', 2), it('plant', 2), it('chair', 1), it('piano', 1)],
+    fill: [set('table', 1, 2, 4, 3), it('shelf', 2), it('plant', 2), it('chair', 1), it('piano', 1), it('fireplace', 1)],
     targetFill: 0.42, carpet: 0.16,
   },
   music: {
@@ -187,7 +192,7 @@ const RECIPES: Record<Archetype, Recipe> = {
   },
   garden: {
     features: [ft('tree', 'cluster', 1, 3), ft('statue', 'single', 0, 1), ft('grill', 'single', 0, 1), ft('tent', 'single', 0, 1)],
-    fill: [cl('shrub', 2, 4, 3), cl('plant', 2, 3, 2), it('tree', 2), it('boulder', 2), it('rubble', 1), it('shrub', 2), it('mud', 2), it('grill', 2), it('tent', 1)],
+    fill: [cl('shrub', 2, 4, 3), cl('plant', 2, 3, 2), it('tree', 2), it('boulder', 2), it('rubble', 1), it('shrub', 2), it('mud', 2), it('grill', 2), it('tent', 1), it('deckchair', 1), it('parasol', 1), it('hammock', 1)],
     targetFill: 0.3, carpet: 0,
   },
   // A paved outdoor seating area (terrace / balcony / rooftop / porch): an outdoor
@@ -195,23 +200,32 @@ const RECIPES: Record<Archetype, Recipe> = {
   // CAMPFIRE would make no sense up here, so neither is offered.
   deck: {
     features: [ft('grill', 'single', 0, 1)],
-    fill: [set('table', 1, 2, 4, 4), cl('plant', 2, 3, 3), it('plant', 2), it('chair', 1), it('shrub', 1), it('grill', 1), it('lamp', 1)],
+    fill: [set('table', 1, 2, 4, 4), cl('plant', 2, 3, 3), it('plant', 2), it('chair', 1), it('deckchair', 1), it('parasol', 1), it('hottub', 1), it('hammock', 1), it('shrub', 1), it('grill', 1), it('lamp', 1)],
     targetFill: 0.34, carpet: 0,
   },
   pasture: {
-    features: [ft('cow', 'cluster', 2, 3), ft('horse', 'cluster', 0, 1)],
-    fill: [cl('cow', 2, 3, 2), it('tree', 2), it('shrub', 2), it('mud', 2), it('boulder', 1)],
+    features: [ft('cow', 'cluster', 2, 3), ft('horse', 'cluster', 0, 1), ft('hay', 'cluster', 0, 2)],
+    fill: [cl('cow', 2, 3, 2), it('hay', 3), it('tree', 2), it('shrub', 2), it('mud', 2), it('boulder', 1)],
     targetFill: 0.3, carpet: 0,
+  },
+  // The BARN is the hay loft of the farm: haystacks as its signature, crates/boxes as
+  // stores — distinct from the generic indoor 'storage' (shelves), which city themes use.
+  barn: {
+    features: [ft('hay', 'cluster', 2, 3), ft('carriage', 'pair', 0, 1)],
+    fill: [it('hay', 3), it('crate', 2), it('barrel', 1), it('box', 1), it('mud', 1)],
+    targetFill: 0.44, carpet: 0,
   },
   // --- camping / wilderness (bear lives ONLY here → "Bär nur draußen") ---
   forest: {
     features: [ft('tree', 'cluster', 2, 4), ft('tent', 'single', 0, 1), ft('campfire', 'single', 0, 1)],
-    fill: [cl('tree', 2, 4, 4), cl('shrub', 2, 4, 3), it('boulder', 2), it('mud', 1), it('rubble', 1), it('bear', 1), it('tent', 1), it('campfire', 1)],
+    fill: [cl('tree', 2, 4, 4), cl('shrub', 2, 4, 3), it('boulder', 2), it('mud', 1), it('rubble', 1), it('bear', 1), it('tent', 1), it('campfire', 1), it('hammock', 1)],
     targetFill: 0.34, carpet: 0,
   },
   camp: {
-    features: [ft('tent', 'cluster', 1, 2), ft('campfire', 'single', 0, 1), ft('grill', 'single', 0, 1), ft('tree', 'single', 1, 2)],
-    fill: [it('tent', 2), it('grill', 1), set('table', 1, 1, 4, 2), it('chair', 1), it('crate', 2), it('box', 1), it('trash', 1), cl('shrub', 1, 3, 2), it('mud', 1), it('bear', 1)],
+    // The odd hay bale doubles as campfire seating — a small feature chance plus a
+    // fill weight, so roughly every other campsite has one without it taking over.
+    features: [ft('tent', 'cluster', 1, 2), ft('campfire', 'single', 0, 1), ft('grill', 'single', 0, 1), ft('tree', 'single', 1, 2), ft('hay', 'cluster', 0, 2)],
+    fill: [it('tent', 2), it('grill', 1), set('table', 1, 1, 4, 2), it('chair', 1), it('hay', 2), it('hammock', 1), it('crate', 2), it('box', 1), it('trash', 1), cl('shrub', 1, 3, 2), it('mud', 1), it('bear', 1)],
     targetFill: 0.34, carpet: 0,
   },
   // The lake is drawn as open WATER (see boardRender), so it stays mostly clear: only
@@ -224,10 +238,116 @@ const RECIPES: Record<Archetype, Recipe> = {
     fill: [cl('waterlily', 2, 4, 5), it('mud', 1)],
     targetFill: 0.22, carpet: 0,
   },
-  animalCow: { features: [ft('cow', 'cluster', 3, 5)], fill: [it('cow', 3), it('crate', 2), it('mud', 2), it('shrub', 1)], targetFill: 0.44, carpet: 0 },
-  animalPig: { features: [ft('pig', 'cluster', 3, 5)], fill: [it('pig', 3), it('crate', 2), it('mud', 2)], targetFill: 0.42, carpet: 0 },
-  animalHen: { features: [ft('chicken', 'cluster', 4, 6)], fill: [it('chicken', 3), it('crate', 2), it('shrub', 1)], targetFill: 0.44, carpet: 0 },
-  animalStable: { features: [ft('horse', 'cluster', 2, 4)], fill: [it('horse', 2), it('crate', 2), it('mud', 1)], targetFill: 0.44, carpet: 0 },
+  animalCow: { features: [ft('cow', 'cluster', 3, 5)], fill: [it('cow', 3), it('hay', 2), it('crate', 2), it('mud', 2), it('shrub', 1)], targetFill: 0.44, carpet: 0 },
+  animalPig: { features: [ft('pig', 'cluster', 3, 5)], fill: [it('pig', 3), it('hay', 1), it('crate', 2), it('mud', 2)], targetFill: 0.42, carpet: 0 },
+  animalHen: { features: [ft('chicken', 'cluster', 4, 6)], fill: [it('chicken', 3), it('hay', 1), it('crate', 2), it('shrub', 1)], targetFill: 0.44, carpet: 0 },
+  animalStable: { features: [ft('horse', 'cluster', 2, 4), ft('carriage', 'pair', 0, 1)], fill: [it('horse', 2), it('hay', 2), it('crate', 2), it('mud', 1)], targetFill: 0.44, carpet: 0 },
+  // --- castle ---
+  throne: {
+    features: [ft('throne', 'single', 1, 1), ft('armor', 'single', 0, 2), ft('statue', 'single', 0, 1)],
+    fill: [it('candle', 3), it('armor', 1), it('statue', 1), it('plant', 1)],
+    targetFill: 0.3, carpet: 0.22, // long crimson runner up to the throne
+  },
+  greathall: {
+    features: [ft('fireplace', 'single', 1, 1), ft('armor', 'single', 0, 1)],
+    fill: [set('table', 2, 4, 6, 5), it('candle', 2), it('armor', 1)],
+    targetFill: 0.5, carpet: 0.08,
+  },
+  chapel: {
+    features: [ft('statue', 'single', 1, 1), ft('candle', 'single', 1, 2)],
+    fill: [rk('chair', 3, 5, 5), it('candle', 2), it('plant', 1)],
+    targetFill: 0.42, carpet: 0.06,
+  },
+  dungeon: {
+    features: [ft('hay', 'cluster', 1, 2)],
+    fill: [it('barrel', 2), it('rubble', 2), it('crate', 1), it('candle', 1), it('box', 1)],
+    targetFill: 0.4, carpet: 0,
+  },
+  // Weapon racks + lockers — shared by castle armouries/gatehouses AND the police lock-up.
+  armory: {
+    features: [ft('weaponrack', 'rack', 2, 3)],
+    fill: [rk('weaponrack', 1, 2, 2), rk('locker', 1, 2, 1), it('crate', 2), it('box', 1)],
+    targetFill: 0.46, carpet: 0,
+  },
+  // Barrel vaults — the wine cellars of mansions and restaurants get barrels too.
+  cellar: {
+    features: [ft('barrel', 'cluster', 2, 4)],
+    fill: [it('barrel', 3), rk('shelf', 1, 2, 2), it('crate', 2), it('box', 1)],
+    targetFill: 0.46, carpet: 0,
+  },
+  chamber: {
+    features: [ft('bed', 'pair', 1, 1), ft('fireplace', 'single', 0, 1)],
+    fill: [it('candle', 2), it('shelf', 1), set('table', 1, 1, 1, 1), it('box', 1)],
+    targetFill: 0.4, carpet: 0.14,
+  },
+  oldkitchen: {
+    features: [ft('fireplace', 'single', 1, 1)],
+    fill: [set('table', 1, 3, 2, 3), it('barrel', 2), it('crate', 2), rk('shelf', 1, 2, 1), it('box', 1)],
+    targetFill: 0.42, carpet: 0,
+  },
+  // Courtyard & battlements: sparse open stone with supply clutter along the walls.
+  bailey: {
+    features: [ft('tree', 'single', 0, 1), ft('statue', 'single', 0, 1), ft('carriage', 'pair', 0, 1)],
+    fill: [it('barrel', 2), it('crate', 1), it('hay', 1), it('boulder', 1), it('shrub', 1), it('rubble', 1)],
+    targetFill: 0.26, carpet: 0,
+  },
+  // The wall-walk: a narrow patrol path — just sparse supplies, no coach up here.
+  wallwalk: {
+    features: [],
+    fill: [it('barrel', 1), it('crate', 1), it('rubble', 1), it('boulder', 1)],
+    targetFill: 0.18, carpet: 0,
+  },
+  // --- pool & spa ---
+  // The pools are WATER rooms but use these sparse recipes instead of the lake's
+  // (no lilies/boats in a swimming pool) — open water, plus the springboard in the
+  // MAIN pool only (nobody dives into the paddling pool).
+  pool: {
+    features: [ft('divingboard', 'single', 0, 1)],
+    fill: [],
+    targetFill: 0.05, carpet: 0,
+  },
+  kidpool: {
+    features: [],
+    fill: [],
+    targetFill: 0.02, carpet: 0,
+  },
+  sunlawn: {
+    features: [ft('parasol', 'single', 1, 2), ft('deckchair', 'cluster', 2, 3)],
+    fill: [cl('deckchair', 2, 3, 4), it('deckchair', 2), it('parasol', 2), it('hammock', 1), it('shrub', 1), it('tree', 1), it('trash', 1)],
+    targetFill: 0.34, carpet: 0,
+  },
+  sauna: {
+    features: [],
+    fill: [rk('chair', 2, 4, 4), it('candle', 1), it('plant', 1)],
+    targetFill: 0.36, carpet: 0,
+  },
+  slidetower: {
+    features: [ft('slide', 'single', 1, 2)],
+    fill: [it('slide', 1), rk('chair', 1, 2, 1), it('trash', 1), it('shrub', 1)],
+    targetFill: 0.3, carpet: 0,
+  },
+  massage: {
+    features: [ft('bed', 'pair', 1, 1), ft('candle', 'single', 0, 2)],
+    fill: [it('plant', 2), it('candle', 1), rk('shelf', 1, 1, 1), set('table', 1, 1, 0, 1)],
+    targetFill: 0.36, carpet: 0.15,
+  },
+  relax: {
+    features: [ft('deckchair', 'cluster', 2, 3), ft('hottub', 'single', 0, 1), ft('lamp', 'single', 0, 1)],
+    fill: [it('deckchair', 2), it('plant', 2), it('candle', 1), set('table', 1, 1, 0, 1)],
+    targetFill: 0.36, carpet: 0.2,
+  },
+  // Kids' corner: the (playground-look) slide is the landmark; benches and greenery around.
+  playground: {
+    features: [ft('slide', 'single', 1, 1)],
+    fill: [it('slide', 1), cl('shrub', 1, 3, 2), it('tree', 1), it('chair', 1), it('trash', 1), it('mud', 1)],
+    targetFill: 0.26, carpet: 0,
+  },
+  // Hotel wellness: the hot tub IS the room, flanked by loungers and candles.
+  spa: {
+    features: [ft('hottub', 'single', 1, 1), ft('shower', 'single', 0, 1)],
+    fill: [it('deckchair', 2), it('candle', 2), it('plant', 2), it('shelf', 1)],
+    targetFill: 0.32, carpet: 0,
+  },
   gallery: {
     features: [ft('statue', 'single', 1, 3)],
     fill: [it('statue', 2), it('plant', 2), it('shelf', 1)],
@@ -248,7 +368,7 @@ const RECIPES: Record<Archetype, Recipe> = {
 /** Explicit nameKey → archetype map (bare key, no `room.` prefix). Covers every room
  *  the built-in themes use; unknown keys fall through to keyword heuristics below. */
 const ARCHETYPE_OF: Record<string, Archetype> = {
-  bathroom: 'bath', bath: 'bath', guestbath: 'bath', restroom: 'bath', spa: 'bath',
+  bathroom: 'bath', bath: 'bath', guestbath: 'bath', restroom: 'bath', spa: 'spa',
   laundry: 'laundry', laundrette: 'laundry', utilityroom: 'laundry',
   kitchen: 'kitchen', kitchenette: 'kitchen', pantry: 'kitchen', scullery: 'kitchen', preproom: 'kitchen', dairy: 'kitchen',
   bedroom: 'bedroom', guestroom: 'bedroom', kids1: 'bedroom', kids2: 'bedroom', kidsroom: 'bedroom', boudoir: 'bedroom',
@@ -269,8 +389,10 @@ const ARCHETYPE_OF: Record<string, Archetype> = {
   auditorium: 'auditorium', assemblyhall: 'auditorium',
   storage: 'storage', storeroom: 'storage', stockroom: 'storage', vault: 'storage', luggageroom: 'storage',
   partsstore: 'storage', tirestore: 'storage', shed: 'storage', basement: 'storage', attic: 'storage',
-  winecellar: 'storage', archive: 'storage', evidenceroom: 'storage', mailroom: 'storage', pharmacy: 'storage', barn: 'storage',
-  lockerroom: 'lockerroom', cloakroom: 'lockerroom', armory: 'lockerroom',
+  archive: 'storage', evidenceroom: 'storage', mailroom: 'storage', pharmacy: 'storage', barn: 'barn',
+  winecellar: 'cellar', // barrels — mansions & restaurants included
+  lockerroom: 'lockerroom', cloakroom: 'lockerroom',
+  armory: 'armory', // weapon racks — castle AND police lock-up
   snacks: 'shopAisle', drinks: 'shopAisle', deli: 'shopAisle', fruit: 'shopAisle', produce: 'shopAisle',
   cheese: 'shopAisle', bakery: 'shopAisle', toys: 'shopAisle', drugstore: 'shopAisle',
   chilled: 'shopChilled', frozen: 'shopChilled', coldroom: 'shopChilled',
@@ -280,7 +402,7 @@ const ARCHETYPE_OF: Record<string, Archetype> = {
   parking: 'parking',
   gym: 'gym', gymnasium: 'gym',
   greenhouse: 'greenhouse',
-  yard: 'garden', garden: 'garden', schoolyard: 'garden', frontyard: 'garden', field: 'garden', pond: 'garden',
+  yard: 'garden', garden: 'garden', schoolyard: 'playground', frontyard: 'garden', field: 'garden', pond: 'garden',
   terrace: 'deck', balcony: 'deck', porch: 'deck', rooftop: 'deck',
   pasture: 'pasture',
   cowshed: 'animalCow', pigsty: 'animalPig', henhouse: 'animalHen', stable: 'animalStable',
@@ -288,7 +410,15 @@ const ARCHETYPE_OF: Record<string, Archetype> = {
   // camping / wilderness (lake/jetty/sea/… are handled by isWaterRoom in archetypeOf)
   forest: 'forest', clearing: 'forest',
   campsite1: 'camp', campsite2: 'camp', campfire: 'camp', picnicarea: 'camp',
-  playground: 'garden', kiosk: 'shopAisle', cabin: 'bedroom', showers: 'bath',
+  playground: 'playground', kiosk: 'shopAisle', cabin: 'bedroom', showers: 'bath',
+  // castle (moat is a water room → lake)
+  throneroom: 'throne', knightshall: 'greathall', chapel: 'chapel', dungeon: 'dungeon',
+  towerroom: 'chamber', chamber: 'chamber', battlements: 'wallwalk', courtyard: 'bailey',
+  castlekitchen: 'oldkitchen', gatehouse: 'armory',
+  // pool & spa (mainpool/kidspool are water rooms, but the explicit 'pool' entry wins
+  // over the water fallback — a swimming pool gets no lilies/boats)
+  mainpool: 'pool', kidspool: 'kidpool', lawn: 'sunlawn', sauna: 'sauna', steamroom: 'sauna',
+  slidetower: 'slidetower', massage: 'massage', relaxroom: 'relax',
 }
 
 /** Keyword fallback for room keys not in the explicit map (future themes). */
@@ -298,18 +428,25 @@ function keywordArchetype(key: string, outside: boolean): Archetype {
   if (has('pig')) return 'animalPig'
   if (has('hen', 'chick', 'poultry')) return 'animalHen'
   if (has('stable', 'horse')) return 'animalStable'
+  if (has('barn', 'hay')) return 'barn'
   if (outside) {
     if (has('park')) return 'parking'
     if (has('pasture', 'paddock', 'meadow')) return 'pasture'
     if (has('terrace', 'balcony', 'patio', 'deck', 'porch', 'rooftop', 'veranda')) return 'deck'
     return 'garden'
   }
-  if (has('bath', 'toilet', 'rest', 'wc', 'shower', 'spa')) return 'bath'
+  if (has('throne')) return 'throne'
+  if (has('chapel', 'church')) return 'chapel'
+  if (has('dungeon')) return 'dungeon'
+  if (has('sauna', 'steam')) return 'sauna'
+  if (has('armor', 'armoury', 'armory')) return 'armory'
+  if (has('spa', 'wellness', 'whirl')) return 'spa'
+  if (has('bath', 'toilet', 'rest', 'wc', 'shower')) return 'bath'
   if (has('laundr', 'utility')) return 'laundry'
   if (has('kitchen', 'pantry', 'dairy', 'prep', 'scullery')) return 'kitchen'
   if (has('cell', 'jail', 'prison')) return 'cell'
   if (has('bed', 'sleep', 'ward', 'dorm', 'suite', 'icu')) return 'bedroom'
-  if (has('locker', 'cloak', 'armor', 'armoury')) return 'lockerroom'
+  if (has('locker', 'cloak')) return 'lockerroom'
   if (has('library', 'archive', 'reading')) return 'library'
   if (has('audit', 'assembly', 'theatre', 'theater', 'lecture')) return 'auditorium'
   if (has('gym')) return 'gym'
@@ -318,7 +455,7 @@ function keywordArchetype(key: string, outside: boolean): Archetype {
   if (has('chill', 'frozen', 'cold', 'freezer')) return 'shopChilled'
   if (has('checkout', 'till', 'register')) return 'checkout'
   if (has('aisle', 'snack', 'drink', 'fruit', 'produce', 'cheese', 'bakery', 'toy', 'drug', 'grocery', 'deli')) return 'shopAisle'
-  if (has('storage', 'store', 'stock', 'vault', 'depot', 'cellar', 'shed', 'attic', 'basement', 'pharmac', 'barn')) return 'storage'
+  if (has('storage', 'store', 'stock', 'vault', 'depot', 'cellar', 'shed', 'attic', 'basement', 'pharmac')) return 'storage'
   if (has('workshop', 'garage', 'assembly', 'paint', 'bay', 'repair', 'craft', 'art', 'gas', 'fuel')) return 'workshop'
   if (has('dining', 'dinner', 'restaurant', 'canteen', 'cafeteria', 'cafe', 'bar', 'breakfast', 'mess')) return 'dining'
   if (has('office', 'study', 'meeting', 'conference', 'desk', 'comput', 'class', 'lab', 'server', 'forensic', 'briefing', 'admin')) return 'office'
@@ -328,11 +465,15 @@ function keywordArchetype(key: string, outside: boolean): Archetype {
 
 /** Classify a room (its i18n nameKey + whether it's an outdoor area) into an archetype. */
 export function archetypeOf(nameKey: string, outside: boolean): Archetype {
-  // Water rooms (lake/jetty/sea/…) furnish from the lake recipe AND get the water look —
-  // one shared definition (isWaterRoom) keeps the two in lock-step for any future theme.
-  if (isWaterRoom(nameKey)) return 'lake'
+  // An explicit mapping wins even over the water look (the swimming pools ARE water
+  // rooms visually, but furnish from the sparse 'pool' recipe — no lilies or boats).
   const key = nameKey.replace(/^room\./, '').toLowerCase()
-  return ARCHETYPE_OF[key] ?? keywordArchetype(key, outside)
+  const explicit = ARCHETYPE_OF[key]
+  if (explicit) return explicit
+  // Water rooms (lake/jetty/sea/moat/…) furnish from the lake recipe AND get the water
+  // look — one shared definition (isWaterRoom) keeps the two in lock-step for any theme.
+  if (isWaterRoom(nameKey)) return 'lake'
+  return keywordArchetype(key, outside)
 }
 
 /** Every object type a recipe can place (features + fill, chairs from sets, carpet rug). */

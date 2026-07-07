@@ -67,7 +67,7 @@ export type Side = 'N' | 'E' | 'S' | 'W'
  * whole pair — never beside its own other half. Every other object is its own
  * one-tile footprint. Single source of truth for both the renderer and the clue logic.
  */
-export const MULTI_CELL_TYPES: ReadonlySet<string> = new Set(['bed', 'car', 'boat'])
+export const MULTI_CELL_TYPES: ReadonlySet<string> = new Set(['bed', 'car', 'boat', 'carriage'])
 
 /** Attribute values a suspect can carry (gender, beard, …). */
 export type AttributeValue = string | number | boolean

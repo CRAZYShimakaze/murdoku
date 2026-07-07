@@ -4,7 +4,21 @@ import type { Solution } from '../model/Solution.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
 import type { Cell, Explanation, PersonId } from '../model/types.ts'
 
-/** "{name} was on a {object}." */
+/**
+ * Prepositional wording per object type: one is IN a tent, UNDER a parasol — everything
+ * else reads "on". This only picks the template-key SUFFIX (onObjectIn/onObjectUnder,
+ * uniqueOnObject…, roomExistsOn…); the locales carry the actual words, and both clue
+ * renderers (Renderer.ts and ClueText.tsx) resolve the keys the same way.
+ */
+export const ON_OBJECT_KEY_SUFFIX: Record<string, 'In' | 'Under'> = {
+  tent: 'In',
+  parasol: 'Under',
+  carriage: 'In',
+  hottub: 'In',
+  hammock: 'In',
+}
+
+/** "{name} was on a {object}." (in/under for tent/parasol) */
 export class OnObjectClue extends UnaryClue {
   constructor(readonly object: string) {
     super()
@@ -13,7 +27,8 @@ export class OnObjectClue extends UnaryClue {
     return board.cellsWithObject(this.object)
   }
   describe(): Explanation {
-    return { key: 'clue.onObject', params: { object: this.object } }
+    const suffix = ON_OBJECT_KEY_SUFFIX[this.object] ?? ''
+    return { key: `clue.onObject${suffix}`, params: { object: this.object } }
   }
 }
 

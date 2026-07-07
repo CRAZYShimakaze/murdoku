@@ -46,6 +46,21 @@ export const OBJECT_GLYPHS: Record<string, string> = {
   tent: '⛺', // palette/dropdown chip only — the board draws a hand-painted tent
   campfire: '🔥', // palette/dropdown chip only — the board draws a hand-painted campfire
   grill: '🍖', // palette/dropdown chip only — the board draws a hand-painted kettle grill
+  hay: '🌾', // palette/dropdown chip only — the board draws a hand-painted haystack
+  candle: '🕯️', // chip only — the board draws a hand-painted candelabra
+  fireplace: '🔥', // chip only — the board draws a hand-painted stone hearth
+  barrel: '🛢️', // chip only — the board draws a hand-painted wooden barrel
+  armor: '🛡️', // chip only — the board draws a hand-painted suit of armor
+  weaponrack: '⚔️', // chip only — the board draws a hand-painted weapon rack
+  throne: '👑', // chip only — the board draws a hand-painted throne
+  deckchair: '🏖️', // chip only — the board draws a hand-painted sun lounger
+  parasol: '⛱️', // chip only — the board draws a hand-painted top-down parasol
+  slide: '🛝', // chip only — the board draws a hand-painted water slide
+  divingboard: '🏊', // chip only — the board draws a hand-painted springboard
+  carriage: '🛺', // chip only — the board draws a hand-painted horse-drawn coach
+  hottub: '🛁', // chip only — the board draws a hand-painted top-down hot tub
+  hammock: '🛌', // chip only — the board draws a hand-painted hammock
   street: '🛣️', // editor palette chip only — the board draws a hand-painted asphalt road
+  path: '🛤️', // editor palette chip only — the board draws a hand-painted dirt trail
   waterlily: '🪷', // palette/dropdown chip only — the board draws hand-painted lily pads
 }

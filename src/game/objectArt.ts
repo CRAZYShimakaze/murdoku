@@ -1061,6 +1061,60 @@ export function drawStreetTile(ctx: Ctx, x: number, y: number, S: number, conn: 
 }
 
 /**
+ * One cell of a dirt/gravel PATH (occupiable ground layer, auto-tiled like the street):
+ * a trodden earth band with a darker packed edge and flat stepping stones staggered
+ * along the run direction — the camping trail and the castle's carriage track.
+ */
+export function drawPathTile(ctx: Ctx, x: number, y: number, S: number, conn: Conn): void {
+  const pad = S * 0.08
+  const ov = Math.max(0.75, S * 0.02)
+  // packed-earth edge, merged seamlessly with connected neighbours
+  ctx.fillStyle = '#8f6f45'
+  piecePath(ctx, x, y, S, conn, pad, S * 0.14, ov)
+  ctx.fill()
+  // lighter trodden centre
+  ctx.fillStyle = '#c2a06b'
+  piecePath(ctx, x, y, S, conn, pad + S * 0.05, S * 0.11, ov)
+  ctx.fill()
+  // flat stepping stones staggered along the run direction (fixed layout per tile)
+  const horiz = conn.e || conn.w
+  const vert = conn.n || conn.s
+  const stones: readonly [number, number, number][] =
+    vert && !horiz
+      ? [
+          [0.42, 0.24, 0.4], // [u along-run centre → mapped below]
+          [0.6, 0.52, -0.3],
+          [0.42, 0.8, 0.2],
+        ]
+      : [
+          [0.24, 0.58, 0.4],
+          [0.52, 0.42, -0.3],
+          [0.8, 0.58, 0.2],
+        ]
+  for (const [su, sv, rot] of stones) {
+    const sx = x + S * su
+    const sy = y + S * sv
+    ctx.save()
+    ctx.translate(sx, sy)
+    ctx.rotate(rot)
+    ctx.fillStyle = '#a98858'
+    ctx.beginPath()
+    ctx.roundRect(-S * 0.09, -S * 0.06, S * 0.18, S * 0.12, S * 0.045)
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(110, 85, 50, 0.55)'
+    ctx.lineWidth = Math.max(0.8, S * 0.016)
+    ctx.stroke()
+    // light catching the stone's top edge
+    ctx.strokeStyle = 'rgba(236, 220, 180, 0.6)'
+    ctx.beginPath()
+    ctx.moveTo(-S * 0.06, -S * 0.045)
+    ctx.lineTo(S * 0.05, -S * 0.045)
+    ctx.stroke()
+    ctx.restore()
+  }
+}
+
+/**
  * A ridge (A-frame) tent seen from a slight front angle — OCCUPIABLE (a person is "in
  * the tent"), so it sits bare on the floor with no blocked card. Two fabric slopes, a
  * dark triangular door flap, and a guy line to a peg give it the camp-tent read.
@@ -1243,6 +1297,1115 @@ export function drawGrill(ctx: Ctx, x: number, y: number, S: number): void {
   ctx.beginPath()
   ctx.moveTo(cx, bowlY - ry * 0.4)
   ctx.quadraticCurveTo(cx + S * 0.08, y + S * 0.22, cx - S * 0.02, y + S * 0.1)
+  ctx.stroke()
+}
+
+/**
+ * A haystack (blocking): a plump, hand-stacked golden mound with a slightly crooked
+ * crown — sunlit on the left, warm shadow on the right, sweeping layer curves that
+ * follow the dome, loose straw ticks all over and a few flyaway strands (with tiny
+ * seed heads) poking out of the silhouette. Sits on the white "blocked" card.
+ */
+export function drawHaystack(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S / 2
+  const baseY = y + S * 0.84
+  const rx = S * 0.36 // mound half-width
+  const topY = y + S * 0.17 // crown height
+
+  // ground shadow
+  ctx.fillStyle = 'rgba(64, 46, 12, 0.16)'
+  ctx.beginPath()
+  ctx.ellipse(cx, baseY, rx * 1.06, S * 0.045, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  // mound silhouette: a bumpy dome with a slightly tilted crown (hand-stacked, not a
+  // perfect arc) — built once as a Path2D so the fill, the clipped shading and the
+  // outline all share the exact same shape.
+  const dome = new Path2D()
+  dome.moveTo(cx - rx, baseY)
+  dome.quadraticCurveTo(cx - rx * 1.04, y + S * 0.56, cx - rx * 0.72, y + S * 0.38)
+  dome.quadraticCurveTo(cx - rx * 0.52, y + S * 0.24, cx - S * 0.05, topY)
+  dome.quadraticCurveTo(cx + rx * 0.38, y + S * 0.13, cx + rx * 0.58, y + S * 0.35)
+  dome.quadraticCurveTo(cx + rx * 1.03, y + S * 0.58, cx + rx, baseY)
+  dome.closePath()
+  ctx.fillStyle = '#e3b254'
+  ctx.fill(dome)
+
+  ctx.save()
+  ctx.clip(dome)
+  // sunlit upper-left flank
+  ctx.fillStyle = 'rgba(255, 224, 129, 0.6)'
+  ctx.beginPath()
+  ctx.ellipse(cx - rx * 0.38, y + S * 0.4, rx * 0.56, S * 0.28, -0.4, 0, Math.PI * 2)
+  ctx.fill()
+  // warm shaded lower-right flank
+  ctx.fillStyle = 'rgba(148, 96, 24, 0.3)'
+  ctx.beginPath()
+  ctx.ellipse(cx + rx * 0.55, y + S * 0.62, rx * 0.62, S * 0.3, 0.35, 0, Math.PI * 2)
+  ctx.fill()
+  // sweeping layer curves — the stacked-in-passes look
+  ctx.strokeStyle = 'rgba(138, 100, 32, 0.5)'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  for (const [ly, sag] of [
+    [0.4, 0.07],
+    [0.56, 0.05],
+    [0.71, 0.04],
+  ] as const) {
+    const w = rx * (0.62 + ly * 0.55) // wider sweeps toward the base
+    ctx.beginPath()
+    ctx.moveTo(cx - w, y + S * ly)
+    ctx.quadraticCurveTo(cx, y + S * (ly + sag), cx + w, y + S * ly)
+    ctx.stroke()
+  }
+  // loose straw ticks scattered over the flanks (fixed table → identical stacks)
+  const ticks: readonly [number, number, number, number][] = [
+    // [u across, v down, angle, light?]  (u,v in mound-local fractions)
+    [-0.62, 0.62, 2.6, 0], [-0.4, 0.44, 2.2, 1], [-0.18, 0.7, 2.9, 0],
+    [0.05, 0.5, 0.5, 1], [0.28, 0.66, 0.4, 0], [0.5, 0.5, 0.7, 0],
+    [-0.3, 0.78, 2.75, 1], [0.16, 0.8, 0.25, 1], [0.62, 0.7, 0.55, 1],
+    [-0.05, 0.32, 2.4, 0],
+  ]
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  for (const [u, v, a, light] of ticks) {
+    ctx.strokeStyle = light ? 'rgba(255, 232, 150, 0.75)' : 'rgba(122, 82, 22, 0.55)'
+    const px = cx + u * rx
+    const py = y + v * S * 0.8
+    const L = S * 0.07
+    ctx.beginPath()
+    ctx.moveTo(px - Math.cos(a) * L, py - Math.sin(a) * L)
+    ctx.lineTo(px + Math.cos(a) * L, py + Math.sin(a) * L)
+    ctx.stroke()
+  }
+  ctx.restore()
+
+  // silhouette outline
+  ctx.strokeStyle = '#8a6420'
+  ctx.lineJoin = 'round'
+  ctx.lineWidth = Math.max(1, S * 0.024)
+  ctx.stroke(dome)
+
+  // flyaway strands out of the crown and flanks, each ending in a tiny seed head
+  const strands: readonly [number, number, number, number][] = [
+    // [x0, y0, x1, y1] in cell fractions
+    [0.42, 0.2, 0.34, 0.09], [0.52, 0.17, 0.56, 0.06], [0.6, 0.22, 0.7, 0.12],
+    [0.17, 0.42, 0.07, 0.36], [0.84, 0.46, 0.93, 0.4],
+  ]
+  ctx.strokeStyle = '#b98a2e'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(0.9, S * 0.018)
+  for (const [x0, y0, x1, y1] of strands) {
+    ctx.beginPath()
+    ctx.moveTo(x + x0 * S, y + y0 * S)
+    ctx.quadraticCurveTo(x + (x0 + x1) * S * 0.5, y + Math.min(y0, y1) * S - S * 0.02, x + x1 * S, y + y1 * S)
+    ctx.stroke()
+    ctx.fillStyle = '#8a6420'
+    ctx.beginPath()
+    ctx.ellipse(x + x1 * S, y + y1 * S, S * 0.017, S * 0.011, Math.atan2(y1 - y0, x1 - x0), 0, Math.PI * 2)
+    ctx.fill()
+  }
+}
+
+/**
+ * A candelabra (blocking): a brass three-arm stand on a round foot, cream candles of
+ * uneven height with warm flames and a soft glow — castle mood lighting. On the card.
+ */
+export function drawCandelabrum(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S / 2
+  const baseY = y + S * 0.84
+  // contact shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.14)'
+  ctx.beginPath()
+  ctx.ellipse(cx, baseY + S * 0.02, S * 0.2, S * 0.05, 0, 0, Math.PI * 2)
+  ctx.fill()
+  const brass = '#b8892f'
+  const brassDark = '#7e5c1c'
+  ctx.strokeStyle = brass
+  ctx.lineCap = 'round'
+  // round foot + stem
+  ctx.fillStyle = brass
+  ctx.beginPath()
+  ctx.ellipse(cx, baseY, S * 0.13, S * 0.045, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.lineWidth = Math.max(1.6, S * 0.045)
+  ctx.beginPath()
+  ctx.moveTo(cx, baseY)
+  ctx.lineTo(cx, y + S * 0.52)
+  ctx.stroke()
+  // two curved arms + straight centre riser
+  ctx.lineWidth = Math.max(1.3, S * 0.035)
+  ctx.beginPath()
+  ctx.moveTo(cx, y + S * 0.56)
+  ctx.quadraticCurveTo(cx - S * 0.22, y + S * 0.56, cx - S * 0.2, y + S * 0.4)
+  ctx.moveTo(cx, y + S * 0.56)
+  ctx.quadraticCurveTo(cx + S * 0.22, y + S * 0.56, cx + S * 0.2, y + S * 0.4)
+  ctx.moveTo(cx, y + S * 0.52)
+  ctx.lineTo(cx, y + S * 0.34)
+  ctx.stroke()
+  // drip pans
+  ctx.fillStyle = brassDark
+  for (const [dx, dy] of [
+    [-0.2, 0.4],
+    [0, 0.34],
+    [0.2, 0.4],
+  ] as const) {
+    ctx.beginPath()
+    ctx.ellipse(cx + dx * S, y + dy * S, S * 0.055, S * 0.02, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // candles (centre one taller) + flames with glow
+  const candle = (dx: number, dy: number, h: number): void => {
+    const px = cx + dx * S
+    const topY = y + (dy - h) * S
+    ctx.fillStyle = '#f3ead2'
+    ctx.strokeStyle = '#c9bb9a'
+    ctx.lineWidth = Math.max(0.8, S * 0.014)
+    ctx.beginPath()
+    ctx.roundRect(px - S * 0.035, topY, S * 0.07, h * S, S * 0.015)
+    ctx.fill()
+    ctx.stroke()
+    // glow halo, then teardrop flame
+    ctx.fillStyle = 'rgba(255, 196, 64, 0.28)'
+    ctx.beginPath()
+    ctx.arc(px, topY - S * 0.055, S * 0.075, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#f6a623'
+    ctx.beginPath()
+    ctx.moveTo(px, topY - S * 0.115)
+    ctx.quadraticCurveTo(px + S * 0.038, topY - S * 0.04, px, topY - S * 0.005)
+    ctx.quadraticCurveTo(px - S * 0.038, topY - S * 0.04, px, topY - S * 0.115)
+    ctx.fill()
+    ctx.fillStyle = '#ffe07a'
+    ctx.beginPath()
+    ctx.ellipse(px, topY - S * 0.045, S * 0.016, S * 0.03, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  candle(-0.2, 0.4, 0.14)
+  candle(0.2, 0.4, 0.17)
+  candle(0, 0.34, 0.15)
+}
+
+/**
+ * A stone fireplace (blocking): a grey block surround with a mantel shelf, an arched
+ * firebox glowing with layered flames over a log, and two small flanking stones.
+ * NOT the campfire — this is the built-in, indoor hearth. Sits on the card.
+ */
+export function drawFireplace(ctx: Ctx, x: number, y: number, S: number): void {
+  const left = x + S * 0.14
+  const w = S * 0.72
+  const top = y + S * 0.2
+  const baseY = y + S * 0.86
+  ctx.lineJoin = 'round'
+  // stone body
+  ctx.fillStyle = '#9aa0a6'
+  ctx.strokeStyle = '#5f646a'
+  ctx.lineWidth = Math.max(1.2, S * 0.028)
+  ctx.beginPath()
+  ctx.roundRect(left, top + S * 0.06, w, baseY - top - S * 0.06, S * 0.03)
+  ctx.fill()
+  ctx.stroke()
+  // mantel shelf (wider than the body)
+  ctx.fillStyle = '#b4bac0'
+  ctx.beginPath()
+  ctx.roundRect(left - S * 0.05, top, w + S * 0.1, S * 0.09, S * 0.02)
+  ctx.fill()
+  ctx.stroke()
+  // block joints on the surround
+  ctx.strokeStyle = 'rgba(70, 74, 80, 0.55)'
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  ctx.beginPath()
+  for (const fy of [0.42, 0.62]) {
+    ctx.moveTo(left, y + fy * S)
+    ctx.lineTo(left + S * 0.12, y + fy * S)
+    ctx.moveTo(left + w - S * 0.12, y + fy * S)
+    ctx.lineTo(left + w, y + fy * S)
+  }
+  ctx.moveTo(left + S * 0.06, top + S * 0.15)
+  ctx.lineTo(left + S * 0.06, baseY)
+  ctx.moveTo(left + w - S * 0.06, top + S * 0.15)
+  ctx.lineTo(left + w - S * 0.06, baseY)
+  ctx.stroke()
+  // arched firebox opening
+  const fx = x + S / 2
+  const fw = S * 0.22
+  ctx.fillStyle = '#241d18'
+  ctx.beginPath()
+  ctx.moveTo(fx - fw, baseY)
+  ctx.lineTo(fx - fw, y + S * 0.5)
+  ctx.quadraticCurveTo(fx, y + S * 0.34, fx + fw, y + S * 0.5)
+  ctx.lineTo(fx + fw, baseY)
+  ctx.closePath()
+  ctx.fill()
+  // log + layered flames (clipped to the opening)
+  ctx.save()
+  ctx.clip()
+  ctx.strokeStyle = '#6b4a2b'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(2, S * 0.06)
+  ctx.beginPath()
+  ctx.moveTo(fx - fw * 0.75, baseY - S * 0.05)
+  ctx.lineTo(fx + fw * 0.75, baseY - S * 0.05)
+  ctx.stroke()
+  const flame = (h: number, w2: number, color: string): void => {
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.moveTo(fx, baseY - h)
+    ctx.quadraticCurveTo(fx + w2, baseY - h * 0.4, fx + w2 * 0.5, baseY - S * 0.04)
+    ctx.quadraticCurveTo(fx, baseY, fx - w2 * 0.5, baseY - S * 0.04)
+    ctx.quadraticCurveTo(fx - w2, baseY - h * 0.4, fx, baseY - h)
+    ctx.closePath()
+    ctx.fill()
+  }
+  flame(S * 0.3, S * 0.13, '#e8612b')
+  flame(S * 0.21, S * 0.085, '#f6a623')
+  flame(S * 0.12, S * 0.045, '#ffe07a')
+  ctx.restore()
+}
+
+/**
+ * A wooden barrel (blocking): upright, bulging staves, two iron hoops and a lighter
+ * elliptical lid with a bunghole — cellar, tavern and harbour stock. On the card.
+ */
+export function drawBarrel(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S / 2
+  const topY = y + S * 0.24
+  const botY = y + S * 0.82
+  const rTop = S * 0.24
+  const bulge = S * 0.31
+  // contact shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.14)'
+  ctx.beginPath()
+  ctx.ellipse(cx, botY + S * 0.035, S * 0.28, S * 0.055, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // body (bulged sides)
+  ctx.fillStyle = '#a9743c'
+  ctx.strokeStyle = '#5e4326'
+  ctx.lineWidth = Math.max(1.2, S * 0.03)
+  ctx.beginPath()
+  ctx.moveTo(cx - rTop, topY)
+  ctx.quadraticCurveTo(cx - bulge, (topY + botY) / 2, cx - rTop, botY)
+  ctx.ellipse(cx, botY, rTop, S * 0.06, 0, Math.PI, 0, true)
+  ctx.quadraticCurveTo(cx + bulge, (topY + botY) / 2, cx + rTop, topY)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // stave joints
+  ctx.strokeStyle = 'rgba(94, 67, 38, 0.55)'
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  for (const f of [-0.5, 0, 0.5]) {
+    ctx.beginPath()
+    ctx.moveTo(cx + f * rTop * 1.4, topY + S * 0.04)
+    ctx.quadraticCurveTo(cx + f * bulge * 1.35, (topY + botY) / 2, cx + f * rTop * 1.4, botY - S * 0.02)
+    ctx.stroke()
+  }
+  // iron hoops
+  ctx.strokeStyle = '#3e4249'
+  ctx.lineWidth = Math.max(1.6, S * 0.045)
+  for (const fy of [0.4, 0.66]) {
+    const yy = y + fy * S
+    const t = Math.abs(yy - (topY + botY) / 2) / ((botY - topY) / 2)
+    const r = rTop + (bulge - rTop) * (1 - t * t)
+    ctx.beginPath()
+    ctx.moveTo(cx - r, yy)
+    ctx.quadraticCurveTo(cx, yy + S * 0.05, cx + r, yy)
+    ctx.stroke()
+  }
+  // lid
+  ctx.fillStyle = '#c99a5e'
+  ctx.strokeStyle = '#5e4326'
+  ctx.lineWidth = Math.max(1, S * 0.024)
+  ctx.beginPath()
+  ctx.ellipse(cx, topY, rTop, S * 0.07, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#5e4326'
+  ctx.beginPath()
+  ctx.ellipse(cx + S * 0.07, topY, S * 0.028, S * 0.016, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // side highlight
+  ctx.strokeStyle = 'rgba(255, 226, 170, 0.4)'
+  ctx.lineWidth = Math.max(1, S * 0.022)
+  ctx.beginPath()
+  ctx.moveTo(cx - rTop * 0.72, topY + S * 0.1)
+  ctx.quadraticCurveTo(cx - bulge * 0.72, (topY + botY) / 2, cx - rTop * 0.72, botY - S * 0.04)
+  ctx.stroke()
+}
+
+/**
+ * A suit of armor (blocking): polished plate on a plinth — plumed great helm with a
+ * dark visor slit, riveted breastplate, pauldrons, and a halberd held upright.
+ */
+export function drawArmor(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S * 0.46
+  const steel = '#c3cad3'
+  const steelDark = '#8a93a0'
+  const line = '#4a505a'
+  ctx.lineJoin = 'round'
+  // plinth
+  ctx.fillStyle = '#9aa0a6'
+  ctx.strokeStyle = '#5f646a'
+  ctx.lineWidth = Math.max(1, S * 0.024)
+  ctx.beginPath()
+  ctx.roundRect(x + S * 0.2, y + S * 0.8, S * 0.52, S * 0.09, S * 0.02)
+  ctx.fill()
+  ctx.stroke()
+  // halberd: shaft + blade (behind the figure, held to the right)
+  ctx.strokeStyle = '#6b4a2b'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(1.4, S * 0.032)
+  ctx.beginPath()
+  ctx.moveTo(x + S * 0.78, y + S * 0.82)
+  ctx.lineTo(x + S * 0.78, y + S * 0.18)
+  ctx.stroke()
+  ctx.fillStyle = steel
+  ctx.strokeStyle = line
+  ctx.lineWidth = Math.max(0.9, S * 0.018)
+  ctx.beginPath()
+  ctx.moveTo(x + S * 0.78, y + S * 0.1)
+  ctx.quadraticCurveTo(x + S * 0.63, y + S * 0.16, x + S * 0.78, y + S * 0.28)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // legs
+  ctx.strokeStyle = steelDark
+  ctx.lineWidth = Math.max(2, S * 0.055)
+  ctx.beginPath()
+  ctx.moveTo(cx - S * 0.07, y + S * 0.6)
+  ctx.lineTo(cx - S * 0.08, y + S * 0.8)
+  ctx.moveTo(cx + S * 0.07, y + S * 0.6)
+  ctx.lineTo(cx + S * 0.08, y + S * 0.8)
+  ctx.stroke()
+  // breastplate
+  ctx.fillStyle = steel
+  ctx.strokeStyle = line
+  ctx.lineWidth = Math.max(1, S * 0.022)
+  ctx.beginPath()
+  ctx.moveTo(cx - S * 0.14, y + S * 0.36)
+  ctx.quadraticCurveTo(cx - S * 0.16, y + S * 0.52, cx - S * 0.06, y + S * 0.62)
+  ctx.lineTo(cx + S * 0.06, y + S * 0.62)
+  ctx.quadraticCurveTo(cx + S * 0.16, y + S * 0.52, cx + S * 0.14, y + S * 0.36)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // waist line + rivets
+  ctx.strokeStyle = 'rgba(74, 80, 90, 0.5)'
+  ctx.lineWidth = Math.max(0.8, S * 0.014)
+  ctx.beginPath()
+  ctx.moveTo(cx - S * 0.11, y + S * 0.5)
+  ctx.quadraticCurveTo(cx, y + S * 0.54, cx + S * 0.11, y + S * 0.5)
+  ctx.stroke()
+  ctx.fillStyle = line
+  for (const dx of [-0.07, 0, 0.07]) {
+    ctx.beginPath()
+    ctx.arc(cx + dx * S, y + S * 0.42, S * 0.012, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // arms: the left hangs at the side, the right reaches out and grips the halberd
+  ctx.strokeStyle = steelDark
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(2, S * 0.05)
+  ctx.beginPath()
+  ctx.moveTo(cx - S * 0.16, y + S * 0.42)
+  ctx.quadraticCurveTo(cx - S * 0.22, y + S * 0.5, cx - S * 0.2, y + S * 0.58)
+  ctx.moveTo(cx + S * 0.16, y + S * 0.42)
+  ctx.quadraticCurveTo(cx + S * 0.26, y + S * 0.46, x + S * 0.75, y + S * 0.52)
+  ctx.stroke()
+  // gauntlets (fists): one hanging, one closed around the shaft
+  ctx.fillStyle = steel
+  ctx.strokeStyle = line
+  ctx.lineWidth = Math.max(0.9, S * 0.018)
+  for (const [gx, gy] of [
+    [cx - S * 0.2, y + S * 0.6],
+    [x + S * 0.78, y + S * 0.52],
+  ] as const) {
+    ctx.beginPath()
+    ctx.arc(gx, gy, S * 0.038, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // pauldrons
+  ctx.fillStyle = steelDark
+  ctx.strokeStyle = line
+  for (const side of [-1, 1]) {
+    ctx.beginPath()
+    ctx.ellipse(cx + side * S * 0.17, y + S * 0.38, S * 0.07, S * 0.055, side * 0.4, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // great helm + visor slit + plume
+  ctx.fillStyle = steel
+  ctx.beginPath()
+  ctx.roundRect(cx - S * 0.09, y + S * 0.17, S * 0.18, S * 0.17, S * 0.06)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#2c3038'
+  ctx.lineWidth = Math.max(1.2, S * 0.026)
+  ctx.beginPath()
+  ctx.moveTo(cx - S * 0.055, y + S * 0.245)
+  ctx.lineTo(cx + S * 0.055, y + S * 0.245)
+  ctx.stroke()
+  ctx.strokeStyle = '#a03c30' // crimson plume
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(1.6, S * 0.04)
+  ctx.beginPath()
+  ctx.moveTo(cx, y + S * 0.17)
+  ctx.quadraticCurveTo(cx + S * 0.02, y + S * 0.08, cx + S * 0.12, y + S * 0.07)
+  ctx.stroke()
+}
+
+/**
+ * A throne (occupiable — one SITS on it): a tall gilded high-back with pointed
+ * finials, crimson velvet seat and back, and sturdy armrests. No card (a seat).
+ */
+export function drawThrone(ctx: Ctx, x: number, y: number, S: number): void {
+  const gold = '#c9a13c'
+  const goldDark = '#8a6420'
+  const velvet = '#9e2f33'
+  const velvetLight = '#bd4a4a'
+  // contact shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.14)'
+  ctx.beginPath()
+  ctx.ellipse(x + S / 2, y + S * 0.82, S * 0.3, S * 0.07, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.lineJoin = 'round'
+  // tall back (gold frame)
+  ctx.fillStyle = gold
+  ctx.strokeStyle = goldDark
+  ctx.lineWidth = Math.max(1.2, S * 0.028)
+  ctx.beginPath()
+  ctx.roundRect(x + S * 0.24, y + S * 0.1, S * 0.52, S * 0.56, S * 0.07)
+  ctx.fill()
+  ctx.stroke()
+  // finials: two side points + centre orb
+  ctx.fillStyle = gold
+  for (const dx of [-0.22, 0.22]) {
+    ctx.beginPath()
+    ctx.moveTo(x + S * (0.5 + dx) - S * 0.045, y + S * 0.12)
+    ctx.lineTo(x + S * (0.5 + dx), y + S * 0.03)
+    ctx.lineTo(x + S * (0.5 + dx) + S * 0.045, y + S * 0.12)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+  }
+  ctx.beginPath()
+  ctx.arc(x + S * 0.5, y + S * 0.07, S * 0.04, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // velvet back panel with button tufts
+  ctx.fillStyle = velvet
+  ctx.beginPath()
+  ctx.roundRect(x + S * 0.3, y + S * 0.16, S * 0.4, S * 0.44, S * 0.05)
+  ctx.fill()
+  ctx.fillStyle = velvetLight
+  for (const [dx, dy] of [
+    [-0.08, 0.26],
+    [0.08, 0.26],
+    [0, 0.36],
+    [-0.08, 0.46],
+    [0.08, 0.46],
+  ] as const) {
+    ctx.beginPath()
+    ctx.arc(x + S * (0.5 + dx), y + S * dy, S * 0.014, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // seat cushion
+  ctx.fillStyle = velvet
+  ctx.strokeStyle = goldDark
+  ctx.beginPath()
+  ctx.roundRect(x + S * 0.22, y + S * 0.6, S * 0.56, S * 0.14, S * 0.05)
+  ctx.fill()
+  ctx.stroke()
+  // armrests + front legs
+  ctx.fillStyle = gold
+  for (const side of [0, 1]) {
+    const ax = x + S * (0.16 + side * 0.6)
+    ctx.beginPath()
+    ctx.roundRect(ax, y + S * 0.52, S * 0.08, S * 0.24, S * 0.03)
+    ctx.fill()
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.roundRect(ax + S * 0.005, y + S * 0.76, S * 0.07, S * 0.1, S * 0.02)
+    ctx.fill()
+    ctx.stroke()
+  }
+}
+
+/**
+ * A weapon rack (blocking): a dark oak stand holding a sword, a battle axe and a
+ * spear in its slots — armory furniture (castles and police lock-ups alike).
+ */
+export function drawWeaponRack(ctx: Ctx, x: number, y: number, S: number): void {
+  const wood = '#7a5230'
+  const woodDark = '#4c331d'
+  const steel = '#c3cad3'
+  const line = '#4a505a'
+  ctx.lineJoin = 'round'
+  // frame: two posts + top and bottom rails
+  ctx.fillStyle = wood
+  ctx.strokeStyle = woodDark
+  ctx.lineWidth = Math.max(1, S * 0.022)
+  for (const fx of [0.14, 0.78]) {
+    ctx.beginPath()
+    ctx.roundRect(x + S * fx, y + S * 0.14, S * 0.08, S * 0.72, S * 0.02)
+    ctx.fill()
+    ctx.stroke()
+  }
+  for (const fy of [0.2, 0.74]) {
+    ctx.beginPath()
+    ctx.roundRect(x + S * 0.14, y + S * fy, S * 0.72, S * 0.07, S * 0.02)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // sword: blade, crossguard, grip
+  const sx = x + S * 0.32
+  ctx.fillStyle = steel
+  ctx.strokeStyle = line
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  ctx.beginPath()
+  ctx.moveTo(sx - S * 0.025, y + S * 0.34)
+  ctx.lineTo(sx, y + S * 0.8)
+  ctx.lineTo(sx + S * 0.025, y + S * 0.34)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#8a6420'
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(1.4, S * 0.032)
+  ctx.beginPath()
+  ctx.moveTo(sx - S * 0.07, y + S * 0.34)
+  ctx.lineTo(sx + S * 0.07, y + S * 0.34)
+  ctx.stroke()
+  ctx.strokeStyle = '#5b3a20'
+  ctx.beginPath()
+  ctx.moveTo(sx, y + S * 0.33)
+  ctx.lineTo(sx, y + S * 0.24)
+  ctx.stroke()
+  // battle axe: shaft + crescent blade
+  const axx = x + S * 0.52
+  ctx.strokeStyle = '#6b4a2b'
+  ctx.lineWidth = Math.max(1.3, S * 0.03)
+  ctx.beginPath()
+  ctx.moveTo(axx, y + S * 0.26)
+  ctx.lineTo(axx, y + S * 0.8)
+  ctx.stroke()
+  ctx.fillStyle = steel
+  ctx.strokeStyle = line
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  ctx.beginPath()
+  ctx.moveTo(axx, y + S * 0.3)
+  ctx.quadraticCurveTo(axx + S * 0.16, y + S * 0.3, axx + S * 0.14, y + S * 0.44)
+  ctx.quadraticCurveTo(axx + S * 0.06, y + S * 0.4, axx, y + S * 0.42)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // spear: long shaft + leaf tip
+  const px = x + S * 0.68
+  ctx.strokeStyle = '#6b4a2b'
+  ctx.lineWidth = Math.max(1.1, S * 0.025)
+  ctx.beginPath()
+  ctx.moveTo(px, y + S * 0.3)
+  ctx.lineTo(px, y + S * 0.8)
+  ctx.stroke()
+  ctx.fillStyle = steel
+  ctx.beginPath()
+  ctx.moveTo(px, y + S * 0.16)
+  ctx.quadraticCurveTo(px + S * 0.045, y + S * 0.24, px, y + S * 0.31)
+  ctx.quadraticCurveTo(px - S * 0.045, y + S * 0.24, px, y + S * 0.16)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+}
+
+/**
+ * A sun lounger from ABOVE (occupiable — one lies on it): a slim pale frame, teal
+ * fabric with cream cross-stripes, a white head cushion and the backrest fold line —
+ * the same clean top-down language as the parasol and hot tub. No card (a seat).
+ */
+export function drawDeckchair(ctx: Ctx, x: number, y: number, S: number): void {
+  ctx.lineJoin = 'round'
+  const fx = x + S * 0.27
+  const fy = y + S * 0.08
+  const fw = S * 0.46
+  const fh = S * 0.84
+  // offset contact shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.13)'
+  ctx.beginPath()
+  ctx.roundRect(fx + S * 0.035, fy + S * 0.045, fw, fh, S * 0.1)
+  ctx.fill()
+  // pale wooden frame
+  ctx.fillStyle = '#e6dcc3'
+  ctx.strokeStyle = '#9a8f74'
+  ctx.lineWidth = Math.max(1, S * 0.022)
+  ctx.beginPath()
+  ctx.roundRect(fx, fy, fw, fh, S * 0.1)
+  ctx.fill()
+  ctx.stroke()
+  // fabric panel
+  const pad = S * 0.045
+  const cloth = new Path2D()
+  cloth.roundRect(fx + pad, fy + pad, fw - 2 * pad, fh - 2 * pad, S * 0.07)
+  ctx.fillStyle = '#2fa3a3'
+  ctx.fill(cloth)
+  ctx.save()
+  ctx.clip(cloth)
+  // cream cross-stripes
+  ctx.strokeStyle = 'rgba(246, 240, 226, 0.9)'
+  ctx.lineWidth = Math.max(1.6, S * 0.05)
+  ctx.beginPath()
+  for (const t of [0.3, 0.46, 0.62, 0.78]) {
+    ctx.moveTo(fx, y + t * S)
+    ctx.lineTo(fx + fw, y + t * S)
+  }
+  ctx.stroke()
+  // gentle side shading so the fabric reads slung, not flat
+  ctx.fillStyle = 'rgba(23, 105, 107, 0.25)'
+  ctx.fillRect(fx, fy, pad * 1.6, fh)
+  ctx.fillRect(fx + fw - pad * 1.6, fy, pad * 1.6, fh)
+  ctx.restore()
+  // backrest hinge (fold line)
+  ctx.strokeStyle = 'rgba(23, 105, 107, 0.7)'
+  ctx.lineWidth = Math.max(1, S * 0.024)
+  ctx.beginPath()
+  ctx.moveTo(fx + pad, y + S * 0.38)
+  ctx.lineTo(fx + fw - pad, y + S * 0.38)
+  ctx.stroke()
+  // head cushion (top end)
+  ctx.fillStyle = '#f6f3ea'
+  ctx.strokeStyle = '#b9b099'
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  ctx.beginPath()
+  ctx.roundRect(fx + fw * 0.16, fy + S * 0.05, fw * 0.68, S * 0.13, S * 0.04)
+  ctx.fill()
+  ctx.stroke()
+}
+
+/**
+ * A parasol seen from ABOVE (occupiable — one stands in its shade): a big scalloped
+ * canopy of alternating red/cream wedges around a centre pole cap, with an offset
+ * shadow. Top-down so a person drawn on the tile reads as standing UNDER it.
+ */
+export function drawParasol(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S * 0.5
+  const cy = y + S * 0.5
+  const r = S * 0.4
+  // offset canopy shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.13)'
+  ctx.beginPath()
+  ctx.arc(cx + S * 0.06, cy + S * 0.07, r * 0.94, 0, Math.PI * 2)
+  ctx.fill()
+  // eight wedges, alternating colours
+  const wedges = 8
+  for (let k = 0; k < wedges; k++) {
+    const a0 = (k / wedges) * Math.PI * 2 - Math.PI / 2
+    const a1 = ((k + 1) / wedges) * Math.PI * 2 - Math.PI / 2
+    ctx.fillStyle = k % 2 === 0 ? '#d4453a' : '#f6efe0'
+    ctx.beginPath()
+    ctx.moveTo(cx, cy)
+    ctx.arc(cx, cy, r, a0, a1)
+    ctx.closePath()
+    ctx.fill()
+  }
+  // scalloped rim: a small bump at the middle of each wedge edge
+  ctx.strokeStyle = '#8f2b23'
+  ctx.lineWidth = Math.max(1, S * 0.022)
+  ctx.beginPath()
+  for (let k = 0; k < wedges; k++) {
+    const a0 = (k / wedges) * Math.PI * 2 - Math.PI / 2
+    const a1 = ((k + 1) / wedges) * Math.PI * 2 - Math.PI / 2
+    const mid = (a0 + a1) / 2
+    ctx.moveTo(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r)
+    ctx.quadraticCurveTo(cx + Math.cos(mid) * r * 1.1, cy + Math.sin(mid) * r * 1.1, cx + Math.cos(a1) * r, cy + Math.sin(a1) * r)
+  }
+  ctx.stroke()
+  // seam lines + centre pole cap
+  ctx.strokeStyle = 'rgba(143, 43, 35, 0.5)'
+  ctx.lineWidth = Math.max(0.8, S * 0.014)
+  ctx.beginPath()
+  for (let k = 0; k < wedges; k++) {
+    const a = (k / wedges) * Math.PI * 2 - Math.PI / 2
+    ctx.moveTo(cx, cy)
+    ctx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r)
+  }
+  ctx.stroke()
+  ctx.fillStyle = '#8f2b23'
+  ctx.beginPath()
+  ctx.arc(cx, cy, S * 0.05, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.fillStyle = '#f6efe0'
+  ctx.beginPath()
+  ctx.arc(cx, cy, S * 0.02, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/**
+ * A slide, side view (occupiable — one sits on it): ladder up to a small platform on
+ * the left, then ONE STRAIGHT chute down to the run-out on the right — no swoosh.
+ * One type, two looks (the caller checks the surroundings): `water` = the blue lido
+ * slide splashing into the pool; otherwise the red-and-yellow playground slide.
+ * `exitLeft` mirrors the whole drawing so the chute can face a pool to the west.
+ */
+export function drawSlide(
+  ctx: Ctx,
+  x: number,
+  y: number,
+  S: number,
+  water = false,
+  exitLeft = false,
+): void {
+  ctx.save()
+  if (exitLeft) {
+    // mirror about the cell's vertical centre line
+    ctx.translate(x + S / 2, 0)
+    ctx.scale(-1, 1)
+    ctx.translate(-(x + S / 2), 0)
+  }
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  const groundY = y + S * 0.84
+  // The water slide flume is warm ORANGE, not blue — a blue chute vanishes on the
+  // blue pool water. Orange pops on that ground and stays distinct from the red-and-
+  // yellow playground slide. (Playground palette unchanged.)
+  const rail = water ? '#b8560f' : '#a3721d'
+  const ladder = water ? '#8d9298' : '#e8b93c'
+  const bedCol = water ? '#f2812e' : '#d4453a'
+  const bedLite = water ? '#ffc078' : '#e8756b'
+
+  // contact shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.13)'
+  ctx.beginPath()
+  ctx.ellipse(x + S * 0.52, groundY + S * 0.04, S * 0.38, S * 0.06, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  // ladder (left): two stringers + rungs
+  const lx = x + S * 0.2
+  ctx.strokeStyle = ladder
+  ctx.lineWidth = Math.max(1.3, S * 0.032)
+  ctx.beginPath()
+  ctx.moveTo(lx - S * 0.05, groundY)
+  ctx.lineTo(lx - S * 0.05, y + S * 0.26)
+  ctx.moveTo(lx + S * 0.05, groundY)
+  ctx.lineTo(lx + S * 0.05, y + S * 0.26)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(1, S * 0.022)
+  ctx.beginPath()
+  for (const fy of [0.38, 0.5, 0.62, 0.74]) {
+    ctx.moveTo(lx - S * 0.05, y + fy * S)
+    ctx.lineTo(lx + S * 0.05, y + fy * S)
+  }
+  ctx.stroke()
+
+  // STRAIGHT chute: a parallel band from the platform edge down to the run-out.
+  // Perpendicular offset gives the band its width.
+  const x0 = x + S * 0.3
+  const y0 = y + S * 0.3
+  const x1 = x + S * 0.86
+  const y1 = y + S * (water ? 0.72 : 0.78)
+  const dx = x1 - x0
+  const dy = y1 - y0
+  const len = Math.hypot(dx, dy)
+  const nx = (-dy / len) * S * 0.075 // half-width normal
+  const ny = (dx / len) * S * 0.075
+  const bed = new Path2D()
+  bed.moveTo(x0 + nx, y0 + ny)
+  bed.lineTo(x1 + nx, y1 + ny)
+  bed.lineTo(x1 - nx, y1 - ny)
+  bed.lineTo(x0 - nx, y0 - ny)
+  bed.closePath()
+  ctx.fillStyle = bedCol
+  ctx.fill(bed)
+  // lighter sliding lane down the middle
+  ctx.strokeStyle = bedLite
+  ctx.lineWidth = Math.max(1.6, S * 0.06)
+  ctx.beginPath()
+  ctx.moveTo(x0, y0)
+  ctx.lineTo(x1, y1)
+  ctx.stroke()
+  // rails along both edges
+  ctx.strokeStyle = rail
+  ctx.lineWidth = Math.max(1, S * 0.024)
+  ctx.beginPath()
+  ctx.moveTo(x0 + nx, y0 + ny)
+  ctx.lineTo(x1 + nx, y1 + ny)
+  ctx.moveTo(x0 - nx, y0 - ny)
+  ctx.lineTo(x1 - nx, y1 - ny)
+  ctx.stroke()
+  // support post under the middle of the chute
+  ctx.strokeStyle = ladder
+  ctx.lineWidth = Math.max(1.2, S * 0.028)
+  ctx.beginPath()
+  ctx.moveTo(x + S * 0.58, y + S * 0.56)
+  ctx.lineTo(x + S * 0.58, groundY)
+  ctx.stroke()
+
+  // platform bridging ladder and chute start, with a little safety rail
+  ctx.fillStyle = water ? '#ffb15a' : '#e8b93c'
+  ctx.strokeStyle = rail
+  ctx.lineWidth = Math.max(1, S * 0.022)
+  ctx.beginPath()
+  ctx.roundRect(x + S * 0.1, y + S * 0.24, S * 0.26, S * 0.08, S * 0.025)
+  ctx.fill()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(x + S * 0.12, y + S * 0.24)
+  ctx.lineTo(x + S * 0.12, y + S * 0.12)
+  ctx.lineTo(x + S * 0.3, y + S * 0.12)
+  ctx.lineTo(x + S * 0.3, y + S * 0.24)
+  ctx.stroke()
+
+  if (water) {
+    // splash where the chute meets the water
+    ctx.strokeStyle = 'rgba(191, 230, 246, 0.95)'
+    ctx.lineWidth = Math.max(1, S * 0.022)
+    ctx.beginPath()
+    for (const [a, len2] of [
+      [-0.6, 0.08],
+      [0, 0.1],
+      [0.55, 0.07],
+    ] as const) {
+      ctx.moveTo(x1, y1 + S * 0.02)
+      ctx.lineTo(x1 + Math.sin(a) * len2 * S * 1.4, y1 - Math.cos(a) * len2 * S * 1.6)
+    }
+    ctx.stroke()
+  } else {
+    // playground run-out: a short flat lip at the bottom end
+    ctx.strokeStyle = bedCol
+    ctx.lineWidth = Math.max(2, S * 0.07)
+    ctx.beginPath()
+    ctx.moveTo(x1 - S * 0.01, y1 + S * 0.01)
+    ctx.lineTo(x1 + S * 0.08, y1 + S * 0.03)
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
+/**
+ * A diving board from ABOVE (occupiable — one stands on its tip): a chequer-plate
+ * base block ANCHORED FLUSH on the pool edge, a pale springboard reaching out over
+ * rippling water, grip stripes, a red "jump here" tip. `base` names the wall side
+ * the block is mounted on — the board springs toward the opposite side, so with a
+ * wall to the EAST one jumps WEST (the caller finds the wall; 'S' when free-standing).
+ */
+export function drawDivingBoard(
+  ctx: Ctx,
+  x: number,
+  y: number,
+  S: number,
+  base: 'N' | 'S' | 'W' | 'E' = 'S',
+): void {
+  ctx.save()
+  // Canonical drawing: base flush at the BOTTOM edge, tip pointing up. Rotate the
+  // whole cell so the base lands on the requested wall side.
+  const theta = { S: 0, W: Math.PI / 2, N: Math.PI, E: (3 * Math.PI) / 2 }[base]
+  if (theta) {
+    ctx.translate(x + S / 2, y + S / 2)
+    ctx.rotate(theta)
+    ctx.translate(-(x + S / 2), -(y + S / 2))
+  }
+  ctx.lineJoin = 'round'
+  // water ripples around the springing end
+  ctx.strokeStyle = 'rgba(63, 138, 180, 0.55)'
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  for (const [fy, w] of [
+    [0.1, 0.3],
+    [0.22, 0.44],
+  ] as const) {
+    ctx.beginPath()
+    ctx.moveTo(x + S * (0.5 - w / 2), y + S * fy)
+    ctx.quadraticCurveTo(x + S * 0.5, y + S * (fy + 0.05), x + S * (0.5 + w / 2), y + S * fy)
+    ctx.stroke()
+  }
+  // base block: chequer-plate, FLUSH with the bottom cell edge (it sits on the rim,
+  // not in the water) — only the water-side corners are rounded.
+  ctx.fillStyle = '#9aa0a6'
+  ctx.strokeStyle = '#5f646a'
+  ctx.lineWidth = Math.max(1, S * 0.024)
+  ctx.beginPath()
+  ctx.roundRect(x + S * 0.26, y + S * 0.74, S * 0.48, S * 0.26, [S * 0.05, S * 0.05, 0, 0])
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = 'rgba(255,255,255,0.35)'
+  for (const [dx, dy] of [
+    [0.34, 0.8],
+    [0.47, 0.86],
+    [0.6, 0.8],
+    [0.4, 0.93],
+    [0.55, 0.93],
+  ] as const) {
+    ctx.beginPath()
+    ctx.arc(x + dx * S, y + dy * S, S * 0.014, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // springboard reaching out over the water, rounded tip
+  const bw = S * 0.24
+  ctx.fillStyle = '#eef3f4'
+  ctx.strokeStyle = '#7f8b90'
+  ctx.lineWidth = Math.max(1, S * 0.022)
+  ctx.beginPath()
+  ctx.roundRect(x + S * 0.5 - bw / 2, y + S * 0.14, bw, S * 0.66, [S * 0.11, S * 0.11, 0, 0])
+  ctx.fill()
+  ctx.stroke()
+  // grip stripes
+  ctx.strokeStyle = 'rgba(127, 139, 144, 0.55)'
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  ctx.beginPath()
+  for (const fy of [0.34, 0.45, 0.56, 0.67]) {
+    ctx.moveTo(x + S * 0.5 - bw * 0.32, y + fy * S)
+    ctx.lineTo(x + S * 0.5 + bw * 0.32, y + fy * S)
+  }
+  ctx.stroke()
+  // tip marking (the "jump here" edge)
+  ctx.strokeStyle = '#d4453a'
+  ctx.lineWidth = Math.max(1.2, S * 0.028)
+  ctx.beginPath()
+  ctx.moveTo(x + S * 0.5 - bw * 0.34, y + S * 0.21)
+  ctx.quadraticCurveTo(x + S * 0.5, y + S * 0.16, x + S * 0.5 + bw * 0.34, y + S * 0.21)
+  ctx.stroke()
+  ctx.restore()
+}
+
+/**
+ * A hot tub from ABOVE (occupiable — one sits IN it): a round wooden stave tub with
+ * rope binding, steaming turquoise water with foam bubbles along the rim and a small
+ * step pad. Top-down so a person on the tile reads as soaking in the water.
+ */
+export function drawHottub(ctx: Ctx, x: number, y: number, S: number): void {
+  const cx = x + S * 0.5
+  const cy = y + S * 0.52
+  const rOut = S * 0.4
+  // contact shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.13)'
+  ctx.beginPath()
+  ctx.arc(cx + S * 0.03, cy + S * 0.04, rOut, 0, Math.PI * 2)
+  ctx.fill()
+  // wooden rim
+  ctx.fillStyle = '#8a5a2b'
+  ctx.strokeStyle = '#4c331d'
+  ctx.lineWidth = Math.max(1, S * 0.024)
+  ctx.beginPath()
+  ctx.arc(cx, cy, rOut, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // stave joints around the rim
+  ctx.strokeStyle = 'rgba(76, 51, 29, 0.55)'
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  ctx.beginPath()
+  for (let k = 0; k < 12; k++) {
+    const a = (k / 12) * Math.PI * 2
+    ctx.moveTo(cx + Math.cos(a) * rOut * 0.78, cy + Math.sin(a) * rOut * 0.78)
+    ctx.lineTo(cx + Math.cos(a) * rOut, cy + Math.sin(a) * rOut)
+  }
+  ctx.stroke()
+  // water
+  const rIn = rOut * 0.74
+  ctx.fillStyle = '#63c2c9'
+  ctx.beginPath()
+  ctx.arc(cx, cy, rIn, 0, Math.PI * 2)
+  ctx.fill()
+  // foam bubbles hugging the inside of the rim
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'
+  for (let k = 0; k < 9; k++) {
+    const a = (k / 9) * Math.PI * 2 + 0.3
+    const rr2 = rIn * (0.78 + 0.08 * ((k * 7) % 3))
+    ctx.beginPath()
+    ctx.arc(cx + Math.cos(a) * rr2, cy + Math.sin(a) * rr2, S * (0.028 + 0.012 * ((k * 5) % 2)), 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // gentle centre ripple
+  ctx.strokeStyle = 'rgba(255,255,255,0.5)'
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  ctx.beginPath()
+  ctx.arc(cx, cy, rIn * 0.4, 0.4, Math.PI * 1.3)
+  ctx.stroke()
+  // steam wisps
+  ctx.strokeStyle = 'rgba(230, 240, 242, 0.6)'
+  ctx.lineWidth = Math.max(1, S * 0.02)
+  ctx.lineCap = 'round'
+  for (const dx of [-0.12, 0.08]) {
+    ctx.beginPath()
+    ctx.moveTo(cx + dx * S, cy - rIn * 0.5)
+    ctx.quadraticCurveTo(cx + (dx + 0.05) * S, cy - rOut - S * 0.02, cx + (dx - 0.02) * S, y + S * 0.03)
+    ctx.stroke()
+  }
+  // step pad at the bottom edge
+  ctx.fillStyle = '#6b4a2b'
+  ctx.strokeStyle = '#4c331d'
+  ctx.lineWidth = Math.max(0.8, S * 0.016)
+  ctx.beginPath()
+  ctx.roundRect(cx - S * 0.1, y + S * 0.88, S * 0.2, S * 0.08, S * 0.02)
+  ctx.fill()
+  ctx.stroke()
+}
+
+/**
+ * A hammock (occupiable — one lies IN it): slung between two wooden posts, a striped
+ * cloth sagging in the middle with spread cords at both ends and a fringe. No card.
+ */
+export function drawHammock(ctx: Ctx, x: number, y: number, S: number): void {
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  // contact shadows under the posts
+  ctx.fillStyle = 'rgba(0,0,0,0.13)'
+  for (const fx of [0.12, 0.88]) {
+    ctx.beginPath()
+    ctx.ellipse(x + fx * S, y + S * 0.84, S * 0.09, S * 0.035, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // posts
+  ctx.strokeStyle = '#6b4a2b'
+  ctx.lineWidth = Math.max(2, S * 0.055)
+  for (const fx of [0.12, 0.88]) {
+    ctx.beginPath()
+    ctx.moveTo(x + fx * S, y + S * 0.84)
+    ctx.lineTo(x + fx * S, y + S * 0.24)
+    ctx.stroke()
+  }
+  // spread cords from each post head to the cloth corners
+  ctx.strokeStyle = '#a98547'
+  ctx.lineWidth = Math.max(0.9, S * 0.018)
+  ctx.beginPath()
+  for (const [px, tx] of [
+    [0.12, 0.3],
+    [0.88, 0.7],
+  ] as const) {
+    for (const ty of [0.4, 0.5, 0.6]) {
+      ctx.moveTo(x + px * S, y + S * 0.28)
+      ctx.lineTo(x + tx * S, y + ty * S)
+    }
+  }
+  ctx.stroke()
+  // sagging cloth
+  const cloth = new Path2D()
+  cloth.moveTo(x + S * 0.3, y + S * 0.4)
+  cloth.quadraticCurveTo(x + S * 0.5, y + S * 0.56, x + S * 0.7, y + S * 0.4)
+  cloth.lineTo(x + S * 0.7, y + S * 0.6)
+  cloth.quadraticCurveTo(x + S * 0.5, y + S * 0.78, x + S * 0.3, y + S * 0.6)
+  cloth.closePath()
+  ctx.fillStyle = '#d9924a'
+  ctx.fill(cloth)
+  ctx.save()
+  ctx.clip(cloth)
+  // cream stripes following the sag
+  ctx.strokeStyle = 'rgba(246, 239, 224, 0.85)'
+  ctx.lineWidth = Math.max(1.4, S * 0.04)
+  for (const t of [0.38, 0.5, 0.62]) {
+    ctx.beginPath()
+    ctx.moveTo(x + S * 0.28, y + S * (t - 0.02))
+    ctx.quadraticCurveTo(x + S * 0.5, y + S * (t + 0.16), x + S * 0.72, y + S * (t - 0.02))
+    ctx.stroke()
+  }
+  ctx.restore()
+  ctx.strokeStyle = '#8a5a2b'
+  ctx.lineWidth = Math.max(0.9, S * 0.02)
+  ctx.stroke(cloth)
+  // little fringe tassels along the near edge
+  ctx.strokeStyle = '#a98547'
+  ctx.lineWidth = Math.max(0.8, S * 0.014)
+  ctx.beginPath()
+  for (const fx of [0.36, 0.44, 0.52, 0.6, 0.68]) {
+    const fy = 0.6 + 0.16 * Math.sin(Math.PI * ((fx - 0.3) / 0.4))
+    ctx.moveTo(x + fx * S, y + fy * S)
+    ctx.lineTo(x + fx * S, y + (fy + 0.05) * S)
+  }
   ctx.stroke()
 }
 

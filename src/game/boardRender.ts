@@ -15,28 +15,42 @@ import type { HelpMarks } from './helpMarks.ts'
 import { drawBigObject, drawSingleObject } from './bigObjects.ts'
 import {
   drawArmchair,
+  drawArmor,
+  drawBarrel,
   drawBear,
   drawBookshelf,
   drawCampfire,
+  drawCandelabrum,
   drawCarpetBase,
   drawCarpetTile,
   drawCashRegister,
   drawCrate,
+  drawDeckchair,
+  drawDivingBoard,
+  drawFireplace,
   drawFloorLamp,
   drawFridge,
   drawGrill,
+  drawHammock,
+  drawHaystack,
+  drawHottub,
   drawLocker,
   drawMud,
   drawOil,
+  drawParasol,
+  drawPathTile,
   drawPiano,
   drawPunchbag,
   drawShower,
+  drawSlide,
   drawStreetTile,
   drawTableTile,
   drawTent,
+  drawThrone,
   drawWashingMachine,
   drawWaterlily,
   drawWaterTile,
+  drawWeaponRack,
   onArtReady,
   type Conn,
 } from './objectArt.ts'
@@ -338,6 +352,8 @@ function furnitureSig(view: BoardView, dpr: number): string {
     String(dpr),
     view.preview ? 'prev' : 'full',
   ]
+  // Room nameKeys matter too: the slide's water/playground look reads them.
+  for (const [id, room] of board.rooms) parts.push(`${id}:${room.nameKey}`)
   let cells = ''
   for (let c = 0; c < board.width * board.height; c++) {
     const tile = board.tileAt(c)
@@ -377,6 +393,13 @@ function paintFurniture(
     if (board.tileAt(c).ground?.type !== 'street') continue
     const { x, y } = xy(c)
     drawStreetTile(ctx, x, y, S, connOf(c, 'ground', 'street'))
+  }
+
+  // --- path (occupiable ground layer) — auto-tiled into one continuous trail --
+  for (let c = 0; c < W * H; c++) {
+    if (board.tileAt(c).ground?.type !== 'path') continue
+    const { x, y } = xy(c)
+    drawPathTile(ctx, x, y, S, connOf(c, 'ground', 'path'))
   }
 
   // --- carpet rug (occupiable ground layer) — auto-tiled into one surface --
@@ -497,6 +520,47 @@ function paintFurniture(
     drawTableTile(ctx, x, y, S, connOf(c, 'top', 'table'))
   }
 
+  // The side of a cell that carries a wall (board edge or another room) — the diving
+  // board mounts its base there and springs the opposite way (east wall → jump west).
+  // No wall on any orthogonal side → default 'S' (the free-standing look).
+  const wallBaseSide = (c: Cell): 'N' | 'S' | 'W' | 'E' => {
+    const { row, col } = board.rc(c)
+    const room = board.roomIdOf(c)
+    const wall = (r: number, cc: number): boolean =>
+      !board.inBounds(r, cc) || board.roomIdOf(board.idx(r, cc)) !== room
+    if (wall(row + 1, col)) return 'S'
+    if (wall(row, col + 1)) return 'E'
+    if (wall(row, col - 1)) return 'W'
+    if (wall(row - 1, col)) return 'N'
+    return 'S'
+  }
+
+  // ONE slide type, two looks (side view, straight chute): reaching REACHABLE water
+  // it becomes the WATER slide — mirrored so the run-out faces a pool to the west —
+  // otherwise the red-and-yellow playground slide. "Reachable" means no wall between
+  // slide and water: the same room, or a DOOR on exactly that edge (nobody slides
+  // into a wall).
+  const slideLook = (c: Cell): { water: boolean; exitLeft: boolean } => {
+    const { row, col } = board.rc(c)
+    const ownRoomId = board.roomIdOf(c)
+    const doorSides = board.doorSides(c)
+    const waterThrough = (r: number, cc: number, side: Side): boolean => {
+      if (!board.inBounds(r, cc)) return false
+      const nb = board.idx(r, cc)
+      const room = board.rooms.get(board.roomIdOf(nb))
+      if (!room || !isWaterRoom(room.nameKey)) return false
+      return board.roomIdOf(nb) === ownRoomId || doorSides.includes(side)
+    }
+    if (waterThrough(row, col + 1, 'E')) return { water: true, exitLeft: false } // pool to the east
+    if (waterThrough(row, col - 1, 'W')) return { water: true, exitLeft: true } // pool to the west
+    const own = board.rooms.get(ownRoomId)
+    const nearWater =
+      waterThrough(row + 1, col, 'S') ||
+      waterThrough(row - 1, col, 'N') ||
+      (own ? isWaterRoom(own.nameKey) : false)
+    return { water: nearWater, exitLeft: false }
+  }
+
   // --- per-cell objects: bed/car span two tiles; every other object is one
   //     isolated tile drawn by the shared drawObjectIcon (the legend uses the
   //     very same function, so its icons match the board exactly).
@@ -506,6 +570,15 @@ function paintFurniture(
     const { x, y } = xy(c)
     if (MULTI_CELL_TYPES.has(top.type)) {
       drawBig(top.type, c)
+      continue
+    }
+    if (top.type === 'divingboard') {
+      drawDivingBoard(ctx, x, y, S, wallBaseSide(c))
+      continue
+    }
+    if (top.type === 'slide') {
+      const look = slideLook(c)
+      drawSlide(ctx, x, y, S, look.water, look.exitLeft)
       continue
     }
     drawObjectIcon(ctx, top.type, x, y, S, top.occupiable, preview)
@@ -1048,6 +1121,7 @@ export function drawObjectIcon(
 ): void {
   if (type === 'carpet') return drawCarpetTile(ctx, x, y, S, NO_CONN)
   if (type === 'street') return drawStreetTile(ctx, x, y, S, NO_CONN)
+  if (type === 'path') return drawPathTile(ctx, x, y, S, NO_CONN)
   if (type === 'table') return drawTableTile(ctx, x, y, S, NO_CONN)
   if (MULTI_CELL_TYPES.has(type)) return drawSingleObject(ctx, type, x, y, S)
   if (type === 'chair') return drawArmchair(ctx, x, y, S)
@@ -1055,6 +1129,12 @@ export function drawObjectIcon(
   if (type === 'waterlily') return drawWaterlily(ctx, x, y, S) // occupiable → no card
   if (type === 'mud') return drawMud(ctx, x, y, S)
   if (type === 'oil') return drawOil(ctx, x, y, S)
+  if (type === 'throne') return drawThrone(ctx, x, y, S) // occupiable → no card
+  if (type === 'deckchair') return drawDeckchair(ctx, x, y, S) // occupiable → no card
+  if (type === 'parasol') return drawParasol(ctx, x, y, S) // occupiable → no card
+  if (type === 'divingboard') return drawDivingBoard(ctx, x, y, S) // occupiable → no card
+  if (type === 'hottub') return drawHottub(ctx, x, y, S) // occupiable → no card
+  if (type === 'hammock') return drawHammock(ctx, x, y, S) // occupiable → no card
   // blocked custom-art objects sit on the same white card as blocked emoji
   if (type === 'shelf') {
     if (!preview) drawBlockedCard(ctx, x, y, S)
@@ -1104,6 +1184,32 @@ export function drawObjectIcon(
     if (!preview) drawBlockedCard(ctx, x, y, S)
     return drawGrill(ctx, x, y, S)
   }
+  if (type === 'hay') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawHaystack(ctx, x, y, S)
+  }
+  if (type === 'candle') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawCandelabrum(ctx, x, y, S)
+  }
+  if (type === 'fireplace') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawFireplace(ctx, x, y, S)
+  }
+  if (type === 'barrel') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawBarrel(ctx, x, y, S)
+  }
+  if (type === 'armor') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawArmor(ctx, x, y, S)
+  }
+  if (type === 'weaponrack') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawWeaponRack(ctx, x, y, S)
+  }
+  // occupiable → no card; the chip/legend shows the neutral playground look
+  if (type === 'slide') return drawSlide(ctx, x, y, S)
   if (type === 'shower') return drawShower(ctx, x, y, S) // occupiable → no blocked card
   const glyph = OBJECT_GLYPHS[type]
   if (!glyph) return

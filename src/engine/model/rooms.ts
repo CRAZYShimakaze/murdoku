@@ -8,7 +8,18 @@
  * the board renderer (water look) and the legend (the "walkable" hint). `pond` is left
  * OUT on purpose — it stays a green garden, not open water.
  */
-const WATER_ROOM_KEYS: ReadonlySet<string> = new Set(['lake', 'jetty', 'sea', 'ocean', 'lagoon'])
+// moat (castle) and the two swimming pools (lido) count as water too — they get the
+// water look and (except the pools, which use the sparse 'pool' recipe) lake furnishing.
+const WATER_ROOM_KEYS: ReadonlySet<string> = new Set([
+  'lake',
+  'jetty',
+  'sea',
+  'ocean',
+  'lagoon',
+  'moat',
+  'mainpool',
+  'kidspool',
+])
 
 /** True when a room's nameKey (with or without the `room.` prefix) names a body of water. */
 export function isWaterRoom(nameKey: string): boolean {

@@ -127,6 +127,16 @@ const THEMES: Theme[] = [
     rooms: ['room.forest', 'room.clearing', 'room.lake', 'room.campsite1', 'room.campsite2', 'room.campfire', 'room.picnicarea', 'room.jetty', 'room.playground', 'room.parking', 'room.restroom', 'room.showers', 'room.kiosk', 'room.reception', 'room.cabin'],
     outdoor: ['room.forest', 'room.clearing', 'room.lake', 'room.campsite1', 'room.campsite2', 'room.campfire', 'room.picnicarea', 'room.jetty', 'room.playground', 'room.parking'],
   },
+  {
+    id: 'castle',
+    rooms: ['room.throneroom', 'room.knightshall', 'room.armory', 'room.chapel', 'room.dungeon', 'room.towerroom', 'room.battlements', 'room.courtyard', 'room.stable', 'room.winecellar', 'room.castlekitchen', 'room.library', 'room.chamber', 'room.gatehouse', 'room.moat'],
+    outdoor: ['room.battlements', 'room.courtyard', 'room.moat'],
+  },
+  {
+    id: 'pool',
+    rooms: ['room.mainpool', 'room.kidspool', 'room.lawn', 'room.sauna', 'room.steamroom', 'room.slidetower', 'room.massage', 'room.relaxroom', 'room.lockerroom', 'room.showers', 'room.restroom', 'room.kiosk', 'room.bar', 'room.reception', 'room.terrace'],
+    outdoor: ['room.mainpool', 'room.kidspool', 'room.lawn', 'room.slidetower', 'room.terrace'],
+  },
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
 

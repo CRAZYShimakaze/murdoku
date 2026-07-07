@@ -1,0 +1,482 @@
+{
+  "schema": 1,
+  "id": "editor-der-burgfall",
+  "title": "Verrat im Thronsaal",
+  "titles": {
+    "de": "Verrat im Thronsaal",
+    "en": "Murder Holds Court"
+  },
+  "size": {
+    "width": 6,
+    "height": 6
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.throneroom",
+      "color": "#e8d8b0",
+      "outside": false
+    },
+    "2": {
+      "nameKey": "room.knightshall",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.armory",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.chapel",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.dungeon",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.towerroom",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.battlements",
+      "color": "#c6c0e0",
+      "outside": true
+    },
+    "8": {
+      "nameKey": "room.courtyard",
+      "color": "#c0e0c8",
+      "outside": true
+    },
+    "9": {
+      "nameKey": "room.stable",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.winecellar",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.castlekitchen",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.library",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.chamber",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.gatehouse",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.moat",
+      "color": "#ded0e6",
+      "outside": true
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "R": {
+      "type": "street",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "S": {
+      "type": "shower",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "O": {
+      "type": "boat",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "Z": {
+      "type": "tent",
+      "occupiable": true
+    },
+    "Y": {
+      "type": "waterlily",
+      "occupiable": true
+    },
+    "J": {
+      "type": "throne",
+      "occupiable": true
+    },
+    "D": {
+      "type": "deckchair",
+      "occupiable": true
+    },
+    "U": {
+      "type": "parasol",
+      "occupiable": true
+    },
+    "X": {
+      "type": "divingboard",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "P": {
+      "type": "piano",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "B": {
+      "type": "bear",
+      "occupiable": false
+    },
+    "A": {
+      "type": "hay",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "G": {
+      "type": "campfire",
+      "occupiable": false
+    },
+    "M": {
+      "type": "grill",
+      "occupiable": false
+    },
+    "C": {
+      "type": "candle",
+      "occupiable": false
+    },
+    "E": {
+      "type": "fireplace",
+      "occupiable": false
+    },
+    "Q": {
+      "type": "barrel",
+      "occupiable": false
+    },
+    "I": {
+      "type": "armor",
+      "occupiable": false
+    },
+    "N": {
+      "type": "weaponrack",
+      "occupiable": false
+    },
+    "V": {
+      "type": "slide",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "333DDD",
+    "333DDD",
+    "333DDD",
+    "BBB111",
+    "BBB111",
+    "BBB111"
+  ],
+  "groundMap": [
+    "....r.",
+    "....r.",
+    "....r.",
+    "....r.",
+    "....r.",
+    "......"
+  ],
+  "topMap": [
+    "N.Nb.b",
+    "..Ib.b",
+    ".QN..s",
+    "..QI.I",
+    "tt....",
+    "...CJC"
+  ],
+  "windows": [
+    {
+      "r": 1,
+      "c": 5,
+      "side": "E"
+    },
+    {
+      "r": 0,
+      "c": 4,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 5,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 3,
+      "side": "N"
+    },
+    {
+      "r": 4,
+      "c": 5,
+      "side": "E"
+    }
+  ],
+  "doors": [
+    {
+      "r": 2,
+      "c": 4,
+      "side": "S"
+    },
+    {
+      "r": 4,
+      "c": 2,
+      "side": "E"
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "side": "S"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "ponytailRight",
+        "hair": "grey"
+      },
+      "clues": [
+        {
+          "type": "roomAttribute",
+          "quantifier": "none",
+          "attribute": "gender",
+          "value": "m",
+          "excludeSelf": true
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "braids",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "sameLineAsObject",
+              "object": "chair",
+              "line": "row",
+              "room": "same"
+            },
+            {
+              "type": "nearObject",
+              "object": "bed"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "roomCompanion",
+          "count": 1,
+          "attribute": "hair",
+          "value": "grey"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "updo",
+        "hair": "grey"
+      },
+      "clues": [
+        {
+          "type": "sameLineAsObject",
+          "object": "barrel",
+          "line": "col",
+          "room": "other"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "undercut",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "directionFromAttr",
+          "attribute": "gender",
+          "value": "f",
+          "dir": "east",
+          "quantifier": "all"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vanessa",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "hard"
+}

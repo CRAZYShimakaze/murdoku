@@ -15,7 +15,7 @@ import type { AttributeValue, Cell, Direction8, Explanation, PersonId } from '..
  *  surface auto-merges into a big table, a bed/car spans two cells, a carpet is one rug.
  *  Everything else — chairs above all — is COUNTED INDIVIDUALLY (two chairs side by side
  *  are two chairs, never "the same chair"). */
-const MERGE_INSTANCE_TYPES = new Set(['table', 'bed', 'car', 'carpet'])
+const MERGE_INSTANCE_TYPES = new Set(['table', 'bed', 'car', 'carpet', 'carriage'])
 
 /** Which line a person shares with the object. */
 export type LineKind = 'col' | 'row' | 'either'

@@ -1,4 +1,5 @@
 import { Clue } from './Clue.ts'
+import { ON_OBJECT_KEY_SUFFIX } from './unaryClues.ts'
 import type { Board } from '../model/Board.ts'
 import type { Solution } from '../model/Solution.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
@@ -425,6 +426,8 @@ export class RoomExistsClue extends Clue {
   describe(): Explanation {
     const params: Record<string, string> = { mateLc: this.whoToken() }
     if (this.usesObject) params.object = this.object
-    return { key: `clue.roomExists${ROOM_EXISTS_REL_KEY[this.relation]}`, params }
+    // 'on' picks the object's natural preposition (in a tent / under a parasol).
+    const suffix = this.relation === 'on' ? (ON_OBJECT_KEY_SUFFIX[this.object] ?? '') : ''
+    return { key: `clue.roomExists${ROOM_EXISTS_REL_KEY[this.relation]}${suffix}`, params }
   }
 }

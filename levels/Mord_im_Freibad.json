@@ -1,0 +1,458 @@
+{
+  "schema": 1,
+  "id": "editor-mord-im-freibad",
+  "title": "Der letzte Sprung",
+  "titles": {
+    "de": "Der letzte Sprung",
+    "en": "The Deep End"
+  },
+  "size": {
+    "width": 7,
+    "height": 7
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.mainpool",
+      "color": "#e8d8b0",
+      "outside": true
+    },
+    "2": {
+      "nameKey": "room.kidspool",
+      "color": "#b9d0e6",
+      "outside": true
+    },
+    "3": {
+      "nameKey": "room.lawn",
+      "color": "#cfe0cf",
+      "outside": true
+    },
+    "4": {
+      "nameKey": "room.sauna",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.steamroom",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.slidetower",
+      "color": "#e6c0d2",
+      "outside": true
+    },
+    "7": {
+      "nameKey": "room.massage",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.relaxroom",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.lockerroom",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.showers",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.restroom",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.kiosk",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.bar",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.reception",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.terrace",
+      "color": "#ded0e6",
+      "outside": true
+    }
+  },
+  "objects": {
+    "2": {
+      "type": "carriage",
+      "occupiable": true
+    },
+    "4": {
+      "type": "path",
+      "occupiable": true
+    },
+    "7": {
+      "type": "hammock",
+      "occupiable": true
+    },
+    "8": {
+      "type": "hottub",
+      "occupiable": true
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "R": {
+      "type": "street",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "D": {
+      "type": "deckchair",
+      "occupiable": true
+    },
+    "J": {
+      "type": "throne",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "O": {
+      "type": "boat",
+      "occupiable": true
+    },
+    "Z": {
+      "type": "tent",
+      "occupiable": true
+    },
+    "S": {
+      "type": "shower",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "U": {
+      "type": "parasol",
+      "occupiable": true
+    },
+    "X": {
+      "type": "divingboard",
+      "occupiable": true
+    },
+    "V": {
+      "type": "slide",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "Y": {
+      "type": "waterlily",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "P": {
+      "type": "piano",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "B": {
+      "type": "bear",
+      "occupiable": false
+    },
+    "A": {
+      "type": "hay",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "G": {
+      "type": "campfire",
+      "occupiable": false
+    },
+    "M": {
+      "type": "grill",
+      "occupiable": false
+    },
+    "C": {
+      "type": "candle",
+      "occupiable": false
+    },
+    "E": {
+      "type": "fireplace",
+      "occupiable": false
+    },
+    "Q": {
+      "type": "barrel",
+      "occupiable": false
+    },
+    "I": {
+      "type": "armor",
+      "occupiable": false
+    },
+    "N": {
+      "type": "weaponrack",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "9933322",
+    "9933222",
+    "9933222",
+    "1133333",
+    "1133333",
+    "1111CCC",
+    "1111CCC"
+  ],
+  "groundMap": [
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    "......."
+  ],
+  "topMap": [
+    ".l.U...",
+    "..D...V",
+    "l.U....",
+    "....UDZ",
+    ".XD....",
+    ".Y..g.K",
+    "..U.g.s"
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alex",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "quiff",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "slide"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "braids",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "sameLineAsObject",
+          "object": "locker",
+          "line": "row",
+          "room": "same"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "directionFromObject",
+          "object": "waterlily",
+          "dir": "southeast",
+          "room": "same"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "curly",
+        "hair": "grey"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "waterlily"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "pixie",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "directionFromObject",
+          "object": "deckchair",
+          "dir": "north",
+          "room": "same",
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Floyd",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "hairstyle": "manbun",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "sameLineAsObject",
+          "object": "tent",
+          "line": "row",
+          "room": "other"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Valerie",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "easy"
+}

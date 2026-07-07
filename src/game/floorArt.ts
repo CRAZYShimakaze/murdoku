@@ -217,6 +217,24 @@ const PATTERN_OF: Record<string, FloorPattern> = {
   toys: 'rubber',
   servantsroom: 'tileSmall',
   conservatory: 'diamond',
+  // castle (moat is a water room — no pattern)
+  throneroom: 'marble',
+  knightshall: 'planksH',
+  chapel: 'checkerDiag',
+  dungeon: 'concrete', // rough cracked slab reads as hewn dungeon stone
+  towerroom: 'planksV',
+  battlements: 'tileGrid', // large walkway slabs
+  courtyard: 'cobble',
+  chamber: 'carpet',
+  gatehouse: 'tileSmall',
+  castlekitchen: 'checker',
+  // pool & spa (mainpool/kidspool are water rooms — no pattern)
+  lawn: 'meadow',
+  sauna: 'planksH',
+  steamroom: 'tileGrid',
+  slidetower: 'diamond', // riffled wet-deck plates
+  massage: 'planksV',
+  relaxroom: 'carpetDiag',
   // outdoors
   garden: 'grass',
   frontyard: 'grass',

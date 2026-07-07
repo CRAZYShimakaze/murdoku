@@ -19,19 +19,32 @@ export interface ObjectDef {
 // grouped as furniture/appliances → containers → shop & gym → plants → animals →
 // outdoor/decor. Chars are arbitrary, stable tokens (case-sensitive) for level maps.
 export const OBJECT_CATALOG: ObjectDef[] = [
-  // --- occupiable (a person can stand/sit on the tile) ---
+  // --- occupiable (a person can stand/sit on the tile), grouped by kind:
+  //     floor → seats/lying → vehicles → camping → wellness/sanitary → lido → animal → terrain.
+  //     (Letters are all taken — digits work exactly the same as map chars.)
   { char: 'r', type: 'carpet', occupiable: true, layer: 'ground' },
   { char: 'R', type: 'street', occupiable: true, layer: 'ground' },
+  { char: '4', type: 'path', occupiable: true, layer: 'ground' }, // dirt trail (camping, castle)
   { char: 's', type: 'chair', occupiable: true, layer: 'top' },
+  { char: 'D', type: 'deckchair', occupiable: true, layer: 'top' }, // sun lounger
+  { char: 'J', type: 'throne', occupiable: true, layer: 'top' }, // one SITS on a throne
   { char: 'b', type: 'bed', occupiable: true, layer: 'top' },
-  { char: 'T', type: 'toilet', occupiable: true, layer: 'top' },
-  { char: 'S', type: 'shower', occupiable: true, layer: 'top' },
   { char: 'c', type: 'car', occupiable: true, layer: 'top' },
+  { char: '2', type: 'carriage', occupiable: true, layer: 'top' }, // 2-cell, one sits IN it
   { char: 'O', type: 'boat', occupiable: true, layer: 'top' }, // 2-cell, water only (like car/bed)
+  { char: 'Z', type: 'tent', occupiable: true, layer: 'top' },
+  { char: '7', type: 'hammock', occupiable: true, layer: 'top' }, // one lies IN it
+  { char: '8', type: 'hottub', occupiable: true, layer: 'top' }, // one sits IN it
+  { char: 'S', type: 'shower', occupiable: true, layer: 'top' },
+  { char: 'T', type: 'toilet', occupiable: true, layer: 'top' },
+  { char: 'U', type: 'parasol', occupiable: true, layer: 'top' }, // one stands UNDER it
+  { char: 'X', type: 'divingboard', occupiable: true, layer: 'top' }, // one stands ON it
+  // ONE slide type: the renderer looks around — exiting into a water room it draws
+  // the water slide (splashing in), otherwise the playground slide.
+  { char: 'V', type: 'slide', occupiable: true, layer: 'top' },
   { char: 'h', type: 'horse', occupiable: true, layer: 'top' },
   { char: 'm', type: 'mud', occupiable: true, layer: 'top' },
   { char: 'j', type: 'oil', occupiable: true, layer: 'top' },
-  { char: 'Z', type: 'tent', occupiable: true, layer: 'top' },
   { char: 'Y', type: 'waterlily', occupiable: true, layer: 'top' },
   // --- blocking: indoor furniture & appliances ---
   { char: 't', type: 'table', occupiable: false, layer: 'top' },
@@ -62,20 +75,27 @@ export const OBJECT_CATALOG: ObjectDef[] = [
   { char: 'H', type: 'chicken', occupiable: false, layer: 'top' },
   { char: 'B', type: 'bear', occupiable: false, layer: 'top' },
   // --- blocking: outdoor / decor ---
+  { char: 'A', type: 'hay', occupiable: false, layer: 'top' }, // haystack (farm/camping)
   { char: 'y', type: 'statue', occupiable: false, layer: 'top' },
   { char: 'o', type: 'boulder', occupiable: false, layer: 'top' },
   { char: 'z', type: 'rubble', occupiable: false, layer: 'top' },
   // --- blocking: camping / wilderness ---
   { char: 'G', type: 'campfire', occupiable: false, layer: 'top' },
   { char: 'M', type: 'grill', occupiable: false, layer: 'top' },
+  // --- blocking: castle ---
+  { char: 'C', type: 'candle', occupiable: false, layer: 'top' }, // candelabra
+  { char: 'E', type: 'fireplace', occupiable: false, layer: 'top' },
+  { char: 'Q', type: 'barrel', occupiable: false, layer: 'top' },
+  { char: 'I', type: 'armor', occupiable: false, layer: 'top' }, // suit of armor
+  { char: 'N', type: 'weaponrack', occupiable: false, layer: 'top' },
 ]
 
 /**
- * Types the editor can paint but the GENERATOR must NOT scatter. A street has to be
- * laid as one CONTINUOUS run (it must connect up), so it is placed by hand in the
- * editor only; auto-furnishing would drop disconnected road tiles everywhere.
+ * Types the editor can paint but the GENERATOR must NOT scatter. A street or a path
+ * has to be laid as one CONTINUOUS run (it must connect up), so they are placed by
+ * hand in the editor only; auto-furnishing would drop disconnected tiles everywhere.
  */
-export const EDITOR_ONLY_TYPES: ReadonlySet<string> = new Set(['street'])
+export const EDITOR_ONLY_TYPES: ReadonlySet<string> = new Set(['street', 'path'])
 
 /** Object types a person can stand on (carpet, chair, bed, car, horse, mud, oil). */
 export const OCCUPIABLE_OBJECT_TYPES: string[] = OBJECT_CATALOG.filter((o) => o.occupiable).map(

@@ -1,4 +1,5 @@
 import { Clue } from './Clue.ts'
+import { ON_OBJECT_KEY_SUFFIX } from './unaryClues.ts'
 import type { Board } from '../model/Board.ts'
 import type { Solution } from '../model/Solution.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
@@ -47,7 +48,7 @@ abstract class UniqueInCellsClue extends Clue {
   }
 }
 
-/** "{name} was the only person on a {object}." */
+/** "{name} was the only person on a {object}." (in/under for tent/parasol) */
 export class UniqueOnObjectClue extends UniqueInCellsClue {
   constructor(readonly object: string) {
     super()
@@ -56,7 +57,8 @@ export class UniqueOnObjectClue extends UniqueInCellsClue {
     return board.cellsWithObject(this.object)
   }
   describe(): Explanation {
-    return { key: 'clue.uniqueOnObject', params: { object: this.object } }
+    const suffix = ON_OBJECT_KEY_SUFFIX[this.object] ?? ''
+    return { key: `clue.uniqueOnObject${suffix}`, params: { object: this.object } }
   }
 }
 

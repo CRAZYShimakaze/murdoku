@@ -1,0 +1,439 @@
+{
+  "schema": 1,
+  "id": "editor-mord-unter-tieren",
+  "title": "Tierische Abgründe",
+  "titles": {
+    "de": "Tierische Abgründe",
+    "en": "Animal Instincts"
+  },
+  "size": {
+    "width": 7,
+    "height": 7
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.pasture",
+      "color": "#e8d8b0",
+      "outside": true
+    },
+    "2": {
+      "nameKey": "room.yard",
+      "color": "#b9d0e6",
+      "outside": true
+    },
+    "3": {
+      "nameKey": "room.garden",
+      "color": "#cfe0cf",
+      "outside": true
+    },
+    "4": {
+      "nameKey": "room.shed",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.farmhouse",
+      "color": "#e6cda0",
+      "outside": false
+    },
+    "6": {
+      "nameKey": "room.cowshed",
+      "color": "#e6c0d2",
+      "outside": false
+    },
+    "7": {
+      "nameKey": "room.pigsty",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.barn",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.henhouse",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.stable",
+      "color": "#a8c8e0",
+      "outside": false
+    },
+    "B": {
+      "nameKey": "room.greenhouse",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.pantry",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.dairy",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.field",
+      "color": "#a8e0d0",
+      "outside": true
+    },
+    "F": {
+      "nameKey": "room.pond",
+      "color": "#ded0e6",
+      "outside": true
+    }
+  },
+  "objects": {
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "R": {
+      "type": "street",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "S": {
+      "type": "shower",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "O": {
+      "type": "boat",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "Z": {
+      "type": "tent",
+      "occupiable": true
+    },
+    "Y": {
+      "type": "waterlily",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "P": {
+      "type": "piano",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "B": {
+      "type": "bear",
+      "occupiable": false
+    },
+    "A": {
+      "type": "hay",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "G": {
+      "type": "campfire",
+      "occupiable": false
+    },
+    "M": {
+      "type": "grill",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "AAA1111",
+    "AAA1111",
+    "AAA1111",
+    "6666111",
+    "6666777",
+    "6666777",
+    "6666777"
+  ],
+  "groundMap": [
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    ".......",
+    "......."
+  ],
+  "topMap": [
+    ".Ah...a",
+    ".h.m.h.",
+    "m...a.m",
+    "Ak.....",
+    ".m.kim.",
+    "..kAiim",
+    "k...m.i"
+  ],
+  "windows": [
+    {
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    },
+    {
+      "r": 1,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 4,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 5,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 5,
+      "c": 6,
+      "side": "E"
+    }
+  ],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Alex",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "quiff",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "sameLineAsObject",
+          "object": "horse",
+          "line": "col",
+          "room": "same"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "braids",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "horse"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Carol",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "directionFromObject",
+          "object": "hay",
+          "dir": "southeast",
+          "room": "other",
+          "all": true
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dylan",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "besideSameObject",
+          "object": "pig",
+          "mate": {
+            "kind": "any"
+          }
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "undercut",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "onObject",
+          "object": "mud"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "curly",
+        "hair": "black"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "hay"
+            },
+            {
+              "type": "roomCompanion",
+              "count": 1,
+              "attribute": "gender",
+              "value": "m"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Veronika",
+    "attributes": {
+      "gender": "f"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "medium"
+}
