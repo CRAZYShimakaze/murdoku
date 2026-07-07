@@ -2,6 +2,10 @@
   "schema": 1,
   "id": "editor-freiluftmord",
   "title": "Freiluftmord",
+  "titles": {
+    "de": "Freiluftmord",
+    "en": "Death in the Fresh Air"
+  },
   "size": {
     "width": 6,
     "height": 6

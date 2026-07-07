@@ -1,7 +1,11 @@
 {
   "schema": 1,
   "id": "editor-der-knifflige-freiluftmord",
-  "title": "Der knifflige Freiluftmord",
+  "title": "Tod an der frischen Luft",
+  "titles": {
+    "de": "Tod an der frischen Luft",
+    "en": "Vera's Last Ride"
+  },
   "size": {
     "width": 6,
     "height": 6

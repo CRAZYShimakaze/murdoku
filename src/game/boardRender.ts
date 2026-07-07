@@ -136,6 +136,153 @@ function drawBlockedCard(ctx: CanvasRenderingContext2D, x: number, y: number, S:
   ctx.stroke()
 }
 
+type BoardModel = Puzzle['board']
+
+/** Same-room neighbours (incl. diagonals) carrying the same object type, for
+ *  auto-tiling — the diagonals let a tile round its inner (concave) L-corners. */
+function objectConn(board: BoardModel, c: Cell, layer: 'top' | 'ground', type: string): Conn {
+  const { row, col } = board.rc(c)
+  const room = board.roomIdOf(c)
+  const same = (r: number, cc: number): boolean => {
+    if (!board.inBounds(r, cc)) return false
+    const i = board.idx(r, cc)
+    if (board.roomIdOf(i) !== room) return false
+    const obj = layer === 'top' ? board.tileAt(i).top : board.tileAt(i).ground
+    return obj?.type === type
+  }
+  return {
+    n: same(row - 1, col),
+    s: same(row + 1, col),
+    w: same(row, col - 1),
+    e: same(row, col + 1),
+    ne: same(row - 1, col + 1),
+    nw: same(row - 1, col - 1),
+    se: same(row + 1, col + 1),
+    sw: same(row + 1, col - 1),
+  }
+}
+
+/** Same-ROOM neighbours (incl. diagonals) — auto-tiles a whole room into one merged
+ *  surface (used for the lake water, so the room reads as one body of water). */
+function roomConn(board: BoardModel, c: Cell): Conn {
+  const { row, col } = board.rc(c)
+  const room = board.roomIdOf(c)
+  const same = (r: number, cc: number): boolean =>
+    board.inBounds(r, cc) && board.roomIdOf(board.idx(r, cc)) === room
+  return {
+    n: same(row - 1, col),
+    s: same(row + 1, col),
+    w: same(row, col - 1),
+    e: same(row, col + 1),
+    ne: same(row - 1, col + 1),
+    nw: same(row - 1, col - 1),
+    se: same(row + 1, col + 1),
+    sw: same(row + 1, col - 1),
+  }
+}
+
+// ─── Static floor layer (cached) ─────────────────────────────────────────────
+// Mortar, void punch-outs, room fills, water and the floor patterns are a pure
+// function of the board + tile size. Re-drawing hundreds of pattern paths on
+// EVERY frame (drags, hovers, highlights, the press animation) is what made the
+// board feel sluggish — so the whole base is rendered ONCE into an offscreen
+// image and every redraw just blits it (one drawImage call).
+
+/** Everything the floor layer's pixels depend on — the cache key. */
+function floorSig(view: BoardView, dpr: number): string {
+  const board = view.puzzle.board
+  const parts: string[] = [
+    `${board.width}x${board.height}`,
+    String(view.cell),
+    String(dpr),
+    view.floorTextures === false ? 'plain' : 'tex',
+    view.preview ? 'prev' : 'full',
+  ]
+  for (const [id, room] of board.rooms) parts.push(`${id}:${room.color}:${room.nameKey}`)
+  let cells = ''
+  for (let c = 0; c < board.width * board.height; c++) {
+    cells += board.roomIdOf(c)
+    // Carpet blanks the pattern under the rug, so it shapes the layer's pixels.
+    if (board.tileAt(c).ground?.type === 'carpet') cells += '*'
+  }
+  parts.push(cells)
+  return parts.join('|')
+}
+
+/** Render the floor layer at device resolution; (1,1) inside maps to the grid's
+ *  top-left, leaving 1px of mortar border on every side (as drawBoard draws it). */
+function renderFloorLayer(view: BoardView, dpr: number): HTMLCanvasElement {
+  const { puzzle, cell: S } = view
+  const board = puzzle.board
+  const W = board.width
+  const H = board.height
+  const w = W * S + 2
+  const h = H * S + 2
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(w * dpr))
+  canvas.height = Math.max(1, Math.round(h * dpr))
+  const ctx = canvas.getContext('2d')!
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+
+  ctx.fillStyle = BOARD.mortar
+  ctx.fillRect(0, 0, w, h)
+  for (let c = 0; c < W * H; c++) {
+    const { row, col } = board.rc(c)
+    const x = 1 + col * S
+    const y = 1 + row * S
+    if (board.isVoid(c)) {
+      // Empty exterior: punch a transparent hole so the page/board background
+      // shows through. Expand 1px only at the board edge to clear the border there.
+      const x0 = col === 0 ? x - 1 : x
+      const y0 = row === 0 ? y - 1 : y
+      const x1 = col === W - 1 ? x + S + 1 : x + S
+      const y1 = row === H - 1 ? y + S + 1 : y + S
+      ctx.clearRect(x0, y0, x1 - x0, y1 - y0)
+      continue
+    }
+    const room = board.rooms.get(board.roomIdOf(c))
+    // Water rooms: a grass-green bank as the base, with the lake surface inset on
+    // top (rounded, merged across the room).
+    const water = room ? isWaterRoom(room.nameKey) : false
+    ctx.fillStyle = water ? BOARD.grass : (room?.color ?? '#cfcfcf')
+    ctx.fillRect(x, y, S, S)
+    if (water) drawWaterTile(ctx, x, y, S, roomConn(board, c))
+    else if (!view.preview && view.floorTextures !== false && room) {
+      // Subtle per-room-type floor texture (kitchen checker, floorboards, grass, …).
+      const pattern = floorPatternOf(room.nameKey)
+      if (pattern) {
+        drawFloorTile(ctx, x, y, S, row, col, pattern)
+        // A rug is translucent so the room colour tints it — but the floor pattern
+        // must not shine through fabric: blank it in the rug's exact shape.
+        if (board.tileAt(c).ground?.type === 'carpet')
+          drawCarpetBase(ctx, x, y, S, objectConn(board, c, 'ground', 'carpet'), room.color)
+      }
+    }
+  }
+  return canvas
+}
+
+/** Small LRU keyed by content: the game holds 1 entry per level; editor drags that
+ *  don't touch rooms/carpet hit the cache too. Previews bypass it (one-shot, tiny). */
+const FLOOR_CACHE_MAX = 4
+const floorCache = new Map<string, HTMLCanvasElement>()
+
+function cachedFloorLayer(view: BoardView, dpr: number): HTMLCanvasElement {
+  const key = floorSig(view, dpr)
+  const hit = floorCache.get(key)
+  if (hit) {
+    floorCache.delete(key) // re-insert → most recently used
+    floorCache.set(key, hit)
+    return hit
+  }
+  const canvas = renderFloorLayer(view, dpr)
+  floorCache.set(key, canvas)
+  if (floorCache.size > FLOOR_CACHE_MAX) {
+    floorCache.delete(floorCache.keys().next().value!)
+  }
+  return canvas
+}
+
 export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void {
   const { puzzle, cell: S, origin, preview } = view
   const board = puzzle.board
@@ -149,92 +296,23 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     return { x: ox + col * S, y: oy + row * S }
   }
 
-  /** Same-room neighbours (incl. diagonals) carrying the same object type, for
-   *  auto-tiling — the diagonals let a tile round its inner (concave) L-corners. */
-  const connOf = (c: Cell, layer: 'top' | 'ground', type: string): Conn => {
-    const { row, col } = board.rc(c)
-    const room = board.roomIdOf(c)
-    const same = (r: number, cc: number): boolean => {
-      if (!board.inBounds(r, cc)) return false
-      const i = board.idx(r, cc)
-      if (board.roomIdOf(i) !== room) return false
-      const obj = layer === 'top' ? board.tileAt(i).top : board.tileAt(i).ground
-      return obj?.type === type
-    }
-    return {
-      n: same(row - 1, col),
-      s: same(row + 1, col),
-      w: same(row, col - 1),
-      e: same(row, col + 1),
-      ne: same(row - 1, col + 1),
-      nw: same(row - 1, col - 1),
-      se: same(row + 1, col + 1),
-      sw: same(row + 1, col - 1),
-    }
-  }
+  const connOf = (c: Cell, layer: 'top' | 'ground', type: string): Conn =>
+    objectConn(board, c, layer, type)
 
-  /** Same-ROOM neighbours (incl. diagonals) — auto-tiles a whole room into one merged
-   *  surface (used for the lake water, so the room reads as one body of water). */
-  const roomConnOf = (c: Cell): Conn => {
-    const { row, col } = board.rc(c)
-    const room = board.roomIdOf(c)
-    const same = (r: number, cc: number): boolean =>
-      board.inBounds(r, cc) && board.roomIdOf(board.idx(r, cc)) === room
-    return {
-      n: same(row - 1, col),
-      s: same(row + 1, col),
-      w: same(row, col - 1),
-      e: same(row, col + 1),
-      ne: same(row - 1, col + 1),
-      nw: same(row - 1, col - 1),
-      se: same(row + 1, col + 1),
-      sw: same(row + 1, col - 1),
-    }
-  }
-
-  ctx.fillStyle = BOARD.mortar
-  ctx.fillRect(ox - 1, oy - 1, W * S + 2, H * S + 2)
+  // --- static floor layer (cached image) + highlight washes ---------------
+  // Mortar, void punch-outs, room fills, water and floor patterns come from ONE
+  // pre-rendered image (see renderFloorLayer) — a single drawImage per frame.
+  const dpr = ctx.getTransform().a || 1
+  const layer = preview ? renderFloorLayer(view, dpr) : cachedFloorLayer(view, dpr)
+  ctx.drawImage(layer, ox - 1, oy - 1, W * S + 2, H * S + 2)
 
   // Cells already taken by a placed figure — a candidate there is no longer possible, so
   // (like a crossed-off cell) its highlight is faded below. Built once, reused throughout.
   const occupied = new Set(view.placements.values())
 
-  // --- room fills + highlight wash ---------------------------------------
   for (let c = 0; c < W * H; c++) {
+    if (board.isVoid(c)) continue
     const { x, y } = xy(c)
-    if (board.isVoid(c)) {
-      // Empty exterior: punch a transparent hole so the page/board background
-      // shows through (re-tinting the CSS background re-tints these cells too).
-      // Expand 1px only at the board edge to clear the mortar border there.
-      const { row, col } = board.rc(c)
-      const x0 = col === 0 ? x - 1 : x
-      const y0 = row === 0 ? y - 1 : y
-      const x1 = col === W - 1 ? x + S + 1 : x + S
-      const y1 = row === H - 1 ? y + S + 1 : y + S
-      ctx.clearRect(x0, y0, x1 - x0, y1 - y0)
-      continue
-    }
-    const room = board.rooms.get(board.roomIdOf(c))
-    // Water rooms: a grass-green bank as the base, with the lake surface inset on top
-    // (rounded, merged across the room). Mechanically still a normal room — the floor
-    // stays occupiable, so a person can stand in the water (the legend says so).
-    const water = room ? isWaterRoom(room.nameKey) : false
-    ctx.fillStyle = water ? BOARD.grass : (room?.color ?? '#cfcfcf')
-    ctx.fillRect(x, y, S, S)
-    if (water) drawWaterTile(ctx, x, y, S, roomConnOf(c))
-    else if (!view.preview && view.floorTextures !== false && room) {
-      // Subtle per-room-type floor texture (kitchen checker, floorboards, grass, …).
-      const pattern = floorPatternOf(room.nameKey)
-      if (pattern) {
-        const { row, col } = board.rc(c)
-        drawFloorTile(ctx, x, y, S, row, col, pattern)
-        // A rug is translucent so the room colour tints it — but the floor pattern
-        // must not shine through fabric: blank it in the rug's exact shape (the
-        // highlight washes and the rug itself are drawn later, so they stack as before).
-        if (board.tileAt(c).ground?.type === 'carpet')
-          drawCarpetBase(ctx, x, y, S, connOf(c, 'ground', 'carpet'), room.color)
-      }
-    }
     // Secondary layer (selection) under the primary (hint), so the hint wins on overlap.
     // A ruled-out candidate — crossed off OR already taken by another figure — fades its
     // wash by HIGHLIGHT_DIM (same as its ring). Capped, never stacked: a placed suspect's

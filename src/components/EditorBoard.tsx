@@ -5,6 +5,7 @@ import { loadLevel, type Cell } from '../engine/index.ts'
 import BoardAxes, { AXES_H, AXES_W } from './BoardAxes.tsx'
 import { drawBoard } from '../game/boardRender.ts'
 import { onArtReady } from '../game/objectArt.ts'
+import { useSettings } from '../game/settings.ts'
 import { buildEditorLevel, type EditorState } from '../game/editorModel.ts'
 
 interface Props {
@@ -27,6 +28,9 @@ interface Layout {
 /** The editable board: live preview of the editor state + click/drag to paint. */
 export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow, doorMode, onPaintDoor }: Props) {
   const { t, i18n } = useTranslation()
+  // The floor-pattern setting applies here too — the editor board must go plain
+  // (and redraw) the moment it's switched off in the gear menu.
+  const { floorTextures } = useSettings()
   const W = state.size
   const H = state.size
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -86,8 +90,9 @@ export default function EditorBoard({ state, onPaint, windowMode, onPaintWindow,
       highlight: null,
       press: null,
       reveal: null,
+      floorTextures,
     })
-  }, [layout, puzzle, artTick, t, i18n.language])
+  }, [layout, puzzle, artTick, t, i18n.language, floorTextures])
 
   // Redraw when bundled board art (e.g. the armchair) finishes loading.
   useEffect(() => onArtReady(() => setArtTick((t) => t + 1)), [])

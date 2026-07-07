@@ -2,6 +2,10 @@
   "schema": 1,
   "id": "editor-der-schmutzige-pausenhof",
   "title": "Der schmutzige Pausenhof",
+  "titles": {
+    "de": "Der schmutzige Pausenhof",
+    "en": "A Pig at School"
+  },
   "author": "Mika Aporius",
   "size": {
     "width": 8,
