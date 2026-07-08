@@ -61,9 +61,10 @@ export interface DeductionStep {
  * - `narrow`  every cell that person can still occupy after the deduction;
  * - `exclude` cells that can now be ruled out (crossed) for someone;
  * - `unplace` a figure the player put where it provably can't be — remove it;
- * - `unmark`  pencil notes the player set where that person provably can't be — erase them.
+ * - `unmark`  pencil notes the player set where that person provably can't be — erase them;
+ * - `uncross` crosses the player set on cells that can't actually be ruled out — remove them.
  */
-export type HintKind = 'place' | 'narrow' | 'exclude' | 'unplace' | 'unmark'
+export type HintKind = 'place' | 'narrow' | 'exclude' | 'unplace' | 'unmark' | 'uncross'
 
 /** A hint = the next deduction plus the cells to highlight for it on the board. */
 export interface HintResult {

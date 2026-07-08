@@ -691,9 +691,12 @@ export class RoomReasoningTechnique extends Technique {
 
   /**
    * Eliminate rooms whose occupancy can't satisfy a "companions in my room" rule:
-   *  - `forbidNonMatching` & a non-matching other is already there → out;
-   *  - more than `max` matching others already there → out;
+   *  - `forbidNonMatching` & a non-matching other is SURELY there → out;
+   *  - more than `max` matching others SURELY there → out;
    *  - even with every still-possible matching other, fewer than `min` → out.
+   * "Surely there" = placed in the room OR unplaced with every candidate cell in it —
+   * both are in the room in every solution (e.g. Greta placed in the Restaurant plus
+   * Bella confined to it already make "alone with exactly one man" impossible there).
    * Victim handling matches the clue (`includeVictim`). Sound: only eliminates a room
    * that is ALREADY impossible, never one that merely might fail.
    */
@@ -722,25 +725,45 @@ export class RoomReasoningTechnique extends Technique {
         if (opts.match(pid)) placedMatch++
         else placedBad++
       }
+      let sureMatch = 0
+      let sureBad = 0
       let couldMatch = 0
       for (const o of ctx.state.unplaced()) {
-        if (!counts(o) || !opts.match(o)) continue
-        if ([...ctx.state.domain(o)].some((c) => ctx.roomOf(c) === room)) couldMatch++
+        if (!counts(o)) continue
+        if (opts.match(o) && [...ctx.state.domain(o)].some((c) => ctx.roomOf(c) === room)) {
+          couldMatch++
+        }
+        if (ctx.guaranteedRoomOf(o) !== room) continue
+        if (opts.match(o)) sureMatch++
+        else sureBad++
       }
-      const invalid =
+      // Placed-only violations keep their established wording; violations that need the
+      // CONFINED (guaranteed) occupants get the "surely already N others" wording.
+      const placedInvalid =
         (opts.forbidNonMatching && placedBad > 0) ||
         (opts.max !== null && placedMatch > opts.max) ||
         (opts.min !== null && placedMatch + couldMatch < opts.min)
-      if (!invalid) continue
+      const sureInvalid =
+        !placedInvalid &&
+        ((opts.forbidNonMatching && sureBad > 0) ||
+          (opts.max !== null && placedMatch + sureMatch > opts.max))
+      if (!placedInvalid && !sureInvalid) continue
       const removed = ctx.removeWhere(id, (c) => ctx.roomOf(c) === room)
       if (removed.length > 0) {
+        const busy = sureInvalid && opts.key === 'step.companionRoom'
         return {
           technique: 'roomReasoning',
           personId: id,
           eliminated: [{ personId: id, cells: removed }],
           explanation: {
-            key: opts.key,
-            params: { name: id, room, attribute: opts.attribute, count: opts.count ?? 1 },
+            key: busy ? 'step.companionRoomBusy' : opts.key,
+            params: {
+              name: id,
+              room,
+              attribute: opts.attribute,
+              count: opts.count ?? 1,
+              sure: placedMatch + placedBad + sureMatch + sureBad,
+            },
           },
         }
       }

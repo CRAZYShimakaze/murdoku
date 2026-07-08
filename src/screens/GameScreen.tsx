@@ -252,7 +252,9 @@ export default function GameScreen({
     // A "remove your notes" hint is done once those marks are erased; a "remove your figure"
     // hint clears via the placement-change effect above when the figure is taken off.
     (hint?.kind === 'unmark' &&
-      hint.focus.every((c) => !session.state.marks.get(c)?.has(hint.step.personId!)))
+      hint.focus.every((c) => !session.state.marks.get(c)?.has(hint.step.personId!))) ||
+    // A "remove your wrong cross" hint is done once those crosses are gone.
+    (hint?.kind === 'uncross' && hint.focus.every((c) => !session.state.crosses.has(c)))
   const activeHint = hintDone ? null : hint
 
   const highlight = useMemo<Set<Cell> | null>(() => {
@@ -385,7 +387,9 @@ export default function GameScreen({
             ? activeHint.focus.filter((c) => !session.state.crosses.has(c))
             : activeHint.kind === 'unmark'
               ? activeHint.focus.filter((c) => session.state.marks.get(c)?.has(activeHint.step.personId!) ?? false)
-              : activeHint.focus,
+              : activeHint.kind === 'uncross'
+                ? activeHint.focus.filter((c) => session.state.crosses.has(c))
+                : activeHint.focus,
         )
       : null
   const selectHL = tut.active ? tut.highlight : highlight
@@ -557,7 +561,7 @@ export default function GameScreen({
         onHoverSuspect={setHoveredSuspect}
         hint={hintText}
         hintChain={hintChain}
-        hintPlain={activeHint?.kind === 'unmark' || activeHint?.kind === 'unplace'}
+        hintPlain={activeHint?.kind === 'unmark' || activeHint?.kind === 'unplace' || activeHint?.kind === 'uncross'}
         hintRequestId={hintRequestId}
       />
 
