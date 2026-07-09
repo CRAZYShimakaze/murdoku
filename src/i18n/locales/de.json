@@ -434,7 +434,14 @@
     "hint": "Tipp",
     "submit": "Lösen",
     "submitLocked": "alle setzen",
-    "hintNone": "Gerade kein Tipp verfügbar."
+    "hintNone": "Gerade kein Tipp verfügbar.",
+    "cantBeOn": "kann nicht auf",
+    "removeNote": "Notiz entfernen",
+    "removeFigure": "Figur entfernen",
+    "crossOut": "Auskreuzen",
+    "removeCrossLabel": "Kreuz entfernen",
+    "figureWrongWhy": "Irgendwo stimmt etwas nicht – prüfe deine Hinweise.",
+    "uncrossWhy": "Hier kann jemand stehen – dein Kreuz stimmt nicht."
   },
   "result": {
     "winStamp": "Fall gelöst",

@@ -434,7 +434,14 @@
     "hint": "Hint",
     "submit": "Solve",
     "submitLocked": "place all first",
-    "hintNone": "No hint available right now."
+    "hintNone": "No hint available right now.",
+    "cantBeOn": "can't be on",
+    "removeNote": "Remove note",
+    "removeFigure": "Remove figure",
+    "crossOut": "Cross out",
+    "removeCrossLabel": "Remove cross",
+    "figureWrongWhy": "Something's off – check your clues.",
+    "uncrossWhy": "Someone can stand here – your cross is wrong."
   },
   "result": {
     "winStamp": "Case closed",

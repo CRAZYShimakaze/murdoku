@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
@@ -18,6 +18,7 @@ import {
   isWaterRoom,
   type Clue,
   type Cell,
+  type HintResult,
   type PersonId,
   type Puzzle,
 } from '../engine/index.ts'
@@ -28,6 +29,47 @@ function refersToInsideOutside(clue: Clue): boolean {
   if (clue instanceof NotClue) return refersToInsideOutside(clue.inner)
   if (clue instanceof AndClue || clue instanceof OrClue) return clue.clues.some(refersToInsideOutside)
   return false
+}
+
+/** Hand-drawn line-art badge for each correction-hint variant (no emoji, on-theme). */
+const HINT_GLYPHS: Record<string, ReactNode> = {
+  // Note struck out — remove your pencil note.
+  note: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4.5" y="4.5" width="15" height="15" rx="2.5" />
+      <path d="M8 16 16 8" />
+    </svg>
+  ),
+  // A person crossed out — take the misplaced figure back off.
+  figure: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="3.2" />
+      <path d="M5.5 19c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+      <path d="M4 4 20 20" strokeWidth="1.5" />
+    </svg>
+  ),
+  // A bold X — cross these empty cells out.
+  cross: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+      <path d="M6 6 18 18M18 6 6 18" />
+    </svg>
+  ),
+  // An undo arrow — take a wrong cross back.
+  uncross: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 7 5 11l4 4" />
+      <path d="M5 11h8a5 5 0 0 1 5 5v2" />
+    </svg>
+  ),
+}
+
+/** Correction-hint kinds that render as the coloured verdict box (not the numbered
+ *  deduction chain). Maps each to its accent variant + uppercase action label. */
+const HINT_FAMILY: Partial<Record<HintResult['kind'], { variant: string; label: string; person: boolean }>> = {
+  unmark: { variant: 'note', label: 'tool.removeNote', person: true },
+  unplace: { variant: 'figure', label: 'tool.removeFigure', person: true },
+  exclude: { variant: 'cross', label: 'tool.crossOut', person: false },
+  uncross: { variant: 'uncross', label: 'tool.removeCrossLabel', person: false },
 }
 
 interface Props {
@@ -45,6 +87,9 @@ interface Props {
   /** Render the chain as plain reason lines (no numbering, no gold "conclusion" line) — for
    *  player-error hints, whose lines are equal reasons, not a numbered deduction. */
   hintPlain?: boolean
+  /** The raw active hint. Correction hints (remove note/figure, cross out, remove cross)
+   *  render as the coloured verdict box instead of the plain text + chain. */
+  activeHint?: HintResult | null
   /** Bumped each time the player requests a hint — scrolls it into view. */
   hintRequestId?: number
 }
@@ -60,6 +105,7 @@ export default function CluePanel({
   hint,
   hintChain,
   hintPlain,
+  activeHint,
   hintRequestId,
 }: Props) {
   const { t, i18n } = useTranslation()
@@ -106,6 +152,40 @@ export default function CluePanel({
     return notes
   }, [puzzle, renderer, t])
 
+  // Correction hints (remove note/figure, cross out, remove cross) render as the coloured
+  // verdict box: the action label + WHO/WHERE (in the person's own colour) first, the short
+  // reason under it. Everything else (place/narrow, "no hint") keeps the plain text box.
+  const hintBox = useMemo(() => {
+    if (!activeHint) return null
+    const fam = HINT_FAMILY[activeHint.kind]
+    if (!fam) return null
+    const step = activeHint.step
+    let personId: PersonId | undefined
+    let personName: string | undefined
+    let accent: string | undefined
+    if (fam.person && step.personId) {
+      personId = step.personId
+      personName = puzzle.suspects.find((x) => x.id === personId)?.name
+      accent = suspectColor(suspectIndex.get(step.personId) ?? 0)
+    }
+    const cells = activeHint.focus.map((c) => renderer.cell(c))
+    let why: string[]
+    if (activeHint.kind === 'exclude') {
+      // The deduction, minus the "→ cross these out" conclusion the header now carries.
+      why = [
+        renderer.render(step.explanation),
+        ...(step.chain ?? []).filter((e) => e.key !== 'why.crossThis').map((e) => renderer.render(e)),
+      ]
+    } else if (activeHint.kind === 'uncross') {
+      why = [t('tool.uncrossWhy')]
+    } else if (step.chain && step.chain.length > 0) {
+      why = step.chain.map((e) => renderer.render(e))
+    } else {
+      why = [t('tool.figureWrongWhy')]
+    }
+    return { variant: fam.variant, label: fam.label, personId, personName, accent, cells, why }
+  }, [activeHint, puzzle, suspectIndex, renderer, t])
+
   return (
     <div className="mk-clues">
       <p className="mk-clues__title">{t('game.suspects')}</p>
@@ -122,7 +202,43 @@ export default function CluePanel({
         </div>
       )}
 
-      {hint && (
+      {hintBox ? (
+        <div
+          className="mk-hintbox"
+          data-variant={hintBox.variant}
+          ref={hintBarRef}
+          style={hintBox.accent ? ({ ['--hint-accent']: hintBox.accent } as CSSProperties) : undefined}
+        >
+          <div className="mk-hintbox__head">
+            <span className="mk-hintbox__badge">{HINT_GLYPHS[hintBox.variant]}</span>
+            <span className="mk-hintbox__label">{t(hintBox.label)}</span>
+          </div>
+          <div className="mk-hintbox__verdict">
+            {hintBox.personId && <span className="mk-tok">{hintBox.personId}</span>}
+            {hintBox.personName && (
+              <span>
+                <span className="mk-hintbox__name">{hintBox.personName}</span>{' '}
+                <span className="mk-hintbox__neg">{t('tool.cantBeOn')}</span>
+              </span>
+            )}
+            {hintBox.cells.map((label, i) => (
+              <span
+                key={i}
+                className={hintBox.variant === 'cross' ? 'mk-cellchip mk-cellchip--x' : 'mk-cellchip'}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+          {hintBox.why.length > 0 && (
+            <div className="mk-hintbox__why">
+              {hintBox.why.map((line, i) => (
+                <p key={i}>{line}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : hint ? (
         <div className="mk-hintbar" ref={hintBarRef}>
           <strong>{t('tool.hint')}</strong>
           {hint}
@@ -142,7 +258,7 @@ export default function CluePanel({
             )
           )}
         </div>
-      )}
+      ) : null}
 
       {puzzle.suspects.map((s) => {
         const idx = suspectIndex.get(s.id) ?? 0

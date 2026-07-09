@@ -3075,6 +3075,146 @@ button {
   font-size: 0.78rem;
 }
 
+/* ---------------------------------------------------------------------------
+   CORRECTION-HINT FAMILY — remove a note / remove a figure / cross out / remove
+   a wrong cross. One skeleton (accent stripe · icon badge + action label ·
+   verdict with the person's own colour · short reason), so at a glance the
+   player reads WHICH action and WHO/WHERE before the why. The action-specific
+   accent lives in `--hint-accent` (person colour for note/figure, set inline;
+   crimson/amber per data-variant for the cross kinds). Readable text tint is
+   derived from the accent so any suspect colour stays legible on dark ink.
+   -------------------------------------------------------------------------- */
+.mk-hintbox {
+  --hint-accent: var(--brass);
+  --hint-accent-text: color-mix(in srgb, var(--hint-accent) 58%, var(--bone));
+  position: relative;
+  margin: 0 0 0.9rem;
+  padding: 0.6rem 0.8rem 0.68rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line-strong);
+  background: var(--ink-850);
+  font-family: var(--font-type);
+  color: var(--bone);
+  line-height: 1.4;
+  overflow: hidden;
+}
+.mk-hintbox[data-variant='cross'] {
+  --hint-accent: var(--crimson);
+  background: rgba(207, 70, 60, 0.08);
+}
+.mk-hintbox[data-variant='uncross'] {
+  --hint-accent: #cf8a3c;
+  background: rgba(207, 138, 60, 0.08);
+}
+.mk-hintbox::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--hint-accent);
+}
+.mk-hintbox__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.mk-hintbox__badge {
+  flex: none;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  color: var(--hint-accent-text);
+  background: color-mix(in srgb, var(--hint-accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--hint-accent) 45%, transparent);
+}
+.mk-hintbox__badge svg {
+  width: 1rem;
+  height: 1rem;
+}
+.mk-hintbox__label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--hint-accent-text);
+}
+.mk-hintbox__verdict {
+  display: flex;
+  align-items: center;
+  gap: 0.42em;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+.mk-hintbox__name {
+  font-weight: 700;
+  color: var(--hint-accent-text);
+}
+.mk-hintbox__neg {
+  color: var(--bone-dim);
+}
+.mk-hintbox__why {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--bone-dim);
+}
+.mk-hintbox__why p {
+  margin: 0;
+}
+.mk-hintbox__why p + p {
+  margin-top: 0.2rem;
+}
+/* Person token — the suspect's letter in their own colour, echoing the board note. */
+.mk-tok {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35em;
+  height: 1.35em;
+  border-radius: 5px;
+  font-weight: 700;
+  font-size: 0.86em;
+  color: #16141d;
+  background: var(--hint-accent);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+  flex: none;
+}
+/* Cell chips ("Z3/S5") — plain, or with a drawn X for the cross-out action. */
+.mk-cellchip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.82em;
+  padding: 0.06em 0.44em;
+  border-radius: 5px;
+  background: rgba(236, 230, 218, 0.08);
+  border: 1px solid var(--line-strong);
+  color: var(--bone);
+  letter-spacing: 0.03em;
+}
+.mk-cellchip--x {
+  position: relative;
+  padding-left: 1.5em;
+  border-color: rgba(207, 70, 60, 0.55);
+  background: rgba(207, 70, 60, 0.12);
+}
+.mk-cellchip--x::before {
+  content: '';
+  position: absolute;
+  left: 0.34em;
+  top: 50%;
+  width: 0.72em;
+  height: 0.72em;
+  transform: translateY(-50%);
+  background:
+    linear-gradient(45deg, transparent 42%, var(--crimson) 42%, var(--crimson) 58%, transparent 58%),
+    linear-gradient(-45deg, transparent 42%, var(--crimson) 42%, var(--crimson) 58%, transparent 58%);
+}
+
 /* Board-wide clues (outdoor rooms, "exactly one on a mud puddle", …) — each is
  * its own clearly-visible card, not a small combined list. */
 .mk-boardclues {

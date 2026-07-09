@@ -562,6 +562,7 @@ export default function GameScreen({
         hint={hintText}
         hintChain={hintChain}
         hintPlain={activeHint?.kind === 'unmark' || activeHint?.kind === 'unplace' || activeHint?.kind === 'uncross'}
+        activeHint={activeHint}
         hintRequestId={hintRequestId}
       />
 
