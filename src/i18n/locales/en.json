@@ -465,7 +465,7 @@
     "winTitle": "Well done, detective!",
     "winBody": "Every suspect placed correctly.",
     "winMurderer": "The murderer was {{name}} in the {{room}}.",
-    "soloHonor": "Cracked solo — without a single hint.",
+    "soloHonor": "Solved solo — no hints.",
     "hintsUsed_one": "Solved with {{count}} hint.",
     "hintsUsed_other": "Solved with {{count}} hints.",
     "loseTitle": "That's not right yet.",

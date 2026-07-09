@@ -2781,6 +2781,38 @@ button {
   .mk-dialog__peek[data-gen='true'] {
     display: none;
   }
+  /* Phones have little room for the verdict card — tighten it and, above all, cap its
+     height so a tall (generated) verdict scrolls INSIDE instead of running off the bottom
+     with its lower buttons unreachable. Smaller gaps/type fit most verdicts without scroll. */
+  .mk-overlay {
+    padding: 1rem;
+  }
+  .mk-dialog {
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    gap: 0.7rem;
+    padding: 1.4rem 1.2rem;
+  }
+  .mk-dialog__stamp {
+    font-size: 1.35rem;
+  }
+  .mk-dialog h3 {
+    font-size: 1.45rem;
+  }
+  .mk-dialog p.mk-dialog__solo {
+    margin-top: -0.1rem;
+    font-size: 0.74rem;
+  }
+  .mk-dialog__medal {
+    width: 2rem;
+    height: 2.3rem;
+    top: 0.65rem;
+    right: 0.7rem;
+  }
+  .mk-dialog__avatar {
+    width: 58px;
+    height: 58px;
+  }
 }
 /* Verdict actions: one uniform grid for every state (loss, win, generated win). The
    primary sits full width on top (.mk-btn--wide); the rest sit in a fixed 2-column grid

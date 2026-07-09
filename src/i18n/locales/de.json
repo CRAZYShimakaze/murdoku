@@ -465,7 +465,7 @@
     "winTitle": "Glückwunsch, Kommissar!",
     "winBody": "Alle Verdächtigen korrekt platziert.",
     "winMurderer": "Der Mörder war {{name}} im {{room}}.",
-    "soloHonor": "Im Alleingang gelöst — ohne einen einzigen Tipp.",
+    "soloHonor": "Im Alleingang gelöst — ohne Tipp.",
     "hintsUsed_one": "Mit {{count}} Tipp gelöst.",
     "hintsUsed_other": "Mit {{count}} Tipps gelöst.",
     "loseTitle": "Das stimmt noch nicht.",
