@@ -58,6 +58,7 @@ const FAMILY_OF: Record<string, HintFamily> = {
   'step.sameObject': 'near',
   'step.sameObjectForce': 'near',
   'step.insideXor': 'near',
+  'step.objectPigeonhole': 'near',
   // Gesellschaft — alone / not-alone / companions / traits in a room.
   'step.aloneExcludeRoom': 'social',
   'step.aloneExcludeLine': 'social',

@@ -9,6 +9,7 @@ import { CrossCenterTechnique } from './techniques/CrossCenterTechnique.ts'
 import { RectangleTechnique } from './techniques/RectangleTechnique.ts'
 import { InsideXorTechnique } from './techniques/InsideXorTechnique.ts'
 import { BoardCountTechnique } from './techniques/BoardCountTechnique.ts'
+import { ObjectPigeonholeTechnique } from './techniques/ObjectPigeonholeTechnique.ts'
 import { EmptyRoomsTechnique } from './techniques/EmptyRoomsTechnique.ts'
 import { RoomReasoningTechnique } from './techniques/RoomReasoningTechnique.ts'
 import { RoomCoverageTechnique } from './techniques/RoomCoverageTechnique.ts'
@@ -85,6 +86,9 @@ export function createForwardTechniques(puzzle: Puzzle, opts: TechniqueOptions =
     new CompanionRoomFitTechnique(),
     new CompanionPairingTechnique(),
     new MurderTechnique(),
+    // LAST: object pigeonhole runs only once the room/companion reasoning above has pinned
+    // who is in which room (see the technique's note on ordering).
+    new ObjectPigeonholeTechnique(),
   ].filter((technique) => technique.relevant(puzzle))
   const roomAssignment = new RoomAssignmentTechnique() // pure forward, no look-ahead — shared
   // GENERATOR acceptance (noCaseSplit): the same forward techniques, but the empty-room

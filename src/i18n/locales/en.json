@@ -1275,6 +1275,7 @@
     "boardCountConfine": "Exactly {{count}} people must be on {{object}}, and only that many can still be there – {{name}} is one of them and must go there.",
     "boardCountConfine_one": "Someone must be on {{object}}, and no one but {{name}} can still be there – so {{name}} must go there.",
     "boardCountLine": "Someone must be on {{object}}, and {{object}} only exists in {{line}} {{num}} – so that line's occupant is on it; the rest of the {{line}} is empty.",
+    "objectPigeonhole": "At least {{count}} different people must be on {{object}}; if {{cell}} were taken there wouldn't be enough seats left for all of them – so {{cell}} stays empty.",
     "boardCountLines": "Exactly {{count}} people must be on {{object}}, and the possible cells lie in exactly {{count}} {{linePlural}} – so each of those {{linePlural}} has someone on it; every other cell of them is empty.",
     "removePlacement": "You placed {{name}} on {{cell}}, but {{name}} can't be there – please remove {{name}} here.",
     "placeFromNotes": "Per your notes, only {{cell}} is left for {{name}} – place {{name}} there.",

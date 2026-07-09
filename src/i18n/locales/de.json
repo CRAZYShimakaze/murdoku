@@ -1401,6 +1401,7 @@
     "boardCountConfine": "Auf {{object}} müssen genau {{count}} Personen stehen, und nur noch so viele kommen dafür infrage – {{name}} ist dabei und muss dorthin.",
     "boardCountConfine_one": "Auf {{object}} muss jemand stehen, und außer {{name}} kommt dafür niemand mehr infrage – {{name}} muss also dorthin.",
     "boardCountLine": "Auf {{object}} muss jemand sein – und das ist nur in {{line}} {{num}} möglich; dort sitzt also der/die Bewohner:in darauf, der Rest der {{line}} bleibt leer.",
+    "objectPigeonhole": "Mindestens {{count}} verschiedene Personen müssen auf {{object}} sitzen; wäre {{cell}} besetzt, blieben nicht genug freie Plätze für alle – also bleibt {{cell}} leer.",
     "boardCountLines": "Auf {{object}} müssen genau {{count}} Personen stehen, und die möglichen Felder liegen in genau {{count}} {{linePlural}} – in jeder muss also jemand darauf sitzen; die übrigen Felder dieser {{linePlural}} bleiben leer.",
     "emptyRoomsAllOccupied": "So viele Räume sind schon belegt, dass die übrigen leer bleiben müssen (genau {{count}} leer) – hier kann niemand mehr stehen.",
     "emptyRoomsConfine": "Die erlaubten leeren Räume stehen schon fest ({{count}}) – {{room}} muss also besetzt sein, und nur {{name}} kann dort stehen.",

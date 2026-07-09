@@ -16,6 +16,7 @@ export type Technique =
   | 'rectangle'
   | 'insideXor'
   | 'boardCount'
+  | 'objectPigeonhole'
   | 'emptyRooms'
   | 'emptyRoomForcing'
   | 'roomAssignment'
@@ -105,6 +106,7 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   rectangle: 3,
   insideXor: 3,
   boardCount: 4,
+  objectPigeonhole: 5,
   emptyRooms: 4,
   roomAssignment: 4,
   emptyRoomForcing: 5,
