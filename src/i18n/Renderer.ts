@@ -197,6 +197,8 @@ export class Renderer {
         return this.lookup(`dir.${value}`) ?? String(value)
       case 'line':
         return this.lookup(`line.${value}`) ?? String(value)
+      case 'linePlural':
+        return this.lookup(`linePlural.${value}`) ?? String(value)
       case 'roomRel':
         return this.lookup(`roomRel.${value}`) ?? String(value)
       case 'side':

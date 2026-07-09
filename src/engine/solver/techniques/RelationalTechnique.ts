@@ -252,8 +252,9 @@ export class RelationalTechnique extends Technique {
     return {
       technique: 'relational',
       personId: subjectId,
-      eliminated,
-      explanation: { key: described.key, params: { ...described.params, name: subjectId } },
+      // `subject` lets a standalone reason NAME the subject ("Alysson war 1 Spalte westlich
+      // von George") instead of the card pronoun ("sie war …") — see CluePanel's nameSubject.
+      explanation: { key: described.key, params: { ...described.params, name: subjectId, subject: subjectId } },
     }
   }
 

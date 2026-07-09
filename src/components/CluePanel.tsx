@@ -8,6 +8,7 @@ import Avatar from './Avatar.tsx'
 import AppearanceInfo from './AppearanceInfo.tsx'
 import ClueText from './ClueText.tsx'
 import InfoTip from './InfoTip.tsx'
+import { familyOf, FAMILY_META, FAMILY_ORDER, type HintFamily } from './hintFamily.tsx'
 import {
   AndClue,
   InsideXorClue,
@@ -61,15 +62,59 @@ const HINT_GLYPHS: Record<string, ReactNode> = {
       <path d="M5 11h8a5 5 0 0 1 5 5v2" />
     </svg>
   ),
+  // A figure lowered onto a cell — place this person here.
+  place: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="7" r="3" />
+      <path d="M7 20c0-3 2.2-5 5-5s5 2 5 5" />
+      <path d="M12 2v3M10.4 3.6 12 5l1.6-1.4" />
+    </svg>
+  ),
 }
 
-/** Correction-hint kinds that render as the coloured verdict box (not the numbered
- *  deduction chain). Maps each to its accent variant + uppercase action label. */
+/** Hint kinds that render as the coloured verdict box (not the legacy plain text). Each
+ *  maps to its accent variant + uppercase action label; `person` = show the suspect token.
+ *  `place` (set a figure) is the positive action; the rest are corrections/cross-outs. */
 const HINT_FAMILY: Partial<Record<HintResult['kind'], { variant: string; label: string; person: boolean }>> = {
+  place: { variant: 'place', label: 'tool.place', person: true },
   unmark: { variant: 'note', label: 'tool.removeNote', person: true },
   unplace: { variant: 'figure', label: 'tool.removeFigure', person: true },
   exclude: { variant: 'cross', label: 'tool.crossOut', person: false },
   uncross: { variant: 'uncross', label: 'tool.removeCrossLabel', person: false },
+}
+
+interface HintReason {
+  text: string
+  family: HintFamily | null
+}
+/** Everything the verdict box needs, per variant (fields unused by a variant stay undefined). */
+interface HintBoxData {
+  variant: string
+  label: string
+  personId?: PersonId
+  personName?: string
+  /** The suspect's own colour — token + name (place: keeps it while the accent turns green). */
+  accent?: string
+  /** place: the target cell chip. */
+  goalCell?: string
+  /** note/figure/cross/uncross: the cell chips. */
+  cells?: string[]
+  /** cross: render chips with an X. */
+  crossed?: boolean
+  /** note/figure: show the "kann nicht auf" connective before the chips. */
+  cantBeOn?: boolean
+  /** place: one-line summary above the reasoning. */
+  subline?: string
+  /** place: which reasoning families the eliminations use, with counts. */
+  famSummary?: { family: HintFamily; count: number }[]
+  /** place & cross: family-tagged reasoning rows. */
+  reasons?: HintReason[]
+  /** place & cross: hide the reasoning behind a toggle. */
+  collapse?: boolean
+  /** i18n key for the collapse toggle label (varies place vs cross). */
+  toggle?: string
+  /** note/figure/uncross: plain reason lines. */
+  why?: string[]
 }
 
 interface Props {
@@ -152,14 +197,24 @@ export default function CluePanel({
     return notes
   }, [puzzle, renderer, t])
 
-  // Correction hints (remove note/figure, cross out, remove cross) render as the coloured
-  // verdict box: the action label + WHO/WHERE (in the person's own colour) first, the short
-  // reason under it. Everything else (place/narrow, "no hint") keeps the plain text box.
-  const hintBox = useMemo(() => {
+  // Deduction & correction hints render as the coloured verdict box: the action label +
+  // WHO/WHERE (in the person's own colour) first, the reasoning under it. A "place" verdict
+  // leads with SETZEN X → cell, a family summary, and the eliminations (family-tagged) behind
+  // a toggle; a cross-out tags its argument by family too. Only the "no hint" text falls back
+  // to the legacy plain box.
+  const hintBox = useMemo((): HintBoxData | null => {
     if (!activeHint) return null
     const fam = HINT_FAMILY[activeHint.kind]
     if (!fam) return null
     const step = activeHint.step
+    const kind = activeHint.kind
+    // nameSubject=true: a reason stands alone, so NAME the subject ("Alysson war 1 Spalte
+    // westlich von George") instead of the card-perspective pronoun ("sie war …").
+    const toReason = (e: Parameters<typeof renderer.render>[0]) => ({
+      text: renderer.render(e, {}, true),
+      family: familyOf(e.key),
+    })
+
     let personId: PersonId | undefined
     let personName: string | undefined
     let accent: string | undefined
@@ -168,23 +223,61 @@ export default function CluePanel({
       personName = puzzle.suspects.find((x) => x.id === personId)?.name
       accent = suspectColor(suspectIndex.get(step.personId) ?? 0)
     }
+
+    const base = { variant: fam.variant, label: fam.label, personId, personName, accent }
+    // Which reasoning families a set of reasons uses, with counts (stable order).
+    const famSummaryOf = (reasons: HintReason[]) => {
+      const counts = new Map<HintFamily, number>()
+      for (const r of reasons) if (r.family) counts.set(r.family, (counts.get(r.family) ?? 0) + 1)
+      return FAMILY_ORDER.filter((f) => counts.has(f)).map((f) => ({ family: f, count: counts.get(f)! }))
+    }
+
+    if (kind === 'place') {
+      const goalCell = activeHint.focus.length ? renderer.cell(activeHint.focus[0]) : ''
+      // The eliminations of every OTHER candidate cell — minus the "→ so X goes on Y"
+      // conclusion, which the verdict header now carries.
+      const reasons = (step.chain ?? []).filter((e) => e.key !== 'why.only').map(toReason)
+      const subline = reasons.length > 0 ? t('tool.placeAllElse', { name: personName }) : t('tool.placeFromNotesWhy')
+      return { ...base, goalCell, subline, famSummary: famSummaryOf(reasons), reasons, collapse: true, toggle: 'tool.reasonsTogglePlace' }
+    }
+
+    if (kind === 'exclude') {
+      const cells = activeHint.focus.map((c) => renderer.cell(c))
+      // The deduction, minus the redundant "→ cross these out" conclusion the header carries.
+      const reasons = [
+        toReason(step.explanation),
+        ...(step.chain ?? []).filter((e) => e.key !== 'why.crossThis').map(toReason),
+      ]
+      return { ...base, cells, crossed: true, famSummary: famSummaryOf(reasons), reasons, collapse: true, toggle: 'tool.reasonsToggleCross' }
+    }
+
+    // Corrections: remove note / figure / wrong cross — a plain short reason.
     const cells = activeHint.focus.map((c) => renderer.cell(c))
     let why: string[]
-    if (activeHint.kind === 'exclude') {
-      // The deduction, minus the "→ cross these out" conclusion the header now carries.
-      why = [
-        renderer.render(step.explanation),
-        ...(step.chain ?? []).filter((e) => e.key !== 'why.crossThis').map((e) => renderer.render(e)),
-      ]
-    } else if (activeHint.kind === 'uncross') {
-      why = [t('tool.uncrossWhy')]
-    } else if (step.chain && step.chain.length > 0) {
-      why = step.chain.map((e) => renderer.render(e))
-    } else {
-      why = [t('tool.figureWrongWhy')]
-    }
-    return { variant: fam.variant, label: fam.label, personId, personName, accent, cells, why }
+    if (kind === 'uncross') why = [t('tool.uncrossWhy')]
+    else if (step.chain && step.chain.length > 0) why = step.chain.map((e) => renderer.render(e, {}, true))
+    else why = [t('tool.figureWrongWhy')]
+    return { ...base, cells, cantBeOn: kind === 'unmark' || kind === 'unplace', why }
   }, [activeHint, puzzle, suspectIndex, renderer, t])
+
+  // Family-tagged reasoning rows (a place hint's eliminations, a cross-out's argument): a
+  // small coloured family glyph in front of each line so its KIND of logic reads at a glance.
+  const renderReasons = (reasons: HintReason[]) => (
+    <ul className="mk-hintbox__reasons">
+      {reasons.map((r, i) => (
+        <li key={i}>
+          <span>
+            {r.family && (
+              <span className="mk-fam mk-fam--dot" data-f={r.family}>
+                {FAMILY_META[r.family].icon}
+              </span>
+            )}
+          </span>
+          <span>{r.text}</span>
+        </li>
+      ))}
+    </ul>
+  )
 
   return (
     <div className="mk-clues">
@@ -207,30 +300,80 @@ export default function CluePanel({
           className="mk-hintbox"
           data-variant={hintBox.variant}
           ref={hintBarRef}
-          style={hintBox.accent ? ({ ['--hint-accent']: hintBox.accent } as CSSProperties) : undefined}
+          style={
+            hintBox.accent
+              ? (hintBox.variant === 'place'
+                  ? ({ ['--hint-person']: hintBox.accent } as CSSProperties)
+                  : ({ ['--hint-accent']: hintBox.accent } as CSSProperties))
+              : undefined
+          }
         >
           <div className="mk-hintbox__head">
             <span className="mk-hintbox__badge">{HINT_GLYPHS[hintBox.variant]}</span>
             <span className="mk-hintbox__label">{t(hintBox.label)}</span>
           </div>
+
           <div className="mk-hintbox__verdict">
             {hintBox.personId && <span className="mk-tok">{hintBox.personId}</span>}
-            {hintBox.personName && (
-              <span>
-                <span className="mk-hintbox__name">{hintBox.personName}</span>{' '}
-                <span className="mk-hintbox__neg">{t('tool.cantBeOn')}</span>
-              </span>
+            {hintBox.variant === 'place' ? (
+              <>
+                {hintBox.personName && <span className="mk-hintbox__name">{hintBox.personName}</span>}
+                <span className="mk-hintbox__arrow">→</span>
+                <span className="mk-cellchip mk-cellchip--goal">{hintBox.goalCell}</span>
+              </>
+            ) : (
+              <>
+                {hintBox.cantBeOn && hintBox.personName && (
+                  <span>
+                    <span className="mk-hintbox__name">{hintBox.personName}</span>{' '}
+                    <span className="mk-hintbox__neg">{t('tool.cantBeOn')}</span>
+                  </span>
+                )}
+                {hintBox.cells?.map((label, i) => (
+                  <span
+                    key={i}
+                    className={hintBox.crossed ? 'mk-cellchip mk-cellchip--x' : 'mk-cellchip'}
+                  >
+                    {label}
+                  </span>
+                ))}
+              </>
             )}
-            {hintBox.cells.map((label, i) => (
-              <span
-                key={i}
-                className={hintBox.variant === 'cross' ? 'mk-cellchip mk-cellchip--x' : 'mk-cellchip'}
-              >
-                {label}
-              </span>
-            ))}
           </div>
-          {hintBox.why.length > 0 && (
+
+          {/* Deduction reasoning (place + cross). A SINGLE reason shows inline; only 2+
+              reasons get the family summary + collapse toggle (uniform place & cross). */}
+          {(hintBox.variant === 'place' || hintBox.variant === 'cross') && (
+            <>
+              {hintBox.subline && <p className="mk-hintbox__subline">{hintBox.subline}</p>}
+              {(hintBox.reasons?.length ?? 0) >= 2 ? (
+                <>
+                  {hintBox.famSummary && hintBox.famSummary.length > 0 && (
+                    <div className="mk-hintbox__famsum">
+                      {hintBox.famSummary.map(({ family, count }) => (
+                        <span key={family} className="mk-fam" data-f={family}>
+                          {FAMILY_META[family].icon}
+                          {t(FAMILY_META[family].labelKey)}
+                          <span className="mk-fam__n">{count}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <details>
+                    <summary>
+                      <span className="mk-chev">▸</span>
+                      {t(hintBox.toggle ?? 'tool.reasonsTogglePlace')} · {hintBox.reasons!.length}
+                    </summary>
+                    {renderReasons(hintBox.reasons!)}
+                  </details>
+                </>
+              ) : (
+                hintBox.reasons?.length === 1 && renderReasons(hintBox.reasons)
+              )}
+            </>
+          )}
+
+          {hintBox.why && hintBox.why.length > 0 && (
             <div className="mk-hintbox__why">
               {hintBox.why.map((line, i) => (
                 <p key={i}>{line}</p>

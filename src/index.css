@@ -31,6 +31,14 @@
   --brass-dim: #b58e3c;
   --evergreen: #79b89a;
 
+  /* Reasoning-family accents (hint boxes) — muted so the action colour stays the lead. */
+  --fam-line: #6f93b8;
+  --fam-room: #6ba07f;
+  --fam-near: #8a86c2;
+  --fam-social: #b07fa0;
+  --fam-murder: #c26a62;
+  --fam-if: #c2954f;
+
   /* Difficulty palette */
   --diff-tutorial: #7fa8c4;
   --diff-easy: #79b89a;
@@ -3106,6 +3114,12 @@ button {
   --hint-accent: #cf8a3c;
   background: rgba(207, 138, 60, 0.08);
 }
+/* "Place a figure" — a constructive action, so a positive green lead; the person's own
+ * colour still rides the token + name (via --hint-person, set inline). */
+.mk-hintbox[data-variant='place'] {
+  --hint-accent: var(--evergreen);
+  background: rgba(121, 184, 154, 0.07);
+}
 .mk-hintbox::before {
   content: '';
   position: absolute;
@@ -3153,15 +3167,21 @@ button {
 }
 .mk-hintbox__name {
   font-weight: 700;
-  color: var(--hint-accent-text);
+  color: color-mix(in srgb, var(--hint-person, var(--hint-accent)) 60%, var(--bone));
+}
+/* Place verdict: "→ Zielfeld". Arrow reads as "belongs on". */
+.mk-hintbox__arrow {
+  color: var(--bone);
+  font-weight: 700;
 }
 .mk-hintbox__neg {
-  color: var(--bone-dim);
+  color: var(--bone);
 }
 .mk-hintbox__why {
   margin: 0.5rem 0 0;
-  font-size: 0.78rem;
-  color: var(--bone-dim);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--bone);
 }
 .mk-hintbox__why p {
   margin: 0;
@@ -3169,7 +3189,8 @@ button {
 .mk-hintbox__why p + p {
   margin-top: 0.2rem;
 }
-/* Person token — the suspect's letter in their own colour, echoing the board note. */
+/* Person token — the suspect's letter in their own colour, echoing the board note.
+ * Uses --hint-person so a place hint (green action accent) still shows the person's hue. */
 .mk-tok {
   display: inline-flex;
   align-items: center;
@@ -3180,7 +3201,7 @@ button {
   font-weight: 700;
   font-size: 0.86em;
   color: #16141d;
-  background: var(--hint-accent);
+  background: var(--hint-person, var(--hint-accent));
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
   flex: none;
 }
@@ -3213,6 +3234,128 @@ button {
   background:
     linear-gradient(45deg, transparent 42%, var(--crimson) 42%, var(--crimson) 58%, transparent 58%),
     linear-gradient(-45deg, transparent 42%, var(--crimson) 42%, var(--crimson) 58%, transparent 58%);
+}
+/* Place hint: the target cell, tinted in the action accent (green). */
+.mk-cellchip--goal {
+  font-weight: 700;
+  border-color: color-mix(in srgb, var(--hint-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--hint-accent) 14%, transparent);
+}
+/* One-line summary under a place verdict ("no other cell is left …"). */
+.mk-hintbox__subline {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--bone);
+}
+
+/* Reasoning-family tag — a coloured pill (summary) or bare glyph (per reason row). */
+.mk-fam {
+  --fc: var(--brass-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32em;
+  font-family: var(--font-type);
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.14em 0.5em 0.14em 0.42em;
+  border-radius: 999px;
+  color: var(--fc);
+  border: 1px solid color-mix(in srgb, var(--fc) 45%, transparent);
+  background: color-mix(in srgb, var(--fc) 12%, transparent);
+}
+.mk-fam svg {
+  width: 0.9em;
+  height: 0.9em;
+  flex: none;
+}
+.mk-fam__n {
+  font-weight: 700;
+  opacity: 0.85;
+}
+.mk-fam[data-f='line'] { --fc: var(--fam-line); }
+.mk-fam[data-f='room'] { --fc: var(--fam-room); }
+.mk-fam[data-f='near'] { --fc: var(--fam-near); }
+.mk-fam[data-f='social'] { --fc: var(--fam-social); }
+.mk-fam[data-f='murder'] { --fc: var(--fam-murder); }
+.mk-fam[data-f='if'] { --fc: var(--fam-if); }
+/* Bare glyph in front of a reason row — colour only, no pill. */
+.mk-fam--dot {
+  padding: 0;
+  border: 0;
+  background: none;
+  width: 1em;
+  height: 1em;
+}
+
+/* Family summary row (which kinds of logic a place hint needs). */
+.mk-hintbox__famsum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+/* Family-tagged reason rows — a place hint's eliminations, a cross-out's argument. */
+.mk-hintbox__reasons {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+.mk-hintbox__reasons li {
+  display: grid;
+  grid-template-columns: 1em 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.34rem 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--bone);
+  border-bottom: 1px solid var(--line);
+}
+.mk-hintbox__reasons li:last-child {
+  border-bottom: 0;
+}
+.mk-hintbox__reasons .mk-fam--dot {
+  margin-top: 0.1em;
+}
+
+/* Collapsible detail ("why the other cells drop out"). */
+.mk-hintbox details {
+  margin-top: 0.55rem;
+  border-top: 1px dashed var(--line-strong);
+  padding-top: 0.45rem;
+}
+.mk-hintbox summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-type);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--brass-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.mk-hintbox summary::-webkit-details-marker {
+  display: none;
+}
+.mk-hintbox summary .mk-chev {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.mk-hintbox details[open] summary {
+  color: var(--brass);
+}
+.mk-hintbox details[open] summary .mk-chev {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-hintbox summary .mk-chev {
+    transition: none;
+  }
 }
 
 /* Board-wide clues (outdoor rooms, "exactly one on a mud puddle", …) — each is

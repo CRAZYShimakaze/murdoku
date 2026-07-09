@@ -441,7 +441,20 @@
     "crossOut": "Cross out",
     "removeCrossLabel": "Remove cross",
     "figureWrongWhy": "Something's off – check your clues.",
-    "uncrossWhy": "Someone can stand here – your cross is wrong."
+    "uncrossWhy": "Someone can stand here – your cross is wrong.",
+    "place": "Place",
+    "placeAllElse": "No other cell is left for {{name}}.",
+    "placeFromNotesWhy": "Your notes leave only this cell.",
+    "reasonsTogglePlace": "Why the other cells drop out",
+    "reasonsToggleCross": "Why these cells stay empty"
+  },
+  "fam": {
+    "line": "Line",
+    "room": "Rooms",
+    "near": "Proximity",
+    "social": "Company",
+    "murder": "Murder",
+    "if": "What-if"
   },
   "result": {
     "winStamp": "Case closed",
@@ -609,6 +622,10 @@
     "col": "column",
     "row": "row",
     "either": "column or row"
+  },
+  "linePlural": {
+    "col": "columns",
+    "row": "rows"
   },
   "coord": {
     "row": "R",
@@ -1258,6 +1275,7 @@
     "boardCountConfine": "Exactly {{count}} people must be on {{object}}, and only that many can still be there – {{name}} is one of them and must go there.",
     "boardCountConfine_one": "Someone must be on {{object}}, and no one but {{name}} can still be there – so {{name}} must go there.",
     "boardCountLine": "Someone must be on {{object}}, and {{object}} only exists in {{line}} {{num}} – so that line's occupant is on it; the rest of the {{line}} is empty.",
+    "boardCountLines": "Exactly {{count}} people must be on {{object}}, and the possible cells lie in exactly {{count}} {{linePlural}} – so each of those {{linePlural}} has someone on it; every other cell of them is empty.",
     "removePlacement": "You placed {{name}} on {{cell}}, but {{name}} can't be there – please remove {{name}} here.",
     "placeFromNotes": "Per your notes, only {{cell}} is left for {{name}} – place {{name}} there.",
     "notesWrong": "Your notes leave only {{cell}} for {{name}}, but {{name}} can't be there at all – something is off, check your notes for {{name}}.",
@@ -1267,6 +1285,7 @@
     "removeCross_one": "Your cross on {{cells}} is wrong – please remove it.",
     "emptyRoomsAllOccupied": "Enough rooms are already occupied that the rest must stay empty (exactly {{count}} empty) – nobody can be here.",
     "emptyRoomsConfine": "The allowed empty rooms are already fixed ({{count}}) – so {{room}} must be occupied, and only {{name}} can be there.",
+    "emptyRoomsLine": "No room stays empty, and {{room}} can only be filled in {{line}} {{num}} – so someone sits there; every other cell of that {{line}} outside {{room}} is empty.",
     "relationalDirection": "{{name}} is {{direction}} of {{target}} – impossible cells removed.",
     "relationalDirectionAttr": "{{name}} is {{direction}} of someone with a matching trait – impossible cells removed.",
     "relationalSameRoom": "{{name}} is in the same room as {{target}} – other rooms removed.",

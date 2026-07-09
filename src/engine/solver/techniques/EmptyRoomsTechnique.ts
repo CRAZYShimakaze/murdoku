@@ -3,6 +3,7 @@ import { EmptyRoomsClue } from '../../clues/boardClues.ts'
 import type { SolveContext } from '../SolveContext.ts'
 import type { DeductionStep, Elimination } from '../DeductionStep.ts'
 import type { Puzzle } from '../../model/Puzzle.ts'
+import type { Cell } from '../../model/types.ts'
 
 /**
  * Board clue "exactly N rooms are empty" — two forward deductions a human makes
@@ -83,6 +84,44 @@ export class EmptyRoomsTechnique extends Technique {
             personId: id,
             eliminated: [{ personId: id, cells: removed }],
             explanation: { key: 'step.emptyRoomsConfine', params: { name: id, room, count: n } },
+          }
+        }
+      }
+
+      // C. LINE PROJECTION — every live room must hold a suspect. If a room's still-reachable
+      //    suspect cells all lie in ONE row (or column), that room's occupant sits in that
+      //    line; each line holds at most one person, so it IS that line's occupant → every
+      //    cell of the line OUTSIDE the room is empty (for everyone, victim included).
+      //    ("The store-room can only be filled in row 5 ⇒ cross the rest of row 5.")
+      for (const room of rooms) {
+        if (!live.has(room)) continue
+        const placedHere = [...ctx.state.placed].some(
+          ([id, cell]) => !ctx.isVictim(id) && ctx.board.roomIdOf(cell) === room,
+        )
+        if (placedHere) continue // its occupant's line is already known + propagated
+        const inRoom: Cell[] = []
+        for (const id of suspects) {
+          for (const c of ctx.state.domain(id)) if (ctx.board.roomIdOf(c) === room) inRoom.push(c)
+        }
+        if (inRoom.length === 0) continue
+        for (const axis of ['row', 'col'] as const) {
+          const lines = new Set(inRoom.map((c) => ctx.axisOf(c, axis)))
+          if (lines.size !== 1) continue
+          const line = [...lines][0]
+          const eliminated: Elimination[] = []
+          for (const id of ctx.state.unplaced()) {
+            const removed = ctx.removeWhere(
+              id,
+              (c) => ctx.axisOf(c, axis) === line && ctx.board.roomIdOf(c) !== room,
+            )
+            if (removed.length > 0) eliminated.push({ personId: id, cells: removed })
+          }
+          if (eliminated.length > 0) {
+            return {
+              technique: 'emptyRooms',
+              eliminated,
+              explanation: { key: 'step.emptyRoomsLine', params: { room, line: axis, num: line + 1 } },
+            }
           }
         }
       }

@@ -9,6 +9,7 @@ import {
 } from '../../clues/socialClues.ts'
 import { SameRoomClue } from '../../clues/relationalClues.ts'
 import { SameRoomAsObjectClue } from '../../clues/objectClues.ts'
+import { InRoomClue } from '../../clues/unaryClues.ts'
 import { AndClue, NotClue } from '../../clues/compositeClues.ts'
 import type { Clue } from '../../clues/Clue.ts'
 import type { Axis, SolveContext } from '../SolveContext.ts'
@@ -24,6 +25,9 @@ import type { Puzzle } from '../../model/Puzzle.ts'
  */
 function aloneClues(clue: Clue): { companion: PersonId | null }[] {
   if (clue instanceof AloneClue) return [{ companion: null }]
+  // "In room R, alone" (inRoom + occupancy 'alone') — the subject is that room's SOLE
+  // occupant, so nobody else (not even the victim) may be there. Same force as AloneClue.
+  if (clue instanceof InRoomClue && clue.occupancy === 'alone') return [{ companion: null }]
   if (clue instanceof SameRoomClue && clue.alone) return [{ companion: clue.target }]
   if (clue instanceof SameRoomAsObjectClue && clue.alone) return [{ companion: null }]
   if (clue instanceof AndClue) return clue.clues.flatMap(aloneClues)

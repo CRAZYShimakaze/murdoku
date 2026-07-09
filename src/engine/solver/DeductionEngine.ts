@@ -367,19 +367,12 @@ export class DeductionEngine {
       }
     }
 
-    // (1a) PURE BOOKKEEPING first — visible from the crosses alone, no clue or note
-    // involved: a line with exactly one free cell forces its crossing line shut.
-    const forced = this.forcedCellHint(placed, crosses)
-    if (forced) return forced
-
-    // (1b) bookkeeping from the player's own (validated) NOTES: a suspect confined by
-    // their notes to one line or to a row+column cross frees provably-empty cells.
-    const confinedCross = this.confinedNotesCrossHint(placed, crosses, marks)
-    if (confinedCross) return confinedCross
-
-    // (1) a suspect the player narrowed (via notes) to a SINGLE remaining cell → place it
-    //   right away (no need to cross the rest out). Validated against the solution: if that
-    //   one note is actually wrong, warn instead of placing.
+    // (0c) CERTAIN PLACEMENTS come BEFORE any crossing — when a figure's cell is already
+    // determined, SET it instead of first crossing the rest of a line out. User request: a
+    // pure priority shuffle (only when the cell is truly unique); the normal cross-then-place
+    // order stands otherwise.
+    //   (A) the player's OWN single note on a cell → set that person (validated against the
+    //       solution); a wrong single note is flagged instead. Their own narrowing acts first.
     for (const s of this.puzzle.suspects) {
       if (placed.has(s.id)) continue
       const noted: Cell[] = []
@@ -402,6 +395,20 @@ export class DeductionEngine {
         }
       }
     }
+    //   (B) the board itself (clues + the player's crosses + placed figures) already pins a
+    //       suspect to one cell — set them, again before any bookkeeping cross.
+    const forcedPlace = this.forcedSinglePlace(okPlaced, okCrosses, grounded)
+    if (forcedPlace) return forcedPlace
+
+    // (1a) PURE BOOKKEEPING first — visible from the crosses alone, no clue or note
+    // involved: a line with exactly one free cell forces its crossing line shut.
+    const forced = this.forcedCellHint(placed, crosses)
+    if (forced) return forced
+
+    // (1b) bookkeeping from the player's own (validated) NOTES: a suspect confined by
+    // their notes to one line or to a row+column cross frees provably-empty cells.
+    const confinedCross = this.confinedNotesCrossHint(placed, crosses, marks)
+    if (confinedCross) return confinedCross
 
     // Cells the grounded run proves EMPTY get crossed in phase (4) — and crossing a cell
     // clears its notes automatically (useGameSession). Notes there get NO separate
@@ -462,6 +469,60 @@ export class DeductionEngine {
       this.walkActions(grounded.actions, placed, crosses, seqGate, gateHint) ??
       this.walkActions(this.hintActions(), placed, crosses, Infinity, null)
     )
+  }
+
+  /**
+   * A suspect the VISIBLE board already pins to a single cell — their clues + the player's
+   * crosses + placed figures leave exactly one option — is surfaced as a `place` hint BEFORE
+   * any crossing (phase 0c), so an unambiguous figure gets set right away instead of after
+   * eliminations the player has effectively already made. Fires ONLY when the cell is unique;
+   * reuses the grounded run's own place action for its readable "why the others fail" chain.
+   * Seeds a context exactly like `buildActions` (clues, then crosses, then figures).
+   */
+  private forcedSinglePlace(
+    placed: ReadonlyMap<PersonId, Cell>,
+    crosses: ReadonlySet<Cell>,
+    grounded: { actions: HintAction[] },
+  ): HintResult | null {
+    const victimId = this.puzzle.victim.id
+    const ctx = SolveContext.create(this.puzzle)
+    this.seedDomains(ctx)
+    for (const id of ctx.state.unplaced()) {
+      const domain = ctx.state.domain(id)
+      for (const c of crosses) domain.delete(c)
+    }
+    for (const [id, cell] of placed) ctx.place(id, cell)
+    // Unplaced suspects (never the victim) now pinned to exactly one cell.
+    const forced: { id: PersonId; cell: Cell }[] = []
+    for (const id of ctx.state.unplaced()) {
+      if (id === victimId) continue
+      const domain = ctx.state.domain(id)
+      if (domain.size !== 1) continue
+      const cell = [...domain][0]
+      // With a known solution, only trust a single that matches it (a stray input could
+      // otherwise pin a wrong cell); in editor test-play (no solution) just take it.
+      const sol = this.solvedCellOf(id)
+      if (sol !== null && sol !== cell) continue
+      forced.push({ id, cell })
+    }
+    if (forced.length === 0) return null
+    // Topmost-leftmost first, matching the other tie-breaks.
+    forced.sort((a, b) => a.cell - b.cell)
+    const { id, cell } = forced[0]
+    // Prefer the grounded run's own place action — it carries the full elimination chain; fall
+    // back to a bare place hint only if (unexpectedly) the run never placed this suspect.
+    const action = grounded.actions.find((a) => a.kind === 'place' && a.personId === id)
+    if (action) return { step: action.step, focus: action.cells, kind: 'place' }
+    return {
+      step: {
+        technique: 'nakedSingle',
+        personId: id,
+        placedCell: cell,
+        explanation: { key: 'step.nakedSingle', params: { name: id, cell } },
+      },
+      focus: [cell],
+      kind: 'place',
+    }
   }
 
   /**
