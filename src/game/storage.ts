@@ -4,8 +4,10 @@ import type { LevelJson } from '../engine/index.ts'
 import type { LevelFilter } from './levels.ts'
 
 const SOLVED_KEY = 'murdoku.solved.v1'
+const RESULTS_KEY = 'murdoku.results.v1'
 const PROGRESS_PREFIX = 'murdoku.progress.v1.'
 const TIME_PREFIX = 'murdoku.time.v1.'
+const HINTS_PREFIX = 'murdoku.hintsused.v1.'
 const CUSTOM_KEY = 'murdoku.custom.v1'
 const EDITOR_DRAFT_KEY = 'murdoku.editordraft.v1'
 const FILTER_KEY = 'murdoku.filter.v1'
@@ -98,10 +100,35 @@ export function saveAppSettings(settings: unknown): void {
   write(APP_SETTINGS_KEY, settings)
 }
 
-export function markSolved(id: string): void {
+/** Per-level best result: the FEWEST hints ever needed to solve it (0 = "solo", no hint).
+ *  A better (lower) count overwrites the old one, so re-solving hint-free earns the medal. */
+export interface LevelResult {
+  hints: number
+}
+
+export function loadResults(): Record<string, LevelResult> {
+  return read<Record<string, LevelResult>>(RESULTS_KEY, {})
+}
+
+/** The best (fewest) hint count recorded for a level, or null if solved without a record
+ *  (legacy solves) / not solved. */
+export function bestHints(id: string): number | null {
+  const r = loadResults()[id]
+  return r ? r.hints : null
+}
+
+export function markSolved(id: string, hints?: number): void {
   const solved = loadSolved()
   solved.add(id)
   write(SOLVED_KEY, [...solved])
+  if (hints === undefined) return
+  const results = loadResults()
+  const prev = results[id]?.hints
+  // Keep the best (fewest) — a hint-free re-solve upgrades an earlier hinted one.
+  if (prev === undefined || hints < prev) {
+    results[id] = { hints }
+    write(RESULTS_KEY, results)
+  }
 }
 
 export function loadProgress(id: string): SavedProgress | null {
@@ -139,6 +166,26 @@ export function saveElapsed(id: string, seconds: number): void {
 export function clearElapsed(id: string): void {
   try {
     localStorage.removeItem(TIME_PREFIX + id)
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Hints taken so far on the CURRENT attempt — persists alongside the board progress so
+ *  leaving a half-solved level and resuming keeps the tally honest (otherwise a resumed
+ *  solve would wrongly count as hint-free). Cleared only on a win/restart/reset. */
+export function loadHintsUsed(id: string): number {
+  const n = read<number>(HINTS_PREFIX + id, 0)
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0
+}
+
+export function saveHintsUsed(id: string, hints: number): void {
+  write(HINTS_PREFIX + id, hints)
+}
+
+export function clearHintsUsed(id: string): void {
+  try {
+    localStorage.removeItem(HINTS_PREFIX + id)
   } catch {
     /* ignore */
   }

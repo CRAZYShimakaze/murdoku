@@ -21,6 +21,7 @@ import {
 import {
   loadCustomLevels,
   loadFilter,
+  loadResults,
   loadShowHiddenAuthor,
   loadSolved,
   saveFilter,
@@ -48,6 +49,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
   // Filter is persisted so it survives leaving for a level and coming back.
   const [filter, setFilter] = useState<LevelFilter>(() => loadFilter(DEFAULT_FILTER))
   const [solved] = useState(() => loadSolved())
+  const [results] = useState(() => loadResults())
   const [custom] = useState(() => loadCustomLevels().map((j) => levelMetaFromJson(j, true)))
   // Whether the hidden author's levels are revealed (persisted, off by default).
   const [showHidden, setShowHidden] = useState(() => loadShowHiddenAuthor())
@@ -230,6 +232,8 @@ export default function LevelSelect({ onPick, onBack }: Props) {
                 )}
                 {g.levels.map((l) => {
                   const i = cardIndex++
+                  const hints = results[l.id]?.hints
+                  const solo = hints === 0
                   return (
                     <button
                       key={l.id}
@@ -259,8 +263,43 @@ export default function LevelSelect({ onPick, onBack }: Props) {
                           <span className="mk-pill" data-d={l.difficulty}>
                             {t(`difficulty.${l.difficulty}`)}
                           </span>
-                          <span className="mk-card__size">
-                            {l.width}×{l.height}
+                          <span className="mk-card__sizewrap">
+                            {solved.has(l.id) &&
+                              (solo ? (
+                                <span
+                                  className="mk-solo"
+                                  data-solo="true"
+                                  title={t('select.solo')}
+                                  aria-label={t('select.solo')}
+                                >
+                                  <svg
+                                    viewBox="0 0 40 46"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      d="M14 3 L17 20 M26 3 L23 20"
+                                      strokeWidth="2.4"
+                                      strokeLinecap="round"
+                                    />
+                                    <circle cx="20" cy="30" r="13" strokeWidth="2.2" />
+                                    <path
+                                      d="M20 23.5 l1.9 3.9 4.3.6 -3.1 3 .8 4.3 -3.8 -2 -3.8 2 .8 -4.3 -3.1 -3 4.3 -.6z"
+                                      fill="currentColor"
+                                      stroke="none"
+                                    />
+                                  </svg>
+                                </span>
+                              ) : hints !== undefined && hints > 0 ? (
+                                <span className="mk-solo">
+                                  {t('select.hintCount', { count: hints })}
+                                </span>
+                              ) : null)}
+                            <span className="mk-card__size">
+                              {l.width}×{l.height}
+                            </span>
                           </span>
                         </span>
                       </span>

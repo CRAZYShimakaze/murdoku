@@ -20,10 +20,13 @@ import { useTutorialFlow } from '../game/useTutorialFlow.ts'
 import { CANDIDATE_BLUE, HIGHLIGHT_DIM, HINT_BLACK, suspectColor } from '../game/palette.ts'
 import {
   clearElapsed,
+  clearHintsUsed,
   loadElapsed,
+  loadHintsUsed,
   markSolved,
   saveCustomLevel,
   saveElapsed,
+  saveHintsUsed,
   exportLevelJson,
   isCustomSaved,
   loadCustomLevels,
@@ -79,6 +82,8 @@ interface Result {
   failures?: string[]
   /** On a win: the next level matching the saved filter (null if none). */
   next?: LevelMeta | null
+  /** On a win: how many hints were used this solve (0 = solo, earns the medal). */
+  hintsUsed?: number
 }
 
 function formatTime(total: number): string {
@@ -153,6 +158,10 @@ export default function GameScreen({
   const [hint, setHint] = useState<HintResult | null>(null)
   const [hintShown, setHintShown] = useState(false) // hint requested (even if none was found)
   const [hintRequestId, setHintRequestId] = useState(0) // bumped per request → scrolls the hint into view
+  // Hints taken this attempt (every request; 0 → solo medal). Restored from storage so
+  // leaving a half-solved level and resuming keeps the tally — else a resumed solve would
+  // wrongly count as hint-free. Reset only on a win/restart/reset. Tutorial: always 0.
+  const [hintsUsed, setHintsUsed] = useState(() => (tutorial ? 0 : loadHintsUsed(storageId)))
   // Elapsed play time — restored from storage so leaving and returning resumes the
   // clock (it also ticks with the timer display switched off). Reset only on a win
   // (or an explicit restart), never by just leaving the level. Tutorial: always 0.
@@ -201,6 +210,12 @@ export default function GameScreen({
     if (tutorial || result?.win) return
     if (elapsed > 0) saveElapsed(storageId, elapsed)
   }, [elapsed, storageId, tutorial, result?.win])
+
+  // Persist the hint tally the same way, so leaving and resuming a level keeps it honest.
+  useEffect(() => {
+    if (tutorial || result?.win) return
+    if (hintsUsed > 0) saveHintsUsed(storageId, hintsUsed)
+  }, [hintsUsed, storageId, tutorial, result?.win])
 
   useEffect(() => {
     const heading = headingRef.current
@@ -330,6 +345,8 @@ export default function GameScreen({
   const onResetClick = () => {
     session.resetAll()
     clearHint()
+    setHintsUsed(0) // fresh attempt — the hint tally starts over
+    if (!tutorial) clearHintsUsed(storageId) // …and drop the persisted tally too
   }
 
   // Replay the solved level from scratch: clear the board, drop the verdict, restart the
@@ -337,12 +354,16 @@ export default function GameScreen({
   const restart = () => {
     session.resetAll()
     clearHint()
+    setHintsUsed(0) // replaying from scratch — hints reset
     setSelected(null)
     setXTool(false)
     setResult(null)
     setDialogHidden(false)
     setElapsed(0)
-    if (!tutorial) clearElapsed(storageId)
+    if (!tutorial) {
+      clearElapsed(storageId)
+      clearHintsUsed(storageId)
+    }
     // Restarting from the final tutorial verdict means "I'm done learning" — drop the
     // guided overlay and let the level be played freely.
     if (tut.active) tut.end()
@@ -371,8 +392,10 @@ export default function GameScreen({
   const showHint = () => {
     setSelected(null) // the black hint highlight replaces the blue selection
     setXTool(false)
-    setHint(engine.nextHint(session.state.placements, session.state.crosses, session.state.marks))
+    const h = engine.nextHint(session.state.placements, session.state.crosses, session.state.marks)
+    setHint(h)
     setHintShown(true)
+    if (h) setHintsUsed((n) => n + 1) // every request that actually shows a hint counts
     setHintRequestId((n) => n + 1) // re-scroll even when the same hint is requested again
   }
 
@@ -479,9 +502,10 @@ export default function GameScreen({
       setResult({ win: false, murderer: null, victimCell: null, failures })
       return
     }
-    markSolved(storageId)
+    markSolved(storageId, hintsUsed)
     session.clearSaved()
     clearElapsed(storageId) // solved — the next visit starts the clock at zero
+    clearHintsUsed(storageId) // …and the hint tally is banked into the result now
     setDialogHidden(false) // a fresh verdict always shows the dialog first
     const m = findMurderer(puzzle, new Solution(placements))
     const room = puzzle.board.rooms.get(m.roomId)
@@ -496,6 +520,7 @@ export default function GameScreen({
       },
       victimCell: placements.get(VICTIM_ID)!,
       next,
+      hintsUsed,
     })
   }
 
@@ -634,6 +659,7 @@ export default function GameScreen({
       {result && !dialogHidden && (
         <ResultDialog
           win={result.win}
+          hintsUsed={result.win ? result.hintsUsed : undefined}
           murderer={result.win ? result.murderer : null}
           avatar={
             result.win && result.murderer?.id

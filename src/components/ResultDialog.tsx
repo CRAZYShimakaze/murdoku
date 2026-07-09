@@ -5,6 +5,8 @@ import type { AvatarAttrs } from '../game/avatar.ts'
 
 interface Props {
   win: boolean
+  /** On a win: hints used this solve (0 → the "solo" medal; undefined → unknown, no badge). */
+  hintsUsed?: number
   murderer: { name: string; room: string } | null
   /** The murderer's avatar (shown alongside the reveal on a win). */
   avatar?: { attrs: AvatarAttrs; color: string; letter: string } | null
@@ -30,6 +32,7 @@ interface Props {
 
 export default function ResultDialog({
   win,
+  hintsUsed,
   murderer,
   avatar,
   failures,
@@ -68,11 +71,26 @@ export default function ResultDialog({
       onClick={onDismiss ? (e) => e.target === e.currentTarget && onDismiss() : undefined}
     >
       <div className="mk-dialog" role="dialog" aria-modal="true">
+        {win && hintsUsed === 0 && (
+          <span className="mk-dialog__medal" aria-hidden="true">
+            <svg viewBox="0 0 40 46" fill="none" stroke="currentColor" strokeLinejoin="round">
+              <path className="mk-dialog__ribbon" d="M14 3 L17 20 M26 3 L23 20" strokeWidth="2.4" strokeLinecap="round" />
+              <circle cx="20" cy="30" r="13" strokeWidth="2.2" fill="rgba(226,183,94,0.1)" />
+              <circle cx="20" cy="30" r="9" strokeWidth="0.9" />
+              <path d="M20 23.5 l1.9 3.9 4.3.6 -3.1 3 .8 4.3 -3.8 -2 -3.8 2 .8 -4.3 -3.1 -3 4.3 -.6z" fill="currentColor" stroke="none" />
+            </svg>
+          </span>
+        )}
         <span className="mk-dialog__stamp" data-win={win}>
           {win ? t('result.winStamp') : t('result.loseStamp')}
         </span>
         <h3>{win ? t('result.winTitle') : t('result.loseTitle')}</h3>
         <p>{win ? t('result.winBody') : t('result.loseBody')}</p>
+        {win && hintsUsed !== undefined && (
+          <p className="mk-dialog__solo" data-solo={hintsUsed === 0}>
+            {hintsUsed === 0 ? t('result.soloHonor') : t('result.hintsUsed', { count: hintsUsed })}
+          </p>
+        )}
         {win && murderer && (
           <div className="mk-dialog__murderer">
             {avatar && (

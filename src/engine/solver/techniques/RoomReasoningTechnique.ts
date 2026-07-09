@@ -125,6 +125,16 @@ export class RoomReasoningTechnique extends Technique {
         const force = this.applyNotAloneForce(ctx, suspect.id)
         if (force) return force
       }
+      // Companion rules ("alone with N matching X") hold once the subject's room is FIXED —
+      // including when they're PLACED: the unique matching companion is forced into the room,
+      // and every non-matching person must leave it. (Brenda placed in the Lobby, alone with
+      // one man; only George can be that man ⇒ George is in the Lobby.)
+      for (const rcomp of suspect.clues.flatMap(roomCompanions)) {
+        const cforce = this.applyCompanionForce(ctx, suspect.id, rcomp)
+        if (cforce) return cforce
+        const creserve = this.applyCompanionReserve(ctx, suspect.id, rcomp)
+        if (creserve) return creserve
+      }
       if (ctx.state.placed.has(suspect.id)) continue
       for (const rc of suspect.clues.flatMap(roomAttributes)) {
         if (rc.quantifier === 'none') {
@@ -175,10 +185,7 @@ export class RoomReasoningTechnique extends Technique {
           count: rcomp.count,
         })
         if (step) return step
-        const force = this.applyCompanionForce(ctx, suspect.id, rcomp)
-        if (force) return force
-        const reserve = this.applyCompanionReserve(ctx, suspect.id, rcomp)
-        if (reserve) return reserve
+        // force + reserve already ran above (they hold for placed subjects too).
       }
       for (const aw of suspect.clues.flatMap(aloneWithList)) {
         const step = this.applyAloneWith(ctx, suspect.id, aw)
@@ -541,7 +548,9 @@ export class RoomReasoningTechnique extends Technique {
     id: PersonId,
     rcomp: RoomCompanionClue,
   ): DeductionStep | null {
-    const room = ctx.guaranteedRoomOf(id)
+    // Their room is fixed whether they're PLACED or their whole domain lies in one room.
+    const placedCell = ctx.state.placed.get(id)
+    const room = placedCell !== undefined ? ctx.roomOf(placedCell) : ctx.guaranteedRoomOf(id)
     if (!room) return null
     const victim = ctx.puzzle.victim.id
     const matches = (o: PersonId): boolean =>
@@ -638,7 +647,8 @@ export class RoomReasoningTechnique extends Technique {
     id: PersonId,
     rcomp: RoomCompanionClue,
   ): DeductionStep | null {
-    const room = ctx.guaranteedRoomOf(id)
+    const placedCell = ctx.state.placed.get(id)
+    const room = placedCell !== undefined ? ctx.roomOf(placedCell) : ctx.guaranteedRoomOf(id)
     if (!room) return null
     const victim = ctx.puzzle.victim.id
     const eliminated: Elimination[] = []
