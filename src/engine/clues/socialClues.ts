@@ -369,13 +369,10 @@ export class RoomExistsClue extends Clue {
   qualifies(board: Board, cell: Cell, room: string): boolean {
     if (board.roomIdOf(cell) !== room) return false
     if (this.relation === 'on') return board.tileAt(cell).hasObjectType(this.object)
-    if (this.relation === 'near') {
-      if (board.tileAt(cell).hasObjectType(this.object)) return false
-      for (const nb of board.neighbors4(cell)) {
-        if (board.roomIdOf(nb) === room && board.tileAt(nb).hasObjectType(this.object)) return true
-      }
-      return false
-    }
+    // "beside" delegates to the board's single instance-aware rule (sitting on chair
+    // one beside chair two IS "beside a chair" — this inline copy used to disagree
+    // with cellsNearObject and hid legitimate placements).
+    if (this.relation === 'near') return board.isBesideObject(cell, this.object)
     // Board-position relations (corner/wall/window/door): the cell itself qualifies.
     return this.positionCells(board).has(cell)
   }

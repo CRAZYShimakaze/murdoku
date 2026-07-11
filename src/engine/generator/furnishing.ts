@@ -39,6 +39,8 @@ const PILE_TYPES = new Set(['box', 'crate', 'rubble', 'oil', 'mud', 'gift', 'hay
 const ITEM_CAP: Record<string, number> = {
   lamp: 1, tv: 1, plant: 3, statue: 4, campfire: 1, grill: 1,
   candle: 3, armor: 2, fireplace: 1, parasol: 3, slide: 2, deckchair: 4, hottub: 1, hammock: 2,
+  bench: 3, snowman: 1, gondola: 2, sled: 3, cash: 2,
+  blackboard: 1, skeleton: 1, paravent: 2, wheelchair: 2, ivdrip: 3, gymmat: 3,
 }
 
 /** Room kinds the furnisher knows. Many room nameKeys map to the same archetype. */
@@ -50,6 +52,10 @@ type Archetype =
   | 'barn' | 'animalCow' | 'animalPig' | 'animalHen' | 'animalStable'
   | 'throne' | 'greathall' | 'chapel' | 'dungeon' | 'armory' | 'cellar' | 'chamber' | 'oldkitchen' | 'bailey' | 'wallwalk'
   | 'pool' | 'kidpool' | 'sunlawn' | 'sauna' | 'slidetower' | 'massage' | 'relax' | 'spa' | 'playground'
+  | 'zooGate' | 'monkeyHouse' | 'lionDen' | 'bearPit' | 'elephantYard' | 'aviary' | 'terrarium'
+  | 'pettingZoo' | 'penguinPool' | 'flamingoPond' | 'giftShop' | 'picnicMeadow'
+  | 'tavern' | 'skiRental' | 'skiDepot' | 'liftStation' | 'slope' | 'beginnerHill' | 'sledRun' | 'iceRink' | 'igloo'
+  | 'classroom' | 'scienceLab' | 'ward' | 'operating' | 'waitingRoom'
   | 'gallery' | 'genericIndoor' | 'genericOutdoor'
 
 /** A defining object, placed first. */
@@ -127,7 +133,8 @@ const RECIPES: Record<Archetype, Recipe> = {
   },
   dining: {
     features: [],
-    fill: [set('table', 1, 4, 6, 6), it('plant', 1), rk('shelf', 0, 1, 1)],
+    // The odd till: restaurants and bars settle bills somewhere (low weight).
+    fill: [set('table', 1, 4, 6, 6), it('plant', 1), rk('shelf', 0, 1, 1), it('cash', 1)],
     targetFill: 0.52, carpet: 0.1,
   },
   office: {
@@ -167,7 +174,8 @@ const RECIPES: Record<Archetype, Recipe> = {
   },
   checkout: {
     features: [ft('cash', 'single', 1, 3)],
-    fill: [rk('shelf', 1, 2, 2), it('cash', 2), set('table', 1, 1, 1, 1), it('crate', 1), it('trash', 1)],
+    // The cashier gets a chair — a till without a seat looked oddly spartan (Dirk).
+    fill: [rk('shelf', 1, 2, 2), it('cash', 2), set('table', 1, 1, 1, 1), it('chair', 1), it('crate', 1), it('trash', 1)],
     targetFill: 0.5, carpet: 0.08,
   },
   workshop: {
@@ -181,8 +189,8 @@ const RECIPES: Record<Archetype, Recipe> = {
     targetFill: 0.42, carpet: 0,
   },
   gym: {
-    features: [ft('punchbag', 'cluster', 2, 4)],
-    fill: [rk('locker', 1, 2, 2), it('punchbag', 2), set('table', 1, 1, 1, 1), it('box', 1)],
+    features: [ft('punchbag', 'cluster', 2, 4), ft('gymmat', 'cluster', 0, 2)],
+    fill: [rk('locker', 1, 2, 2), it('punchbag', 2), it('gymmat', 2), set('table', 1, 1, 1, 1), it('box', 1)],
     targetFill: 0.34, carpet: 0.18,
   },
   greenhouse: {
@@ -192,7 +200,7 @@ const RECIPES: Record<Archetype, Recipe> = {
   },
   garden: {
     features: [ft('tree', 'cluster', 1, 3), ft('statue', 'single', 0, 1), ft('grill', 'single', 0, 1), ft('tent', 'single', 0, 1)],
-    fill: [cl('shrub', 2, 4, 3), cl('plant', 2, 3, 2), it('tree', 2), it('boulder', 2), it('rubble', 1), it('shrub', 2), it('mud', 2), it('grill', 2), it('tent', 1), it('deckchair', 1), it('parasol', 1), it('hammock', 1)],
+    fill: [cl('shrub', 2, 4, 3), cl('plant', 2, 3, 2), it('tree', 2), it('boulder', 2), it('rubble', 1), it('shrub', 2), it('mud', 2), it('grill', 2), it('tent', 1), it('deckchair', 1), it('parasol', 1), it('hammock', 1), it('bench', 1)],
     targetFill: 0.3, carpet: 0,
   },
   // A paved outdoor seating area (terrace / balcony / rooftop / porch): an outdoor
@@ -225,7 +233,7 @@ const RECIPES: Record<Archetype, Recipe> = {
     // The odd hay bale doubles as campfire seating — a small feature chance plus a
     // fill weight, so roughly every other campsite has one without it taking over.
     features: [ft('tent', 'cluster', 1, 2), ft('campfire', 'single', 0, 1), ft('grill', 'single', 0, 1), ft('tree', 'single', 1, 2), ft('hay', 'cluster', 0, 2)],
-    fill: [it('tent', 2), it('grill', 1), set('table', 1, 1, 4, 2), it('chair', 1), it('hay', 2), it('hammock', 1), it('crate', 2), it('box', 1), it('trash', 1), cl('shrub', 1, 3, 2), it('mud', 1), it('bear', 1)],
+    fill: [it('tent', 2), it('grill', 1), set('table', 1, 1, 4, 2), it('chair', 1), it('bench', 1), it('hay', 2), it('hammock', 1), it('crate', 2), it('box', 1), it('trash', 1), cl('shrub', 1, 3, 2), it('mud', 1), it('bear', 1)],
     targetFill: 0.34, carpet: 0,
   },
   // The lake is drawn as open WATER (see boardRender), so it stays mostly clear: only
@@ -313,7 +321,7 @@ const RECIPES: Record<Archetype, Recipe> = {
   },
   sunlawn: {
     features: [ft('parasol', 'single', 1, 2), ft('deckchair', 'cluster', 2, 3)],
-    fill: [cl('deckchair', 2, 3, 4), it('deckchair', 2), it('parasol', 2), it('hammock', 1), it('shrub', 1), it('tree', 1), it('trash', 1)],
+    fill: [cl('deckchair', 2, 3, 4), it('deckchair', 2), it('parasol', 2), it('hammock', 1), it('shrub', 1), it('tree', 1), it('bench', 1), it('trash', 1)],
     targetFill: 0.34, carpet: 0,
   },
   sauna: {
@@ -339,7 +347,7 @@ const RECIPES: Record<Archetype, Recipe> = {
   // Kids' corner: the (playground-look) slide is the landmark; benches and greenery around.
   playground: {
     features: [ft('slide', 'single', 1, 1)],
-    fill: [it('slide', 1), cl('shrub', 1, 3, 2), it('tree', 1), it('chair', 1), it('trash', 1), it('mud', 1)],
+    fill: [it('slide', 1), cl('shrub', 1, 3, 2), it('tree', 1), it('bench', 1), it('chair', 1), it('trash', 1), it('mud', 1)],
     targetFill: 0.26, carpet: 0,
   },
   // Hotel wellness: the hot tub IS the room, flanked by loungers and candles.
@@ -352,6 +360,142 @@ const RECIPES: Record<Archetype, Recipe> = {
     features: [ft('statue', 'single', 1, 3)],
     fill: [it('statue', 2), it('plant', 2), it('shelf', 1)],
     targetFill: 0.34, carpet: 0.12,
+  },
+  // --- zoo: every enclosure is built around ITS animal (Dirk's rule: the room only
+  //     exists because the animal does), padded with rocks/trees/mud like the pasture.
+  zooGate: {
+    features: [ft('cash', 'single', 1, 2), ft('bench', 'single', 1, 2)],
+    fill: [it('bench', 2), it('trash', 2), set('table', 1, 1, 2, 1), it('chair', 1), it('plant', 1), it('gift', 1)],
+    targetFill: 0.32, carpet: 0,
+  },
+  monkeyHouse: {
+    features: [ft('monkey', 'cluster', 2, 4), ft('tree', 'single', 1, 2)],
+    fill: [it('monkey', 3), it('tree', 2), cl('shrub', 1, 3, 2), it('boulder', 2), it('mud', 1), it('crate', 1)],
+    targetFill: 0.36, carpet: 0,
+  },
+  lionDen: {
+    features: [ft('lion', 'cluster', 1, 3)],
+    fill: [it('lion', 2), it('boulder', 3), it('tree', 1), it('shrub', 1), it('mud', 1)],
+    targetFill: 0.34, carpet: 0,
+  },
+  bearPit: {
+    features: [ft('bear', 'cluster', 1, 3)],
+    fill: [it('bear', 2), it('boulder', 2), it('tree', 2), it('shrub', 1), it('mud', 1)],
+    targetFill: 0.34, carpet: 0,
+  },
+  elephantYard: {
+    features: [ft('elephant', 'cluster', 1, 3)],
+    fill: [it('elephant', 3), it('mud', 2), it('boulder', 1), it('tree', 1), it('hay', 2)],
+    targetFill: 0.34, carpet: 0,
+  },
+  aviary: {
+    features: [ft('parrot', 'cluster', 2, 4), ft('tree', 'single', 1, 2)],
+    fill: [it('parrot', 3), it('tree', 2), cl('shrub', 1, 3, 2), it('plant', 1)],
+    targetFill: 0.36, carpet: 0,
+  },
+  terrarium: {
+    features: [ft('boulder', 'cluster', 1, 2), ft('lamp', 'single', 0, 1)], // heat lamp
+    fill: [it('boulder', 2), cl('plant', 1, 3, 2), it('shrub', 1), it('mud', 1), it('box', 1)],
+    targetFill: 0.36, carpet: 0,
+  },
+  pettingZoo: {
+    features: [ft('goat', 'cluster', 2, 3), ft('chicken', 'cluster', 0, 3), ft('hay', 'cluster', 0, 2)],
+    fill: [it('goat', 3), it('pig', 2), it('chicken', 2), it('hay', 2), it('mud', 2), it('crate', 1), it('bench', 1)],
+    targetFill: 0.4, carpet: 0,
+  },
+  // Water enclosures: sparse open water like the lake, but the animal IS the signature.
+  penguinPool: {
+    features: [ft('penguin', 'cluster', 2, 4)],
+    fill: [it('penguin', 3), it('boulder', 1)],
+    targetFill: 0.24, carpet: 0,
+  },
+  flamingoPond: {
+    features: [ft('flamingo', 'cluster', 2, 4), ft('waterlily', 'cluster', 0, 2)],
+    fill: [it('flamingo', 3), cl('waterlily', 1, 3, 2)],
+    targetFill: 0.24, carpet: 0,
+  },
+  giftShop: {
+    features: [ft('cash', 'single', 1, 1)],
+    fill: [rk('shelf', 2, 3, 3), it('gift', 3), it('box', 1), it('chair', 1), set('table', 1, 1, 1, 1)],
+    targetFill: 0.46, carpet: 0.08,
+  },
+  picnicMeadow: {
+    features: [ft('parasol', 'single', 0, 2), ft('grill', 'single', 0, 1)],
+    fill: [set('table', 1, 2, 4, 4), it('bench', 2), it('trash', 1), it('tree', 1), it('shrub', 1), it('parasol', 1), it('grill', 1)],
+    targetFill: 0.34, carpet: 0,
+  },
+  // --- ski resort: cosy hut rooms inside, snow rooms outside (winter art via isWinterRoom).
+  tavern: {
+    features: [ft('fireplace', 'single', 1, 1)],
+    fill: [set('table', 1, 3, 4, 5), it('barrel', 2), it('candle', 1), it('chair', 1), it('lamp', 1), it('shelf', 1)],
+    targetFill: 0.46, carpet: 0.08,
+  },
+  skiRental: {
+    features: [ft('skirack', 'rack', 1, 2), ft('cash', 'single', 1, 1)],
+    fill: [rk('skirack', 1, 2, 2), rk('locker', 1, 2, 1), rk('shelf', 1, 2, 1), it('chair', 1), it('crate', 1), it('box', 1)],
+    targetFill: 0.46, carpet: 0,
+  },
+  skiDepot: {
+    features: [ft('skirack', 'rack', 2, 3)],
+    fill: [rk('skirack', 1, 2, 2), rk('locker', 1, 2, 2), it('box', 2), it('crate', 1), it('sled', 1)],
+    targetFill: 0.48, carpet: 0,
+  },
+  liftStation: {
+    features: [ft('gondola', 'single', 1, 2)],
+    fill: [it('gondola', 2), it('skirack', 1), it('bench', 1), it('cash', 1), it('trash', 1)],
+    targetFill: 0.32, carpet: 0,
+  },
+  slope: {
+    features: [ft('tree', 'cluster', 1, 2)],
+    fill: [cl('tree', 1, 3, 2), it('boulder', 2), it('tree', 1)],
+    targetFill: 0.22, carpet: 0,
+  },
+  beginnerHill: {
+    features: [ft('snowman', 'single', 1, 1), ft('sled', 'cluster', 0, 2)],
+    fill: [it('sled', 2), it('snowman', 1), it('tree', 1), it('boulder', 1)],
+    targetFill: 0.26, carpet: 0,
+  },
+  sledRun: {
+    // Hay bales are the classic crash barriers along a sledding run.
+    features: [ft('sled', 'cluster', 1, 2)],
+    fill: [it('sled', 2), it('hay', 2), it('tree', 1), it('boulder', 1)],
+    targetFill: 0.26, carpet: 0,
+  },
+  iceRink: {
+    features: [ft('snowman', 'single', 0, 1)],
+    fill: [it('bench', 1), it('snowman', 1), it('boulder', 1), it('trash', 1)],
+    targetFill: 0.16, carpet: 0,
+  },
+  igloo: {
+    features: [ft('campfire', 'single', 0, 1)],
+    fill: [it('campfire', 1), it('box', 1), it('barrel', 1), it('hay', 1)],
+    targetFill: 0.3, carpet: 0,
+  },
+  // --- school & clinic: each keeps its theme slot by owning its objects (Dirk).
+  classroom: {
+    features: [ft('blackboard', 'single', 1, 1)],
+    fill: [set('table', 1, 2, 4, 4), rk('shelf', 1, 2, 1), it('skeleton', 1), it('plant', 1), it('box', 1)],
+    targetFill: 0.46, carpet: 0.06,
+  },
+  scienceLab: {
+    features: [ft('skeleton', 'single', 0, 1)],
+    fill: [set('table', 1, 2, 4, 4), rk('shelf', 1, 2, 2), it('blackboard', 1), it('crate', 1), it('box', 1)],
+    targetFill: 0.46, carpet: 0,
+  },
+  ward: {
+    features: [ft('bed', 'pair', 1, 2), ft('ivdrip', 'single', 0, 1)],
+    fill: [it('ivdrip', 2), it('paravent', 1), it('wheelchair', 1), it('shelf', 1), set('table', 1, 1, 1, 1)],
+    targetFill: 0.42, carpet: 0.06,
+  },
+  operating: {
+    features: [ft('ivdrip', 'single', 1, 1), ft('lamp', 'single', 0, 1)],
+    fill: [set('table', 1, 2, 0, 3), it('paravent', 1), it('shelf', 1), rk('locker', 1, 2, 1), it('trash', 1)],
+    targetFill: 0.42, carpet: 0,
+  },
+  waitingRoom: {
+    features: [ft('wheelchair', 'single', 0, 1)],
+    fill: [rk('chair', 2, 4, 4), set('table', 1, 1, 2, 1), it('wheelchair', 1), it('plant', 2), it('trash', 1)],
+    targetFill: 0.4, carpet: 0.12,
   },
   genericIndoor: {
     features: [ft('lamp', 'single', 0, 1)],
@@ -372,18 +516,18 @@ const ARCHETYPE_OF: Record<string, Archetype> = {
   laundry: 'laundry', laundrette: 'laundry', utilityroom: 'laundry',
   kitchen: 'kitchen', kitchenette: 'kitchen', pantry: 'kitchen', scullery: 'kitchen', preproom: 'kitchen', dairy: 'kitchen',
   bedroom: 'bedroom', guestroom: 'bedroom', kids1: 'bedroom', kids2: 'bedroom', kidsroom: 'bedroom', boudoir: 'bedroom',
-  servantsroom: 'bedroom', dressingroom: 'bedroom', suite: 'bedroom', ward: 'bedroom', icu: 'bedroom', deliveryroom: 'bedroom',
+  servantsroom: 'bedroom', dressingroom: 'bedroom', suite: 'bedroom', ward: 'ward', icu: 'ward', deliveryroom: 'ward',
   cell1: 'cell', cell2: 'cell',
   living: 'living', lounge: 'living', salon: 'living', commonroom: 'living', lobby: 'living', foyer: 'living',
-  vestibule: 'living', firesideroom: 'living', breakroom: 'living', staffroom: 'living', waiting: 'living', waitingroom: 'living',
+  vestibule: 'living', firesideroom: 'living', breakroom: 'living', staffroom: 'living', waiting: 'living', waitingroom: 'waitingRoom',
   reception: 'living', receptionarea: 'living', frontdesk: 'living', conservatory: 'living', smokingroom: 'living',
   musicroom: 'music', musichall: 'music', gameroom: 'living', ballroom: 'living', farmhouse: 'living',
   dining: 'dining', dininghall: 'dining', restaurant: 'dining', canteen: 'dining', cafeteria: 'dining',
   breakfastroom: 'dining', cafe: 'dining', bar: 'dining',
   office: 'office', study: 'office', openoffice: 'office', bossoffice: 'office', chiefoffice: 'office', meeting: 'office',
   conference: 'office', copyroom: 'office', printroom: 'office', secretariat: 'office', dispatch: 'office',
-  teachersroom: 'office', computerroom: 'office', classroom: 'office', lab: 'office', chemlab: 'office', forensics: 'office',
-  serverroom: 'office', briefing: 'office', security: 'office', operating: 'office', xray: 'office', emergency: 'office',
+  teachersroom: 'classroom', computerroom: 'office', classroom: 'classroom', lab: 'office', chemlab: 'scienceLab', forensics: 'office',
+  serverroom: 'office', briefing: 'office', security: 'office', operating: 'operating', xray: 'office', emergency: 'operating',
   sterilization: 'office', interrogation: 'office',
   library: 'library',
   auditorium: 'auditorium', assemblyhall: 'auditorium',
@@ -419,6 +563,17 @@ const ARCHETYPE_OF: Record<string, Archetype> = {
   // over the water fallback — a swimming pool gets no lilies/boats)
   mainpool: 'pool', kidspool: 'kidpool', lawn: 'sunlawn', sauna: 'sauna', steamroom: 'sauna',
   slidetower: 'slidetower', massage: 'massage', relaxroom: 'relax',
+  // zoo (penguinpool/flamingopond are water rooms; the explicit entry wins over the
+  // lake fallback so each pool gets ITS animal instead of lilies and boats)
+  zooentrance: 'zooGate', monkeyhouse: 'monkeyHouse', predatorhouse: 'lionDen', bearpit: 'bearPit',
+  elephantyard: 'elephantYard', penguinpool: 'penguinPool', flamingopond: 'flamingoPond',
+  aviary: 'aviary', terrarium: 'terrarium', pettingzoo: 'pettingZoo', feedkitchen: 'kitchen',
+  vetstation: 'office', zooshop: 'giftShop', picnicmeadow: 'picnicMeadow', zooschool: 'auditorium',
+  // ski resort
+  gaststube: 'tavern', hutkitchen: 'kitchen', snowbar: 'dining', sunterrace: 'deck',
+  mattresscamp: 'bedroom', skirental: 'skiRental', skidepot: 'skiDepot',
+  valleystation: 'liftStation', topstation: 'liftStation', piste: 'slope',
+  beginnerhill: 'beginnerHill', sledrun: 'sledRun', icerink: 'iceRink', igloo: 'igloo',
 }
 
 /** Keyword fallback for room keys not in the explicit map (future themes). */

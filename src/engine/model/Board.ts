@@ -1,4 +1,5 @@
 import { MULTI_CELL_TYPES, VOID_ROOM, type Cell, type Side } from './types.ts'
+import { MERGE_INSTANCE_TYPES } from './objects.ts'
 import type { Tile } from './Tile.ts'
 import type { Room } from './Room.ts'
 
@@ -223,25 +224,107 @@ export class Board {
   }
 
   /**
-   * Occupiable cells with a same-room orthogonal neighbour carrying `type`, where the
-   * person is NOT standing on a `type` object themselves. Standing on the object (a
-   * chair, a bed, a rug, …) is being "on" it, never "beside" it — even when another
-   * same-type object sits right next door. (For blocking objects this on-object skip
-   * never fires, since their tiles are not occupiable to begin with.)
+   * Occupiable cells with a same-room orthogonal neighbour carrying `type` that belongs
+   * to a DIFFERENT object instance than the one the person may be standing on. Standing
+   * on an object is being "on" it, never "beside" IT — but a SECOND chair right next
+   * door is another object, so sitting on chair one you ARE beside chair two. Instances
+   * follow MERGE_INSTANCE_TYPES: a merged rug/table or a two-cell bed counts as ONE
+   * object whose own cells never make you "beside" it; single-cell types (chairs above
+   * all) are one instance per cell.
    */
   cellsNearObject(type: string): Set<Cell> {
     const out = new Set<Cell>()
     for (const cell of this.occupiable) {
-      if (this.tiles[cell].hasObjectType(type)) continue // on the object ⇒ not beside it
-      const room = this.tiles[cell].roomId
-      for (const nb of this.neighbors4(cell)) {
-        if (this.tiles[nb].roomId === room && this.tiles[nb].hasObjectType(type)) {
-          out.add(cell)
-          break
-        }
-      }
+      if (this.isBesideObject(cell, type)) out.add(cell)
     }
     return out
+  }
+
+  /**
+   * Whether `cell` is beside a `type` instance OTHER than the one it may stand on —
+   * the single "beside" truth shared by nearObject clues, roomExists('near') and the
+   * generator (the three used to disagree). Called from solver hot paths, hence the
+   * memoized instance map (the board is immutable, so caching is safe).
+   */
+  isBesideObject(cell: Cell, type: string): boolean {
+    const instance = this.objectInstanceIds(type)
+    const own = instance.get(cell) // undefined when not standing on `type`
+    const room = this.tiles[cell].roomId
+    for (const nb of this.neighbors4(cell)) {
+      if (this.tiles[nb].roomId !== room) continue
+      const nbInstance = instance.get(nb)
+      if (nbInstance === undefined) continue // neighbour doesn't carry the type
+      if (own !== undefined && nbInstance === own) continue // same instance ⇒ ON it
+      return true
+    }
+    return false
+  }
+
+  private instanceIdCache = new Map<string, Map<Cell, number>>()
+
+  /**
+   * Instance id per cell carrying `type` (memoized).
+   *  - Two-tile objects (bed/car/boat/carriage) follow the RENDERER'S pairing
+   *    (bigObjectPartners): two beds touching in an L are TWO beds, exactly as drawn —
+   *    so someone lying on one IS "beside" the other.
+   *  - Merged surfaces (table/carpet/street/path) flood-fill orthogonally within one
+   *    room — one continuous rug is ONE object.
+   *  - Everything else (chairs above all) is one instance per cell.
+   */
+  private objectInstanceIds(type: string): Map<Cell, number> {
+    const cached = this.instanceIdCache.get(type)
+    if (cached) return cached
+    const ids = new Map<Cell, number>()
+    let next = 0
+    const cells = this.objectCells(type)
+    if (MULTI_CELL_TYPES.has(type)) {
+      const partner = this.bigObjectPartners()
+      for (const cell of cells) {
+        if (ids.has(cell)) continue
+        ids.set(cell, next)
+        const mate = partner.get(cell)
+        if (mate !== null && mate !== undefined) ids.set(mate, next)
+        next++
+      }
+    } else if (!MERGE_INSTANCE_TYPES.has(type)) {
+      for (const cell of cells) ids.set(cell, next++)
+    } else {
+      const inType = new Set(cells)
+      for (const start of cells) {
+        if (ids.has(start)) continue
+        const room = this.tiles[start].roomId
+        const stack: Cell[] = [start]
+        ids.set(start, next)
+        while (stack.length > 0) {
+          const c = stack.pop()!
+          for (const nb of this.neighbors4(c)) {
+            if (inType.has(nb) && !ids.has(nb) && this.tiles[nb].roomId === room) {
+              ids.set(nb, next)
+              stack.push(nb)
+            }
+          }
+        }
+        next++
+      }
+    }
+    this.instanceIdCache.set(type, ids)
+    return ids
+  }
+
+  /** The distinct instances of `type` as cell sets (pairing/merge rules above) —
+   *  shared with "beside the SAME object", so both "beside" notions agree with the
+   *  picture. Returns fresh sets; callers may keep or mutate them. */
+  objectInstances(type: string): Set<Cell>[] {
+    const groups = new Map<number, Set<Cell>>()
+    for (const [cell, id] of this.objectInstanceIds(type)) {
+      let g = groups.get(id)
+      if (!g) {
+        g = new Set<Cell>()
+        groups.set(id, g)
+      }
+      g.add(cell)
+    }
+    return [...groups.values()]
   }
 
   /** Occupiable cells adjacent to a window. */

@@ -48,7 +48,8 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
               out.push(term(m.index, word, 'negation'))
               out.push(' ')
             }
-          } else if (name === 'direction') out.push(term(m.index, val, 'direction'))
+          } else if (name === 'direction' || name === 'directionComp')
+            out.push(term(m.index, val, 'direction'))
           // "demselben Tisch" carries the "same instance" concept — bold + its tooltip,
           // like a concept word (the article is gendered, so it stays a param).
           else if (name === 'objectSame') out.push(term(m.index, val, 'besideSameObject'))

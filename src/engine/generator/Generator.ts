@@ -52,39 +52,38 @@ export const DEFAULT_OBJECT_TYPES: string[] = [
 // lists 15 rooms; the generator picks a random subset per level.
 const THEMES: Theme[] = [
   {
-    id: 'apartment',
-    rooms: ['room.bathroom', 'room.kitchen', 'room.living', 'room.guestroom', 'room.hallway', 'room.kids1', 'room.kids2', 'room.study', 'room.garage', 'room.bedroom', 'room.dining', 'room.balcony', 'room.storeroom', 'room.laundry', 'room.pantry'],
+    // Merged 2026-07-11: apartment + crime-scene + game-night were near-identical
+    // domestic themes — one best-of room pool replaces all three. (Old theme ids
+    // survive only in saved level ids/titles; levels reference room keys, never
+    // theme ids, so nothing breaks.)
+    id: 'home',
+    rooms: ['room.living', 'room.kitchen', 'room.bath', 'room.bedroom', 'room.kidsroom', 'room.gameroom', 'room.study', 'room.guestroom', 'room.hallway', 'room.dining', 'room.balcony', 'room.garage', 'room.basement', 'room.attic', 'room.laundry'],
     outdoor: ['room.garage', 'room.balcony'],
   },
   {
-    id: 'crime-scene',
-    rooms: ['room.hallway', 'room.living', 'room.kitchen', 'room.bath', 'room.bedroom', 'room.office', 'room.basement', 'room.garage', 'room.dining', 'room.attic', 'room.guestroom', 'room.utilityroom', 'room.laundry', 'room.porch', 'room.kidsroom'],
-    outdoor: ['room.garage', 'room.porch'],
+    // Merged: mansion + museum — both stately interiors of galleries, statues and
+    // old libraries; the museum vault makes a fine crime-scene centrepiece.
+    id: 'manor',
+    rooms: ['room.entrancehall', 'room.salon', 'room.dininghall', 'room.ballroom', 'room.library', 'room.musicroom', 'room.maingallery', 'room.vault', 'room.boudoir', 'room.smokingroom', 'room.winecellar', 'room.greenhouse', 'room.servantsroom', 'room.archive', 'room.firesideroom'],
+    outdoor: [],
+  },
+  {
+    // Merged: hotel + restaurant — one hospitality house from lobby to wine cellar.
+    id: 'grandhotel',
+    rooms: ['room.lobby', 'room.frontdesk', 'room.restaurant', 'room.bar', 'room.suite', 'room.kitchen', 'room.winecellar', 'room.terrace', 'room.rooftop', 'room.spa', 'room.gym', 'room.luggageroom', 'room.breakfastroom', 'room.elevator', 'room.laundrette'],
+    outdoor: ['room.terrace', 'room.rooftop'],
+  },
+  {
+    // Merged: police-station + office — the noir precinct keeps its cells and
+    // interrogation room, padded with the office rooms both shared anyway.
+    id: 'precinct',
+    rooms: ['room.openoffice', 'room.meeting', 'room.receptionarea', 'room.chiefoffice', 'room.interrogation', 'room.cell1', 'room.cell2', 'room.armory', 'room.forensics', 'room.evidenceroom', 'room.lockerroom', 'room.breakroom', 'room.archive', 'room.briefing', 'room.garage'],
+    outdoor: ['room.garage'],
   },
   {
     id: 'auto-shop',
     rooms: ['room.workshop', 'room.storage', 'room.office', 'room.waiting', 'room.yard', 'room.washbay', 'room.partsstore', 'room.tirestore', 'room.reception', 'room.paintshop', 'room.assembly', 'room.testbay', 'room.breakroom', 'room.checkout', 'room.gasstation'],
     outdoor: ['room.workshop', 'room.yard', 'room.washbay', 'room.assembly', 'room.paintshop', 'room.testbay', 'room.gasstation'],
-  },
-  {
-    id: 'game-night',
-    rooms: ['room.living', 'room.dining', 'room.kitchen', 'room.hallway', 'room.balcony', 'room.gameroom', 'room.bar', 'room.lounge', 'room.terrace', 'room.library', 'room.conservatory', 'room.vestibule', 'room.pantry', 'room.guestbath', 'room.study'],
-    outdoor: ['room.balcony', 'room.terrace'],
-  },
-  {
-    id: 'office',
-    rooms: ['room.openoffice', 'room.meeting', 'room.kitchen', 'room.reception', 'room.serverroom', 'room.archive', 'room.bossoffice', 'room.copyroom', 'room.kitchenette', 'room.storage', 'room.conference', 'room.lobby', 'room.commonroom', 'room.mailroom', 'room.printroom'],
-    outdoor: [],
-  },
-  {
-    id: 'mansion',
-    rooms: ['room.entrancehall', 'room.salon', 'room.dininghall', 'room.library', 'room.musicroom', 'room.conservatory', 'room.gallery', 'room.boudoir', 'room.smokingroom', 'room.ballroom', 'room.greenhouse', 'room.winecellar', 'room.servantsroom', 'room.dressingroom', 'room.firesideroom'],
-    outdoor: [],
-  },
-  {
-    id: 'hotel',
-    rooms: ['room.lobby', 'room.frontdesk', 'room.restaurant', 'room.bar', 'room.suite', 'room.conference', 'room.spa', 'room.gym', 'room.kitchen', 'room.luggageroom', 'room.breakfastroom', 'room.rooftop', 'room.elevator', 'room.hallway', 'room.laundrette'],
-    outdoor: ['room.rooftop'],
   },
   {
     id: 'school',
@@ -97,16 +96,6 @@ const THEMES: Theme[] = [
     outdoor: [],
   },
   {
-    id: 'museum',
-    rooms: ['room.entrancehall', 'room.maingallery', 'room.exposition', 'room.vault', 'room.cafe', 'room.security', 'room.workshop', 'room.archive', 'room.cloakroom', 'room.specialexhibit', 'room.foyer', 'room.library', 'room.storage', 'room.auditorium', 'room.restroom'],
-    outdoor: [],
-  },
-  {
-    id: 'restaurant',
-    rooms: ['room.dininghall', 'room.kitchen', 'room.bar', 'room.winecellar', 'room.terrace', 'room.storage', 'room.office', 'room.reception', 'room.scullery', 'room.preproom', 'room.coldroom', 'room.staffroom', 'room.lounge', 'room.restroom', 'room.cloakroom'],
-    outdoor: ['room.terrace'],
-  },
-  {
     id: 'farm',
     rooms: ['room.pasture', 'room.yard', 'room.garden', 'room.shed', 'room.farmhouse', 'room.cowshed', 'room.pigsty', 'room.barn', 'room.henhouse', 'room.stable', 'room.greenhouse', 'room.pantry', 'room.dairy', 'room.field', 'room.pond'],
     outdoor: ['room.pasture', 'room.yard', 'room.garden', 'room.field', 'room.pond'],
@@ -115,11 +104,6 @@ const THEMES: Theme[] = [
     id: 'supermarkt',
     rooms: ['room.checkout', 'room.snacks', 'room.drinks', 'room.deli', 'room.fruit', 'room.chilled', 'room.toys', 'room.stockroom', 'room.bakery', 'room.produce', 'room.cheese', 'room.frozen', 'room.drugstore', 'room.staffroom', 'room.parking'],
     outdoor: ['room.parking'],
-  },
-  {
-    id: 'police-station',
-    rooms: ['room.evidenceroom', 'room.openoffice', 'room.receptionarea', 'room.chiefoffice', 'room.interrogation', 'room.cell1', 'room.cell2', 'room.armory', 'room.forensics', 'room.dispatch', 'room.lockerroom', 'room.breakroom', 'room.archive', 'room.briefing', 'room.garage'],
-    outdoor: ['room.garage'],
   },
   {
     id: 'camping',
@@ -135,6 +119,20 @@ const THEMES: Theme[] = [
     id: 'pool',
     rooms: ['room.mainpool', 'room.kidspool', 'room.lawn', 'room.sauna', 'room.steamroom', 'room.slidetower', 'room.massage', 'room.relaxroom', 'room.lockerroom', 'room.showers', 'room.restroom', 'room.kiosk', 'room.bar', 'room.reception', 'room.terrace'],
     outdoor: ['room.mainpool', 'room.kidspool', 'room.lawn', 'room.slidetower', 'room.terrace'],
+  },
+  {
+    // Every animal room carries its animal (Dirk: "Elefantenanlage nur mit Elefant").
+    // Penguin pool + flamingo pond are WATER rooms (see isWaterRoom).
+    id: 'zoo',
+    rooms: ['room.zooentrance', 'room.monkeyhouse', 'room.predatorhouse', 'room.bearpit', 'room.elephantyard', 'room.penguinpool', 'room.flamingopond', 'room.aviary', 'room.terrarium', 'room.pettingzoo', 'room.feedkitchen', 'room.vetstation', 'room.zooshop', 'room.picnicmeadow', 'room.zooschool'],
+    outdoor: ['room.zooentrance', 'room.bearpit', 'room.elephantyard', 'room.penguinpool', 'room.flamingopond', 'room.aviary', 'room.pettingzoo', 'room.picnicmeadow'],
+  },
+  {
+    // The snowy outdoor rooms are winter rooms (see isWinterRoom): trees and
+    // boulders there render as their snowed-in variants.
+    id: 'ski',
+    rooms: ['room.gaststube', 'room.hutkitchen', 'room.snowbar', 'room.sunterrace', 'room.mattresscamp', 'room.lockerroom', 'room.skirental', 'room.skidepot', 'room.valleystation', 'room.topstation', 'room.piste', 'room.beginnerhill', 'room.sledrun', 'room.icerink', 'room.igloo'],
+    outdoor: ['room.sunterrace', 'room.valleystation', 'room.topstation', 'room.piste', 'room.beginnerhill', 'room.sledrun', 'room.icerink', 'room.igloo'],
   },
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
@@ -1623,12 +1621,13 @@ function candidatesFor(
     const onTypes = [...board.tileAt(idCell).objects()]
       .filter((o) => o.occupiable)
       .map((o) => o.type)
-    // "beside": orthogonal neighbour in the same room — never the object stood on.
+    // "beside": the board's instance-aware rule (a second chair next door counts,
+    // the object stood on never does).
     const nearTypes = new Set<string>()
     for (const nb of board.neighbors4(idCell)) {
       if (board.roomIdOf(nb) !== idRoom) continue
       for (const obj of board.tileAt(nb).objects()) {
-        if (!board.tileAt(idCell).hasObjectType(obj.type)) nearTypes.add(obj.type)
+        if (board.isBesideObject(idCell, obj.type)) nearTypes.add(obj.type)
       }
     }
     // Board positions this co-occupant stands on (corner ⊂ wall, so both can hold).

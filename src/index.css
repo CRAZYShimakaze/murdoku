@@ -882,6 +882,17 @@ button {
     box-shadow 0.16s ease,
     opacity 0.16s ease;
   animation: fade-up 0.5s ease backwards;
+  /* With ~150 cases, only the on-screen dossiers get laid out and painted — the single
+     biggest lever for a smooth picker (especially mobile). The intrinsic size matches the
+     card height, so the scrollbar stays honest before a card first renders; `auto` then
+     remembers the real size. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 138px;
+}
+/* Only the first dozen cards (the visible ones) play the entrance animation — 150
+   simultaneous animations on mount cost real frames and nobody sees them. */
+.mk-card[data-anim='off'] {
+  animation: none;
 }
 .mk-card:hover {
   transform: translateY(-3px);
@@ -979,7 +990,9 @@ button {
   height: 0.98rem; /* keeps the 40×46 viewBox aspect */
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
-.mk-card:has(.mk-solo[data-solo='true']) {
+/* Card-level state comes as data attributes set by React (NOT :has() — evaluating
+   :has() across ~150 cards makes every style recalc expensive). */
+.mk-card[data-solo] {
   border-color: rgba(226, 183, 94, 0.5);
 }
 .mk-card__body {
@@ -1058,14 +1071,14 @@ button {
   width: 0.09em;
 }
 /* keep long titles clear of the "custom" badge in the top-right corner */
-.mk-card:has(.mk-custom) .mk-card__title {
+.mk-card[data-custom] .mk-card__title {
   padding-right: 3.4rem;
 }
 /* On desktop there's room — a case name WITHOUT an author may run to 3 lines so it stays
    readable (with an author, 2 lines leave room for the signature). Scoped to ≥641px so
    the mobile one-line clamp still wins on small screens. */
 @media (min-width: 641px) {
-  .mk-card:not(:has(.mk-card__author)) .mk-card__title {
+  .mk-card:not([data-author]) .mk-card__title {
     -webkit-line-clamp: 3;
   }
 }
@@ -1118,6 +1131,7 @@ button {
     height: auto;
     gap: 0.55rem;
     padding: 0.4rem 0.55rem 0.4rem 0.5rem;
+    contain-intrinsic-size: auto 78px; /* slim register row estimate (self-corrects) */
   }
   .mk-card:hover {
     transform: none; /* no hover lift on touch — rows just press */
@@ -1158,8 +1172,7 @@ button {
     border-width: 2px;
     padding: 0.08rem 0.35rem;
   }
-  .mk-card:has(.mk-stamp) .mk-card__body,
-  .mk-card:has(.mk-custom) .mk-card__body {
+  .mk-card[data-solved='true'] .mk-card__body {
     padding-right: 4.6rem;
   }
   /* The small solo/hint badge rides just above the stamp, centred over it. Its box shares
@@ -1185,20 +1198,18 @@ button {
     width: 0.9rem;
     height: 1.04rem;
   }
-  .mk-custom {
-    top: 50%;
-    right: 0.55rem;
-    transform: translateY(-50%);
+  /* "Eigen" leaves the gutter (it collided with the solo medal / hint tally there)
+     and joins the meta row as a plain pill: LEICHT · 6×6 · EIGEN | GELÖST.
+     Two-class selector: the base .mk-custom rule sits LATER in this file, so a bare
+     .mk-custom here would lose the cascade and stay absolutely positioned. */
+  .mk-card__meta .mk-custom {
+    position: static;
+    transform: none;
+    box-shadow: none;
+    padding: 0.14rem 0.45rem;
   }
-  .mk-card:has(.mk-custom) .mk-card__title {
+  .mk-card[data-custom] .mk-card__title {
     padding-right: 0;
-  }
-  /* A solved custom level shows both — stack them in the gutter. */
-  .mk-card:has(.mk-stamp):has(.mk-custom) .mk-custom {
-    top: calc(50% - 0.95rem);
-  }
-  .mk-card:has(.mk-stamp):has(.mk-custom) .mk-stamp {
-    top: calc(50% + 0.95rem);
   }
 }
 
@@ -1933,6 +1944,79 @@ button {
 }
 .mk-tipinfo span {
   white-space: nowrap;
+}
+
+/* Legend trigger riding the board corner — shown only where the legend column is
+   hidden (the portrait/phone layout below); on desktop the sidebar legend suffices. */
+.mk-legendbtn {
+  display: none;
+  position: absolute;
+  top: 0.45rem;
+  left: 0.45rem; /* top-LEFT: the empty corner where the two axis strips meet (the
+     right edge is unreliable — the phone header can overflow the viewport a touch) */
+  z-index: 5;
+  width: 2rem;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--ink-700);
+  color: var(--brass);
+  font-family: var(--font-type);
+  font-size: 1rem;
+  line-height: 1;
+  box-shadow: var(--shadow-card);
+}
+/* The legend as a bottom sheet (mobile): slides up over the board, taps aside close it. */
+.mk-overlay--sheet {
+  align-items: flex-end;
+  padding: 0;
+}
+.mk-sheet {
+  position: relative;
+  width: 100%;
+  max-height: 62dvh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--ink-800), var(--ink-850));
+  border-top: 1px solid var(--line-strong);
+  border-radius: 14px 14px 0 0;
+  padding: 0.7rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom));
+  animation: sheet-up 0.22s ease;
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(30%);
+    opacity: 0.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-sheet {
+    animation: none;
+  }
+}
+/* Inside the sheet the legend always renders (two-class selector: it must beat the
+   phone layout's `.mk-legend { display: none }`, which sits later in this file). */
+.mk-sheet .mk-legend {
+  display: flex;
+  border-top: 0;
+  margin-top: 0;
+  padding: 0 0 0.2rem;
+}
+.mk-sheet .mk-legend ul {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.5rem 0.9rem;
+}
+.mk-sheet__close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.55rem;
+  background: none;
+  border: 0;
+  color: var(--bone-faint);
+  font-size: 1.25rem;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
 }
 
 /* legend (right column, landscape only) */
@@ -2812,6 +2896,19 @@ button {
   .mk-dialog__avatar {
     width: 58px;
     height: 58px;
+  }
+  /* Thumb rule: the verdict buttons stay ≥44px tall no matter how tight the card is —
+     text and paddings may shrink, TAP TARGETS may not. The tightened grid gap gives most
+     of that height back; a truly tall verdict scrolls inside the card (capped above). */
+  .mk-actiongrid {
+    gap: 0.55rem;
+  }
+  .mk-actiongrid .mk-btn {
+    min-height: 2.75rem;
+    padding: 0.5rem 0.6rem;
+  }
+  .mk-dialog__peek {
+    padding: 0.5rem 0.6rem; /* the footnote is a button too — give it a real tap area */
   }
 }
 /* Verdict actions: one uniform grid for every state (loss, win, generated win). The
@@ -4018,6 +4115,9 @@ button {
   }
   .mk-legend {
     display: none;
+  }
+  .mk-legendbtn {
+    display: flex; /* the sheet trigger replaces the hidden legend column here */
   }
   /* All five share the width and shrink to fit; none keeps a fixed width (the old
      120px Solve + no-shrink buttons overflowed narrow phones and forced a scroll). */

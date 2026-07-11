@@ -2,7 +2,6 @@
   "schema": 1,
   "id": "editor-niemand-h-rt-dich-schreien",
   "title": "Niemand hört dich schreien",
-  "titles": { "de": "Niemand hört dich schreien", "en": "No One Hears You Scream" },
   "size": {
     "width": 9,
     "height": 9
@@ -85,6 +84,46 @@
     }
   },
   "objects": {
+    "0": {
+      "type": "bench",
+      "occupiable": true
+    },
+    "1": {
+      "type": "lion",
+      "occupiable": false
+    },
+    "2": {
+      "type": "carriage",
+      "occupiable": true
+    },
+    "3": {
+      "type": "monkey",
+      "occupiable": false
+    },
+    "4": {
+      "type": "path",
+      "occupiable": true
+    },
+    "5": {
+      "type": "goat",
+      "occupiable": false
+    },
+    "6": {
+      "type": "parrot",
+      "occupiable": false
+    },
+    "7": {
+      "type": "hammock",
+      "occupiable": true
+    },
+    "8": {
+      "type": "hottub",
+      "occupiable": true
+    },
+    "9": {
+      "type": "penguin",
+      "occupiable": false
+    },
     "r": {
       "type": "carpet",
       "occupiable": true
@@ -97,20 +136,68 @@
       "type": "chair",
       "occupiable": true
     },
+    "D": {
+      "type": "deckchair",
+      "occupiable": true
+    },
+    "J": {
+      "type": "throne",
+      "occupiable": true
+    },
+    "@": {
+      "type": "wheelchair",
+      "occupiable": true
+    },
     "b": {
       "type": "bed",
       "occupiable": true
     },
-    "T": {
-      "type": "toilet",
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "O": {
+      "type": "boat",
+      "occupiable": true
+    },
+    "&": {
+      "type": "sled",
+      "occupiable": true
+    },
+    "=": {
+      "type": "gondola",
+      "occupiable": true
+    },
+    "Z": {
+      "type": "tent",
       "occupiable": true
     },
     "S": {
       "type": "shower",
       "occupiable": true
     },
-    "c": {
-      "type": "car",
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "U": {
+      "type": "parasol",
+      "occupiable": true
+    },
+    "^": {
+      "type": "paravent",
+      "occupiable": true
+    },
+    "~": {
+      "type": "gymmat",
+      "occupiable": true
+    },
+    "X": {
+      "type": "divingboard",
+      "occupiable": true
+    },
+    "V": {
+      "type": "slide",
       "occupiable": true
     },
     "h": {
@@ -123,10 +210,6 @@
     },
     "j": {
       "type": "oil",
-      "occupiable": true
-    },
-    "Z": {
-      "type": "tent",
       "occupiable": true
     },
     "Y": {
@@ -225,6 +308,18 @@
       "type": "bear",
       "occupiable": false
     },
+    "%": {
+      "type": "elephant",
+      "occupiable": false
+    },
+    "!": {
+      "type": "flamingo",
+      "occupiable": false
+    },
+    "A": {
+      "type": "hay",
+      "occupiable": false
+    },
     "y": {
       "type": "statue",
       "occupiable": false
@@ -243,6 +338,46 @@
     },
     "M": {
       "type": "grill",
+      "occupiable": false
+    },
+    "*": {
+      "type": "snowman",
+      "occupiable": false
+    },
+    "+": {
+      "type": "skirack",
+      "occupiable": false
+    },
+    "#": {
+      "type": "blackboard",
+      "occupiable": false
+    },
+    "$": {
+      "type": "skeleton",
+      "occupiable": false
+    },
+    "?": {
+      "type": "ivdrip",
+      "occupiable": false
+    },
+    "C": {
+      "type": "candle",
+      "occupiable": false
+    },
+    "E": {
+      "type": "fireplace",
+      "occupiable": false
+    },
+    "Q": {
+      "type": "barrel",
+      "occupiable": false
+    },
+    "I": {
+      "type": "armor",
+      "occupiable": false
+    },
+    "N": {
+      "type": "weaponrack",
       "occupiable": false
     }
   },
@@ -406,8 +541,20 @@
       },
       "clues": [
         {
-          "type": "nearObject",
-          "object": "chair"
+          "type": "and",
+          "clues": [
+            {
+              "type": "nearObject",
+              "object": "chair"
+            },
+            {
+              "type": "not",
+              "clue": {
+                "type": "onObject",
+                "object": "chair"
+              }
+            }
+          ]
         }
       ]
     },
@@ -457,7 +604,7 @@
       "name": "Grant",
       "attributes": {
         "gender": "m",
-        "hairstyle": "spiky",
+        "hairstyle": "shaggy",
         "hair": "blond"
       },
       "clues": [

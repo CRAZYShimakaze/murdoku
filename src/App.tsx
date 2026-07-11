@@ -38,6 +38,7 @@ function initialScreen(): Screen {
   if (window.location.hash.includes('tutorial')) return { name: 'tutorial' }
   if (window.location.hash.includes('generate')) return { name: 'generate' }
   if (window.location.hash.includes('editor')) return { name: 'editor' }
+  if (window.location.hash.includes('select')) return { name: 'select' }
   return { name: 'start' }
 }
 

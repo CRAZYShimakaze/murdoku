@@ -3,6 +3,7 @@ import {
   VICTIM_ID,
   VOID_ROOM,
   isWaterRoom,
+  isWinterRoom,
   type Cell,
   type PersonId,
   type Puzzle,
@@ -18,6 +19,9 @@ import {
   drawArmor,
   drawBarrel,
   drawBear,
+  drawBench,
+  drawBlackboard,
+  drawBlockedCardTile,
   drawBookshelf,
   drawCampfire,
   drawCandelabrum,
@@ -27,17 +31,35 @@ import {
   drawCrate,
   drawDeckchair,
   drawDivingBoard,
+  drawElephant,
   drawFireplace,
+  drawFlamingo,
   drawFloorLamp,
   drawFridge,
+  drawGoat,
+  drawGondola,
   drawGrill,
+  drawGymMat,
   drawHammock,
   drawHaystack,
   drawHottub,
+  drawIvDrip,
+  drawLion,
   drawLocker,
+  drawMonkey,
   drawMud,
   drawOil,
   drawParasol,
+  drawParavent,
+  drawParrot,
+  drawPenguin,
+  drawSkeleton,
+  drawSkiRack,
+  drawSled,
+  drawSnowBoulder,
+  drawSnowman,
+  drawWheelchair,
+  drawWinterFir,
   drawPathTile,
   drawPiano,
   drawPunchbag,
@@ -514,6 +536,16 @@ function paintFurniture(
   }
 
   // --- merged table surface (auto-tiles with adjacent same-room tables) ---
+  // The table was the ONE blocker without the white card (it renders as a merged
+  // surface, not through drawObjectIcon). A seamless card underlay first makes
+  // "white card = nobody stands here" hold board-wide; the table itself is unchanged.
+  if (!preview) {
+    for (let c = 0; c < W * H; c++) {
+      if (board.tileAt(c).top?.type !== 'table') continue
+      const { x, y } = xy(c)
+      drawBlockedCardTile(ctx, x, y, S, connOf(c, 'top', 'table'))
+    }
+  }
   for (let c = 0; c < W * H; c++) {
     if (board.tileAt(c).top?.type !== 'table') continue
     const { x, y } = xy(c)
@@ -580,6 +612,18 @@ function paintFurniture(
       const look = slideLook(c)
       drawSlide(ctx, x, y, S, look.water, look.exitLeft)
       continue
+    }
+    // Winter skin (like the slide's water look): trees and boulders standing in a
+    // snowy room render as their snowed-in variants. The legend keeps the neutral
+    // icon, exactly as it does for the slide.
+    if (top.type === 'tree' || top.type === 'boulder') {
+      const room = board.rooms.get(board.roomIdOf(c))
+      if (room && isWinterRoom(room.nameKey)) {
+        if (!preview) drawBlockedCard(ctx, x, y, S)
+        if (top.type === 'tree') drawWinterFir(ctx, x, y, S)
+        else drawSnowBoulder(ctx, x, y, S)
+        continue
+      }
     }
     drawObjectIcon(ctx, top.type, x, y, S, top.occupiable, preview)
   }
@@ -1122,7 +1166,10 @@ export function drawObjectIcon(
   if (type === 'carpet') return drawCarpetTile(ctx, x, y, S, NO_CONN)
   if (type === 'street') return drawStreetTile(ctx, x, y, S, NO_CONN)
   if (type === 'path') return drawPathTile(ctx, x, y, S, NO_CONN)
-  if (type === 'table') return drawTableTile(ctx, x, y, S, NO_CONN)
+  if (type === 'table') {
+    if (!preview) drawBlockedCard(ctx, x, y, S) // blocked like everything else now
+    return drawTableTile(ctx, x, y, S, NO_CONN)
+  }
   if (MULTI_CELL_TYPES.has(type)) return drawSingleObject(ctx, type, x, y, S)
   if (type === 'chair') return drawArmchair(ctx, x, y, S)
   if (type === 'tent') return drawTent(ctx, x, y, S) // occupiable → no card
@@ -1135,6 +1182,12 @@ export function drawObjectIcon(
   if (type === 'divingboard') return drawDivingBoard(ctx, x, y, S) // occupiable → no card
   if (type === 'hottub') return drawHottub(ctx, x, y, S) // occupiable → no card
   if (type === 'hammock') return drawHammock(ctx, x, y, S) // occupiable → no card
+  if (type === 'bench') return drawBench(ctx, x, y, S) // occupiable → no card
+  if (type === 'sled') return drawSled(ctx, x, y, S) // occupiable → no card
+  if (type === 'gondola') return drawGondola(ctx, x, y, S) // occupiable → no card
+  if (type === 'gymmat') return drawGymMat(ctx, x, y, S) // occupiable → no card
+  if (type === 'wheelchair') return drawWheelchair(ctx, x, y, S) // occupiable → no card
+  if (type === 'paravent') return drawParavent(ctx, x, y, S) // occupiable (one stands BEHIND it)
   // blocked custom-art objects sit on the same white card as blocked emoji
   if (type === 'shelf') {
     if (!preview) drawBlockedCard(ctx, x, y, S)
@@ -1207,6 +1260,54 @@ export function drawObjectIcon(
   if (type === 'weaponrack') {
     if (!preview) drawBlockedCard(ctx, x, y, S)
     return drawWeaponRack(ctx, x, y, S)
+  }
+  if (type === 'lion') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawLion(ctx, x, y, S)
+  }
+  if (type === 'monkey') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawMonkey(ctx, x, y, S)
+  }
+  if (type === 'goat') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawGoat(ctx, x, y, S)
+  }
+  if (type === 'elephant') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawElephant(ctx, x, y, S)
+  }
+  if (type === 'parrot') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawParrot(ctx, x, y, S)
+  }
+  if (type === 'penguin') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawPenguin(ctx, x, y, S)
+  }
+  if (type === 'flamingo') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawFlamingo(ctx, x, y, S)
+  }
+  if (type === 'snowman') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawSnowman(ctx, x, y, S)
+  }
+  if (type === 'skirack') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawSkiRack(ctx, x, y, S)
+  }
+  if (type === 'blackboard') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawBlackboard(ctx, x, y, S)
+  }
+  if (type === 'skeleton') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawSkeleton(ctx, x, y, S)
+  }
+  if (type === 'ivdrip') {
+    if (!preview) drawBlockedCard(ctx, x, y, S)
+    return drawIvDrip(ctx, x, y, S)
   }
   // occupiable → no card; the chip/legend shows the neutral playground look
   if (type === 'slide') return drawSlide(ctx, x, y, S)

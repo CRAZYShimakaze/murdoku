@@ -14,4 +14,4 @@ export {
   BLOCKING_OBJECT_TYPES,
   type ObjectDef,
 } from './objects.ts'
-export { isWaterRoom } from './rooms.ts'
+export { isWaterRoom, isWinterRoom } from './rooms.ts'

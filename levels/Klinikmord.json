@@ -1,84 +1,85 @@
 {
   "schema": 1,
-  "id": "editor-der-kiosk-am-see",
-  "title": "Der Kiosk am See",
+  "id": "editor-klinikmord",
+  "title": "Hinter dem Wandschirm",
+  "titles": { "de": "Hinter dem Wandschirm", "en": "Behind the Screen" },
   "size": {
     "width": 8,
     "height": 8
   },
   "rooms": {
     "1": {
-      "nameKey": "room.restroom",
+      "nameKey": "room.reception",
       "color": "#e8d8b0",
       "outside": false
     },
     "2": {
-      "nameKey": "room.jetty",
+      "nameKey": "room.waitingroom",
       "color": "#b9d0e6",
-      "outside": true
+      "outside": false
     },
     "3": {
-      "nameKey": "room.kiosk",
+      "nameKey": "room.operating",
       "color": "#cfe0cf",
       "outside": false
     },
     "4": {
-      "nameKey": "room.parking",
+      "nameKey": "room.ward",
       "color": "#d8c0c0",
-      "outside": true
+      "outside": false
     },
     "5": {
-      "nameKey": "room.forest",
+      "nameKey": "room.lab",
       "color": "#e6cda0",
-      "outside": true
+      "outside": false
     },
     "6": {
-      "nameKey": "room.clearing",
+      "nameKey": "room.pharmacy",
       "color": "#e6c0d2",
-      "outside": true
+      "outside": false
     },
     "7": {
-      "nameKey": "room.lake",
+      "nameKey": "room.xray",
       "color": "#c6c0e0",
-      "outside": true
+      "outside": false
     },
     "8": {
-      "nameKey": "room.campsite1",
+      "nameKey": "room.icu",
       "color": "#c0e0c8",
-      "outside": true
+      "outside": false
     },
     "9": {
-      "nameKey": "room.campsite2",
+      "nameKey": "room.commonroom",
       "color": "#e0c4a0",
-      "outside": true
+      "outside": false
     },
     "A": {
-      "nameKey": "room.campfire",
+      "nameKey": "room.emergency",
       "color": "#a8c8e0",
-      "outside": true
+      "outside": false
     },
     "B": {
-      "nameKey": "room.picnicarea",
+      "nameKey": "room.deliveryroom",
       "color": "#d8e0a8",
-      "outside": true
+      "outside": false
     },
     "C": {
-      "nameKey": "room.playground",
+      "nameKey": "room.sterilization",
       "color": "#e0b0a8",
-      "outside": true
+      "outside": false
     },
     "D": {
-      "nameKey": "room.showers",
+      "nameKey": "room.office",
       "color": "#c8b0d8",
       "outside": false
     },
     "E": {
-      "nameKey": "room.reception",
+      "nameKey": "room.cafeteria",
       "color": "#a8e0d0",
       "outside": false
     },
     "F": {
-      "nameKey": "room.cabin",
+      "nameKey": "room.hallway",
       "color": "#ded0e6",
       "outside": false
     }
@@ -382,50 +383,70 @@
     }
   },
   "roomMap": [
-    "11166444",
-    "11666444",
-    "22224444",
-    "22222333",
-    "22223333",
-    "22223333",
-    "22233333",
-    "22233333"
+    "888FF333",
+    "888FF333",
+    "888FF333",
+    "888FF333",
+    "888FF999",
+    "222FF999",
+    "222FF111",
+    "222FF111"
   ],
   "groundMap": [
-    ".rr...R.",
-    ".r....R.",
-    ".....RR.",
-    "......r.",
-    ".....rr.",
-    ".....r..",
-    "...r.r..",
-    "...rrr.."
+    "....r...",
+    "....r...",
+    "...rr...",
+    "....r...",
+    "....r...",
+    "....r...",
+    "rrr.rrrr",
+    "....r..."
   ],
   "topMap": [
-    "T....c.c",
-    "T.a.ac.c",
-    "OO......",
-    "Y....g.g",
-    "YY.Og..K",
-    "Y..Og.g.",
-    "....g.g.",
-    ".YY...g."
+    ".@bL.t$t",
+    "?.bp..b?",
+    "b.....b.",
+    "b?b@.^.^",
+    "@.bL.gts",
+    "sss...sp",
+    "........",
+    "sssp.t.."
   ],
   "windows": [
     {
-      "r": 7,
-      "c": 6,
-      "side": "S"
-    },
-    {
-      "r": 2,
+      "r": 6,
       "c": 7,
       "side": "E"
     },
     {
-      "r": 7,
-      "c": 5,
-      "side": "S"
+      "r": 4,
+      "c": 7,
+      "side": "E"
+    },
+    {
+      "r": 0,
+      "c": 2,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 1,
+      "side": "N"
+    },
+    {
+      "r": 1,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 2,
+      "c": 0,
+      "side": "W"
+    },
+    {
+      "r": 3,
+      "c": 0,
+      "side": "W"
     },
     {
       "r": 6,
@@ -433,81 +454,56 @@
       "side": "W"
     },
     {
-      "r": 6,
-      "c": 7,
-      "side": "E"
-    },
-    {
-      "r": 0,
-      "c": 7,
-      "side": "E"
-    },
-    {
-      "r": 4,
-      "c": 3,
-      "side": "E"
-    },
-    {
       "r": 5,
-      "c": 3,
-      "side": "S"
-    },
-    {
-      "r": 6,
       "c": 2,
       "side": "E"
     },
     {
-      "r": 3,
+      "r": 1,
       "c": 4,
       "side": "E"
     }
   ],
   "doors": [
     {
-      "r": 0,
+      "r": 2,
       "c": 2,
       "side": "E"
     },
     {
       "r": 2,
-      "c": 6,
-      "side": "S"
+      "c": 4,
+      "side": "E"
     },
     {
       "r": 5,
-      "c": 3,
-      "side": "S"
+      "c": 4,
+      "side": "E"
+    },
+    {
+      "r": 6,
+      "c": 4,
+      "side": "E"
+    },
+    {
+      "r": 6,
+      "c": 2,
+      "side": "E"
     }
   ],
   "suspects": [
     {
       "id": "A",
-      "name": "Anna",
+      "name": "Alex",
       "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "ponytailRight",
+        "gender": "m",
+        "hairstyle": "quiff",
         "hair": "black"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "nearObject",
-              "object": "waterlily"
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "onObject",
-                "object": "waterlily"
-              }
-            }
-          ]
+          "type": "roomExists",
+          "relation": "window"
         }
       ]
     },
@@ -517,162 +513,127 @@
       "attributes": {
         "gender": "f",
         "hairstyle": "braids",
-        "hair": "white"
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "onObject",
-              "object": "boat"
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "nearObject",
-                "object": "waterlily"
-              }
-            }
-          ]
+          "type": "besideSameObject",
+          "object": "carpet",
+          "mate": {
+            "kind": "any"
+          },
+          "dir": "south"
         }
       ]
     },
     {
       "id": "C",
-      "name": "Cyrus",
+      "name": "Carol",
       "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "fringe",
-        "hair": "black"
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "red"
       },
       "clues": [
         {
           "type": "onObject",
-          "object": "boat"
+          "object": "wheelchair"
         }
       ]
     },
     {
       "id": "D",
-      "name": "Dalia",
+      "name": "Dylan",
       "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "updo",
-        "hair": "black"
+        "gender": "m",
+        "hairstyle": "curly",
+        "hair": "blond"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "onObject",
-              "object": "carpet"
-            },
-            {
-              "type": "sameLineAsObject",
-              "object": "cash",
-              "line": "either",
-              "room": "any"
-            }
-          ]
+          "type": "directionFromObject",
+          "object": "skeleton",
+          "dir": "southwest",
+          "room": "same"
         }
       ]
     },
     {
       "id": "E",
-      "name": "Edison",
+      "name": "Elsa",
       "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "manbun",
-        "hair": "black"
+        "gender": "f",
+        "hairstyle": "pixie",
+        "hair": "brown"
       },
       "clues": [
         {
-          "type": "directionFromObject",
-          "object": "tree",
-          "dir": "west",
-          "room": "any",
-          "all": true
+          "type": "and",
+          "clues": [
+            {
+              "type": "directionFromObject",
+              "object": "lamp",
+              "dir": "east",
+              "room": "same",
+              "all": true
+            },
+            {
+              "type": "nearDoor"
+            }
+          ]
         }
       ]
     },
     {
       "id": "F",
-      "name": "Freya",
+      "name": "Floyd",
       "attributes": {
-        "gender": "f",
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
         "glasses": true,
         "glassesShape": "round",
         "glassesColor": "black",
-        "hairstyle": "curly",
-        "hair": "brown"
+        "bald": true
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "roomExists",
-              "attribute": "gender",
-              "value": "m",
-              "relation": "near",
-              "object": "waterlily"
-            },
-            {
-              "type": "roomExists",
-              "relation": "on",
-              "object": "waterlily"
-            }
-          ]
+          "type": "direction",
+          "of": "B",
+          "dir": "north"
         }
       ]
     },
     {
       "id": "G",
-      "name": "Grant",
+      "name": "Greta",
       "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "hairstyle": "shaggy",
-        "hair": "brown"
+        "gender": "f",
+        "hairstyle": "hime",
+        "hair": "grey"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "onObject",
-              "object": "street"
-            },
-            {
-              "type": "atWall"
-            }
-          ]
+          "type": "roomAttribute",
+          "quantifier": "none",
+          "attribute": "gender",
+          "value": "m",
+          "excludeSelf": true
         }
       ]
     }
   ],
   "victim": {
-    "name": "Vivian",
+    "name": "Vanessa",
     "attributes": {
       "gender": "f"
     }
   },
-  "boardClues": [],
-  "difficulty": "medium"
+  "boardClues": [
+    {
+      "type": "emptyRooms",
+      "count": 0
+    }
+  ],
+  "difficulty": "hard"
 }

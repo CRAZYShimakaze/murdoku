@@ -63,4 +63,22 @@ export const OBJECT_GLYPHS: Record<string, string> = {
   street: '🛣️', // editor palette chip only — the board draws a hand-painted asphalt road
   path: '🛤️', // editor palette chip only — the board draws a hand-painted dirt trail
   waterlily: '🪷', // palette/dropdown chip only — the board draws hand-painted lily pads
+  bench: '🛋️', // chip only (no bench emoji exists) — the board draws a hand-painted park bench
+  lion: '🦁', // chip only — the board draws a hand-painted lion
+  monkey: '🐒', // chip only — the board draws a hand-painted monkey
+  goat: '🐐', // chip only — the board draws a hand-painted goat
+  parrot: '🦜', // chip only — the board draws a hand-painted macaw on its stand
+  penguin: '🐧', // chip only — the board draws a hand-painted penguin on an ice floe
+  flamingo: '🦩', // chip only — the board draws a hand-painted flamingo in shallow water
+  elephant: '🐘', // chip only — the board draws a hand-painted elephant
+  sled: '🛷', // chip only — the board draws a hand-painted Davos sled
+  gondola: '🚠', // chip only — the board draws a hand-painted cable-car cabin
+  snowman: '⛄', // chip only — the board draws a hand-painted snowman
+  skirack: '🎿', // chip only — the board draws a hand-painted ski rack
+  blackboard: '🟩', // chip only (no blackboard emoji) — the board draws a hand-painted easel board
+  skeleton: '💀', // chip only — the board draws a hand-painted anatomy skeleton
+  gymmat: '🟦', // chip only — the board draws a hand-painted top-down gym mat
+  wheelchair: '♿', // chip only — the board draws a hand-painted wheelchair
+  ivdrip: '💉', // chip only — the board draws a hand-painted IV drip stand
+  paravent: '🚧', // chip only (closest match) — the board draws a hand-painted folding screen
 }

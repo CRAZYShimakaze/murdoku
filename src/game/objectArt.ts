@@ -105,6 +105,23 @@ function piecePath(
   ctx.closePath()
 }
 
+/**
+ * The white "blocked" card as an AUTO-TILED underlay for the merged table surface —
+ * same look as the per-cell card under every other blocker, but seamless across
+ * connected cells, so the whole table block reads "nobody can stand here" without
+ * touching the table's own size (the card only peeks out around its edges).
+ */
+export function drawBlockedCardTile(ctx: Ctx, x: number, y: number, S: number, conn: Conn): void {
+  const pad = S * 0.08
+  const ov = Math.max(0.75, S * 0.02)
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.78)'
+  ctx.strokeStyle = 'rgba(40, 32, 48, 0.18)'
+  ctx.lineWidth = 1
+  piecePath(ctx, x, y, S, conn, pad, S * 0.1, ov)
+  ctx.fill()
+  ctx.stroke()
+}
+
 /** One cell of a wooden table surface (auto-tiled). Inset a touch more than the cell so a
  *  carpet underneath stays visible around the table (and merged tables read as one block). */
 export function drawTableTile(ctx: Ctx, x: number, y: number, S: number, conn: Conn): void {
@@ -2533,4 +2550,1443 @@ export function drawWaterlily(ctx: Ctx, x: number, y: number, S: number): void {
   lilyPad(ctx, x + S * 0.42, y + S * 0.6, S * 0.3, 2.3) // large pad under the blossom
   lilyFlower(ctx, x + S * 0.5, y + S * 0.5, S * 0.17) // blossom, centred on the large pad
   ctx.restore()
+}
+
+// ─── Zoo & ski resort (2026-07) ──────────────────────────────────────────────
+// These were designed as 100×100 SVG mock-ups first (approved by Dirk), so they
+// draw in a 0..100 design space via a per-call unit `u = S / 100`. Same ink look
+// as the bear: chunky rounded shapes, dark outline, far limbs in a darker tone.
+
+/** Soft ground-contact shadow all standing figures share. */
+function groundShadow(ctx: Ctx, x: number, y: number, u: number, cy: number, rx: number): void {
+  ctx.fillStyle = 'rgba(22, 20, 29, 0.10)'
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + cy * u, rx * u, 4.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** A park bench (occupiable): wooden slats on cast-iron legs — zoo, playgrounds, gardens. */
+export function drawBench(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 88, 34)
+  // cast-iron side frames with the armrest curl
+  ctx.strokeStyle = '#3d4f46'
+  ctx.lineWidth = Math.max(1.5, 4.5 * u)
+  for (const m of [1, -1]) {
+    const lx = 50 - m * 26
+    ctx.beginPath()
+    ctx.moveTo(x + lx * u, y + 84 * u)
+    ctx.lineTo(x + lx * u, y + 56 * u)
+    ctx.bezierCurveTo(x + (lx - m * 2) * u, y + 44 * u, x + (lx + m * 4) * u, y + 40 * u, x + (lx + m * 9) * u, y + 42 * u)
+    ctx.stroke()
+  }
+  // slats: two back boards, the seat, a front rail
+  ctx.strokeStyle = '#22301f'
+  ctx.lineWidth = Math.max(1, 2.6 * u)
+  const slat = (sx: number, sy: number, w: number, h: number, r: number, fill: string): void => {
+    ctx.fillStyle = fill
+    ctx.beginPath()
+    ctx.roundRect(x + sx * u, y + sy * u, w * u, h * u, r * u)
+    ctx.fill()
+    ctx.stroke()
+  }
+  slat(18, 28, 64, 9, 3.5, '#b07a3e')
+  slat(18, 41, 64, 9, 3.5, '#b07a3e')
+  slat(15, 55, 70, 9, 3.5, '#c08a4a')
+  slat(19, 66, 62, 6, 3, '#9a6a34')
+}
+
+/** A lion (blocking): the bear's chunky stance plus a scalloped mane. */
+export function drawLion(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.strokeStyle = '#5a3a10'
+  ctx.lineWidth = Math.max(1.2, 3 * u)
+  // far legs (darker, behind)
+  ctx.fillStyle = '#a87838'
+  for (const [lx, ly] of [[57, 64], [75, 62]] as const) {
+    ctx.beginPath()
+    ctx.roundRect(x + lx * u, y + ly * u, 11 * u, 21 * u, 5 * u)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // tail with tuft
+  ctx.lineCap = 'round'
+  ctx.save()
+  ctx.strokeStyle = '#c99a4e'
+  ctx.lineWidth = Math.max(1.5, 5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 84 * u, y + 50 * u)
+  ctx.bezierCurveTo(x + 96 * u, y + 44 * u, x + 98 * u, y + 32 * u, x + 90 * u, y + 26 * u)
+  ctx.stroke()
+  ctx.restore()
+  ctx.fillStyle = '#8a5a20'
+  ctx.beginPath()
+  ctx.arc(x + 89 * u, y + 25 * u, 6 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // body + near legs
+  ctx.fillStyle = '#c99a4e'
+  ctx.beginPath()
+  ctx.ellipse(x + 60 * u, y + 56 * u, 26 * u, 21 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  for (const lx of [41, 63]) {
+    ctx.beginPath()
+    ctx.roundRect(x + lx * u, y + 66 * u, 12 * u, 20 * u, 5 * u)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // mane: a ring of scallop lobes, then a solid inner disc the head sits on
+  ctx.fillStyle = '#a4692b'
+  for (let k = 0; k < 8; k++) {
+    const a = (k * Math.PI) / 4
+    ctx.beginPath()
+    ctx.arc(x + (33 + 16 * Math.cos(a)) * u, y + (44 + 16 * Math.sin(a)) * u, 8.5 * u, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  ctx.beginPath()
+  ctx.arc(x + 33 * u, y + 44 * u, 16.5 * u, 0, Math.PI * 2)
+  ctx.fill()
+  // head + muzzle
+  ctx.fillStyle = '#c99a4e'
+  ctx.beginPath()
+  ctx.arc(x + 33 * u, y + 44 * u, 13 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#e6c690'
+  ctx.beginPath()
+  ctx.ellipse(x + 25 * u, y + 50 * u, 8 * u, 6.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // nose + eye
+  ctx.fillStyle = '#241a10'
+  ctx.beginPath()
+  ctx.ellipse(x + 20 * u, y + 47.5 * u, 3 * u, 2.4 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.arc(x + 31 * u, y + 40 * u, 1.9 * u, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** A monkey (blocking): sitting, pale face and belly, curling tail. */
+export function drawMonkey(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  const fur = '#7a5230'
+  const skin = '#d9b68a'
+  const ink = '#33200f'
+  // tail first (body overlaps its root)
+  ctx.strokeStyle = fur
+  ctx.lineWidth = Math.max(1.5, 5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 70 * u, y + 64 * u)
+  ctx.bezierCurveTo(x + 88 * u, y + 60 * u, x + 92 * u, y + 42 * u, x + 82 * u, y + 34 * u)
+  ctx.stroke()
+  ctx.strokeStyle = ink
+  ctx.lineWidth = Math.max(1, 2.8 * u)
+  // body + belly
+  ctx.fillStyle = fur
+  ctx.beginPath()
+  ctx.ellipse(x + 56 * u, y + 63 * u, 19 * u, 17 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = skin
+  ctx.beginPath()
+  ctx.ellipse(x + 53 * u, y + 66 * u, 10 * u, 10 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // arm down to the ground + hand
+  ctx.strokeStyle = fur
+  ctx.lineWidth = Math.max(2, 7 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 44 * u, y + 52 * u)
+  ctx.bezierCurveTo(x + 38 * u, y + 60 * u, x + 34 * u, y + 70 * u, x + 35 * u, y + 79 * u)
+  ctx.stroke()
+  ctx.strokeStyle = ink
+  ctx.lineWidth = Math.max(1, 2.8 * u)
+  ctx.fillStyle = skin
+  ctx.beginPath()
+  ctx.ellipse(x + 35 * u, y + 80 * u, 5 * u, 3.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // bent legs in front + foot
+  ctx.fillStyle = fur
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 77 * u, 11 * u, 6.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = skin
+  ctx.beginPath()
+  ctx.ellipse(x + 60 * u, y + 80 * u, 5.5 * u, 3.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // ears BEFORE the head (bear trick), inner ear after
+  ctx.fillStyle = fur
+  for (const ex of [24, 54]) {
+    ctx.beginPath()
+    ctx.arc(x + ex * u, y + 34 * u, 6.5 * u, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  ctx.fillStyle = skin
+  for (const ex of [24, 54]) {
+    ctx.beginPath()
+    ctx.arc(x + ex * u, y + 34 * u, 3 * u, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // head with the pale face patch (brow + muzzle lobes)
+  ctx.fillStyle = fur
+  ctx.beginPath()
+  ctx.arc(x + 39 * u, y + 40 * u, 15 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = skin
+  ctx.beginPath()
+  ctx.ellipse(x + 37 * u, y + 45 * u, 10 * u, 8 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.ellipse(x + 37 * u, y + 36 * u, 7 * u, 5.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // face
+  ctx.fillStyle = '#241a10'
+  for (const ex of [33, 41]) {
+    ctx.beginPath()
+    ctx.arc(x + ex * u, y + 37 * u, 1.8 * u, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  for (const nx of [34.5, 39.5]) {
+    ctx.beginPath()
+    ctx.ellipse(x + nx * u, y + 46 * u, 1.2 * u, 1.6 * u, 0, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.strokeStyle = '#241a10'
+  ctx.lineWidth = Math.max(0.8, 1.4 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 33 * u, y + 50 * u)
+  ctx.quadraticCurveTo(x + 37 * u, y + 53 * u, x + 41 * u, y + 50 * u)
+  ctx.stroke()
+}
+
+/** A goat (blocking): cream coat, little horns, floppy ear and chin beard. */
+export function drawGoat(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  const coat = '#e9e3d3'
+  const shade = '#cfc7b2'
+  ctx.strokeStyle = '#57503f'
+  ctx.lineWidth = Math.max(1, 2.8 * u)
+  // far legs
+  ctx.fillStyle = shade
+  for (const [lx, ly] of [[56, 66], [72, 64]] as const) {
+    ctx.beginPath()
+    ctx.roundRect(x + lx * u, y + ly * u, 9 * u, 19 * u, 4 * u)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // stubby tail up
+  ctx.save()
+  ctx.strokeStyle = coat
+  ctx.lineWidth = Math.max(1.5, 4.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 82 * u, y + 46 * u)
+  ctx.lineTo(x + 88 * u, y + 38 * u)
+  ctx.stroke()
+  ctx.restore()
+  // body + near legs
+  ctx.fillStyle = coat
+  ctx.beginPath()
+  ctx.ellipse(x + 60 * u, y + 57 * u, 24 * u, 18 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  for (const lx of [42, 63]) {
+    ctx.beginPath()
+    ctx.roundRect(x + lx * u, y + 68 * u, 10 * u, 18 * u, 4 * u)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // horns (behind the head)
+  ctx.save()
+  ctx.lineWidth = Math.max(1.4, 3.6 * u)
+  ctx.strokeStyle = '#b09468'
+  ctx.beginPath()
+  ctx.moveTo(x + 36 * u, y + 32 * u)
+  ctx.bezierCurveTo(x + 37 * u, y + 24 * u, x + 43 * u, y + 20 * u, x + 48 * u, y + 22 * u)
+  ctx.stroke()
+  ctx.strokeStyle = '#9c8058'
+  ctx.beginPath()
+  ctx.moveTo(x + 31 * u, y + 33 * u)
+  ctx.bezierCurveTo(x + 31 * u, y + 26 * u, x + 36 * u, y + 21 * u, x + 41 * u, y + 22 * u)
+  ctx.stroke()
+  ctx.restore()
+  // floppy ear, then head over its base, muzzle, beard
+  ctx.fillStyle = shade
+  ctx.beginPath()
+  ctx.ellipse(x + 43 * u, y + 41 * u, 8 * u, 4.5 * u, (28 * Math.PI) / 180, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = coat
+  ctx.beginPath()
+  ctx.ellipse(x + 32 * u, y + 44 * u, 12.5 * u, 11 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#d8cfb8'
+  ctx.beginPath()
+  ctx.ellipse(x + 23 * u, y + 49 * u, 7.5 * u, 6 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = shade
+  ctx.lineWidth = Math.max(0.9, 2.2 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 23 * u, y + 55 * u)
+  ctx.lineTo(x + 26 * u, y + 65 * u)
+  ctx.lineTo(x + 30 * u, y + 55 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // eye + nostril
+  ctx.fillStyle = '#241a10'
+  ctx.beginPath()
+  ctx.arc(x + 30 * u, y + 41 * u, 1.9 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.ellipse(x + 19.5 * u, y + 48 * u, 1.3 * u, 1.8 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** A macaw parrot on a wooden perch stand (blocking) — the aviary's showpiece. */
+export function drawParrot(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  // stand: base, post, crossbar
+  ctx.strokeStyle = '#4a2f14'
+  ctx.lineWidth = Math.max(1, 2.6 * u)
+  ctx.fillStyle = '#8a6238'
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 86 * u, 17 * u, 4.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.rect(x + 47 * u, y + 58 * u, 6 * u, 27 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.roundRect(x + 28 * u, y + 53 * u, 44 * u, 6 * u, 3 * u)
+  ctx.fill()
+  ctx.stroke()
+  // long tail feathers (blue behind, red in front)
+  ctx.lineWidth = Math.max(1, 2.4 * u)
+  ctx.strokeStyle = '#2e4a5e'
+  ctx.fillStyle = '#4f8fb0'
+  ctx.beginPath()
+  ctx.moveTo(x + 45 * u, y + 48 * u)
+  ctx.lineTo(x + 39 * u, y + 76 * u)
+  ctx.lineTo(x + 45 * u, y + 75 * u)
+  ctx.lineTo(x + 49 * u, y + 50 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#6e1f18'
+  ctx.fillStyle = '#cf463c'
+  ctx.beginPath()
+  ctx.moveTo(x + 49 * u, y + 50 * u)
+  ctx.lineTo(x + 46 * u, y + 74 * u)
+  ctx.lineTo(x + 51 * u, y + 73 * u)
+  ctx.lineTo(x + 53 * u, y + 51 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // body, wing, head, face patch
+  ctx.beginPath()
+  ctx.ellipse(x + 52 * u, y + 38 * u, 11 * u, 14 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#2e4a5e'
+  ctx.fillStyle = '#4f8fb0'
+  ctx.beginPath()
+  ctx.ellipse(x + 57 * u, y + 39 * u, 6 * u, 11 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#6e1f18'
+  ctx.fillStyle = '#cf463c'
+  ctx.beginPath()
+  ctx.arc(x + 47 * u, y + 22 * u, 9.5 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#f0e8da'
+  ctx.beginPath()
+  ctx.arc(x + 44 * u, y + 23 * u, 5.2 * u, 0, Math.PI * 2)
+  ctx.fill()
+  // hooked beak
+  ctx.strokeStyle = '#28242e'
+  ctx.lineWidth = Math.max(0.9, 2 * u)
+  ctx.fillStyle = '#4a4450'
+  ctx.beginPath()
+  ctx.moveTo(x + 39 * u, y + 19 * u)
+  ctx.bezierCurveTo(x + 33 * u, y + 19 * u, x + 32 * u, y + 25 * u, x + 37 * u, y + 27 * u)
+  ctx.bezierCurveTo(x + 35 * u, y + 23 * u, x + 37 * u, y + 20 * u, x + 40 * u, y + 21 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // eye + feet gripping the bar
+  ctx.fillStyle = '#241a10'
+  ctx.beginPath()
+  ctx.arc(x + 44.5 * u, y + 22.5 * u, 1.7 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#4a4450'
+  ctx.lineWidth = Math.max(1, 2.2 * u)
+  for (const fx of [47, 54]) {
+    ctx.beginPath()
+    ctx.moveTo(x + fx * u, y + 52 * u)
+    ctx.lineTo(x + fx * u, y + 56 * u)
+    ctx.stroke()
+  }
+}
+
+/** A penguin (blocking) on a small ice floe — water rooms only, like the water lily. */
+export function drawPenguin(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  const ink = '#12141c'
+  // ice floe
+  ctx.fillStyle = '#ddeef6'
+  ctx.strokeStyle = '#9dc4d8'
+  ctx.lineWidth = Math.max(1, 2 * u)
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 84 * u, 27 * u, 6.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // flippers behind, then the egg body
+  ctx.strokeStyle = ink
+  ctx.lineWidth = Math.max(1, 2.8 * u)
+  ctx.fillStyle = '#262b38'
+  for (const m of [1, -1]) {
+    ctx.beginPath()
+    ctx.ellipse(x + (50 - m * 24) * u, y + 54 * u, 6 * u, 16 * u, (-m * 16 * Math.PI) / 180, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 52 * u, 23 * u, 31 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // white cheeks + belly in one tone (no stroke — soft inner patch)
+  ctx.fillStyle = '#f4f1e8'
+  for (const ex of [43, 57]) {
+    ctx.beginPath()
+    ctx.arc(x + ex * u, y + 34 * u, 7.5 * u, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 58 * u, 16 * u, 22 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // eyes, beak, feet
+  ctx.fillStyle = ink
+  for (const ex of [43, 57]) {
+    ctx.beginPath()
+    ctx.arc(x + ex * u, y + 33 * u, 2.2 * u, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.strokeStyle = '#a05e20'
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.fillStyle = '#e8913f'
+  ctx.beginPath()
+  ctx.moveTo(x + 44.5 * u, y + 38 * u)
+  ctx.lineTo(x + 55.5 * u, y + 38 * u)
+  ctx.lineTo(x + 50 * u, y + 47 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  for (const fx of [40, 60]) {
+    ctx.beginPath()
+    ctx.ellipse(x + fx * u, y + 82.5 * u, 7 * u, 3.2 * u, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+}
+
+/** A flamingo (blocking) standing one-legged in shallow water — water rooms only. */
+export function drawFlamingo(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  const pink = '#ec9aac'
+  const dark = '#a84a62'
+  // shallow water + ripples
+  ctx.fillStyle = '#bcd9ea'
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 85 * u, 30 * u, 6 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#8fb9d4'
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 28 * u, y + 84 * u)
+  ctx.quadraticCurveTo(x + 34 * u, y + 81 * u, x + 40 * u, y + 84 * u)
+  ctx.moveTo(x + 58 * u, y + 86 * u)
+  ctx.quadraticCurveTo(x + 64 * u, y + 83 * u, x + 70 * u, y + 86 * u)
+  ctx.stroke()
+  // legs (back one thinner, front one with the knee bend)
+  ctx.strokeStyle = '#c25a74'
+  ctx.lineWidth = Math.max(1, 2.6 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 57 * u, y + 54 * u)
+  ctx.lineTo(x + 59 * u, y + 72 * u)
+  ctx.lineTo(x + 58 * u, y + 84 * u)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(1.2, 3.2 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 50 * u, y + 55 * u)
+  ctx.lineTo(x + 48 * u, y + 68 * u)
+  ctx.lineTo(x + 51 * u, y + 84 * u)
+  ctx.stroke()
+  // tail plume, body, wing
+  ctx.strokeStyle = dark
+  ctx.lineWidth = Math.max(1, 2.8 * u)
+  ctx.fillStyle = '#e07d95'
+  ctx.beginPath()
+  ctx.moveTo(x + 68 * u, y + 38 * u)
+  ctx.lineTo(x + 81 * u, y + 31 * u)
+  ctx.lineTo(x + 72 * u, y + 46 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = pink
+  ctx.beginPath()
+  ctx.ellipse(x + 55 * u, y + 44 * u, 17 * u, 12.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#e07d95'
+  ctx.beginPath()
+  ctx.ellipse(x + 60 * u, y + 45 * u, 10 * u, 7.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  // S-neck up to the head
+  ctx.strokeStyle = pink
+  ctx.lineWidth = Math.max(2, 6.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 42 * u, y + 49 * u)
+  ctx.bezierCurveTo(x + 29 * u, y + 45 * u, x + 26 * u, y + 32 * u, x + 33 * u, y + 23 * u)
+  ctx.stroke()
+  ctx.strokeStyle = dark
+  ctx.fillStyle = pink
+  ctx.lineWidth = Math.max(1, 2.4 * u)
+  ctx.beginPath()
+  ctx.arc(x + 35 * u, y + 21 * u, 6.5 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // bent bill, pale with a black tip
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.fillStyle = '#efe3c8'
+  ctx.beginPath()
+  ctx.moveTo(x + 30 * u, y + 23 * u)
+  ctx.lineTo(x + 22 * u, y + 25 * u)
+  ctx.lineTo(x + 25 * u, y + 31 * u)
+  ctx.bezierCurveTo(x + 28 * u, y + 31 * u, x + 30 * u, y + 28 * u, x + 30 * u, y + 25 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#2b2530'
+  ctx.beginPath()
+  ctx.moveTo(x + 22 * u, y + 25 * u)
+  ctx.lineTo(x + 25 * u, y + 31 * u)
+  ctx.bezierCurveTo(x + 23 * u, y + 30 * u, x + 21 * u, y + 27 * u, x + 22 * u, y + 25 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.fillStyle = '#241a10'
+  ctx.beginPath()
+  ctx.arc(x + 34 * u, y + 20 * u, 1.5 * u, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** An elephant (blocking): head and trunk are ONE unbroken silhouette (no seam),
+ *  big ear on top, tusk in the gap between trunk and chest — approved mock-up. */
+export function drawElephant(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  const hide = '#9a9aa8'
+  const ink = '#3c3c48'
+  groundShadow(ctx, x, y, u, 87, 33)
+  ctx.strokeStyle = ink
+  // far legs (darker)
+  ctx.lineWidth = Math.max(1, 2.4 * u)
+  ctx.fillStyle = '#7e7e90'
+  for (const [lx, ly] of [[36, 60], [68, 58]] as const) {
+    ctx.beginPath()
+    ctx.roundRect(x + lx * u, y + ly * u, 10 * u, 24 * u, 4 * u)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // tail with tuft
+  ctx.lineCap = 'round'
+  ctx.save()
+  ctx.strokeStyle = hide
+  ctx.lineWidth = Math.max(1.4, 3.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 82 * u, y + 44 * u)
+  ctx.bezierCurveTo(x + 90 * u, y + 48 * u, x + 91 * u, y + 58 * u, x + 87 * u, y + 66 * u)
+  ctx.stroke()
+  ctx.restore()
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.fillStyle = '#7e7e90'
+  ctx.beginPath()
+  ctx.arc(x + 87 * u, y + 67 * u, 3 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // body + near legs
+  ctx.lineWidth = Math.max(1.2, 3 * u)
+  ctx.fillStyle = hide
+  ctx.beginPath()
+  ctx.ellipse(x + 57 * u, y + 50 * u, 27 * u, 22 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  for (const lx of [42, 62]) {
+    ctx.beginPath()
+    ctx.roundRect(x + lx * u, y + 62 * u, 13 * u, 23 * u, 5 * u)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // head + trunk as one silhouette: forehead flows into the hanging trunk
+  ctx.beginPath()
+  ctx.moveTo(x + 37 * u, y + 24 * u)
+  ctx.bezierCurveTo(x + 27 * u, y + 23 * u, x + 20 * u, y + 28 * u, x + 18 * u, y + 35 * u)
+  ctx.bezierCurveTo(x + 16 * u, y + 40 * u, x + 14 * u, y + 46 * u, x + 12 * u, y + 53 * u)
+  ctx.bezierCurveTo(x + 10 * u, y + 60 * u, x + 8 * u, y + 68 * u, x + 10 * u, y + 74 * u)
+  ctx.bezierCurveTo(x + 11 * u, y + 79 * u, x + 18 * u, y + 80 * u, x + 18 * u, y + 74 * u)
+  ctx.bezierCurveTo(x + 18 * u, y + 68 * u, x + 19 * u, y + 60 * u, x + 21 * u, y + 54 * u)
+  ctx.bezierCurveTo(x + 22 * u, y + 49 * u, x + 25 * u, y + 46 * u, x + 29 * u, y + 46 * u)
+  ctx.bezierCurveTo(x + 34 * u, y + 47 * u, x + 38 * u, y + 52 * u, x + 40 * u, y + 56 * u)
+  ctx.bezierCurveTo(x + 45 * u, y + 60 * u, x + 50 * u, y + 54 * u, x + 51 * u, y + 45 * u)
+  ctx.bezierCurveTo(x + 52 * u, y + 34 * u, x + 47 * u, y + 26 * u, x + 37 * u, y + 24 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // trunk folds
+  ctx.save()
+  ctx.globalAlpha = 0.3
+  ctx.lineWidth = Math.max(0.8, 1.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 15 * u, y + 48 * u)
+  ctx.quadraticCurveTo(x + 19 * u, y + 50 * u, x + 22.5 * u, y + 48 * u)
+  ctx.moveTo(x + 12 * u, y + 57 * u)
+  ctx.quadraticCurveTo(x + 16 * u, y + 59 * u, x + 19.5 * u, y + 57 * u)
+  ctx.moveTo(x + 10 * u, y + 66 * u)
+  ctx.quadraticCurveTo(x + 14 * u, y + 68 * u, x + 17.5 * u, y + 66 * u)
+  ctx.stroke()
+  ctx.restore()
+  // tusk (outlined ivory so it reads on the white card)
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.fillStyle = '#f0ead8'
+  ctx.beginPath()
+  ctx.moveTo(x + 30 * u, y + 47 * u)
+  ctx.bezierCurveTo(x + 24 * u, y + 50 * u, x + 20 * u, y + 56 * u, x + 21 * u, y + 63 * u)
+  ctx.bezierCurveTo(x + 21 * u, y + 65.5 * u, x + 24 * u, y + 65.5 * u, x + 24.5 * u, y + 63 * u)
+  ctx.bezierCurveTo(x + 25.5 * u, y + 57 * u, x + 28 * u, y + 53 * u, x + 33 * u, y + 51 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // big ear on top of the head, with a soft inner fold
+  ctx.lineWidth = Math.max(1.2, 3 * u)
+  ctx.fillStyle = '#8b8b9d'
+  ctx.beginPath()
+  ctx.ellipse(x + 44 * u, y + 42 * u, 13 * u, 16 * u, (-6 * Math.PI) / 180, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.save()
+  ctx.globalAlpha = 0.3
+  ctx.lineWidth = Math.max(0.8, 1.6 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 44 * u, y + 30 * u)
+  ctx.bezierCurveTo(x + 40 * u, y + 37 * u, x + 40 * u, y + 47 * u, x + 44 * u, y + 54 * u)
+  ctx.stroke()
+  ctx.restore()
+  // toenails + eye
+  ctx.fillStyle = '#d8d8e2'
+  for (const nx of [45.5, 51, 65.5, 71]) {
+    ctx.beginPath()
+    ctx.arc(x + nx * u, y + 83 * u, 1.9 * u, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.fillStyle = '#241a10'
+  ctx.beginPath()
+  ctx.arc(x + 26 * u, y + 38 * u, 2 * u, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** A wooden Davos sled (occupiable): red runners with the front curl and a tow rope. */
+export function drawSled(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 84, 34)
+  // runner with the front curl
+  ctx.strokeStyle = '#b5432f'
+  ctx.lineWidth = Math.max(1.6, 4.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 20 * u, y + 64 * u)
+  ctx.bezierCurveTo(x + 10 * u, y + 66 * u, x + 10 * u, y + 80 * u, x + 22 * u, y + 80 * u)
+  ctx.lineTo(x + 80 * u, y + 80 * u)
+  ctx.lineTo(x + 84 * u, y + 74 * u)
+  ctx.stroke()
+  // struts + seat plank + slat ends
+  ctx.strokeStyle = '#6e2318'
+  ctx.lineWidth = Math.max(1, 2.4 * u)
+  ctx.fillStyle = '#b5432f'
+  for (const sx of [30, 64]) {
+    ctx.beginPath()
+    ctx.rect(x + sx * u, y + 62 * u, 5 * u, 14 * u)
+    ctx.fill()
+    ctx.stroke()
+  }
+  ctx.strokeStyle = '#5a3a14'
+  ctx.fillStyle = '#c08a4a'
+  ctx.beginPath()
+  ctx.roundRect(x + 22 * u, y + 54 * u, 58 * u, 8 * u, 3.5 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#c08a4a'
+  ctx.lineWidth = Math.max(1.4, 3.4 * u)
+  ctx.beginPath()
+  for (const sx of [32, 43, 54, 65]) {
+    ctx.moveTo(x + sx * u, y + 54 * u)
+    ctx.lineTo(x + sx * u, y + 50 * u)
+  }
+  ctx.stroke()
+  // tow rope with a loop
+  ctx.strokeStyle = '#8a6238'
+  ctx.lineWidth = Math.max(1, 2.2 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 16 * u, y + 68 * u)
+  ctx.bezierCurveTo(x + 10 * u, y + 58 * u, x + 12 * u, y + 48 * u, x + 20 * u, y + 43 * u)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(x + 21 * u, y + 42 * u, 2.6 * u, 0, Math.PI * 2)
+  ctx.stroke()
+}
+
+/** A cable-car gondola (occupiable): red cabin hanging from its carrier rope. */
+export function drawGondola(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 86, 30)
+  // carrier rope, grip and hanger arm
+  ctx.strokeStyle = '#4a4450'
+  ctx.lineWidth = Math.max(1, 2.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 4 * u, y + 15 * u)
+  ctx.lineTo(x + 96 * u, y + 8 * u)
+  ctx.stroke()
+  ctx.fillStyle = '#4a4450'
+  ctx.beginPath()
+  ctx.arc(x + 50 * u, y + 11.5 * u, 3.5 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.lineWidth = Math.max(1.4, 3.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 50 * u, y + 12 * u)
+  ctx.lineTo(x + 50 * u, y + 28 * u)
+  ctx.stroke()
+  // cabin with roof stripe, window band and door seam
+  ctx.strokeStyle = '#5e1f1a'
+  ctx.lineWidth = Math.max(1.2, 3 * u)
+  ctx.fillStyle = '#cf463c'
+  ctx.beginPath()
+  ctx.roundRect(x + 26 * u, y + 27 * u, 48 * u, 46 * u, 14 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#f0e8da'
+  ctx.lineWidth = Math.max(1.6, 4 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 30 * u, y + 36 * u)
+  ctx.lineTo(x + 70 * u, y + 36 * u)
+  ctx.stroke()
+  ctx.strokeStyle = '#355062'
+  ctx.lineWidth = Math.max(1, 2.2 * u)
+  ctx.fillStyle = '#bcd9ea'
+  ctx.beginPath()
+  ctx.roundRect(x + 33 * u, y + 49 * u, 34 * u, 15 * u, 6 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.lineWidth = Math.max(0.9, 2 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 50 * u, y + 49 * u)
+  ctx.lineTo(x + 50 * u, y + 64 * u)
+  ctx.stroke()
+}
+
+/** A snowman (blocking): three snowballs, twig arms, brass scarf and crimson cap. */
+export function drawSnowman(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 88, 30)
+  // three balls, bottom to top
+  ctx.strokeStyle = '#7d8695'
+  ctx.lineWidth = Math.max(1, 2.5 * u)
+  ctx.fillStyle = '#f7f5ee'
+  for (const [cy, r] of [[69, 19.5], [44, 14.5], [24, 10.5]] as const) {
+    ctx.beginPath()
+    ctx.arc(x + 50 * u, y + cy * u, r * u, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  // twig arms (one forked)
+  ctx.strokeStyle = '#6d4a26'
+  ctx.lineWidth = Math.max(1, 2.6 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 37 * u, y + 42 * u)
+  ctx.lineTo(x + 20 * u, y + 33 * u)
+  ctx.moveTo(x + 26 * u, y + 36 * u)
+  ctx.lineTo(x + 21 * u, y + 41 * u)
+  ctx.moveTo(x + 63 * u, y + 42 * u)
+  ctx.lineTo(x + 80 * u, y + 31 * u)
+  ctx.moveTo(x + 74 * u, y + 35 * u)
+  ctx.lineTo(x + 80 * u, y + 39 * u)
+  ctx.stroke()
+  // brass scarf with hanging tail
+  ctx.strokeStyle = '#8a6a2a'
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.fillStyle = '#e2b75e'
+  ctx.beginPath()
+  ctx.roundRect(x + 40 * u, y + 32 * u, 20 * u, 5.5 * u, 2.5 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.roundRect(x + 53 * u, y + 35 * u, 6.5 * u, 14 * u, 3 * u)
+  ctx.fill()
+  ctx.stroke()
+  // crimson beanie with pompom
+  ctx.strokeStyle = '#6e1f18'
+  ctx.lineWidth = Math.max(0.9, 2 * u)
+  ctx.fillStyle = '#cf463c'
+  ctx.beginPath()
+  ctx.arc(x + 50 * u, y + 21 * u, 10.5 * u, Math.PI, 0)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.roundRect(x + 38.5 * u, y + 18.5 * u, 23 * u, 4.5 * u, 2.2 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#8a6a2a'
+  ctx.lineWidth = Math.max(0.8, 1.5 * u)
+  ctx.fillStyle = '#f0e8da'
+  ctx.beginPath()
+  ctx.arc(x + 50 * u, y + 10 * u, 3.6 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // face + buttons + carrot nose
+  ctx.fillStyle = '#241a10'
+  for (const [cy, r] of [[24, 1.5], [41, 1.6], [47, 1.6], [64, 1.8], [71, 1.8]] as const) {
+    for (const cx of cy === 24 ? [46, 54] : [50]) {
+      ctx.beginPath()
+      ctx.arc(x + cx * u, y + cy * u, r * u, 0, Math.PI * 2)
+      ctx.fill()
+    }
+  }
+  ctx.strokeStyle = '#9c5520'
+  ctx.lineWidth = Math.max(0.8, 1.4 * u)
+  ctx.fillStyle = '#dd8136'
+  ctx.beginPath()
+  ctx.moveTo(x + 50 * u, y + 26 * u)
+  ctx.lineTo(x + 39 * u, y + 28.5 * u)
+  ctx.lineTo(x + 50 * u, y + 30.5 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+}
+
+/** A ski rack (blocking): wooden rail with leaning ski pairs and poles — the
+ *  ski colours are suspect-token colours (crimson, steel, sage). */
+export function drawSkiRack(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 88, 32)
+  // skis: two pairs with curved tips
+  const ski = (x0: number, y0: number, x1: number, y1: number, color: string): void => {
+    ctx.strokeStyle = color
+    ctx.lineWidth = Math.max(1.8, 4.6 * u)
+    ctx.beginPath()
+    ctx.moveTo(x + x0 * u, y + y0 * u)
+    ctx.lineTo(x + x1 * u, y + y1 * u)
+    ctx.bezierCurveTo(x + x1 * u, y + (y1 - 7) * u, x + (x1 + 6) * u, y + (y1 - 7) * u, x + (x1 + 6) * u, y + (y1 - 1) * u)
+    ctx.stroke()
+  }
+  ski(30, 86, 27, 32, '#cf463c')
+  ski(39, 86, 36, 32, '#cf463c')
+  ski(54, 86, 51, 30, '#4f8fb0')
+  ski(63, 86, 60, 30, '#4f8fb0')
+  // poles with baskets
+  ctx.strokeStyle = '#5f9e7a'
+  ctx.lineWidth = Math.max(1, 2.4 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 76 * u, y + 86 * u)
+  ctx.lineTo(x + 78 * u, y + 34 * u)
+  ctx.moveTo(x + 84 * u, y + 86 * u)
+  ctx.lineTo(x + 86 * u, y + 34 * u)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  for (const bx of [77.2, 85.2]) {
+    ctx.beginPath()
+    ctx.arc(x + bx * u, y + 72 * u, 3.4 * u, 0, Math.PI * 2)
+    ctx.stroke()
+  }
+  // the wooden rack in front holds everything upright
+  ctx.strokeStyle = '#4a2f14'
+  ctx.lineWidth = Math.max(1, 2.4 * u)
+  ctx.fillStyle = '#8a6238'
+  ctx.beginPath()
+  ctx.roundRect(x + 14 * u, y + 44 * u, 72 * u, 6 * u, 3 * u)
+  ctx.fill()
+  ctx.stroke()
+  for (const px of [17, 70]) {
+    ctx.beginPath()
+    ctx.rect(x + px * u, y + 50 * u, 5 * u, 36 * u)
+    ctx.fill()
+    ctx.stroke()
+  }
+}
+
+/** The TREE's winter skin: a fir with icing-fringe snow ledges on every tier —
+ *  drawn instead of the tree glyph inside winter rooms (see isWinterRoom). */
+export function drawWinterFir(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  groundShadow(ctx, x, y, u, 88, 30)
+  // trunk + three tiers
+  ctx.strokeStyle = '#3a250f'
+  ctx.lineWidth = Math.max(1, 2.6 * u)
+  ctx.fillStyle = '#6d4a26'
+  ctx.beginPath()
+  ctx.roundRect(x + 45.5 * u, y + 71 * u, 9 * u, 14 * u, 2 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#22402e'
+  const tier = (bx0: number, by: number, apex: number, ay: number, fill: string): void => {
+    ctx.fillStyle = fill
+    ctx.beginPath()
+    ctx.moveTo(x + bx0 * u, y + by * u)
+    ctx.lineTo(x + apex * u, y + ay * u)
+    ctx.lineTo(x + (100 - bx0) * u, y + by * u)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+  }
+  tier(22, 73, 50, 47, '#3e6b4f')
+  tier(28, 56, 50, 33, '#3e6b4f')
+  tier(34, 40, 50, 19, '#456f52')
+  // snow: wavy icing fringes along each tier's lower edge + an apex cap
+  ctx.strokeStyle = '#9fb4c4'
+  ctx.lineWidth = Math.max(0.8, 1.4 * u)
+  ctx.fillStyle = '#f7f5ee'
+  const fringe = (pts: number[][]): void => {
+    ctx.beginPath()
+    ctx.moveTo(x + pts[0][0] * u, y + pts[0][1] * u)
+    ctx.lineTo(x + pts[1][0] * u, y + pts[1][1] * u)
+    for (let k = 2; k + 1 < pts.length; k += 2)
+      ctx.quadraticCurveTo(x + pts[k][0] * u, y + pts[k][1] * u, x + pts[k + 1][0] * u, y + pts[k + 1][1] * u)
+    ctx.lineTo(x + pts[pts.length - 1][0] * u, y + pts[pts.length - 1][1] * u)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+  }
+  fringe([[22, 73], [30.6, 65], [34, 70], [38.5, 65.5], [43, 70], [47, 65.5], [50, 70], [54, 65.5], [58, 70], [62, 65.5], [66, 70], [69.4, 65], [78, 73]])
+  fringe([[28, 56], [34.7, 49], [38, 54], [42, 49.5], [46, 54], [50, 49.5], [54, 54], [58, 49.5], [62, 54], [65.3, 49], [72, 56]])
+  fringe([[34, 40], [38.6, 34], [42, 38.5], [46, 34.5], [50, 38.5], [54, 34.5], [58, 38.5], [61.4, 34], [66, 40]])
+  ctx.beginPath()
+  ctx.moveTo(x + 43.5 * u, y + 27 * u)
+  ctx.quadraticCurveTo(x + 50 * u, y + 15.5 * u, x + 56.5 * u, y + 27 * u)
+  ctx.quadraticCurveTo(x + 50 * u, y + 31 * u, x + 43.5 * u, y + 27 * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // snow mound at the trunk
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 84.5 * u, 15 * u, 4 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** The BOULDER's winter skin: a faceted grey rock wearing a snow cap. */
+export function drawSnowBoulder(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 86, 32)
+  const pts: number[][] = [[24, 80], [17, 58], [34, 40], [58, 34], [79, 46], [83, 68], [72, 82]]
+  ctx.strokeStyle = '#4c4956'
+  ctx.lineWidth = Math.max(1.2, 3 * u)
+  ctx.fillStyle = '#8d8a96'
+  ctx.beginPath()
+  ctx.moveTo(x + pts[0][0] * u, y + pts[0][1] * u)
+  for (let k = 1; k < pts.length; k++) ctx.lineTo(x + pts[k][0] * u, y + pts[k][1] * u)
+  ctx.closePath()
+  ctx.fill()
+  ctx.stroke()
+  // facet lines
+  ctx.save()
+  ctx.globalAlpha = 0.45
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 34 * u, y + 40 * u)
+  ctx.lineTo(x + 44 * u, y + 62 * u)
+  ctx.lineTo(x + 24 * u, y + 80 * u)
+  ctx.moveTo(x + 58 * u, y + 34 * u)
+  ctx.lineTo(x + 64 * u, y + 58 * u)
+  ctx.lineTo(x + 83 * u, y + 68 * u)
+  ctx.moveTo(x + 44 * u, y + 62 * u)
+  ctx.lineTo(x + 64 * u, y + 58 * u)
+  ctx.stroke()
+  ctx.restore()
+  // snow cap hugging the top edge
+  ctx.strokeStyle = '#f7f5ee'
+  ctx.lineWidth = Math.max(2.4, 6.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 19 * u, y + 57 * u)
+  ctx.lineTo(x + 34 * u, y + 41 * u)
+  ctx.lineTo(x + 58 * u, y + 35 * u)
+  ctx.lineTo(x + 77 * u, y + 46 * u)
+  ctx.stroke()
+  ctx.fillStyle = '#f7f5ee'
+  ctx.beginPath()
+  ctx.ellipse(x + 47 * u, y + 37 * u, 13 * u, 4 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+// ─── School & clinic (2026-07) ───────────────────────────────────────────────
+// Approved mock-ups from the design folder ("Akte 21"), same 0..100 design space.
+
+/** A free-standing easel blackboard (blocking): chalk scribbles + tray. */
+export function drawBlackboard(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 87, 32)
+  // A-frame legs + crossbar
+  ctx.strokeStyle = '#4a2f14'
+  ctx.lineWidth = Math.max(1.6, 4 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 32 * u, y + 85 * u)
+  ctx.lineTo(x + 40 * u, y + 26 * u)
+  ctx.moveTo(x + 68 * u, y + 85 * u)
+  ctx.lineTo(x + 60 * u, y + 26 * u)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(1.2, 3 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 35 * u, y + 68 * u)
+  ctx.lineTo(x + 65 * u, y + 68 * u)
+  ctx.stroke()
+  // wooden frame + green board
+  ctx.lineWidth = Math.max(1, 2.5 * u)
+  ctx.fillStyle = '#8a6238'
+  ctx.beginPath()
+  ctx.roundRect(x + 20 * u, y + 20 * u, 60 * u, 44 * u, 3 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#2e5544'
+  ctx.beginPath()
+  ctx.roundRect(x + 25 * u, y + 25 * u, 50 * u, 34 * u, 1.5 * u)
+  ctx.fill()
+  // chalk scribbles (abstract case notes)
+  ctx.save()
+  ctx.globalAlpha = 0.85
+  ctx.strokeStyle = '#f7f5ee'
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 30 * u, y + 32 * u)
+  ctx.quadraticCurveTo(x + 36 * u, y + 28 * u, x + 42 * u, y + 33 * u)
+  ctx.moveTo(x + 48 * u, y + 31 * u)
+  ctx.lineTo(x + 62 * u, y + 31 * u)
+  ctx.moveTo(x + 30 * u, y + 42 * u)
+  ctx.quadraticCurveTo(x + 40 * u, y + 46 * u, x + 50 * u, y + 41 * u)
+  ctx.quadraticCurveTo(x + 60 * u, y + 37 * u, x + 70 * u, y + 42 * u)
+  ctx.moveTo(x + 58 * u, y + 50 * u)
+  ctx.lineTo(x + 66 * u, y + 56 * u)
+  ctx.moveTo(x + 66 * u, y + 50 * u)
+  ctx.lineTo(x + 58 * u, y + 56 * u)
+  ctx.moveTo(x + 31 * u, y + 52 * u)
+  ctx.lineTo(x + 40 * u, y + 52 * u)
+  ctx.stroke()
+  ctx.restore()
+  // chalk tray + a piece of chalk
+  ctx.strokeStyle = '#4a2f14'
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.fillStyle = '#8a6238'
+  ctx.beginPath()
+  ctx.roundRect(x + 24 * u, y + 62 * u, 52 * u, 4.5 * u, 2 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#9fb4c4'
+  ctx.lineWidth = Math.max(0.7, 1 * u)
+  ctx.fillStyle = '#f7f5ee'
+  ctx.beginPath()
+  ctx.roundRect(x + 42 * u, y + 59.5 * u, 9 * u, 3 * u, 1.5 * u)
+  ctx.fill()
+  ctx.stroke()
+}
+
+/** The biology class anatomy skeleton on its rolling stand (blocking). Bones are
+ *  double-stroked (ink under bone-white) so they stay outlined on the white card. */
+export function drawSkeleton(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 87, 28)
+  // stand: base + pole + hook (behind the bones)
+  ctx.strokeStyle = '#28242e'
+  ctx.lineWidth = Math.max(0.9, 2 * u)
+  ctx.fillStyle = '#4a4450'
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 85 * u, 14 * u, 3.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#4a4450'
+  ctx.lineWidth = Math.max(1.2, 3 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 50 * u, y + 84 * u)
+  ctx.lineTo(x + 50 * u, y + 16 * u)
+  ctx.bezierCurveTo(x + 46 * u, y + 16 * u, x + 44 * u, y + 19 * u, x + 46 * u, y + 21 * u)
+  ctx.stroke()
+  // long bones: spine, clavicle, arms, legs, feet — ink pass then bone pass
+  const bones = (): void => {
+    ctx.beginPath()
+    ctx.moveTo(x + 50 * u, y + 32 * u)
+    ctx.lineTo(x + 50 * u, y + 56 * u)
+    ctx.moveTo(x + 40 * u, y + 36 * u)
+    ctx.lineTo(x + 60 * u, y + 36 * u)
+    ctx.moveTo(x + 40 * u, y + 36 * u)
+    ctx.bezierCurveTo(x + 36 * u, y + 44 * u, x + 36 * u, y + 52 * u, x + 40 * u, y + 58 * u)
+    ctx.moveTo(x + 60 * u, y + 36 * u)
+    ctx.bezierCurveTo(x + 64 * u, y + 44 * u, x + 64 * u, y + 52 * u, x + 60 * u, y + 58 * u)
+    ctx.moveTo(x + 46 * u, y + 64 * u)
+    ctx.lineTo(x + 44 * u, y + 80 * u)
+    ctx.moveTo(x + 54 * u, y + 64 * u)
+    ctx.lineTo(x + 56 * u, y + 80 * u)
+    ctx.moveTo(x + 44 * u, y + 80 * u)
+    ctx.lineTo(x + 40 * u, y + 82 * u)
+    ctx.moveTo(x + 56 * u, y + 80 * u)
+    ctx.lineTo(x + 60 * u, y + 82 * u)
+    ctx.stroke()
+  }
+  ctx.strokeStyle = '#3c3c48'
+  ctx.lineWidth = Math.max(2, 5 * u)
+  bones()
+  ctx.strokeStyle = '#efe9d8'
+  ctx.lineWidth = Math.max(1, 2.6 * u)
+  bones()
+  // ribs, same double-stroke
+  const ribs = (): void => {
+    ctx.beginPath()
+    for (const ry of [39, 44, 49]) {
+      ctx.moveTo(x + 50 * u, y + ry * u)
+      ctx.bezierCurveTo(x + 43 * u, y + ry * u, x + 42 * u, y + (ry + 4) * u, x + 47 * u, y + (ry + 6) * u)
+      ctx.moveTo(x + 50 * u, y + ry * u)
+      ctx.bezierCurveTo(x + 57 * u, y + ry * u, x + 58 * u, y + (ry + 4) * u, x + 53 * u, y + (ry + 6) * u)
+    }
+    ctx.stroke()
+  }
+  ctx.strokeStyle = '#3c3c48'
+  ctx.lineWidth = Math.max(1.5, 3.6 * u)
+  ribs()
+  ctx.strokeStyle = '#efe9d8'
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ribs()
+  // hands, pelvis
+  ctx.strokeStyle = '#3c3c48'
+  ctx.lineWidth = Math.max(0.8, 1.5 * u)
+  ctx.fillStyle = '#efe9d8'
+  for (const hx of [40, 60]) {
+    ctx.beginPath()
+    ctx.arc(x + hx * u, y + 60 * u, 2.6 * u, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+  }
+  ctx.lineWidth = Math.max(0.9, 2 * u)
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 60 * u, 7 * u, 4.5 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  // skull with jaw, sockets, nose
+  ctx.lineWidth = Math.max(1, 2.5 * u)
+  ctx.beginPath()
+  ctx.arc(x + 50 * u, y + 22 * u, 9.5 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.lineWidth = Math.max(0.9, 2 * u)
+  ctx.beginPath()
+  ctx.roundRect(x + 45 * u, y + 29 * u, 10 * u, 6 * u, 2.5 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#3c3c48'
+  ctx.lineWidth = Math.max(0.6, 0.9 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 48 * u, y + 29 * u)
+  ctx.lineTo(x + 48 * u, y + 33 * u)
+  ctx.moveTo(x + 52 * u, y + 29 * u)
+  ctx.lineTo(x + 52 * u, y + 33 * u)
+  ctx.stroke()
+  ctx.fillStyle = '#241a10'
+  for (const ex of [46.5, 53.5]) {
+    ctx.beginPath()
+    ctx.arc(x + ex * u, y + 21 * u, 2.3 * u, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.beginPath()
+  ctx.moveTo(x + 50 * u, y + 24.5 * u)
+  ctx.lineTo(x + 48.6 * u, y + 27 * u)
+  ctx.lineTo(x + 51.4 * u, y + 27 * u)
+  ctx.closePath()
+  ctx.fill()
+}
+
+/** A top-down gym mat (occupiable): blue pad with stitched border and handles. */
+export function drawGymMat(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.fillStyle = 'rgba(22, 20, 29, 0.08)'
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 82 * u, 36 * u, 4 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.strokeStyle = '#2e4a5e'
+  ctx.lineWidth = Math.max(1.2, 3 * u)
+  ctx.fillStyle = '#4f8fb0'
+  ctx.beginPath()
+  ctx.roundRect(x + 14 * u, y + 24 * u, 72 * u, 52 * u, 9 * u)
+  ctx.fill()
+  ctx.stroke()
+  // stitched inner seam + centre fold
+  ctx.save()
+  ctx.globalAlpha = 0.7
+  ctx.strokeStyle = '#dceef6'
+  ctx.lineWidth = Math.max(0.8, 1.6 * u)
+  ctx.setLineDash([5 * u, 4 * u])
+  ctx.beginPath()
+  ctx.roundRect(x + 19 * u, y + 29 * u, 62 * u, 42 * u, 6 * u)
+  ctx.stroke()
+  ctx.setLineDash([])
+  ctx.restore()
+  ctx.save()
+  ctx.globalAlpha = 0.5
+  ctx.strokeStyle = '#2e4a5e'
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 50 * u, y + 26 * u)
+  ctx.lineTo(x + 50 * u, y + 74 * u)
+  ctx.stroke()
+  ctx.restore()
+  // carry handles
+  ctx.fillStyle = '#2e4a5e'
+  ctx.beginPath()
+  ctx.roundRect(x + 10 * u, y + 44 * u, 6 * u, 12 * u, 3 * u)
+  ctx.fill()
+  ctx.beginPath()
+  ctx.roundRect(x + 84 * u, y + 44 * u, 6 * u, 12 * u, 3 * u)
+  ctx.fill()
+}
+
+/** A wheelchair (occupiable, one sits IN it): big spoked wheel, generous crimson
+ *  seat and backrest (Dirk: the first draft's cushions read far too small). */
+export function drawWheelchair(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 86, 32)
+  // frame: push handle, back post, front fork, footrest
+  ctx.strokeStyle = '#4a4450'
+  ctx.lineWidth = Math.max(1.4, 3.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 34 * u, y + 18 * u)
+  ctx.bezierCurveTo(x + 34 * u, y + 14 * u, x + 40 * u, y + 13 * u, x + 43 * u, y + 16 * u)
+  ctx.moveTo(x + 34 * u, y + 18 * u)
+  ctx.lineTo(x + 34 * u, y + 46 * u)
+  ctx.moveTo(x + 36 * u, y + 50 * u)
+  ctx.lineTo(x + 62 * u, y + 50 * u)
+  ctx.moveTo(x + 39 * u, y + 50 * u)
+  ctx.bezierCurveTo(x + 37 * u, y + 60 * u, x + 34 * u, y + 67 * u, x + 30 * u, y + 73 * u)
+  ctx.moveTo(x + 30 * u, y + 73 * u)
+  ctx.lineTo(x + 25 * u, y + 78 * u)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(1.2, 3 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 20 * u, y + 80 * u)
+  ctx.lineTo(x + 31 * u, y + 80 * u)
+  ctx.stroke()
+  // generous cushions
+  ctx.strokeStyle = '#6e1f18'
+  ctx.lineWidth = Math.max(0.9, 2 * u)
+  ctx.fillStyle = '#cf463c'
+  ctx.beginPath()
+  ctx.roundRect(x + 30 * u, y + 19 * u, 10 * u, 26 * u, 3.5 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.roundRect(x + 31 * u, y + 41 * u, 32 * u, 9 * u, 3 * u)
+  ctx.fill()
+  ctx.stroke()
+  // small front caster
+  ctx.strokeStyle = '#28242e'
+  ctx.lineWidth = Math.max(1, 2.5 * u)
+  ctx.fillStyle = '#8b8b9d'
+  ctx.beginPath()
+  ctx.arc(x + 29 * u, y + 78 * u, 6 * u, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#28242e'
+  ctx.beginPath()
+  ctx.arc(x + 29 * u, y + 78 * u, 2 * u, 0, Math.PI * 2)
+  ctx.fill()
+  // big wheel: spokes, tyre, handrim, hub
+  ctx.strokeStyle = '#4a4450'
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 62 * u, y + 41 * u)
+  ctx.lineTo(x + 62 * u, y + 83 * u)
+  ctx.moveTo(x + 41 * u, y + 62 * u)
+  ctx.lineTo(x + 83 * u, y + 62 * u)
+  ctx.moveTo(x + 47.2 * u, y + 47.2 * u)
+  ctx.lineTo(x + 76.8 * u, y + 76.8 * u)
+  ctx.moveTo(x + 76.8 * u, y + 47.2 * u)
+  ctx.lineTo(x + 47.2 * u, y + 76.8 * u)
+  ctx.stroke()
+  ctx.strokeStyle = '#2a2633'
+  ctx.lineWidth = Math.max(1.4, 3.5 * u)
+  ctx.beginPath()
+  ctx.arc(x + 62 * u, y + 62 * u, 21 * u, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.strokeStyle = '#4a4450'
+  ctx.lineWidth = Math.max(0.8, 1.6 * u)
+  ctx.beginPath()
+  ctx.arc(x + 62 * u, y + 62 * u, 16.5 * u, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.fillStyle = '#2a2633'
+  ctx.beginPath()
+  ctx.arc(x + 62 * u, y + 62 * u, 3.5 * u, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+/** An IV drip stand (blocking): wheeled pole, hook bar, bag with line and chamber. */
+export function drawIvDrip(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 86, 26)
+  // rolling base + casters
+  ctx.strokeStyle = '#28242e'
+  ctx.lineWidth = Math.max(0.9, 2 * u)
+  ctx.fillStyle = '#6b6b78'
+  ctx.beginPath()
+  ctx.ellipse(x + 50 * u, y + 84 * u, 15 * u, 4 * u, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#2a2633'
+  for (const [cx, cy] of [[38, 86], [50, 87.5], [62, 86]] as const) {
+    ctx.beginPath()
+    ctx.arc(x + cx * u, y + cy * u, 2 * u, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  // pole + hook bar with curled tips
+  ctx.strokeStyle = '#8b8b9d'
+  ctx.lineWidth = Math.max(1.4, 3.5 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 50 * u, y + 82 * u)
+  ctx.lineTo(x + 50 * u, y + 14 * u)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(1.2, 2.8 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 37 * u, y + 17 * u)
+  ctx.lineTo(x + 63 * u, y + 17 * u)
+  ctx.moveTo(x + 37 * u, y + 17 * u)
+  ctx.bezierCurveTo(x + 34 * u, y + 17 * u, x + 34 * u, y + 21 * u, x + 37 * u, y + 21 * u)
+  ctx.moveTo(x + 63 * u, y + 17 * u)
+  ctx.bezierCurveTo(x + 66 * u, y + 17 * u, x + 66 * u, y + 21 * u, x + 63 * u, y + 21 * u)
+  ctx.stroke()
+  // bag on its loop, fluid, label, drip chamber, line
+  ctx.strokeStyle = '#355062'
+  ctx.lineWidth = Math.max(0.7, 1.4 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 37 * u, y + 20 * u)
+  ctx.lineTo(x + 37 * u, y + 23 * u)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(1, 2.2 * u)
+  ctx.fillStyle = '#eef6fb'
+  ctx.beginPath()
+  ctx.roundRect(x + 30 * u, y + 23 * u, 14 * u, 20 * u, 3 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#bcd9ea'
+  ctx.beginPath()
+  ctx.roundRect(x + 31.5 * u, y + 33 * u, 11 * u, 8.5 * u, 2 * u)
+  ctx.fill()
+  ctx.strokeStyle = '#355062'
+  ctx.lineWidth = Math.max(0.6, 1.2 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 33 * u, y + 27 * u)
+  ctx.lineTo(x + 41 * u, y + 27 * u)
+  ctx.stroke()
+  ctx.lineWidth = Math.max(0.8, 1.5 * u)
+  ctx.fillStyle = '#dceef6'
+  ctx.beginPath()
+  ctx.roundRect(x + 34.5 * u, y + 45 * u, 5 * u, 7 * u, 2 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.strokeStyle = '#9dc4d8'
+  ctx.lineWidth = Math.max(0.9, 1.8 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 37 * u, y + 52 * u)
+  ctx.bezierCurveTo(x + 36 * u, y + 60 * u, x + 43 * u, y + 66 * u, x + 41 * u, y + 75 * u)
+  ctx.stroke()
+}
+
+/** A three-panel folding screen (OCCUPIABLE — one stands BEHIND it): cream panels
+ *  with hinges, little feet and a blossom-branch motif. No card. */
+export function drawParavent(ctx: Ctx, x: number, y: number, S: number): void {
+  const u = S / 100
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  groundShadow(ctx, x, y, u, 87, 34)
+  // outer panels, then the centre panel slightly taller (reads as the front fold)
+  ctx.strokeStyle = '#6b4a2c'
+  ctx.lineWidth = Math.max(1, 2.5 * u)
+  ctx.fillStyle = '#efe3c8'
+  ctx.beginPath()
+  ctx.roundRect(x + 18 * u, y + 30 * u, 20 * u, 52 * u, 7 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.roundRect(x + 62 * u, y + 30 * u, 20 * u, 52 * u, 7 * u)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#e2d4b8'
+  ctx.beginPath()
+  ctx.roundRect(x + 40 * u, y + 26 * u, 20 * u, 56 * u, 7 * u)
+  ctx.fill()
+  ctx.stroke()
+  // hinges + feet
+  ctx.fillStyle = '#6b4a2c'
+  for (const [hx, hy] of [[37.5, 40], [37.5, 62], [58.5, 40], [58.5, 62]] as const) {
+    ctx.beginPath()
+    ctx.roundRect(x + hx * u, y + hy * u, 4 * u, 5 * u, 1 * u)
+    ctx.fill()
+  }
+  for (const fx of [24, 47.5, 71]) {
+    ctx.beginPath()
+    ctx.roundRect(x + fx * u, y + 82 * u, 5 * u, 4 * u, 1.5 * u)
+    ctx.fill()
+  }
+  // blossom branch on the centre panel
+  ctx.strokeStyle = '#a8794a'
+  ctx.lineWidth = Math.max(0.8, 1.4 * u)
+  ctx.beginPath()
+  ctx.moveTo(x + 45 * u, y + 68 * u)
+  ctx.bezierCurveTo(x + 48 * u, y + 58 * u, x + 51 * u, y + 50 * u, x + 55 * u, y + 40 * u)
+  ctx.stroke()
+  ctx.fillStyle = '#cf463c'
+  for (const [bx, by] of [[49, 54], [53, 45], [47, 61]] as const) {
+    ctx.beginPath()
+    ctx.arc(x + bx * u, y + by * u, 1.7 * u, 0, Math.PI * 2)
+    ctx.fill()
+  }
 }

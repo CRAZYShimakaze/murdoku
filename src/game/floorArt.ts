@@ -54,6 +54,9 @@ export type FloorPattern =
   | 'lino'
   | 'terrazzo'
   | 'splatter'
+  | 'snow'
+  | 'ice'
+  | 'snowtracks'
 
 // ─── Room type → pattern (global; per-theme uniqueness is tested) ────────────
 
@@ -210,7 +213,7 @@ const PATTERN_OF: Record<string, FloorPattern> = {
   kids1: 'rubber',
   kids2: 'terrazzo',
   kidsroom: 'rubber',
-  gameroom: 'rubber',
+  gameroom: 'lino', // was rubber — the merged 'home' theme holds kidsroom AND gameroom
   gym: 'rubber',
   lockerroom: 'rubber',
   security: 'rubber',
@@ -249,6 +252,35 @@ const PATTERN_OF: Record<string, FloorPattern> = {
   playground: 'sand',
   forest: 'leaves',
   pond: 'leaves',
+  // zoo (penguinpool/flamingopond are water rooms — no pattern)
+  zooentrance: 'terrazzo',
+  monkeyhouse: 'leaves',
+  predatorhouse: 'flagstone',
+  bearpit: 'dirt',
+  elephantyard: 'sand',
+  aviary: 'gravel',
+  terrarium: 'diamond', // glazed vivarium panes
+  pettingzoo: 'straw',
+  feedkitchen: 'checker',
+  vetstation: 'tileSmall',
+  zooshop: 'lino',
+  picnicmeadow: 'meadow',
+  zooschool: 'rubber',
+  // ski resort (snowy outdoor rooms wear the new winter motifs)
+  gaststube: 'planksOld',
+  hutkitchen: 'checker',
+  snowbar: 'hexTile',
+  sunterrace: 'deck',
+  mattresscamp: 'carpetDiag',
+  skirental: 'tileGrid',
+  skidepot: 'concrete',
+  valleystation: 'asphalt',
+  topstation: 'flagstone',
+  piste: 'snow',
+  beginnerhill: 'sand', // rippled drifts on the bunny hill
+  sledrun: 'snowtracks',
+  icerink: 'ice',
+  igloo: 'cobble', // rounded snow-brick blocks
 }
 
 /** Default rotation for the editor's unnamed placeholder rooms (Raum 1–15). */
@@ -871,6 +903,69 @@ export function drawFloorTile(
         ctx.lineTo(px + r * sq * Math.cos(a + 4.8), py + r * sq * Math.sin(a + 4.8))
         ctx.closePath()
         ctx.fill()
+      }
+      break
+    }
+    case 'snow': {
+      // Groomed piste: fine white corduroy lines with the odd soft drift.
+      ctx.strokeStyle = LITE(0.38)
+      ctx.lineWidth = thin
+      ctx.beginPath()
+      for (let k = 0; k <= 4; k++) {
+        ctx.moveTo(x + (k * S) / 4, y)
+        ctx.lineTo(x + (k * S) / 4 - S * 0.18, y + S)
+      }
+      ctx.stroke()
+      if (rnd(row, col, 1) < 0.5) {
+        ctx.fillStyle = LITE(0.3)
+        ctx.beginPath()
+        ctx.ellipse(
+          x + S * (0.25 + 0.5 * rnd(row, col, 2)),
+          y + S * (0.25 + 0.5 * rnd(row, col, 3)),
+          S * 0.22,
+          S * 0.1,
+          Math.PI * rnd(row, col, 4),
+          0,
+          Math.PI * 2,
+        )
+        ctx.fill()
+      }
+      break
+    }
+    case 'ice': {
+      // Polished rink: a light gloss sweep plus a hairline skate crack.
+      ctx.strokeStyle = LITE(0.4)
+      ctx.lineWidth = mid
+      ctx.lineCap = 'round'
+      const gy = y + S * (0.2 + 0.4 * rnd(row, col, 1))
+      ctx.beginPath()
+      ctx.moveTo(x + S * 0.1, gy + S * 0.18)
+      ctx.quadraticCurveTo(x + S * 0.5, gy - S * 0.1, x + S * 0.9, gy + S * 0.12)
+      ctx.stroke()
+      ctx.strokeStyle = INK(0.1)
+      ctx.lineWidth = thin * 0.9
+      const x0 = x + S * (0.15 + 0.6 * rnd(row, col, 2))
+      ctx.beginPath()
+      ctx.moveTo(x0, y + S * (0.1 + 0.2 * rnd(row, col, 3)))
+      ctx.lineTo(x0 + S * 0.22, y + S * 0.55)
+      ctx.lineTo(x0 + S * (0.1 + 0.2 * rnd(row, col, 4)), y + S * 0.9)
+      ctx.stroke()
+      break
+    }
+    case 'snowtracks': {
+      // Sled-runner ruts: paired grooves weaving downhill through the snow.
+      ctx.lineCap = 'round'
+      ctx.strokeStyle = INK(0.12)
+      ctx.lineWidth = thin
+      for (let k = 0; k < 2; k++) {
+        const cx = S * (0.24 + 0.5 * rnd(row, col, k + 1))
+        const sway = S * 0.1 * (rnd(row, col, k + 5) - 0.5)
+        for (const off of [-S * 0.05, S * 0.05]) {
+          ctx.beginPath()
+          ctx.moveTo(x + cx + off, y)
+          ctx.bezierCurveTo(x + cx + off + sway, y + S * 0.33, x + cx + off - sway, y + S * 0.66, x + cx + off, y + S)
+          ctx.stroke()
+        }
       }
       break
     }

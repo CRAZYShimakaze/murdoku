@@ -53,6 +53,7 @@ import SettingsButton from '../components/SettingsButton.tsx'
 import Coach from '../components/Coach.tsx'
 import { useSettings } from '../game/settings.ts'
 import { hasMarks, helpMarks, type HelpMarks } from '../game/helpMarks.ts'
+import { useBackInterceptor } from '../game/backHandler.ts'
 
 const NOOP = () => {}
 
@@ -169,6 +170,10 @@ export default function GameScreen({
   const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
   // The settings dialog is controlled so the tutorial can open it (and explain it).
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // Mobile-only legend: the desktop legend column is hidden on phones, so a small
+  // button on the board corner opens it as a bottom sheet instead.
+  const [legendOpen, setLegendOpen] = useState(false)
+  useBackInterceptor(legendOpen, () => setLegendOpen(false))
   // On the phase-1 tutorial verdict, Restart / Back are LOCKED (they'd skip the second
   // part) — clicking them just explains what they'd do; only the coach's "Next" proceeds.
   const [tutNote, setTutNote] = useState<string | null>(null)
@@ -592,6 +597,14 @@ export default function GameScreen({
       />
 
       <div className="mk-board">
+        <button
+          type="button"
+          className="mk-legendbtn"
+          aria-label={t('legend.title')}
+          onClick={() => setLegendOpen(true)}
+        >
+          ?
+        </button>
         <BoardCanvas
           puzzle={puzzle}
           state={session.state}
@@ -655,6 +668,25 @@ export default function GameScreen({
         locked={!tut.active && !!result?.win}
         legend={<Legend puzzle={puzzle} />}
       />
+
+      {legendOpen && (
+        <div
+          className="mk-overlay mk-overlay--sheet"
+          onClick={(e) => e.target === e.currentTarget && setLegendOpen(false)}
+        >
+          <div className="mk-sheet" role="dialog" aria-modal="true">
+            <button
+              type="button"
+              className="mk-sheet__close"
+              aria-label={t('legend.close')}
+              onClick={() => setLegendOpen(false)}
+            >
+              ×
+            </button>
+            <Legend puzzle={puzzle} />
+          </div>
+        </div>
+      )}
 
       {result && !dialogHidden && (
         <ResultDialog

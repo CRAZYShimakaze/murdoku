@@ -19,10 +19,35 @@ const WATER_ROOM_KEYS: ReadonlySet<string> = new Set([
   'moat',
   'mainpool',
   'kidspool',
+  'penguinpool', // zoo — penguins on their floes get the water look
+  'flamingopond', // zoo — the ONE pond that IS water (the garden 'pond' stays green)
 ])
 
 /** True when a room's nameKey (with or without the `room.` prefix) names a body of water. */
 export function isWaterRoom(nameKey: string): boolean {
   const key = nameKey.replace(/^room\./, '').toLowerCase()
   return WATER_ROOM_KEYS.has(key) || /lake|ocean|lagoon|sea/.test(key)
+}
+
+/**
+ * Winter rooms — snowed-in outdoor areas of the ski resort. Purely COSMETIC (unlike
+ * water rooms they change no recipe on their own): the board renderer swaps the tree
+ * and boulder art for their snowy variants there, exactly like the slide picks its
+ * water look from context. The regex also catches German editor-typed room names
+ * ("Piste", "Rodelbahn", "Schneewiese", …), so hand-built winter levels work too.
+ */
+const WINTER_ROOM_KEYS: ReadonlySet<string> = new Set([
+  'piste',
+  'beginnerhill',
+  'sledrun',
+  'icerink',
+  'igloo',
+  'valleystation',
+  'topstation',
+])
+
+/** True when a room's nameKey (or editor-typed name) reads as a snowy winter area. */
+export function isWinterRoom(nameKey: string): boolean {
+  const key = nameKey.replace(/^room\./, '').toLowerCase()
+  return WINTER_ROOM_KEYS.has(key) || /schnee|piste|rodel|iglu|gletscher|eisbahn|winter|snow|glacier/.test(key)
 }

@@ -12,6 +12,7 @@ const PATTERNS: FloorPattern[] = [
   'marble', 'flagstone', 'cobble', 'concrete', 'asphalt', 'gravel',
   'grass', 'meadow', 'furrows', 'dirt', 'straw', 'leaves', 'sand',
   'carpet', 'carpetDiag', 'rubber', 'lino', 'terrazzo', 'splatter',
+  'snow', 'ice', 'snowtracks',
 ]
 const ROOM_COLORS = ['#e8d8b0', '#b9d0e6', '#cfe0cf', '#d8c0c0', '#e6cda0', '#e6c0d2', '#c6c0e0', '#c0e0c8']
 
@@ -51,6 +52,9 @@ class SvgCtx {
   }
   quadraticCurveTo(cx: number, cy: number, x: number, y: number): void {
     this.d += `Q${cx} ${cy} ${x} ${y}`
+  }
+  bezierCurveTo(c1x: number, c1y: number, c2x: number, c2y: number, x: number, y: number): void {
+    this.d += `C${c1x} ${c1y} ${c2x} ${c2y} ${x} ${y}`
   }
   rect(x: number, y: number, w: number, h: number): void {
     this.d += `M${x} ${y}H${x + w}V${y + h}H${x}Z`

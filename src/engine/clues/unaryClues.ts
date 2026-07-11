@@ -5,17 +5,21 @@ import type { Puzzle } from '../model/Puzzle.ts'
 import type { Cell, Explanation, PersonId } from '../model/types.ts'
 
 /**
- * Prepositional wording per object type: one is IN a tent, UNDER a parasol — everything
- * else reads "on". This only picks the template-key SUFFIX (onObjectIn/onObjectUnder,
- * uniqueOnObject…, roomExistsOn…); the locales carry the actual words, and both clue
- * renderers (Renderer.ts and ClueText.tsx) resolve the keys the same way.
+ * Prepositional wording per object type: one is IN a tent, UNDER a parasol, BEHIND a
+ * folding screen — everything else reads "on". This only picks the template-key SUFFIX
+ * (onObjectIn/onObjectUnder/onObjectBehind, uniqueOnObject…, roomExistsOn…); the locales
+ * carry the actual words, and both clue renderers (Renderer.ts and ClueText.tsx) resolve
+ * the keys the same way.
  */
-export const ON_OBJECT_KEY_SUFFIX: Record<string, 'In' | 'Under'> = {
+export const ON_OBJECT_KEY_SUFFIX: Record<string, 'In' | 'Under' | 'Behind'> = {
   tent: 'In',
   parasol: 'Under',
   carriage: 'In',
   hottub: 'In',
   hammock: 'In',
+  gondola: 'In', // one sits IN the cable car, not on it
+  wheelchair: 'In',
+  paravent: 'Behind',
 }
 
 /** "{name} was on a {object}." (in/under for tent/parasol) */

@@ -195,6 +195,15 @@ export class Renderer {
       }
       case 'direction':
         return this.lookup(`dir.${value}`) ?? String(value)
+      // Comparative direction ("südlicher" / plain "south" for "further south than …") —
+      // disambiguates beside-same-object: the mate is farther that way THAN THE SUBJECT,
+      // not on that side of the object ("südlich neben dem Teppich" read both ways).
+      case 'directionComp':
+        return this.lookup(`dirComp.${value}`) ?? this.lookup(`dir.${value}`) ?? String(value)
+      // The subject's NAME even where {{subject}} renders as a pronoun — comparisons
+      // ("südlicher als Bella") need the name; "südlicher als sie" stays ambiguous.
+      case 'subjectName':
+        return subject !== undefined ? this.puzzle.nameOf(String(subject)) : String(value)
       case 'line':
         return this.lookup(`line.${value}`) ?? String(value)
       case 'linePlural':

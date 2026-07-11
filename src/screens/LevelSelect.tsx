@@ -234,23 +234,30 @@ export default function LevelSelect({ onPick, onBack }: Props) {
                   const i = cardIndex++
                   const hints = results[l.id]?.hints
                   const solo = hints === 0
+                  const isSolved = solved.has(l.id)
+                  // Card state travels as data attributes so the CSS never needs :has()
+                  // (which is costly to recalc across ~150 cards). Only the first dozen
+                  // cards animate in — the rest are off-screen anyway.
                   return (
                     <button
                       key={l.id}
                       type="button"
                       className="mk-card"
-                      data-solved={solved.has(l.id)}
-                      style={{ animationDelay: `${Math.min(i, 12) * 0.04}s` }}
+                      data-solved={isSolved}
+                      data-custom={l.custom ? 'true' : undefined}
+                      data-author={l.author ? 'true' : undefined}
+                      data-solo={isSolved && solo ? 'true' : undefined}
+                      data-anim={i < 12 ? undefined : 'off'}
+                      style={i < 12 ? { animationDelay: `${i * 0.04}s` } : undefined}
                       onClick={() => onPick(l)}
                     >
                       <span className="mk-card__photo">
                         <span className="mk-card__tape" />
                         <BoardPreview json={l.json} />
                       </span>
-                      {solved.has(l.id) && (
+                      {isSolved && (
                         <span className="mk-stamp">{t('select.solved')}</span>
                       )}
-                      {l.custom && <span className="mk-custom">{t('select.custom')}</span>}
                       <span className="mk-card__body">
                         <span className="mk-card__titlewrap">
                           <BloodSplatter className="mk-card__splatter" />
@@ -264,7 +271,7 @@ export default function LevelSelect({ onPick, onBack }: Props) {
                             {t(`difficulty.${l.difficulty}`)}
                           </span>
                           <span className="mk-card__sizewrap">
-                            {solved.has(l.id) &&
+                            {isSolved &&
                               (solo ? (
                                 <span
                                   className="mk-solo"
@@ -301,6 +308,11 @@ export default function LevelSelect({ onPick, onBack }: Props) {
                               {l.width}×{l.height}
                             </span>
                           </span>
+                          {/* Desktop: absolute top-right badge (anchors to the card, so the
+                              DOM slot doesn't matter). Mobile: a static pill in this meta
+                              row, between the size and the GELÖST gutter — in the gutter it
+                              collided with the solo medal / hint tally. */}
+                          {l.custom && <span className="mk-custom">{t('select.custom')}</span>}
                         </span>
                       </span>
                     </button>

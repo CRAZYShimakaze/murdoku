@@ -11,12 +11,6 @@ import type { AttributeValue, Cell, Direction8, Explanation, PersonId } from '..
  * object cells (no dependency on where other people stand).
  */
 
-/** Object types whose orthogonally-adjacent cells form ONE object instance: a table
- *  surface auto-merges into a big table, a bed/car spans two cells, a carpet is one rug.
- *  Everything else — chairs above all — is COUNTED INDIVIDUALLY (two chairs side by side
- *  are two chairs, never "the same chair"). */
-const MERGE_INSTANCE_TYPES = new Set(['table', 'bed', 'car', 'carpet', 'carriage'])
-
 /** Which line a person shares with the object. */
 export type LineKind = 'col' | 'row' | 'either'
 /** Optional room qualifier tying the object's room to the person's. */
@@ -240,32 +234,11 @@ export class BesideSameObjectClue extends Clue {
   }
   // definiteCells stays null (default): negation depends on others, so it prunes nothing.
 
-  /** Connected same-type object groups (orthogonally adjacent cells = one instance) — but
-   *  an instance NEVER crosses a room border: two adjacent table tiles in different rooms
-   *  are TWO tables, so "beside the same table" means the two people share ONE room. */
+  /** The board's shared instance grouping: renderer pairing for two-tile objects,
+   *  same-room merge for surfaces, one-per-cell for everything else — so "beside the
+   *  same object" always matches the picture AND plain "beside an object". */
   private instances(board: Board): Set<Cell>[] {
-    const cells = new Set<Cell>(board.objectCells(this.object))
-    // Only surfaces/multi-cell objects merge; chairs (and the rest) stay individual.
-    if (!MERGE_INSTANCE_TYPES.has(this.object)) return [...cells].map((c) => new Set<Cell>([c]))
-    const seen = new Set<Cell>()
-    const out: Set<Cell>[] = []
-    for (const start of cells) {
-      if (seen.has(start)) continue
-      const room = board.roomIdOf(start)
-      const comp = new Set<Cell>()
-      const stack: Cell[] = [start]
-      while (stack.length > 0) {
-        const c = stack.pop()!
-        if (seen.has(c)) continue
-        seen.add(c)
-        comp.add(c)
-        for (const nb of board.neighbors4(c)) {
-          if (cells.has(nb) && !seen.has(nb) && board.roomIdOf(nb) === room) stack.push(nb)
-        }
-      }
-      out.push(comp)
-    }
-    return out
+    return board.objectInstances(this.object)
   }
 
   /** Cells orthogonally beside instance `comp`, in the same room (not the object itself). */
@@ -331,9 +304,17 @@ export class BesideSameObjectClue extends Clue {
     return {
       key: this.dir ? 'clue.besideSameObjectDir' : 'clue.besideSameObject',
       // object → "(beside) a table" (sentence 1); objectSame/objName → "the same table"
-      // (sentence 2); mate → the other person/anyone/trait; direction (+ subjectObj,
-      // injected per render) → optional "north of him".
-      params: { object: this.object, objectSame: this.object, objName: this.object, mate, direction: this.dir ?? '' },
+      // (sentence 2); mate → the other person/anyone/trait; direction/directionComp
+      // (+ subjectName, injected per render) → "südlicher als Bella" / "further south
+      // than Bella" — comparative, so it can't be misread as a side of the OBJECT.
+      params: {
+        object: this.object,
+        objectSame: this.object,
+        objName: this.object,
+        mate,
+        direction: this.dir ?? '',
+        directionComp: this.dir ?? '',
+      },
     }
   }
 }

@@ -133,8 +133,10 @@ export class SameObjectTechnique extends Technique {
       personId: partner,
       eliminated: [{ personId: partner, cells: removed }],
       explanation: {
+        // objectSame carries the fully declined "demselben/derselben <Objekt>" form —
+        // the template must not glue its own article onto the bare objName.
         key: 'step.sameObjectForce',
-        params: { name: id, target: partner, objName: clue.object },
+        params: { name: id, target: partner, objName: clue.object, objectSame: clue.object },
       },
     }
   }

@@ -73,10 +73,12 @@ export default function BoardCanvas(props: Props) {
   // Hovered cell mirrored into state so the coordinate margins can light up the
   // matching row/col label (the canvas itself keeps reading hoverRef).
   const [hoverRC, setHoverRC] = useState<{ row: number; col: number } | null>(null)
-  // Tooltip naming the placed person (if any) + object(s) under the cursor.
+  // Tooltip naming the placed person (if any) + object(s) under the cursor, plus
+  // whether the tile is walkable (shown as a small begehbar/blockiert status line).
   const [objTip, setObjTip] = useState<{
     person?: string
     types: string[]
+    walkable: boolean
     x: number
     y: number
     left: boolean
@@ -104,9 +106,16 @@ export default function BoardCanvas(props: Props) {
     buzzed?: boolean
   } | null>(null)
   const rafRef = useRef<number | null>(null)
-  const paintRef = useRef<{ value: boolean; visited: Set<Cell> } | null>(null)
-  const markPaintRef = useRef<{ personId: PersonId; on: boolean; visited: Set<Cell> } | null>(null)
+  // Both drag-paints remember the previous pointer position (`last`, canvas-relative) so
+  // each move can walk the line since then — a fast swipe must not skip cells.
+  const paintRef = useRef<{ value: boolean; visited: Set<Cell>; last: { x: number; y: number } } | null>(null)
+  const markPaintRef = useRef<{ personId: PersonId; on: boolean; visited: Set<Cell>; last: { x: number; y: number } } | null>(null)
   const hoverRef = useRef<Cell | null>(null)
+  // Mobile "what is this?" tap: set on a pointer-down that triggers NO game action
+  // (no X-tool, no occupant, no selected suspect); shown as a short-lived tooltip on
+  // release. Desktop keeps its hover tooltip — this is the touch equivalent.
+  const inertTapRef = useRef<Cell | null>(null)
+  const tipTimerRef = useRef<number | undefined>(undefined)
   const avatarsRef = useRef<Map<PersonId, HTMLImageElement>>(new Map())
   const emphPulseRef = useRef(0)
   // The active long-press ring, drawn on the overlay (never on the board canvas).
@@ -223,6 +232,7 @@ export default function BoardCanvas(props: Props) {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => cancelPress(), [])
+  useEffect(() => () => window.clearTimeout(tipTimerRef.current), [])
 
   // Redraw once bundled board art (e.g. the armchair) finishes loading.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -313,6 +323,58 @@ export default function BoardCanvas(props: Props) {
     return row * W + col
   }
 
+  /** The pointer position relative to the board canvas. */
+  function ptOf(e: ReactPointerEvent<HTMLCanvasElement>): { x: number; y: number } {
+    const rect = e.currentTarget.getBoundingClientRect()
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top }
+  }
+
+  /**
+   * Apply a drag-paint step along the pointer's ACTUAL path: all coalesced samples the
+   * browser batched into this move event, with a line-walk between consecutive samples.
+   * Touch move events arrive throttled, so a fast swipe otherwise skips cells — this
+   * guarantees every crossed cell is painted. `apply` receives each cell (may repeat).
+   */
+  function strokeTo(
+    e: ReactPointerEvent<HTMLCanvasElement>,
+    last: { x: number; y: number },
+    apply: (cell: Cell) => void,
+  ): void {
+    const L = layoutRef.current
+    if (!L) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const native = e.nativeEvent
+    const coalesced = native.getCoalescedEvents?.() ?? []
+    const events: { clientX: number; clientY: number }[] = coalesced.length ? coalesced : [native]
+    const step = L.cell / 2
+    for (const ev of events) {
+      const tx = ev.clientX - rect.left
+      const ty = ev.clientY - rect.top
+      const n = Math.max(1, Math.ceil(Math.hypot(tx - last.x, ty - last.y) / step))
+      for (let k = 1; k <= n; k++) {
+        const col = Math.floor((last.x + ((tx - last.x) * k) / n) / L.cell)
+        const row = Math.floor((last.y + ((ty - last.y) * k) / n) / L.cell)
+        if (col >= 0 && col < W && row >= 0 && row < H) apply(row * W + col)
+      }
+      last.x = tx
+      last.y = ty
+    }
+  }
+
+  /**
+   * The hover outline while drag-painting: a mouse keeps it under the cursor, a finger
+   * gets NONE — it used to stick to the stroke's start cell for the whole drag (the
+   * pointer-down set it, the paint branches never updated it), which read as a stuck
+   * white ring on mobile. The finger covers the cell anyway.
+   */
+  function syncPaintHover(e: ReactPointerEvent<HTMLCanvasElement>) {
+    const cell = e.pointerType === 'mouse' ? cellAt(e) : null
+    if (cell !== hoverRef.current) {
+      setHover(cell)
+      redraw()
+    }
+  }
+
   /** Show/hide the "what's this object" tooltip beside the hovered cell. */
   function updateObjTip(cell: Cell | null) {
     const cv = canvasRef.current
@@ -330,6 +392,7 @@ export default function BoardCanvas(props: Props) {
     setObjTip({
       person,
       types: objs.map((o) => o.type),
+      walkable: puzzle.board.isOccupiable(cell),
       x: flip ? left - 8 : left + L.cell + 8,
       y: top + 4,
       left: flip,
@@ -340,15 +403,19 @@ export default function BoardCanvas(props: Props) {
     const cell = cellAt(e)
     if (cell === null) return
     e.currentTarget.setPointerCapture(e.pointerId)
+    window.clearTimeout(tipTimerRef.current)
+    inertTapRef.current = null
     setObjTip(null) // hide while interacting
-    setHover(cell) // show blocked outline on touch/press too
 
     if (props.xTool) {
+      // No hover ring for a finger — it would stick to the stroke's start cell.
+      setHover(e.pointerType === 'mouse' ? cell : null)
       const value = !props.state.crosses.has(cell)
-      paintRef.current = { value, visited: new Set([cell]) }
+      paintRef.current = { value, visited: new Set([cell]), last: ptOf(e) }
       props.onSetCross(cell, value)
       return
     }
+    setHover(cell) // show blocked outline on touch/press too
 
     const occ = props.occupantAt(cell)
     if (occ !== undefined) {
@@ -362,24 +429,34 @@ export default function BoardCanvas(props: Props) {
       rafRef.current = requestAnimationFrame(tick)
       return
     }
+    // Inert press (no action follows). On touch WITHOUT a selected suspect this arms
+    // the "what is this?" tap tooltip shown on release (Dirk: never while placing
+    // notes, i.e. never with a suspect selected — and touch only).
+    if (e.pointerType === 'touch' && !props.selectedSuspect) inertTapRef.current = cell
     redraw() // non-occupiable / empty without selection → just hover feedback
   }
 
   function onPointerMove(e: ReactPointerEvent<HTMLCanvasElement>) {
     if (paintRef.current) {
-      const cell = cellAt(e)
-      if (cell !== null && !paintRef.current.visited.has(cell)) {
-        paintRef.current.visited.add(cell)
-        props.onSetCross(cell, paintRef.current.value)
-      }
+      const paint = paintRef.current
+      strokeTo(e, paint.last, (c) => {
+        if (!paint.visited.has(c)) {
+          paint.visited.add(c)
+          props.onSetCross(c, paint.value)
+        }
+      })
+      syncPaintHover(e)
       return
     }
     if (markPaintRef.current) {
-      const cell = cellAt(e)
-      if (cell !== null && !markPaintRef.current.visited.has(cell)) {
-        markPaintRef.current.visited.add(cell)
-        props.onSetMark(cell, markPaintRef.current.personId, markPaintRef.current.on)
-      }
+      const mp = markPaintRef.current
+      strokeTo(e, mp.last, (c) => {
+        if (!mp.visited.has(c)) {
+          mp.visited.add(c)
+          props.onSetMark(c, mp.personId, mp.on)
+        }
+      })
+      syncPaintHover(e)
       return
     }
     if (pressRef.current) {
@@ -396,12 +473,13 @@ export default function BoardCanvas(props: Props) {
           const on = !(props.state.marks.get(press.cell)?.has(suspect) ?? false)
           cancelPress()
           const visited = new Set<Cell>([press.cell])
-          markPaintRef.current = { personId: suspect, on, visited }
+          markPaintRef.current = { personId: suspect, on, visited, last: ptOf(e) }
           props.onSetMark(press.cell, suspect, on)
           if (cell !== null && cell !== press.cell) {
             visited.add(cell)
             props.onSetMark(cell, suspect, on)
           }
+          syncPaintHover(e) // drops the ring stuck on the start cell (touch)
           redraw()
         }
         return // small movement within the start cell → keep the long-press alive
@@ -415,6 +493,9 @@ export default function BoardCanvas(props: Props) {
     }
     // hover (desktop): outline cells + name the object under the cursor
     const cell = cellAt(e)
+    if (inertTapRef.current !== null && cell !== inertTapRef.current) {
+      inertTapRef.current = null // finger slid off the cell → not a tap
+    }
     if (cell !== hoverRef.current) {
       setHover(cell)
       redraw()
@@ -441,14 +522,28 @@ export default function BoardCanvas(props: Props) {
     }
     if (e.pointerType === 'touch') {
       setHover(null)
-      setObjTip(null)
+      const tap = inertTapRef.current
+      inertTapRef.current = null
+      if (tap !== null && tap === cellAt(e)) {
+        // The touch stand-in for the desktop hover tooltip: a short-lived chip naming
+        // the object(s) + walkable status, then it tidies itself away.
+        updateObjTip(tap)
+        window.clearTimeout(tipTimerRef.current)
+        tipTimerRef.current = window.setTimeout(() => setObjTip(null), 1800)
+      } else {
+        setObjTip(null)
+      }
     }
     redraw()
   }
 
-  function onPointerLeave() {
+  function onPointerLeave(e: ReactPointerEvent<HTMLCanvasElement>) {
+    inertTapRef.current = null
     setHover(null)
-    setObjTip(null)
+    // A touch pointer ALWAYS "leaves" right after pointer-up (the finger ceases to
+    // exist) — clearing here killed the tap tooltip the moment endPointer showed it
+    // (it only flickered for a frame). Only a mouse actually leaves the board.
+    if (e.pointerType !== 'touch') setObjTip(null)
     redraw()
   }
 
@@ -488,6 +583,16 @@ export default function BoardCanvas(props: Props) {
                 {t(`objName.${ty}`)}
               </span>
             ))}
+            <span
+              style={{
+                display: 'block',
+                fontSize: '0.85em',
+                letterSpacing: '0.04em',
+                color: objTip.walkable ? '#6fae88' : '#d95c4f',
+              }}
+            >
+              {t(objTip.walkable ? 'legend.occupiable' : 'legend.blocked')}
+            </span>
           </span>,
           document.body,
         )}

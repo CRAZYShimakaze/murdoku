@@ -1,86 +1,86 @@
 {
   "schema": 1,
-  "id": "editor-der-kiosk-am-see",
-  "title": "Der Kiosk am See",
+  "id": "editor-rodeln-ins-ungl-ck",
+  "title": "Rodeln ins Unglück",
   "size": {
-    "width": 8,
-    "height": 8
+    "width": 6,
+    "height": 6
   },
   "rooms": {
     "1": {
-      "nameKey": "room.restroom",
+      "nameKey": "room.gaststube",
       "color": "#e8d8b0",
       "outside": false
     },
     "2": {
-      "nameKey": "room.jetty",
+      "nameKey": "room.hutkitchen",
       "color": "#b9d0e6",
-      "outside": true
+      "outside": false
     },
     "3": {
-      "nameKey": "room.kiosk",
+      "nameKey": "room.snowbar",
       "color": "#cfe0cf",
       "outside": false
     },
     "4": {
-      "nameKey": "room.parking",
+      "nameKey": "room.sunterrace",
       "color": "#d8c0c0",
       "outside": true
     },
     "5": {
-      "nameKey": "room.forest",
+      "nameKey": "room.mattresscamp",
       "color": "#e6cda0",
-      "outside": true
+      "outside": false
     },
     "6": {
-      "nameKey": "room.clearing",
+      "nameKey": "room.lockerroom",
       "color": "#e6c0d2",
-      "outside": true
+      "outside": false
     },
     "7": {
-      "nameKey": "room.lake",
+      "nameKey": "room.skirental",
       "color": "#c6c0e0",
-      "outside": true
+      "outside": false
     },
     "8": {
-      "nameKey": "room.campsite1",
+      "nameKey": "room.skidepot",
       "color": "#c0e0c8",
-      "outside": true
+      "outside": false
     },
     "9": {
-      "nameKey": "room.campsite2",
+      "nameKey": "room.valleystation",
       "color": "#e0c4a0",
       "outside": true
     },
     "A": {
-      "nameKey": "room.campfire",
+      "nameKey": "room.topstation",
       "color": "#a8c8e0",
       "outside": true
     },
     "B": {
-      "nameKey": "room.picnicarea",
+      "nameKey": "room.piste",
       "color": "#d8e0a8",
       "outside": true
     },
     "C": {
-      "nameKey": "room.playground",
+      "nameKey": "room.beginnerhill",
       "color": "#e0b0a8",
       "outside": true
     },
     "D": {
-      "nameKey": "room.showers",
+      "nameKey": "room.sledrun",
       "color": "#c8b0d8",
-      "outside": false
+      "outside": true
     },
     "E": {
-      "nameKey": "room.reception",
+      "nameKey": "room.icerink",
       "color": "#a8e0d0",
-      "outside": false
+      "outside": true
     },
     "F": {
-      "nameKey": "room.cabin",
+      "nameKey": "room.igloo",
       "color": "#ded0e6",
-      "outside": false
+      "outside": true
     }
   },
   "objects": {
@@ -382,132 +382,46 @@
     }
   },
   "roomMap": [
-    "11166444",
-    "11666444",
-    "22224444",
-    "22222333",
-    "22223333",
-    "22223333",
-    "22233333",
-    "22233333"
+    "DDDCCC",
+    "DDDCCC",
+    "DDDCCC",
+    "DDDCCC",
+    "111111",
+    "111111"
   ],
   "groundMap": [
-    ".rr...R.",
-    ".r....R.",
-    ".....RR.",
-    "......r.",
-    ".....rr.",
-    ".....r..",
-    "...r.r..",
-    "...rrr.."
+    "......",
+    "......",
+    "......",
+    "......",
+    "......",
+    "......"
   ],
   "topMap": [
-    "T....c.c",
-    "T.a.ac.c",
-    "OO......",
-    "Y....g.g",
-    "YY.Og..K",
-    "Y..Og.g.",
-    "....g.g.",
-    ".YY...g."
+    "&....o",
+    ".&....",
+    "*.&...",
+    "&..+.+",
+    ".stts.",
+    ".EssE."
   ],
-  "windows": [
-    {
-      "r": 7,
-      "c": 6,
-      "side": "S"
-    },
-    {
-      "r": 2,
-      "c": 7,
-      "side": "E"
-    },
-    {
-      "r": 7,
-      "c": 5,
-      "side": "S"
-    },
-    {
-      "r": 6,
-      "c": 0,
-      "side": "W"
-    },
-    {
-      "r": 6,
-      "c": 7,
-      "side": "E"
-    },
-    {
-      "r": 0,
-      "c": 7,
-      "side": "E"
-    },
-    {
-      "r": 4,
-      "c": 3,
-      "side": "E"
-    },
-    {
-      "r": 5,
-      "c": 3,
-      "side": "S"
-    },
-    {
-      "r": 6,
-      "c": 2,
-      "side": "E"
-    },
-    {
-      "r": 3,
-      "c": 4,
-      "side": "E"
-    }
-  ],
-  "doors": [
-    {
-      "r": 0,
-      "c": 2,
-      "side": "E"
-    },
-    {
-      "r": 2,
-      "c": 6,
-      "side": "S"
-    },
-    {
-      "r": 5,
-      "c": 3,
-      "side": "S"
-    }
-  ],
+  "windows": [],
+  "doors": [],
   "suspects": [
     {
       "id": "A",
       "name": "Anna",
       "attributes": {
         "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
         "hairstyle": "ponytailRight",
-        "hair": "black"
+        "hair": "white"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "nearObject",
-              "object": "waterlily"
-            },
-            {
-              "type": "not",
-              "clue": {
-                "type": "onObject",
-                "object": "waterlily"
-              }
-            }
-          ]
+          "type": "not",
+          "clue": {
+            "type": "atWall"
+          }
         }
       ]
     },
@@ -516,22 +430,25 @@
       "name": "Bella",
       "attributes": {
         "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
         "hairstyle": "braids",
-        "hair": "white"
+        "hair": "grey"
       },
       "clues": [
         {
           "type": "and",
           "clues": [
             {
-              "type": "onObject",
-              "object": "boat"
+              "type": "nearObject",
+              "object": "chair"
             },
             {
               "type": "not",
               "clue": {
-                "type": "nearObject",
-                "object": "waterlily"
+                "type": "onObject",
+                "object": "chair"
               }
             }
           ]
@@ -540,21 +457,16 @@
     },
     {
       "id": "C",
-      "name": "Cyrus",
+      "name": "Carol",
       "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "fringe",
-        "hair": "black"
+        "gender": "f",
+        "hairstyle": "bun",
+        "hair": "white"
       },
       "clues": [
         {
-          "type": "onObject",
-          "object": "boat"
+          "type": "nearObject",
+          "object": "skirack"
         }
       ]
     },
@@ -567,23 +479,12 @@
         "glassesShape": "round",
         "glassesColor": "black",
         "hairstyle": "updo",
-        "hair": "black"
+        "hair": "brown"
       },
       "clues": [
         {
-          "type": "and",
-          "clues": [
-            {
-              "type": "onObject",
-              "object": "carpet"
-            },
-            {
-              "type": "sameLineAsObject",
-              "object": "cash",
-              "line": "either",
-              "room": "any"
-            }
-          ]
+          "type": "nearObject",
+          "object": "snowman"
         }
       ]
     },
@@ -592,87 +493,25 @@
       "name": "Edison",
       "attributes": {
         "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
         "glasses": true,
         "glassesShape": "round",
         "glassesColor": "black",
-        "hairstyle": "manbun",
-        "hair": "black"
+        "bald": true
       },
       "clues": [
         {
-          "type": "directionFromObject",
-          "object": "tree",
-          "dir": "west",
-          "room": "any",
-          "all": true
-        }
-      ]
-    },
-    {
-      "id": "F",
-      "name": "Freya",
-      "attributes": {
-        "gender": "f",
-        "glasses": true,
-        "glassesShape": "round",
-        "glassesColor": "black",
-        "hairstyle": "curly",
-        "hair": "brown"
-      },
-      "clues": [
-        {
-          "type": "and",
-          "clues": [
-            {
-              "type": "roomExists",
-              "attribute": "gender",
-              "value": "m",
-              "relation": "near",
-              "object": "waterlily"
-            },
-            {
-              "type": "roomExists",
-              "relation": "on",
-              "object": "waterlily"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "id": "G",
-      "name": "Grant",
-      "attributes": {
-        "gender": "m",
-        "beard": true,
-        "beardStyle": "full",
-        "hairstyle": "shaggy",
-        "hair": "brown"
-      },
-      "clues": [
-        {
-          "type": "and",
-          "clues": [
-            {
-              "type": "onObject",
-              "object": "street"
-            },
-            {
-              "type": "atWall"
-            }
-          ]
+          "type": "nearObject",
+          "object": "boulder"
         }
       ]
     }
   ],
   "victim": {
-    "name": "Vivian",
+    "name": "Victor",
     "attributes": {
-      "gender": "f"
+      "gender": "m"
     }
   },
   "boardClues": [],
-  "difficulty": "medium"
+  "difficulty": "easy"
 }
