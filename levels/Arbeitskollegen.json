@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-arbeitskollegen",
   "title": "Kollegen unter Verdacht",
-  "titles": { "de": "Kollegen unter Verdacht", "en": "Colleagues Under Suspicion" },
+  "titles": { "de": "Kollegen unter Verdacht", "en": "Colleagues Under Suspicion", "es": "Colegas bajo sospecha" },
   "size": {
     "width": 6,
     "height": 6

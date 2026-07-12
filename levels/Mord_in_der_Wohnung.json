@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-mord-in-der-wohnung",
   "title": "Die netten Nachbarn",
-  "titles": { "de": "Die netten Nachbarn", "en": "Those Nice Neighbors" },
+  "titles": { "de": "Die netten Nachbarn", "en": "Those Nice Neighbors", "es": "Esos amables vecinos" },
   "size": {
     "width": 9,
     "height": 9

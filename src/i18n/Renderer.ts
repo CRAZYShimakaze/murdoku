@@ -125,6 +125,10 @@ export class Renderer {
           .replace(/^einer /, 'jeder ')
           .replace(/^an /, 'every ')
           .replace(/^a /, 'every ')
+          // Spanish: "un árbol"/"una mesa" → "cada árbol"/"cada mesa" ("cada" is
+          // gender-neutral, so both indefinite articles map to it).
+          .replace(/^una /, 'cada ')
+          .replace(/^un /, 'cada ')
       }
       // `who` resolves "a man/woman" (m_nom/f_nom) and its negated "kein/keine"
       // form (…_neg); `whoNeg` is the same lookup under a second name so a template

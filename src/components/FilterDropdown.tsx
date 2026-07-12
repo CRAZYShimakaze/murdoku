@@ -12,6 +12,8 @@ interface Props {
   value: string
   options: DropdownOption[]
   onChange: (value: string) => void
+  /** Open the panel upward instead of down — for triggers near the viewport bottom. */
+  dropUp?: boolean
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * the native <select> — best touch UX). Follows the listbox pattern: focus stays on
  * the trigger button, the highlighted option travels via aria-activedescendant.
  */
-export default function FilterDropdown({ label, value, options, onChange }: Props) {
+export default function FilterDropdown({ label, value, options, onChange, dropUp = false }: Props) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -95,7 +97,7 @@ export default function FilterDropdown({ label, value, options, onChange }: Prop
   }
 
   return (
-    <div className="mk-dropdown" data-open={open} ref={rootRef}>
+    <div className="mk-dropdown" data-open={open} data-drop={dropUp ? 'up' : 'down'} ref={rootRef}>
       <button
         type="button"
         className="mk-dropdown__btn"

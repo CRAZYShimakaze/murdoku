@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-sommerferien",
   "title": "Ein mörderischer Sommer",
-  "titles": { "de": "Ein mörderischer Sommer", "en": "A Murderous Summer" },
+  "titles": { "de": "Ein mörderischer Sommer", "en": "A Murderous Summer", "es": "Un verano mortal" },
   "size": {
     "width": 9,
     "height": 9

@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-wer-war-s",
   "title": "Wer war's",
-  "titles": { "de": "Wer war's", "en": "Whodunit" },
+  "titles": { "de": "Wer war's", "en": "Whodunit", "es": "¿Quién lo hizo?" },
   "size": {
     "width": 7,
     "height": 7

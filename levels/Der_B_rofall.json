@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-der-b-rofall",
   "title": "Tod nach Feierabend",
-  "titles": { "de": "Tod nach Feierabend", "en": "Death After Hours" },
+  "titles": { "de": "Tod nach Feierabend", "en": "Death After Hours", "es": "Muerte fuera de horario" },
   "size": {
     "width": 6,
     "height": 6

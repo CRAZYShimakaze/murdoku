@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-kampf-der-camper",
   "title": "Kampf der Camper",
-  "titles": { "de": "Kampf der Camper", "en": "Clash of the Campers" },
+  "titles": { "de": "Kampf der Camper", "en": "Clash of the Campers", "es": "El duelo de los campistas" },
   "size": {
     "width": 7,
     "height": 7

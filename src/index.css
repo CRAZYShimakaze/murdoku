@@ -175,30 +175,35 @@ button {
   justify-content: center;
 }
 
-/* segmented control (language) */
-.mk-seg {
+/* Language picker (start screen + settings): the noir FilterDropdown on desktop,
+   a native <select> on touch — the same split the level filters use, so it scales
+   to any number of locales. */
+.mk-langselect {
+  position: relative;
   display: inline-flex;
+}
+.mk-langselect__native {
+  display: none;
+  appearance: none;
+  padding: 0.45rem 1.7rem 0.45rem 0.7rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--bone);
   border: 1px solid var(--line-strong);
   border-radius: 99px;
-  padding: 3px;
-  background: rgba(0, 0, 0, 0.25);
-  gap: 2px;
+  background-color: var(--ink-700);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none' stroke='%23a79f8c' stroke-width='1.4'><path d='M1 1l4 4 4-4'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 0.62rem;
 }
-.mk-seg button {
-  border: 0;
-  background: transparent;
-  color: var(--bone-dim);
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 0.4rem 0.85rem;
-  border-radius: 99px;
-  transition: all 0.16s ease;
-}
-.mk-seg button[data-active='true'] {
-  background: var(--brass);
-  color: #2a2010;
+@media (max-width: 640px) {
+  .mk-langselect .mk-dropdown {
+    display: none;
+  }
+  .mk-langselect__native {
+    display: inline-block;
+  }
 }
 
 /* difficulty pill */
@@ -832,7 +837,14 @@ button {
   border: 1px solid var(--brass-dim);
   border-radius: var(--r-md);
   box-shadow: var(--shadow-pop);
+  z-index: 30;
   animation: mk-dropdown-in 0.15s ease;
+}
+/* Open upward: for a trigger near the viewport bottom (the start-screen language
+   picker sits just above the fixed credit line, which a downward panel would hit). */
+.mk-dropdown[data-drop='up'] .mk-dropdown__panel {
+  top: auto;
+  bottom: calc(100% + 0.45rem);
 }
 @keyframes mk-dropdown-in {
   from {

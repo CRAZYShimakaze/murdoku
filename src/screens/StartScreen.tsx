@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import LanguageToggle from '../components/LanguageToggle.tsx'
+import LanguageSelect from '../components/LanguageSelect.tsx'
 import BloodText from '../components/BloodText.tsx'
 import BloodSplatter from '../components/BloodSplatter.tsx'
 
@@ -133,7 +133,7 @@ export default function StartScreen({
             </button>
           </div>
           <div className="mk-start__lang">
-            <LanguageToggle />
+            <LanguageSelect dropUp />
           </div>
           {onQuit && (
             <button type="button" className="mk-start__quit" onClick={onQuit}>

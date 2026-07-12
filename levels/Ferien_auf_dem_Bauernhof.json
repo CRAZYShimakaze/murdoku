@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-ferien-auf-dem-bauernhof",
   "title": "Tödliche Landluft",
-  "titles": { "de": "Tödliche Landluft", "en": "Deadly Country Air" },
+  "titles": { "de": "Tödliche Landluft", "en": "Deadly Country Air", "es": "Aire de campo mortal" },
   "size": {
     "width": 8,
     "height": 8

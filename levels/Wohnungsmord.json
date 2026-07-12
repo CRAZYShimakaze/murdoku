@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-wohnungsmord",
   "title": "Volkers letzter Gang",
-  "titles": { "de": "Volkers letzter Gang", "en": "Volker's Last Walk" },
+  "titles": { "de": "Volkers letzter Gang", "en": "Volker's Last Walk", "es": "El último paseo de Volker" },
   "size": {
     "width": 8,
     "height": 8

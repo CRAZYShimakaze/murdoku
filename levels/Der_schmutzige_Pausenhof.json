@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-der-schmutzige-pausenhof",
   "title": "Der schmutzige Pausenhof",
+  "titles": { "es": "El patio sucio" },
   "size": {
     "width": 8,
     "height": 8

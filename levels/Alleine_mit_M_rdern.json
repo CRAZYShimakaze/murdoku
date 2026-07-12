@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-alleine-mit-m-rdern",
   "title": "Geladene Gäste",
-  "titles": { "de": "Geladene Gäste", "en": "The Guest List" },
+  "titles": { "de": "Geladene Gäste", "en": "The Guest List", "es": "La lista de invitados" },
   "size": {
     "width": 9,
     "height": 9

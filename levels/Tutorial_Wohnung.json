@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-tutorial-wohnung",
   "title": "Tutorial Wohnung",
-  "titles": { "de": "Tutorial Wohnung", "en": "Tutorial Apartment" },
+  "titles": { "de": "Tutorial Wohnung", "en": "Tutorial Apartment", "es": "Tutorial: el piso" },
   "size": {
     "width": 6,
     "height": 6

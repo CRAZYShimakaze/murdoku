@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-mord-im-polizeirevier",
   "title": "Dienstschluss",
-  "titles": { "de": "Dienstschluss", "en": "End of Watch" },
+  "titles": { "de": "Dienstschluss", "en": "End of Watch", "es": "Fin de turno" },
   "size": {
     "width": 8,
     "height": 8

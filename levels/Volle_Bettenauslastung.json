@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-volle-bettenauslastung",
   "title": "Volle Bettenauslastung",
+  "titles": { "es": "Camas al completo" },
   "size": {
     "width": 8,
     "height": 8

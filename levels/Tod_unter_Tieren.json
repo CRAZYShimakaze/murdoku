@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-tod-unter-tieren",
   "title": "Der Elefant vergisst nie",
-  "titles": { "de": "Der Elefant vergisst nie", "en": "The Elephant Never Forgets" },
+  "titles": { "de": "Der Elefant vergisst nie", "en": "The Elephant Never Forgets", "es": "El elefante nunca olvida" },
   "size": {
     "width": 7,
     "height": 7

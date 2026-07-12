@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-mord-mit-gutem-essen",
   "title": "Tod zwischen den Gängen",
-  "titles": { "de": "Tod zwischen den Gängen", "en": "Death Between Courses" },
+  "titles": { "de": "Tod zwischen den Gängen", "en": "Death Between Courses", "es": "Muerte entre platos" },
   "size": {
     "width": 10,
     "height": 10

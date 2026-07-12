@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-vier-fenster",
   "title": "Vier Fenster, ein Mörder",
-  "titles": { "de": "Vier Fenster, ein Mörder", "en": "Four Windows, One Killer" },
+  "titles": { "de": "Vier Fenster, ein Mörder", "en": "Four Windows, One Killer", "es": "Cuatro ventanas, un asesino" },
   "size": {
     "width": 6,
     "height": 6

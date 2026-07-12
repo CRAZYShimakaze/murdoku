@@ -2,6 +2,7 @@
   "schema": 1,
   "id": "editor-m-rderisches-obst",
   "title": "Mörderisches Obst",
+  "titles": { "es": "Fruta asesina" },
   "size": {
     "width": 8,
     "height": 8

@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-die-fernsehjunkies",
   "title": "Die Fernsehjunkies",
-  "titles": { "de": "Die Fernsehjunkies", "en": "The TV Junkies" },
+  "titles": { "de": "Die Fernsehjunkies", "en": "The TV Junkies", "es": "Los adictos a la tele" },
   "size": {
     "width": 8,
     "height": 8
