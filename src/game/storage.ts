@@ -52,9 +52,11 @@ export function loadSolved(): Set<string> {
   return new Set(read<string[]>(SOLVED_KEY, []))
 }
 
-/** The level picker's last filter selection. Pass DEFAULT_FILTER as the fallback. */
+/** The level picker's last filter selection. Pass DEFAULT_FILTER as the fallback.
+ *  Merged over the fallback so a selection stored before a filter key existed
+ *  (e.g. `theme`) still yields a complete filter. */
 export function loadFilter(fallback: LevelFilter): LevelFilter {
-  return read<LevelFilter>(FILTER_KEY, fallback)
+  return { ...fallback, ...read<Partial<LevelFilter>>(FILTER_KEY, {}) }
 }
 
 export function saveFilter(filter: LevelFilter): void {

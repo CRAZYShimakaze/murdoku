@@ -384,6 +384,7 @@
     "filterDifficulty": "Difficulty",
     "filterSize": "Size",
     "filterStatus": "Status",
+    "filterTheme": "Theme",
     "all": "All",
     "unsolved": "Unsolved",
     "empty": "No cases match these filters.",

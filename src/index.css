@@ -770,6 +770,125 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Custom noir dropdown (desktop filters). The trigger is a typed entry on the case
+   form: the chosen value in the typewriter face sitting on a dashed blank line, next
+   to its uppercase label — no box, the filter bar reads like a filled-in dossier
+   sheet. The open panel borrows the tooltip chrome (ink-700 card, brass hairline,
+   deep pop shadow); the sticky header's z-index keeps it above the level cards. */
+.mk-dropdown {
+  position: relative;
+}
+.mk-dropdown__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 7.5rem;
+  padding: 0.24rem 0.15rem 0.18rem;
+  appearance: none;
+  border: 0;
+  border-bottom: 1px dashed var(--line-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--bone);
+  font-family: var(--font-type);
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.mk-dropdown__btn:hover,
+.mk-dropdown[data-open='true'] .mk-dropdown__btn {
+  border-bottom-color: var(--brass-dim);
+  border-bottom-style: solid;
+  color: var(--brass);
+}
+.mk-dropdown__btn:focus-visible {
+  outline: 2px solid var(--brass-dim);
+  outline-offset: 2px;
+}
+.mk-dropdown__value {
+  white-space: nowrap;
+}
+.mk-dropdown__caret {
+  flex: none;
+  width: 0.6rem;
+  color: var(--brass-dim);
+  transition: transform 0.15s ease;
+}
+.mk-dropdown[data-open='true'] .mk-dropdown__caret {
+  transform: rotate(180deg);
+}
+.mk-dropdown__panel {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  min-width: calc(100% + 1.5rem);
+  max-height: min(30rem, 70vh);
+  overflow-y: auto;
+  padding: 0.35rem;
+  background: var(--ink-700);
+  border: 1px solid var(--brass-dim);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  animation: mk-dropdown-in 0.15s ease;
+}
+@keyframes mk-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.3rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-dropdown__panel {
+    animation: none;
+  }
+}
+.mk-dropdown__opt {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.4rem 0.7rem 0.34rem 0.5rem;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  border-radius: calc(var(--r-md) - 4px);
+  font-family: var(--font-type);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  color: var(--bone);
+  text-align: left;
+  white-space: nowrap;
+}
+/* One highlight for hover AND keyboard (the component mirrors mouse position into
+   data-active): the bone-on-ink inversion the active filter chip used to have —
+   like a typed line lit by the desk lamp. */
+.mk-dropdown__opt[data-active='true'] {
+  background: var(--bone);
+  color: var(--ink-900);
+}
+.mk-dropdown__opt[data-selected='true'] {
+  color: var(--brass);
+}
+.mk-dropdown__opt[data-selected='true'][data-active='true'] {
+  color: var(--ink-900);
+}
+.mk-dropdown__check {
+  flex: none;
+  width: 0.9em;
+  visibility: hidden;
+  font-size: 0.8em;
+}
+.mk-dropdown__opt[data-selected='true'] .mk-dropdown__check {
+  visibility: visible;
+}
+
 /* Compact dropdown alternative — hidden on desktop, shown on narrow screens.
    Scoped under .mk-filtergroup to outrank the base .mk-select-input rule that
    is defined later in this file (equal specificity would otherwise win). */
@@ -797,7 +916,12 @@ button {
     align-items: stretch;
     gap: 0.3rem;
   }
-  .mk-filtergroup .mk-chips {
+  /* Phones keep the native select (best touch UX); the custom dropdown is
+     desktop-only, as is the theme filter group entirely. */
+  .mk-filtergroup .mk-dropdown {
+    display: none;
+  }
+  .mk-filtergroup[data-desktop-only='true'] {
     display: none;
   }
   .mk-filtergroup .mk-filterselect {

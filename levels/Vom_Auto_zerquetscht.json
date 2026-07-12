@@ -1,0 +1,620 @@
+{
+  "schema": 1,
+  "id": "editor-vom-auto-zerquetscht",
+  "title": "Erdrückende Beweise",
+  "titles": {
+    "de": "Erdrückende Beweise",
+    "en": "Crushing Evidence"
+  },
+  "size": {
+    "width": 8,
+    "height": 8
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.workshop",
+      "color": "#e8d8b0",
+      "outside": true
+    },
+    "2": {
+      "nameKey": "room.storage",
+      "color": "#b9d0e6",
+      "outside": false
+    },
+    "3": {
+      "nameKey": "room.office",
+      "color": "#cfe0cf",
+      "outside": false
+    },
+    "4": {
+      "nameKey": "room.waiting",
+      "color": "#d8c0c0",
+      "outside": false
+    },
+    "5": {
+      "nameKey": "room.yard",
+      "color": "#e6cda0",
+      "outside": true
+    },
+    "6": {
+      "nameKey": "room.washbay",
+      "color": "#e6c0d2",
+      "outside": true
+    },
+    "7": {
+      "nameKey": "room.partsstore",
+      "color": "#c6c0e0",
+      "outside": false
+    },
+    "8": {
+      "nameKey": "room.tirestore",
+      "color": "#c0e0c8",
+      "outside": false
+    },
+    "9": {
+      "nameKey": "room.reception",
+      "color": "#e0c4a0",
+      "outside": false
+    },
+    "A": {
+      "nameKey": "room.paintshop",
+      "color": "#a8c8e0",
+      "outside": true
+    },
+    "B": {
+      "nameKey": "room.assembly",
+      "color": "#d8e0a8",
+      "outside": true
+    },
+    "C": {
+      "nameKey": "room.testbay",
+      "color": "#e0b0a8",
+      "outside": true
+    },
+    "D": {
+      "nameKey": "room.breakroom",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.checkout",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.gasstation",
+      "color": "#ded0e6",
+      "outside": true
+    }
+  },
+  "objects": {
+    "0": {
+      "type": "bench",
+      "occupiable": true
+    },
+    "1": {
+      "type": "lion",
+      "occupiable": false
+    },
+    "2": {
+      "type": "carriage",
+      "occupiable": true
+    },
+    "3": {
+      "type": "monkey",
+      "occupiable": false
+    },
+    "4": {
+      "type": "path",
+      "occupiable": true
+    },
+    "5": {
+      "type": "goat",
+      "occupiable": false
+    },
+    "6": {
+      "type": "parrot",
+      "occupiable": false
+    },
+    "7": {
+      "type": "hammock",
+      "occupiable": true
+    },
+    "8": {
+      "type": "hottub",
+      "occupiable": true
+    },
+    "9": {
+      "type": "penguin",
+      "occupiable": false
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "R": {
+      "type": "street",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "D": {
+      "type": "deckchair",
+      "occupiable": true
+    },
+    "J": {
+      "type": "throne",
+      "occupiable": true
+    },
+    "@": {
+      "type": "wheelchair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "O": {
+      "type": "boat",
+      "occupiable": true
+    },
+    "&": {
+      "type": "sled",
+      "occupiable": true
+    },
+    "=": {
+      "type": "gondola",
+      "occupiable": true
+    },
+    "Z": {
+      "type": "tent",
+      "occupiable": true
+    },
+    "S": {
+      "type": "shower",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "U": {
+      "type": "parasol",
+      "occupiable": true
+    },
+    "^": {
+      "type": "paravent",
+      "occupiable": true
+    },
+    "~": {
+      "type": "gymmat",
+      "occupiable": true
+    },
+    "X": {
+      "type": "divingboard",
+      "occupiable": true
+    },
+    "V": {
+      "type": "slide",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "Y": {
+      "type": "waterlily",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "P": {
+      "type": "piano",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "B": {
+      "type": "bear",
+      "occupiable": false
+    },
+    "%": {
+      "type": "elephant",
+      "occupiable": false
+    },
+    "!": {
+      "type": "flamingo",
+      "occupiable": false
+    },
+    "A": {
+      "type": "hay",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "G": {
+      "type": "campfire",
+      "occupiable": false
+    },
+    "M": {
+      "type": "grill",
+      "occupiable": false
+    },
+    "*": {
+      "type": "snowman",
+      "occupiable": false
+    },
+    "+": {
+      "type": "skirack",
+      "occupiable": false
+    },
+    "#": {
+      "type": "blackboard",
+      "occupiable": false
+    },
+    "$": {
+      "type": "skeleton",
+      "occupiable": false
+    },
+    "?": {
+      "type": "ivdrip",
+      "occupiable": false
+    },
+    "C": {
+      "type": "candle",
+      "occupiable": false
+    },
+    "E": {
+      "type": "fireplace",
+      "occupiable": false
+    },
+    "Q": {
+      "type": "barrel",
+      "occupiable": false
+    },
+    "I": {
+      "type": "armor",
+      "occupiable": false
+    },
+    "N": {
+      "type": "weaponrack",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "11111EEE",
+    "11111EEE",
+    "11111EEE",
+    "11111999",
+    "11111999",
+    "22333444",
+    "22333444",
+    "22333444"
+  ],
+  "groundMap": [
+    "........",
+    "........",
+    ".444....",
+    "...4.rrr",
+    "......r.",
+    "...r..r.",
+    "...r..r.",
+    "......r."
+  ],
+  "topMap": [
+    "L..cLss.",
+    "ccjc.Kt.",
+    ".......L",
+    "jcc.c...",
+    "...jcp.s",
+    "n.g.gs.s",
+    ".l..ts.s",
+    "n..dss.s"
+  ],
+  "windows": [
+    {
+      "r": 3,
+      "c": 7,
+      "side": "E"
+    },
+    {
+      "r": 5,
+      "c": 7,
+      "side": "E"
+    },
+    {
+      "r": 6,
+      "c": 7,
+      "side": "E"
+    },
+    {
+      "r": 2,
+      "c": 5,
+      "side": "S"
+    },
+    {
+      "r": 1,
+      "c": 7,
+      "side": "E"
+    },
+    {
+      "r": 0,
+      "c": 7,
+      "side": "E"
+    },
+    {
+      "r": 0,
+      "c": 6,
+      "side": "N"
+    },
+    {
+      "r": 0,
+      "c": 5,
+      "side": "N"
+    },
+    {
+      "r": 4,
+      "c": 7,
+      "side": "E"
+    }
+  ],
+  "doors": [
+    {
+      "r": 4,
+      "c": 6,
+      "side": "S"
+    },
+    {
+      "r": 4,
+      "c": 3,
+      "side": "S"
+    },
+    {
+      "r": 2,
+      "c": 6,
+      "side": "S"
+    },
+    {
+      "r": 3,
+      "c": 7,
+      "side": "E"
+    }
+  ],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "ponytailRight",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "roomExists",
+          "attribute": "hair",
+          "value": "white",
+          "relation": "on",
+          "object": "path"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bernd",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "cash"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Cyrus",
+      "attributes": {
+        "gender": "m",
+        "bald": true
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "plant"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "updo",
+        "hair": "grey"
+      },
+      "clues": [
+        {
+          "type": "direction",
+          "of": "F",
+          "dir": "southwest"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Elsa",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "pixie",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "besideSameObject",
+          "object": "car",
+          "mate": {
+            "kind": "person",
+            "of": "A"
+          }
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "curly",
+        "hair": "blond"
+      },
+      "clues": [
+        {
+          "type": "sameLineAsObject",
+          "object": "pc",
+          "line": "col",
+          "room": "other"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Grant",
+      "attributes": {
+        "gender": "m",
+        "beard": true,
+        "beardStyle": "full",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "longM",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "roomAttribute",
+          "quantifier": "none",
+          "attribute": "gender",
+          "value": "m",
+          "excludeSelf": true
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vidal",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [],
+  "difficulty": "hard"
+}

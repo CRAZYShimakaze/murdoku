@@ -4,6 +4,7 @@ import SettingsButton from '../components/SettingsButton.tsx'
 import BloodText from '../components/BloodText.tsx'
 import BloodSplatter from '../components/BloodSplatter.tsx'
 import BoardPreview from '../components/BoardPreview.tsx'
+import FilterDropdown from '../components/FilterDropdown.tsx'
 import {
   DEFAULT_FILTER,
   DIFFICULTIES,
@@ -11,6 +12,7 @@ import {
   authorVisibleLevels,
   availableFilterOptions,
   availableSizes,
+  availableThemes,
   effectiveFilter,
   filterLevels,
   levelMetaFromJson,
@@ -119,14 +121,16 @@ export default function LevelSelect({ onPick, onBack }: Props) {
     setToast({ text: on ? t('select.garandOn') : t('select.garandOff'), on, n: toastN.current })
   }
 
-  // One source of truth for the three filters; rendered as inline chips on
-  // desktop and as compact dropdowns on mobile (CSS toggles which is visible).
-  // Empty non-"all" options are pruned, and a group with no real choice is dropped.
+  // One source of truth for the four filters; rendered as custom noir dropdowns on
+  // desktop and as native selects on mobile (CSS toggles which is visible; the theme
+  // filter is desktop-only). Empty non-"all" options are pruned, and a group with
+  // no real choice is dropped.
   const filterDefs: {
     key: keyof LevelFilter
     label: string
     value: string
     options: { value: string; label: string }[]
+    desktopOnly?: boolean
   }[] = [
     {
       key: 'difficulty',
@@ -138,6 +142,10 @@ export default function LevelSelect({ onPick, onBack }: Props) {
           value: d,
           label: t(`difficulty.${d}`),
         })),
+        // The player's own levels (editor-built or kept generated ones).
+        ...(available.difficulty.has('custom')
+          ? [{ value: 'custom', label: t('select.custom') }]
+          : []),
       ],
     },
     {
@@ -159,6 +167,18 @@ export default function LevelSelect({ onPick, onBack }: Props) {
         ...(available.status.has('unsolved')
           ? [{ value: 'unsolved', label: t('select.unsolved') }]
           : []),
+      ],
+    },
+    {
+      key: 'theme',
+      label: t('select.filterTheme'),
+      value: effective.theme,
+      desktopOnly: true,
+      options: [
+        { value: 'all', label: t('select.all') },
+        ...availableThemes(universe)
+          .map((id) => ({ value: id, label: t(`theme.${id}`) }))
+          .sort((a, b) => a.label.localeCompare(b.label, lang)),
       ],
     },
   ]
@@ -185,20 +205,14 @@ export default function LevelSelect({ onPick, onBack }: Props) {
 
         <div className="mk-filters">
           {filters.map((f) => (
-            <div className="mk-filtergroup" key={f.key}>
+            <div className="mk-filtergroup" key={f.key} data-desktop-only={f.desktopOnly}>
               <span className="mk-filtergroup__label">{f.label}</span>
-              <div className="mk-chips">
-                {f.options.map((o) => (
-                  <button
-                    key={o.value}
-                    className="mk-chip"
-                    data-active={f.value === o.value}
-                    onClick={() => update(f.key, o.value)}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
+              <FilterDropdown
+                label={f.label}
+                value={f.value}
+                options={f.options}
+                onChange={(v) => update(f.key, v)}
+              />
               <select
                 className="mk-select-input mk-filterselect"
                 aria-label={f.label}

@@ -1,4 +1,5 @@
 import type { LevelJson } from '../engine/index.ts'
+import { themeFromRoomKeys } from '../engine/generator/index.ts'
 
 /** The difficulty buckets the level picker filters by. `original` is the curated,
  *  hand-built campaign — set only via the level JSON, never offered in the editor. */
@@ -27,6 +28,17 @@ export interface LevelMeta {
   json: LevelJson
   /** True for player-generated levels (not part of the bundled set). */
   custom?: boolean
+  /** Theme id guessed from the level's room nameKeys (best overlap; a level whose
+   *  rooms all belong to one theme matches it exactly). Undefined when no room
+   *  overlaps any theme (e.g. generic room.editor* slots) — such a level only
+   *  appears with the theme filter on "all". */
+  theme?: string
+}
+
+/** Theme id for a raw level JSON — the shared generator/editor guess, derived once
+ *  at load time (the JSON itself carries no theme field). */
+function themeOfJson(json: LevelJson): string | undefined {
+  return themeFromRoomKeys(Object.values(json.rooms).map((r) => r.nameKey)) ?? undefined
 }
 
 /** Title for a generated level: theme name + a short seed suffix (so two
@@ -49,14 +61,24 @@ export function compareLevels(a: LevelMeta, b: LevelMeta): number {
 /** Solved-status the picker can filter by. */
 export type LevelStatus = 'all' | 'solved' | 'unsolved'
 
+/** What the difficulty filter can select: a real difficulty, or the pseudo-bucket
+ *  `custom` = the player's own levels (editor-built or saved generated ones). */
+export type DifficultyFilter = Difficulty | 'custom'
+
 /** The level picker's filter selection (persisted so it survives navigation). */
 export interface LevelFilter {
-  difficulty: Difficulty | 'all'
+  difficulty: DifficultyFilter | 'all'
   size: string | 'all'
   status: LevelStatus
+  theme: string | 'all'
 }
 
-export const DEFAULT_FILTER: LevelFilter = { difficulty: 'all', size: 'all', status: 'all' }
+export const DEFAULT_FILTER: LevelFilter = {
+  difficulty: 'all',
+  size: 'all',
+  status: 'all',
+  theme: 'all',
+}
 
 /** Bundled + custom levels, de-duped by id and sorted — the picker's universe. */
 export function allLevels(custom: LevelMeta[]): LevelMeta[] {
@@ -74,9 +96,11 @@ export function filterLevels(
 ): LevelMeta[] {
   return levels.filter(
     (l) =>
-      (filter.difficulty === 'all' || l.difficulty === filter.difficulty) &&
+      (filter.difficulty === 'all' ||
+        (filter.difficulty === 'custom' ? l.custom === true : l.difficulty === filter.difficulty)) &&
       (filter.size === 'all' || `${l.width}×${l.height}` === filter.size) &&
-      (filter.status === 'all' || solved.has(l.id) === (filter.status === 'solved')),
+      (filter.status === 'all' || solved.has(l.id) === (filter.status === 'solved')) &&
+      (filter.theme === 'all' || l.theme === filter.theme),
   )
 }
 
@@ -97,12 +121,19 @@ export function availableSizes(levels: LevelMeta[]): string[] {
     .map(([label]) => label)
 }
 
+/** Distinct theme ids present in `levels` (unsorted — the picker sorts them by
+ *  their localized labels, which this module can't know). */
+export function availableThemes(levels: LevelMeta[]): string[] {
+  return [...new Set(levels.map((l) => l.theme).filter((t): t is string => t !== undefined))]
+}
+
 /** Per filter key: the option values that still match at least one level. Drives
  *  the picker's chip pruning and the stale-selection fallback below. */
 export interface FilterOptions {
   difficulty: Set<string>
   size: Set<string>
   status: Set<string>
+  theme: Set<string>
 }
 
 export function availableFilterOptions(
@@ -110,12 +141,17 @@ export function availableFilterOptions(
   solved: ReadonlySet<string>,
 ): FilterOptions {
   return {
-    difficulty: new Set(DIFFICULTIES.filter((d) => levels.some((l) => l.difficulty === d))),
+    difficulty: new Set([
+      ...DIFFICULTIES.filter((d) => levels.some((l) => l.difficulty === d)),
+      // "Eigen": offered only while the player actually has own levels.
+      ...(levels.some((l) => l.custom) ? ['custom'] : []),
+    ]),
     size: new Set(availableSizes(levels)),
     status: new Set([
       ...(levels.some((l) => solved.has(l.id)) ? ['solved'] : []),
       ...(levels.some((l) => !solved.has(l.id)) ? ['unsolved'] : []),
     ]),
+    theme: new Set(availableThemes(levels)),
   }
 }
 
@@ -129,6 +165,7 @@ export function effectiveFilter(filter: LevelFilter, available: FilterOptions): 
     difficulty: keep('difficulty'),
     size: keep('size'),
     status: keep('status'),
+    theme: keep('theme'),
   } as LevelFilter
 }
 
@@ -175,6 +212,7 @@ export function levelMetaFromJson(json: LevelJson, custom = false): LevelMeta {
     height: json.size.height,
     json,
     custom,
+    theme: themeOfJson(json),
   }
 }
 
@@ -220,6 +258,7 @@ export const LEVELS: LevelMeta[] = Object.values(modules)
     width: json.size.width,
     height: json.size.height,
     json,
+    theme: themeOfJson(json),
   }))
   .sort(compareLevels)
 
