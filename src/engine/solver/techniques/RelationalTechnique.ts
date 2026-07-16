@@ -1,5 +1,6 @@
 import { Technique } from './Technique.ts'
 import {
+  AdjacentRoomsClue,
   DirectionClue,
   DirectionFromAttrClue,
   OffsetClue,
@@ -12,14 +13,15 @@ import type { DeductionStep, Elimination } from '../DeductionStep.ts'
 import type { PersonId } from '../../model/types.ts'
 import type { Puzzle } from '../../model/Puzzle.ts'
 
-type Relational = DirectionClue | DirectionFromAttrClue | OffsetClue | SameRoomClue
+type Relational = DirectionClue | DirectionFromAttrClue | OffsetClue | SameRoomClue | AdjacentRoomsClue
 
 function relationalClues(clue: Clue): Relational[] {
   if (
     clue instanceof DirectionClue ||
     clue instanceof DirectionFromAttrClue ||
     clue instanceof OffsetClue ||
-    clue instanceof SameRoomClue
+    clue instanceof SameRoomClue ||
+    clue instanceof AdjacentRoomsClue
   ) {
     return [clue]
   }
@@ -35,6 +37,14 @@ function differentRoomTargets(clue: Clue): PersonId[] {
     return [clue.inner.target]
   }
   if (clue instanceof AndClue) return clue.clues.flatMap(differentRoomTargets)
+  return []
+}
+
+/** "NOT in a room adjoining X's" — the people each suspect must be at least two rooms from.
+ *  Note it still ALLOWS sharing a room: a room never adjoins itself. */
+function notAdjacentTargets(clue: Clue): PersonId[] {
+  if (clue instanceof NotClue && clue.inner instanceof AdjacentRoomsClue) return [clue.inner.target]
+  if (clue instanceof AndClue) return clue.clues.flatMap(notAdjacentTargets)
   return []
 }
 
@@ -56,6 +66,7 @@ export class RelationalTechnique extends Technique {
         if (clue instanceof DirectionClue) step = this.applyDirection(ctx, suspect.id, clue)
         else if (clue instanceof DirectionFromAttrClue) step = this.applyDirectionAttr(ctx, suspect.id, clue)
         else if (clue instanceof OffsetClue) step = this.applyOffset(ctx, suspect.id, clue)
+        else if (clue instanceof AdjacentRoomsClue) step = this.applyAdjacentRooms(ctx, suspect.id, clue)
         else step = this.applySameRoom(ctx, suspect.id, clue)
         if (step) return step
       }
@@ -67,6 +78,11 @@ export class RelationalTechnique extends Technique {
         const step = this.applyDifferentRoom(ctx, suspect.id, target)
         if (step) return step
       }
+      // "NOT one room over" — same shape, but it strikes the target's NEIGHBOURS.
+      for (const target of suspect.clues.flatMap(notAdjacentTargets)) {
+        const step = this.applyNotAdjacentRooms(ctx, suspect.id, target)
+        if (step) return step
+      }
     }
     return null
   }
@@ -74,7 +90,13 @@ export class RelationalTechnique extends Technique {
   override relevant(puzzle: Puzzle): boolean {
     for (const suspect of puzzle.suspects) {
       for (const clue of suspect.clues) {
-        if (relationalClues(clue).length > 0 || differentRoomTargets(clue).length > 0) return true
+        if (
+          relationalClues(clue).length > 0 ||
+          differentRoomTargets(clue).length > 0 ||
+          notAdjacentTargets(clue).length > 0
+        ) {
+          return true
+        }
       }
     }
     return false
@@ -105,6 +127,34 @@ export class RelationalTechnique extends Technique {
       personId: subjectId,
       eliminated,
       explanation: { key: 'step.differentRoom', params: { name: subjectId, target } },
+    }
+  }
+
+  /** "{subject} NOT in a room adjoining {target}'s": once one side is confined to a room,
+   *  the other loses every room BORDERING it — but keeps that room itself, since a room does
+   *  not adjoin itself. Mirrors applyDifferentRoom, which strikes the room instead. */
+  private applyNotAdjacentRooms(
+    ctx: SolveContext,
+    subjectId: PersonId,
+    target: PersonId,
+  ): DeductionStep | null {
+    const subjRoom = this.roomOf(ctx, subjectId)
+    const targetRoom = this.roomOf(ctx, target)
+    const eliminated: Elimination[] = []
+    if (subjRoom) {
+      const banned = ctx.board.roomNeighbors(subjRoom)
+      this.removeFrom(ctx, target, (c) => banned.has(ctx.roomOf(c)), eliminated)
+    }
+    if (targetRoom) {
+      const banned = ctx.board.roomNeighbors(targetRoom)
+      this.removeFrom(ctx, subjectId, (c) => banned.has(ctx.roomOf(c)), eliminated)
+    }
+    if (eliminated.length === 0) return null
+    return {
+      technique: 'relational',
+      personId: subjectId,
+      eliminated,
+      explanation: { key: 'step.notAdjacentRooms', params: { name: subjectId, target } },
     }
   }
 
@@ -255,6 +305,45 @@ export class RelationalTechnique extends Technique {
       // `subject` lets a standalone reason NAME the subject ("Alysson war 1 Spalte westlich
       // von George") instead of the card pronoun ("sie war …") — see CluePanel's nameSubject.
       explanation: { key: described.key, params: { ...described.params, name: subjectId, subject: subjectId } },
+    }
+  }
+
+  /**
+   * "{subject} and {target} in adjoining rooms": each side must sit in a room bordering one
+   * of the rooms the other can still reach, so each is confined to the union of the
+   * neighbours of the other's possible rooms. Sound: a cell whose room borders NONE of them
+   * can never satisfy the clue, whichever of those rooms the other side ends up in.
+   * Symmetric, and it tightens as soon as either side's room set shrinks.
+   */
+  private applyAdjacentRooms(
+    ctx: SolveContext,
+    subjectId: PersonId,
+    clue: AdjacentRoomsClue,
+  ): DeductionStep | null {
+    const subjRooms = ctx.roomsOf(subjectId)
+    const targetRooms = ctx.roomsOf(clue.target)
+    if (subjRooms.size === 0 || targetRooms.size === 0) return null
+
+    const neighborsOf = (rooms: Set<string>): Set<string> => {
+      const out = new Set<string>()
+      for (const room of rooms) for (const n of ctx.board.roomNeighbors(room)) out.add(n)
+      return out
+    }
+    const allowedSubj = neighborsOf(targetRooms)
+    const allowedTarget = neighborsOf(subjRooms)
+
+    const eliminated: Elimination[] = []
+    this.removeFrom(ctx, subjectId, (c) => !allowedSubj.has(ctx.roomOf(c)), eliminated)
+    this.removeFrom(ctx, clue.target, (c) => !allowedTarget.has(ctx.roomOf(c)), eliminated)
+    if (eliminated.length === 0) return null
+    return {
+      technique: 'relational',
+      personId: subjectId,
+      eliminated,
+      explanation: {
+        key: 'step.relationalAdjacentRooms',
+        params: { name: subjectId, target: clue.target },
+      },
     }
   }
 

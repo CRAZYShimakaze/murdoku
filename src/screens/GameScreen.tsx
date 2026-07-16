@@ -28,11 +28,13 @@ import {
   saveElapsed,
   saveHintsUsed,
   exportLevelJson,
+  eraseHintSeen,
   isCustomSaved,
   loadCustomLevels,
   loadFilter,
   loadShowHiddenAuthor,
   loadSolved,
+  markEraseHintSeen,
 } from '../game/storage.ts'
 import {
   DEFAULT_FILTER,
@@ -138,6 +140,8 @@ export default function GameScreen({
   const [selected, setSelected] = useState<PersonId | null>(null)
   const [hoveredSuspect, setHoveredSuspect] = useState<PersonId | null>(null)
   const [xTool, setXTool] = useState(false)
+  // The eraser: armed by a TAP on the erase button (a long press wipes the whole board).
+  const [eraseTool, setEraseTool] = useState(false)
   const [result, setResult] = useState<Result | null>(null)
   // Header "solved" mark: already in the solved set on entry (re-checked per level),
   // OR just won this session (result.win) — the difficulty stamp then shows a check.
@@ -174,14 +178,15 @@ export default function GameScreen({
   // button on the board corner opens it as a bottom sheet instead.
   const [legendOpen, setLegendOpen] = useState(false)
   useBackInterceptor(legendOpen, () => setLegendOpen(false))
-  // On the phase-1 tutorial verdict, Restart / Back are LOCKED (they'd skip the second
-  // part) — clicking them just explains what they'd do; only the coach's "Next" proceeds.
-  const [tutNote, setTutNote] = useState<string | null>(null)
+  // A short-lived note over the board. Two users: the phase-1 tutorial verdict, where
+  // Restart / Back are LOCKED (they'd skip the second part) and a click just explains what
+  // they'd do; and the eraser, which introduces its two reaches once.
+  const [note, setNote] = useState<string | null>(null)
   useEffect(() => {
-    if (!tutNote) return
-    const id = window.setTimeout(() => setTutNote(null), 4200)
+    if (!note) return
+    const id = window.setTimeout(() => setNote(null), 4200)
     return () => window.clearTimeout(id)
-  }, [tutNote])
+  }, [note])
   const verdictLock = tut.active && !!tut.coach?.overDialog
   useEffect(() => {
     if (!tut.active) return
@@ -322,13 +327,18 @@ export default function GameScreen({
   }
   // Selecting a suspect or arming the X-tool must NOT drop the hint (the player is
   // about to act ON it) — so these no longer clear it.
+  // Picking a suspect means "I'm about to place THEM", so it disarms both cell tools — a
+  // tap on the board must then place, never cross or erase. The eraser follows the X tool
+  // here exactly; anything else and the next tap would silently do the wrong thing.
   const selectFromCard = (id: PersonId) => {
     setSelected((prev) => (prev === id ? null : id))
     setXTool(false)
+    setEraseTool(false)
   }
   const selectFromBoard = (id: PersonId | null) => {
     setSelected(id)
     setXTool(false)
+    setEraseTool(false)
   }
   // After placing a figure, drop the selection so their candidate highlight clears — the
   // player is done with that suspect.
@@ -336,9 +346,29 @@ export default function GameScreen({
     session.commit(cell, id)
     setSelected(null)
   }
+  // The X tool and the eraser are one toolbox: only ONE can be armed, so a tap on the board
+  // always has a single, readable meaning.
   const toggleX = () => {
     setXTool((v) => {
-      if (!v) setSelected(null)
+      if (!v) {
+        setSelected(null)
+        setEraseTool(false)
+      }
+      return !v
+    })
+  }
+  const toggleErase = () => {
+    setEraseTool((v) => {
+      if (!v) {
+        setSelected(null)
+        setXTool(false)
+        // Explain BOTH reaches once, exactly when the player first discovers the small one —
+        // a button that does two things by press length has to say so at least that once.
+        if (!eraseHintSeen()) {
+          markEraseHintSeen()
+          setNote(t('game.eraseIntro'))
+        }
+      }
       return !v
     })
   }
@@ -362,6 +392,7 @@ export default function GameScreen({
     setHintsUsed(0) // replaying from scratch — hints reset
     setSelected(null)
     setXTool(false)
+    setEraseTool(false)
     setResult(null)
     setDialogHidden(false)
     setElapsed(0)
@@ -397,6 +428,7 @@ export default function GameScreen({
   const showHint = () => {
     setSelected(null) // the black hint highlight replaces the blue selection
     setXTool(false)
+    setEraseTool(false) // the hint wants you to ACT on a cell — not to wipe it
     const h = engine.nextHint(session.state.placements, session.state.crosses, session.state.marks)
     setHint(h)
     setHintShown(true)
@@ -619,6 +651,8 @@ export default function GameScreen({
           helpMarks={tut.active ? null : refMarks}
           emphasize={hoveredSuspect}
           xTool={tut.active ? tut.xTool : xTool}
+          // The tutorial drives its own board; the eraser stays out of its way.
+          eraseTool={tut.active ? false : eraseTool}
           reveal={reveal}
           roomName={(key) => t(key)}
           occupantAt={session.occupantAt}
@@ -626,6 +660,7 @@ export default function GameScreen({
           onCommit={tut.active ? tut.onCommit : commitAndClear}
           onRemove={tut.active ? NOOP : session.remove}
           onSetCross={tut.active ? tut.onSetCross : session.setCross}
+          onEraseCell={tut.active ? NOOP : session.eraseCell}
           onSetMark={tut.active ? tut.onSetMark : session.setMark}
           onSelectSuspect={tut.active ? (id) => id && tut.onSelect(id) : selectFromBoard}
         />
@@ -648,6 +683,8 @@ export default function GameScreen({
       <Toolbar
         xTool={tut.active ? tut.xTool : xTool}
         onToggleX={tut.active ? tut.onToggleX : toggleX}
+        eraseTool={tut.active ? false : eraseTool}
+        onToggleErase={tut.active ? NOOP : toggleErase}
         onUndo={tut.active ? NOOP : onUndoClick}
         canUndo={tut.active ? false : session.canUndo}
         onReset={tut.active ? NOOP : onResetClick}
@@ -712,12 +749,12 @@ export default function GameScreen({
           onRestart={
             result.win
               ? verdictLock
-                ? () => setTutNote(t('tutorial.lockRestart'))
+                ? () => setNote(t('tutorial.lockRestart'))
                 : restart
               : undefined
           }
           onDismiss={result.win ? () => setDialogHidden(true) : undefined}
-          onBack={verdictLock ? () => setTutNote(t('tutorial.lockBack')) : onBack}
+          onBack={verdictLock ? () => setNote(t('tutorial.lockBack')) : onBack}
           generated={generated}
           saved={saved}
           defaultName={meta.title}
@@ -732,9 +769,9 @@ export default function GameScreen({
 
       {tut.coach && (!result || tut.coach.overDialog) && <Coach view={tut.coach} />}
 
-      {tutNote && (
+      {note && (
         <div className="mk-coachnote" role="status" aria-live="polite">
-          {tutNote}
+          {note}
         </div>
       )}
     </div>

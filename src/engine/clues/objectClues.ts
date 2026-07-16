@@ -35,7 +35,7 @@ export class SameLineAsObjectClue extends UnaryClue {
     super()
   }
 
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     const objs = objectsOf(board, this.object)
     const out = new Set<Cell>()
     for (const cell of board.occupiableCells()) {
@@ -81,7 +81,7 @@ export class SameRoomAsObjectClue extends UnaryClue {
     super()
   }
 
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     const rooms = new Set(objectsOf(board, this.object).map((o) => o.room))
     const out = new Set<Cell>()
     for (const cell of board.occupiableCells()) {
@@ -93,7 +93,7 @@ export class SameRoomAsObjectClue extends UnaryClue {
   override test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
     const board = puzzle.board
     const cell = solution.cellOf(subjectId)
-    if (!this.candidateCells(board).has(cell)) return false
+    if (!this.candidateCells(board)!.has(cell)) return false
     if (!this.alone) return true
     const room = board.roomIdOf(cell)
     for (const id of puzzle.allIds()) {
@@ -151,7 +151,7 @@ export class DirectionFromObjectClue extends UnaryClue {
     super()
   }
 
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     const objs = objectsOf(board, this.object).filter(
       (o) => this.at === null || board.idx(o.row, o.col) === this.at,
     )
@@ -217,7 +217,7 @@ export class BesideSameObjectClue extends Clue {
     super()
   }
 
-  override candidateCells(board: Board): Set<Cell> {
+  protected override computeCandidateCells(board: Board): Set<Cell> {
     // Every occupiable cell beside SOME instance of this object — the exact positional
     // precondition `test`/`besideCells` use. It MUST be derived from `besideCells` (not
     // `board.cellsNearObject`, which additionally drops cells that themselves carry an

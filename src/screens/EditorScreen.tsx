@@ -4,9 +4,9 @@ import SettingsButton from '../components/SettingsButton.tsx'
 import EditorBoard from '../components/EditorBoard.tsx'
 import SuspectsPanel from '../components/SuspectsPanel.tsx'
 import ObjectIcon from '../components/ObjectIcon.tsx'
-import { THEME_IDS, themeRooms, themeOutdoor, themeFromRoomKeys, themeDefaultObjects } from '../engine/generator/index.ts'
+import { THEME_IDS, themeRooms, themeOutdoor, themeFromRoomKeys, themeDefaultObjects, redundantBoardClues } from '../engine/generator/index.ts'
 import { fillBoardCluesAsync, generateLevelAsync, type GenHandle } from '../game/generatorClient.ts'
-import type { Condition } from '../game/editorClues.ts'
+import { VALUED_ATTRS, type Condition } from '../game/editorClues.ts'
 import { LEVELS, levelMetaFromJson, type Difficulty, type LevelMeta } from '../game/levels.ts'
 import {
   saveCustomLevel,
@@ -25,6 +25,7 @@ import {
   editorPeopleFromLevel,
   editorStateFromLevel,
   emptyEditorState,
+  normalizeBoardClues,
   presentObjectTypes,
   pruneWallEdges,
   setCell,
@@ -53,6 +54,10 @@ type CheckResult = {
   coverage?: number
   /** Mean per-suspect domain breadth in percent. */
   breadth?: number
+  /** How many GLOBAL clues the case cracks without — pure noise the player reasons with in
+   *  vain. Reported rather than prevented: a global clue is the author's, so neither the fill
+   *  nor `pruneClues` may drop it, and refusing such a fill cost 3 of 12 fills (measured). */
+  redundantBoard?: number
 }
 type EditDifficulty = Exclude<Difficulty, 'tutorial' | 'original'>
 const DIFFS: EditDifficulty[] = ['easy', 'medium', 'hard']
@@ -117,11 +122,22 @@ function draftFromLevel(level: LevelJson): EditorDraft {
   }
 }
 
+/**
+ * A restored draft comes straight from localStorage and may predate the current build — its
+ * board clues have to be migrated, exactly like a level opened from a file. Without this the
+ * editor crashed on open as soon as a clue type was renamed: the stale type reached
+ * createBoardClue, which no longer knows it.
+ */
+function migrateDraft(draft: EditorDraft | null): EditorDraft | null {
+  if (!draft?.state) return draft
+  return { ...draft, state: { ...draft.state, boardClues: normalizeBoardClues(draft.state.boardClues) } }
+}
+
 export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
   const { t, i18n } = useTranslation()
   // Open the passed level for editing; otherwise restore the saved draft, else fresh.
   const [draft] = useState<EditorDraft | null>(() =>
-    initialLevel ? draftFromLevel(initialLevel) : loadEditorDraft<EditorDraft>(),
+    initialLevel ? draftFromLevel(initialLevel) : migrateDraft(loadEditorDraft<EditorDraft>()),
   )
   const [theme, setTheme] = useState<string>(() => draft?.theme ?? pickTheme())
   const [state, setState] = useState<EditorState>(
@@ -332,7 +348,8 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
 
   const check = () => {
     try {
-      const puzzle = loadLevel(build('editor-check'))
+      const level = build('editor-check')
+      const puzzle = loadLevel(level)
       const c = checkLevel(puzzle, { budget: CHECK_BUDGET })
       if (c.aborted) return setResult({ kind: 'aborted' })
       if (c.solutions === 0) return setResult({ kind: 'none' })
@@ -348,6 +365,7 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
         logic: c.solvable ? 'pure' : 'contradiction',
         coverage: Math.round(cov.constrainedRatio * 100),
         breadth: Math.round(cov.avgBreadth * 100),
+        redundantBoard: redundantBoardClues(level).length,
       })
     } catch {
       setResult({ kind: 'error' })
@@ -475,6 +493,68 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
 
   const updateBoardClue = (i: number, next: BoardClueJson) =>
     setState((s) => ({ ...s, boardClues: s.boardClues.map((b, j) => (j === i ? next : b)) }))
+
+  /**
+   * The traits a "trait inside/outside" clue may ask about — the ones the player can SEE on
+   * the suspect cards, matching the set the generator offers (editor/generator parity).
+   */
+  const BOARD_CLUE_TRAITS = ['gender', 'beard', 'glasses', 'bald', 'hair'] as const
+
+  /**
+   * The murder rule (the victim's room always holds the victim + EXACTLY one suspect, i.e.
+   * 2 people / 1 suspect) makes some counts unsatisfiable on every board. Rather than let
+   * the user build a level that can never have a solution, the number input is bounded:
+   *
+   *   at most     >= 2 people / >= 1 suspect  (the victim's room already has that many)
+   *   exactly     == 2 people / == 1 suspect  (every room must match the victim's room)
+   *   not exactly must SKIP 2 people / 1 suspect — handled by boardClueSkip below
+   *   at least    >= 1 (0 says nothing)
+   */
+  const occupancyFloor = (scope: 'people' | 'suspects' | undefined): number =>
+    scope === 'suspects' ? 1 : 2
+
+  const boardClueMin = (bc: BoardClueJson): number => {
+    if (bc.type === 'roomOccupancy') {
+      if (bc.op === 'atMost' || bc.op === 'exactly') return occupancyFloor(bc.scope)
+      return bc.op === 'atLeast' ? 1 : 0
+    }
+    if (bc.type === 'countWithAttr') return 1
+    return 0
+  }
+
+  /** Upper bound, where the operator forces one ('exactly' can only be the victim's count). */
+  const boardClueMax = (bc: BoardClueJson): number | undefined =>
+    bc.type === 'roomOccupancy' && bc.op === 'exactly' ? occupancyFloor(bc.scope) : undefined
+
+  /** The one count "not exactly" may never name: the victim's room always has it. */
+  const boardClueSkip = (bc: BoardClueJson): number | undefined =>
+    bc.type === 'roomOccupancy' && bc.op === 'notExactly' ? occupancyFloor(bc.scope) : undefined
+
+  /** Push `count` into the legal range for the current operator/scope. */
+  const clampBoardClue = (bc: BoardClueJson): BoardClueJson => {
+    let count = Math.max(bc.count, boardClueMin(bc))
+    const max = boardClueMax(bc)
+    if (max !== undefined) count = Math.min(count, max)
+    if (count === boardClueSkip(bc)) count = count + 1
+    return { ...bc, count }
+  }
+
+  /** A fresh clue of the picked type, carrying `count` over where that stays legal. */
+  const boardClueOfType = (type: BoardClueJson['type'], count: number): BoardClueJson => {
+    switch (type) {
+      case 'countOnObject':
+        return { type, object: presentObjectTypes(state)[0] ?? 'mud', count }
+      case 'roomOccupancy':
+        // "no room held exactly 1 person" — the most useful default of the four.
+        return clampBoardClue({ type, op: 'notExactly', count: 1, scope: 'people' })
+      case 'countWithAttr':
+        // Defaults to gender, the only trait the victim visibly carries — so scope 'people'
+        // is legal right away and the user can switch either field freely.
+        return { type, attribute: 'gender', value: 'f', area: 'outside', count: Math.max(1, count), scope: 'people' }
+      default:
+        return { type, count }
+    }
+  }
   const removeBoardClue = (i: number) =>
     setState((s) => ({ ...s, boardClues: s.boardClues.filter((_, j) => j !== i) }))
   const addBoardClue = () =>
@@ -586,22 +666,33 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
           <select
             className="mk-select-input"
             value={bc.type}
-            onChange={(e) => {
-              const type = e.target.value as BoardClueJson['type']
-              updateBoardClue(
-                i,
-                type === 'countOnObject'
-                  ? { type, object: presentObjectTypes(state)[0] ?? 'mud', count: bc.count }
-                  : { type, count: bc.count },
-              )
-            }}
+            onChange={(e) =>
+              updateBoardClue(i, boardClueOfType(e.target.value as BoardClueJson['type'], bc.count))
+            }
           >
-            {(['countOnObject', 'emptyRooms', 'everyRoomCount'] as const).map((k) => (
+            {/* `everyRoomCount` is legacy — it IS roomOccupancy/exactly, and old levels are
+                normalised to that on open, so it never needs its own entry here. */}
+            {(['countOnObject', 'emptyRooms', 'roomOccupancy', 'countWithAttr'] as const).map((k) => (
               <option key={k} value={k}>
                 {t(`editor.boardClueKind.${k}`)}
               </option>
             ))}
           </select>
+          {bc.type === 'roomOccupancy' && (
+            <select
+              className="mk-select-input"
+              value={bc.op}
+              onChange={(e) =>
+                updateBoardClue(i, clampBoardClue({ ...bc, op: e.target.value as typeof bc.op }))
+              }
+            >
+              {(['atLeast', 'atMost', 'exactly', 'notExactly'] as const).map((op) => (
+                <option key={op} value={op}>
+                  {t(`editor.occupancyOp.${op}`)}
+                </option>
+              ))}
+            </select>
+          )}
           {bc.type === 'countOnObject' && (
             <select
               className="mk-select-input"
@@ -615,16 +706,78 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
               ))}
             </select>
           )}
+          {bc.type === 'countWithAttr' && (
+            <>
+              <select
+                className="mk-select-input"
+                value={bc.attribute}
+                onChange={(e) => {
+                  const attribute = e.target.value
+                  const spec = VALUED_ATTRS[attribute]
+                  updateBoardClue(i, {
+                    ...bc,
+                    attribute,
+                    value: spec ? spec.values[0] : true,
+                    // Only gender is visible on the victim, so every other trait must count
+                    // suspects only — otherwise the clue would hinge on hidden data.
+                    scope: attribute === 'gender' ? bc.scope : 'suspects',
+                  })
+                }}
+              >
+                {BOARD_CLUE_TRAITS.map((a) => (
+                  <option key={a} value={a}>
+                    {t(`attrKind.${a}`)}
+                  </option>
+                ))}
+              </select>
+              {VALUED_ATTRS[bc.attribute] && (
+                <select
+                  className="mk-select-input"
+                  value={String(bc.value)}
+                  onChange={(e) => updateBoardClue(i, { ...bc, value: e.target.value })}
+                >
+                  {VALUED_ATTRS[bc.attribute].values.map((v) => (
+                    <option key={v} value={v}>
+                      {t(`${VALUED_ATTRS[bc.attribute].labelKey}.${v}`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <select
+                className="mk-select-input"
+                value={bc.area}
+                onChange={(e) => updateBoardClue(i, { ...bc, area: e.target.value as 'inside' | 'outside' })}
+              >
+                <option value="inside">{t('area.inside')}</option>
+                <option value="outside">{t('area.outside')}</option>
+              </select>
+            </>
+          )}
+          {(bc.type === 'roomOccupancy' || bc.type === 'countWithAttr') && (
+            <select
+              className="mk-select-input"
+              value={bc.scope ?? (bc.type === 'countWithAttr' ? 'suspects' : 'people')}
+              // A non-gender trait can only ever count suspects (hidden victim traits).
+              disabled={bc.type === 'countWithAttr' && bc.attribute !== 'gender'}
+              onChange={(e) => {
+                const scope = e.target.value as 'people' | 'suspects'
+                // Switching scope moves the murder rule's bounds — re-clamp the count.
+                updateBoardClue(i, clampBoardClue({ ...bc, scope }))
+              }}
+            >
+              <option value="people">{t('editor.boardClueScopePeople')}</option>
+              <option value="suspects">{t('editor.boardClueScopeSuspects')}</option>
+            </select>
+          )}
           <label className="mk-bce__count">
             <span>{t('editor.count')}</span>
             <input
               className="mk-input"
               type="number"
-              min={0}
+              min={boardClueMin(bc)}
+              max={boardClueMax(bc)}
               value={bc.count}
-              onChange={(e) =>
-                updateBoardClue(i, { ...bc, count: Math.max(0, Number(e.target.value)) })
-              }
+              onChange={(e) => updateBoardClue(i, clampBoardClue({ ...bc, count: Number(e.target.value) }))}
             />
           </label>
         </div>
@@ -881,6 +1034,11 @@ export default function EditorScreen({ onBack, onPlay, initialLevel }: Props) {
               {result.coverage !== undefined && (
                 <span className="mk-editor__logic">
                   {t('editor.coverage', { percent: result.coverage, avg: result.breadth ?? 0 })}
+                </span>
+              )}
+              {result.redundantBoard !== undefined && result.redundantBoard > 0 && (
+                <span className="mk-editor__logic" data-logic="contradiction">
+                  {t('editor.redundantBoardClue', { count: result.redundantBoard })}
                 </span>
               )}
             </>

@@ -13,12 +13,36 @@ export interface SuspectJson {
  * A board-wide clue not tied to one suspect (shown separately in the UI):
  *  - countOnObject: exactly `count` people stand on cells with this object;
  *  - emptyRooms: exactly `count` rooms hold nobody (0 = "no room is empty");
- *  - everyRoomCount: every room holds exactly `count` people.
+ *  - roomOccupancy: one comparison every room must satisfy (at least / at most / exactly /
+ *    not exactly `count`);
+ *  - countWithAttr: exactly `count` carriers of a trait are inside / outside.
+ *
+ * `scope` picks who is counted — every person (victim included) or only the suspects;
+ * it defaults to each clue's historical behaviour so old level JSON keeps its meaning.
  */
 export type BoardClueJson =
   | { type: 'countOnObject'; object: string; count: number }
   | { type: 'emptyRooms'; count: number }
+  /** LEGACY (pre-roomOccupancy): identical to roomOccupancy 'exactly' over people. Still
+   *  loaded so older level files keep working; the editor normalises it on open. */
   | { type: 'everyRoomCount'; count: number }
+  /** The murder rule bounds `count` per op/scope — see RoomOccupancyClue. */
+  | {
+      type: 'roomOccupancy'
+      op: 'atLeast' | 'atMost' | 'exactly' | 'notExactly'
+      count: number
+      scope?: 'people' | 'suspects'
+    }
+  /** scope 'people' is only legal for `attribute: 'gender'` — the victim's other traits
+   *  are hidden from the player, so counting them would be uncheckable. */
+  | {
+      type: 'countWithAttr'
+      attribute: string
+      value: AttributeValue
+      area: 'inside' | 'outside'
+      count: number
+      scope?: 'people' | 'suspects'
+    }
 
 /** JSON definition of a complete level (see levels/demo-4x4.json). */
 export interface LevelJson {

@@ -1665,6 +1665,178 @@ button {
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
+/* Touch: a finger resting on a term is how you ASK for the tooltip (InfoTip fires on
+   pointerdown) — but the same long-press also starts the native text selection, which
+   shoves a selection UI over the answer. Clue text is testimony to read, not to copy,
+   so selection goes entirely on coarse pointers (same recipe as the toolbar buttons). */
+@media (pointer: coarse) {
+  .mk-clue,
+  .mk-boardclue {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
+/* ---- Akten-Notiz (mobile): tap the FACE of a clue card (or the lens of a global clue)
+   and its dossier note folds out underneath — every concept explanation plus the persons
+   the clue names. Only rendered on coarse pointers (CluePanel gates it); desktop keeps
+   its hover tooltips untouched. ---- */
+/* The handle: a dashed chalk ring — the Kommissar outline language ("dashed = look here").
+   Turns solid crimson while its note is open. On touch the ring is always visible (it is
+   the only invitation there); on hover-capable devices it appears when the cursor arrives,
+   so desktop cards stay as calm as before while the click still works everywhere. */
+.mk-facebtn {
+  border: 1.5px dashed rgba(42, 35, 23, 0.5);
+  border-radius: 50%;
+  padding: 2px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.14s ease;
+}
+@media (hover: hover) {
+  .mk-facebtn:not([aria-expanded='true']) {
+    border-color: transparent;
+  }
+  .mk-facebtn:not([aria-expanded='true']):hover,
+  .mk-facebtn:not([aria-expanded='true']):focus-visible {
+    border-color: rgba(42, 35, 23, 0.55);
+  }
+}
+.mk-facebtn[aria-expanded='true'] {
+  border-style: solid;
+  border-color: var(--crimson);
+}
+/* The lens of a global clue is square-ish — keep the ring round around it. */
+.mk-boardclue .mk-facebtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: none;
+}
+.mk-note {
+  grid-column: 1 / -1;
+  flex-basis: 100%;
+  margin-top: 0.35rem;
+  animation: mk-note-in 0.18s ease;
+  cursor: default;
+}
+@keyframes mk-note-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mk-note {
+    animation: none;
+  }
+}
+/* The note card borrows the tooltip chrome (ink card, brass hairline, pop shadow) — it IS
+   the tooltip, just resident instead of fleeting. */
+.mk-note__card {
+  position: relative;
+  background: var(--ink-700);
+  color: var(--bone);
+  border: 1px solid var(--brass-dim);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  padding: 0.55rem 0.7rem;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+}
+.mk-note__card::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: -6px;
+  width: 10px;
+  height: 10px;
+  background: var(--ink-700);
+  border-left: 1px solid var(--brass-dim);
+  border-top: 1px solid var(--brass-dim);
+  transform: rotate(45deg);
+}
+.mk-note__label {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-type);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.mk-note__label + .mk-note__label,
+.mk-note__row + .mk-note__label,
+.mk-note__person + .mk-note__label {
+  margin-top: 0.5rem;
+}
+.mk-note__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  margin: 0;
+  padding: 0.22rem 0;
+  border-top: 1px solid var(--line);
+}
+.mk-note__row:first-of-type {
+  border-top: 0;
+}
+.mk-note__row strong {
+  font-family: var(--font-type);
+  font-weight: 400;
+  color: var(--bone);
+  flex: none;
+  max-width: 45%;
+}
+.mk-note__row span {
+  color: var(--bone-dim);
+}
+/* One person = ONE flowing line: avatar, name, then the attributes as wrapping running
+   text with dot separators — the stacked tooltip layout wasted the whole right half and
+   grew four lines tall per person (user-reported). */
+.mk-note__person {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.3rem 0;
+  border-top: 1px solid var(--line);
+}
+.mk-note__avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+.mk-note__who {
+  display: block;
+  min-width: 0;
+  line-height: 1.55;
+}
+.mk-note__who > strong {
+  font-family: var(--font-type);
+  font-weight: 400;
+  color: var(--bone);
+  font-size: 0.82rem;
+  margin-right: 0.55rem;
+}
+/* AppearanceInfo flows inline after the name. The base .mk-tipinfo is a COLUMN flex
+   (tooltip layout) — display:inline undoes that here, and the dot separators replace
+   the line breaks. `white-space: normal` lets long attribute pairs wrap mid-phrase. */
+.mk-note__who .mk-tipinfo {
+  display: inline;
+  color: var(--bone-dim);
+}
+.mk-note__who .mk-tipinfo span {
+  white-space: normal;
+}
+.mk-note__who .mk-tipinfo span + span::before {
+  content: ' · ';
+  color: var(--bone-faint);
+}
 .mk-clue:hover {
   transform: translateY(-1px);
 }
@@ -1989,6 +2161,13 @@ button {
   font-size: 1.4rem;
   line-height: 1;
 }
+/* The eraser draws its icon as line art (the others are text glyphs), so it needs a box —
+   matched to the glyphs' optical size, and it inherits `color` like every stroke here. */
+.mk-tool__icon > svg {
+  display: block;
+  width: 1.45rem;
+  height: 1.45rem;
+}
 .mk-tool[data-active='true'] {
   background: var(--bone);
   color: var(--ink-900);
@@ -1998,6 +2177,13 @@ button {
   background: var(--crimson);
   color: #fff;
   border-color: var(--crimson);
+}
+/* Armed eraser: the bone highlight of an active tool (the X's crimson stays ITS colour, so
+   the two armed states never read as the same tool). */
+.mk-tool--erase[data-active='true'] {
+  background: var(--bone);
+  color: var(--ink-900);
+  border-color: var(--bone);
 }
 .mk-tool--submit {
   background: linear-gradient(180deg, var(--brass), var(--brass-dim));
@@ -3718,14 +3904,22 @@ button {
   border-radius: var(--r-md);
   background: rgba(120, 150, 210, 0.16);
   border: 1px solid rgba(120, 150, 210, 0.5);
-  display: flex;
+  /* GRID, not wrapping flex: the text column sits firmly beside the lens whatever its
+     length (a wrapping flex row bumps a long sentence onto its OWN line below the icon —
+     flex decides wrapping before shrinking; user-reported on mobile), while the mobile
+     Akten-Notiz still gets a full-width row of its own via grid-column. */
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: 0.5rem;
-  align-items: flex-start;
+  align-items: start;
   font-family: var(--font-type);
   font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.4;
   color: var(--bone);
+}
+.mk-boardclue > span:not(.mk-boardclue__icon) {
+  min-width: 0; /* let the text column wrap internally instead of overflowing the grid */
 }
 .mk-boardclue__icon {
   flex: none;

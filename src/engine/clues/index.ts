@@ -7,12 +7,14 @@ export {
   NearDoorClue,
   OutsideClue,
   InRoomClue,
+  InRoomAdjacentToClue,
   InRowClue,
   InColClue,
   CornerClue,
   AtWallClue,
 } from './unaryClues.ts'
 export {
+  AdjacentRoomsClue,
   DirectionClue,
   DirectionFromAttrClue,
   InsideXorClue,
@@ -37,6 +39,8 @@ export {
   AloneClue,
   NotAloneClue,
   AloneWithClue,
+  NeighborRoomCountClue,
+  NeighborRoomEmptyClue,
   RoomAttributeClue,
   RoomCompanionClue,
   RoomExistsClue,
@@ -45,11 +49,13 @@ export type { Quantifier } from './socialClues.ts'
 export { NotClue, AndClue, OrClue } from './compositeClues.ts'
 export { createClue } from './ClueFactory.ts'
 export type { ClueJson } from './ClueFactory.ts'
-export { relatedSuspects } from './clueRefs.ts'
+export { relatedSuspects, usesInsideOutside } from './clueRefs.ts'
 export {
   BoardClue,
   CountOnObjectClue,
+  CountWithAttrClue,
   EmptyRoomsClue,
-  EveryRoomCountClue,
+  RoomOccupancyClue,
   createBoardClue,
 } from './boardClues.ts'
+export type { CountScope, OccupancyOp } from './boardClues.ts'

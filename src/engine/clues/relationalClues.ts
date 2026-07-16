@@ -199,6 +199,41 @@ export class SameRoomClue extends Clue {
   }
 }
 
+/**
+ * "{name} and {target} were in adjoining rooms." — the two stand in DIFFERENT rooms that
+ * share a wall edge. Symmetric. Being in the SAME room never satisfies it (a room is not its
+ * own neighbour), so this is a genuine alternative to `SameRoomClue`, not a weaker form of it.
+ * Relational: where the subject may stand depends on the target, so `candidateCells` stays
+ * null and the pruning lives in `violatedBy` + the RelationalTechnique bound.
+ */
+export class AdjacentRoomsClue extends Clue {
+  constructor(readonly target: PersonId) {
+    super()
+  }
+
+  test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
+    const board = puzzle.board
+    const room = board.roomIdOf(solution.cellOf(subjectId))
+    return board.roomNeighbors(room).has(board.roomIdOf(solution.cellOf(this.target)))
+  }
+
+  override violatedBy(
+    subjectId: PersonId,
+    placement: ReadonlyMap<PersonId, Cell>,
+    puzzle: Puzzle,
+  ): boolean {
+    const s = placement.get(subjectId)
+    const t = placement.get(this.target)
+    if (s === undefined || t === undefined) return false
+    const board = puzzle.board
+    return !board.roomNeighbors(board.roomIdOf(s)).has(board.roomIdOf(t))
+  }
+
+  describe(): Explanation {
+    return { key: 'clue.adjacentRooms', params: { target: this.target } }
+  }
+}
+
 /** "{name} was exactly {distance} column(s)/row(s) {direction} of {target}." */
 export class OffsetClue extends Clue {
   constructor(

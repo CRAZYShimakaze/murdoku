@@ -20,6 +20,10 @@
     "credit": "Murdoku · a logic mystery"
   },
   "editor": {
+    "occupancyOp": {"atLeast":"at least","atMost":"at most","exactly":"exactly","notExactly":"not exactly"},
+    "boardClueScopePeople": "People (incl. victim)",
+    "boardClueScopeSuspects": "Suspects only",
+    "boardClueArea": "Area",
     "title": "Editor",
     "subtitle": "Build your own cases",
     "name": "Case name",
@@ -46,7 +50,7 @@
     "groupBlocking": "Blocking",
     "addClue": "+ Clue",
     "count": "Count",
-    "boardClueKind": { "countOnObject": "Count on object", "emptyRooms": "Empty rooms", "everyRoomCount": "Per room exactly" },
+    "boardClueKind": { "countOnObject": "Count on object", "emptyRooms": "Empty rooms", "everyRoomCount": "Per room exactly" , "roomOccupancy": "People per room", "countWithAttr": "Trait inside/outside" },
     "windowHint": "Click near the edge of a tile to place a window there. Click again to remove it.",
     "doorHint": "Click near the edge of a tile to place a door there (counts from both sides). Click again to remove it.",
     "room": "Room",
@@ -71,6 +75,8 @@
     "resultOkNoMurderer": "Solvable & unique, but no single murderer.",
     "logic_pure": "Solvable by pure logic",
     "logic_contradiction": "Needs contradictions",
+    "redundantBoardClue_one": "One global clue isn't needed",
+    "redundantBoardClue": "{{count}} global clues aren't needed",
     "coverage": "Cell coverage: {{percent}}% · avg breadth: {{avg}}%",
     "result_multi": "Ambiguous — more than one solution. It can't be saved like this.",
     "result_none": "Not solvable — no valid arrangement. It can't be saved like this.",
@@ -426,6 +432,7 @@
     "original": "Original"
   },
   "game": {
+    "eraseIntro": "Tap or drag across cells to erase notes, crosses and figures. Hold the button to erase everything.",
     "suspects": "Suspects",
     "selectPrompt": "Tap to select · long-press to place",
     "outsideLabel": "Outside",
@@ -437,10 +444,11 @@
     "author": "A case by {{name}}"
   },
   "tool": {
+    "erase": "Erase",
+    "eraseHold": "hold: all",
+    "eraseActive": "tap cells",
     "x": "X",
     "xSub": "block cell",
-    "reset": "Reset",
-    "eraseSub": "hold",
     "undo": "Undo",
     "hint": "Hint",
     "submit": "Solve",
@@ -763,6 +771,14 @@
     "glassesColor_silver": "silver glasses"
   },
   "who": {
+    "m_countPl": "men",
+    "f_countPl": "women",
+    "m_countSg": "man",
+    "f_countSg": "woman",
+    "m_countPl_susp": "male suspects",
+    "f_countPl_susp": "female suspects",
+    "m_countSg_susp": "male suspect",
+    "f_countSg_susp": "female suspect",
     "m_dat": "a man",
     "f_dat": "a woman",
     "m_all": "all men",
@@ -1032,7 +1048,23 @@
   "pronObj": { "m": "him", "f": "her" },
   "sameThe": "the same",
   "poss": { "m": "his", "f": "her" },
+  "area": {
+    "inside": "inside",
+    "outside": "outside"
+  },
   "clue": {
+    "inRoomAdjacentTo": "{{subject}} was {{neg}}in a room [[adjoining:adjacentRoom]] the {{room}}",
+    "adjacentRooms": "{{subject}} and {{target}} were {{neg}}in [[adjoining rooms:adjacentRoom]]",
+    "neighborRoomEmpty": "At least one [[empty room:emptyRoom]] adjoined {{poss}} room",
+    "neighborRoomEmptyNeg": "No [[empty room:emptyRoom]] adjoined {{poss}} room",
+    "neighborRoomCount": "A room [[adjoining:adjacentRoom]] {{poss}} room held [[exactly:roomAttrExact]] {{count}} [[suspects:suspect]]",
+    "neighborRoomCount_one": "A room [[adjoining:adjacentRoom]] {{poss}} room held [[exactly:roomAttrExact]] {{count}} [[suspect:suspect]]",
+    "neighborRoomCountNeg": "No room [[adjoining:adjacentRoom]] {{poss}} room held [[exactly:roomAttrExact]] {{count}} [[suspects:suspect]]",
+    "neighborRoomCountNeg_one": "No room [[adjoining:adjacentRoom]] {{poss}} room held [[exactly:roomAttrExact]] {{count}} [[suspect:suspect]]",
+    "neighborRoomCountDir": "An [[adjoining room:adjacentRoom]] {{direction}} of {{subjectName}} held [[exactly:roomAttrExact]] {{count}} [[suspects:suspect]]",
+    "neighborRoomCountDir_one": "An [[adjoining room:adjacentRoom]] {{direction}} of {{subjectName}} held [[exactly:roomAttrExact]] {{count}} [[suspect:suspect]]",
+    "neighborRoomCountDirNeg": "No [[adjoining room:adjacentRoom]] {{direction}} of {{subjectName}} held [[exactly:roomAttrExact]] {{count}} [[suspects:suspect]]",
+    "neighborRoomCountDirNeg_one": "No [[adjoining room:adjacentRoom]] {{direction}} of {{subjectName}} held [[exactly:roomAttrExact]] {{count}} [[suspect:suspect]]",
     "negWord": "not ",
     "onObject": "{{subject}} was {{neg}}[[on:onObject]] {{object}}",
     "onObjectIn": "{{subject}} was {{neg}}[[in:onObject]] {{object}}",
@@ -1131,18 +1163,54 @@
     "not": "[[not:negation]] ({{child}})"
   },
   "boardClue": {
-    "countOnObject": "Exactly {{count}} people were on {{object}}.",
-    "countOnObject_one": "Exactly {{count}} person was on {{object}}.",
+    "roomOccupancy": {
+      "atLeast": "Every room held at least {{count}} [[people:person]].",
+      "atLeast_one": "Every room held at least {{count}} [[person:person]].",
+      "atLeastSusp": "Every room held at least {{count}} suspects.",
+      "atLeastSusp_one": "Every room held at least {{count}} suspect.",
+      "atMost": "No room held more than {{count}} [[people:person]].",
+      "atMost_one": "No room held more than {{count}} [[person:person]].",
+      "atMostSusp": "No room held more than {{count}} suspects.",
+      "atMostSusp_one": "No room held more than {{count}} suspect.",
+      "exactly": "Every room held exactly {{count}} [[people:person]].",
+      "exactly_one": "Every room held exactly {{count}} [[person:person]].",
+      "exactlySusp": "Every room held exactly {{count}} suspects.",
+      "exactlySusp_one": "Every room held exactly {{count}} suspect.",
+      "notExactly": "No room held exactly {{count}} [[people:person]].",
+      "notExactly_one": "No room held exactly {{count}} [[person:person]].",
+      "notExactly_zero": "No room was empty.",
+      "notExactlySusp": "No room held exactly {{count}} suspects.",
+      "notExactlySusp_one": "No room held exactly {{count}} suspect.",
+      "notExactlySusp_zero": "Every room held at least one suspect."
+    },
+    "emptyRooms_zero": "No room was empty.",
+    "countWithAttrGender_zero": "Nobody was {{area}}.",
+    "countWithAttrTrait_zero": "Nobody with {{attribute}} was {{area}}.",
+    "countWithAttrTraitSusp_zero": "No suspect with {{attribute}} was {{area}}.",
+    "countWithAttrGender": "Exactly {{count}} {{who}} were {{area}}.",
+    "countWithAttrGender_one": "Exactly {{count}} {{whoSg}} was {{area}}.",
+    "countWithAttrTrait": "Exactly {{count}} [[people:person]] with {{attribute}} were {{area}}.",
+    "countWithAttrTrait_one": "Exactly {{count}} [[person:person]] with {{attribute}} was {{area}}.",
+    "countWithAttrTraitSusp": "Exactly {{count}} suspects with {{attribute}} were {{area}}.",
+    "countWithAttrTraitSusp_one": "Exactly {{count}} suspect with {{attribute}} was {{area}}.",
+    "countOnObject": "Exactly {{count}} [[people:person]] were on {{object}}.",
+    "countOnObject_one": "Exactly {{count}} [[person:person]] was on {{object}}.",
     "emptyRooms": "Exactly {{count}} rooms are empty.",
     "emptyRooms_one": "Exactly {{count}} room is empty.",
-    "everyRoomCount": "Every room has exactly {{count}} people.",
-    "everyRoomCount_one": "Every room has exactly {{count}} person."
+    "everyRoomCount": "Every room has exactly {{count}} [[people:person]].",
+    "everyRoomCount_one": "Every room has exactly {{count}} [[person:person]]."
   },
   "rule": {
     "aloneWithVictim": "The victim must be alone in a room with exactly one suspect.",
     "oneEachLine": "Each person must stand in their own row and column."
   },
+  "clueNote": {
+    "terms": "Terms",
+    "persons": "People in this clue"
+  },
   "tip": {
+    "adjacentRoom": "Two rooms adjoin when they share a wall somewhere. Rooms that only touch at a corner do not adjoin.",
+    "emptyRoom": "A room with nobody in it — no suspect, and not the victim either.",
     "negation": "Negation – flips the condition to its opposite: what follows is exactly NOT the case.",
     "onObject": "Standing on this object's tile (it is walkable).",
     "nearObject": "Right next to it — same room, one tile left, right, above or below the object.",
@@ -1176,7 +1244,7 @@
     "outside": "In an outdoor area (pasture, yard or garden).",
     "notAlone": "At least one other person is in the same room.",
     "suspect": "Only the suspects — the victim does not count here.",
-    "person": "All people: the suspects and the victim together."
+    "person": "A person can be a suspect or the victim."
   },
   "info": {
     "male": "male",
@@ -1186,6 +1254,10 @@
     "bald": "bald"
   },
   "cond": {
+    "suspectsUnit": "suspects",
+    "adjTargetRoom": "a room",
+    "adjTargetPerson": "a person’s room",
+    "neighborDirAny": "anywhere",
     "inRoom": "In room",
     "onObject": "On object",
     "uniqueOnObject": "Only one on object",
@@ -1233,7 +1305,7 @@
       "alone": "was alone",
       "in": "Specific room",
       "with": "in the same room as …",
-      "onObject": "someone at object/position"
+      "onObject": "someone at object/position", "adjacent": "adjoining …", "neighborEmpty": "empty adjoining room", "neighborCount": "suspects in an adjoining room"
     },
     "posCorner": "in a corner",
     "posWall": "at a wall",
@@ -1338,6 +1410,18 @@
   },
   "conn": { "and": "AND", "or": "OR" },
   "step": {
+    "notAdjacentRooms": "{{name}} is in no room next to {{target}} – the neighbouring rooms are removed.",
+    "roomOccupancyFull": "The {{room}} has reached its allowed number – ruled out for everyone else. ({{child}})",
+    "roomOccupancyConfine": "The {{room}} still needs exactly as many as can qualify – {{name}} must go there. ({{child}})",
+    "roomOccupancyMustJoin": "The {{room}} would otherwise hold exactly {{count}} – only {{name}} can still join, so they must. ({{child}})",
+    "roomOccupancyMustStayOut": "{{name}} in the {{room}} would make it exactly {{count}} – so not there. ({{child}})",
+    "relationalAdjacentRooms": "{{name}} is in a room next to {{target}} – rooms adjoining none of the other one’s possible rooms are removed.",
+    "neighborRoomEmpty": "An empty room must adjoin {{name}}’s room – here every neighbouring room is already occupied.",
+    "neighborRoomAllOccupied": "No empty room may adjoin {{name}}’s room – here a neighbouring room would be bound to stay empty.",
+    "neighborRoomCount": "A room with exactly {{count}} suspects must adjoin {{name}}’s room – here no neighbouring room can still manage that.",
+    "countWithAttrFull": "The required number is already reached – excluded for all the others. ({{child}})",
+    "countWithAttrConfine": "Exactly as many can still qualify as are required – {{name}} is one of them and must go there. ({{child}})",
+    "countWithAttrLine": "The required people fill exactly these rows or columns – the rest of them stays empty. ({{child}})",
     "clueCandidates": "{{name}}: the clues leave {{count}} possible cells.",
     "clueCandidates_one": "{{name}}: the clues leave {{count}} possible cell.",
     "nakedSingle": "{{name}} must be on {{cell}} – the only possible cell.",

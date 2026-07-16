@@ -1,10 +1,40 @@
 import type { Clue } from './Clue.ts'
 import { AndClue, OrClue, NotClue } from './compositeClues.ts'
 import { RoomAttributeClue, RoomCompanionClue, RoomExistsClue, AloneWithClue } from './socialClues.ts'
-import { DirectionClue, OffsetClue, SameRoomClue, InsideXorClue, DirectionFromAttrClue } from './relationalClues.ts'
+import { AdjacentRoomsClue, DirectionClue, OffsetClue, SameRoomClue, InsideXorClue, DirectionFromAttrClue } from './relationalClues.ts'
 import { BesideSameObjectClue } from './objectClues.ts'
+import { OutsideClue } from './unaryClues.ts'
+import { UniqueOutsideClue } from './uniquenessClues.ts'
+import { CountWithAttrClue } from './boardClues.ts'
 import type { AttributeValue, PersonId } from '../model/types.ts'
 import type { Puzzle } from '../model/Puzzle.ts'
+
+/**
+ * Does ANY clue of this puzzle hinge on the indoor/outdoor split?
+ *
+ * `outside` is a per-room FLAG, and nothing on the board reveals it: the floor art is chosen
+ * from the room's NAME, never from that flag. So whenever a clue leans on it, the panels must
+ * spell out which rooms are outdoors — otherwise "exactly 2 men were inside" is unusable.
+ *
+ * Covers all three homes a clue can have: a suspect's own clues, the puzzle's global clues,
+ * and the board clues (the trait-count clue names an area). Note `UniqueOutsideClue` does NOT
+ * extend `OutsideClue` — it must be listed separately or "the only person outside" is missed.
+ */
+export function usesInsideOutside(puzzle: Puzzle): boolean {
+  const inClue = (clue: Clue): boolean => {
+    if (clue instanceof OutsideClue || clue instanceof UniqueOutsideClue || clue instanceof InsideXorClue) {
+      return true
+    }
+    if (clue instanceof NotClue) return inClue(clue.inner)
+    if (clue instanceof AndClue || clue instanceof OrClue) return clue.clues.some(inClue)
+    return false
+  }
+  return (
+    puzzle.suspects.some((s) => s.clues.some(inClue)) ||
+    puzzle.globalClues.some(inClue) ||
+    puzzle.boardClues.some((c) => c instanceof CountWithAttrClue)
+  )
+}
 
 /** The traits and named people a clue points at — used to highlight the OTHER suspects a
  *  selected suspect's clue is "about" (everyone sharing a mentioned trait, plus any named
@@ -52,6 +82,7 @@ function collect(clue: Clue, into: ClueRefs): void {
     clue instanceof DirectionClue ||
     clue instanceof OffsetClue ||
     clue instanceof SameRoomClue ||
+    clue instanceof AdjacentRoomsClue ||
     clue instanceof InsideXorClue
   ) {
     into.persons.push(clue.target)

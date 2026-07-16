@@ -1,0 +1,352 @@
+# Murdoku — Regeln & Architektur
+
+Ein Deduktions-Krimi: Verdächtige + Opfer werden per Hinweisen auf einem Raster platziert.
+
+## Die zwei Kernregeln (NIEMALS vergessen)
+
+Beide werden dem Spieler angezeigt (`i18n/locales/de.json` → `rule.*`):
+
+1. **`rule.oneEachLine` — Jede Person steht in einer eigenen Zeile UND Spalte.**
+   Das Opfer zählt mit. Belegt in `SearchSolver.ts` (`forbid[cell]` = ganze Zeile+Spalte, wird beim
+   Setzen aus allen anderen Domains entfernt), `SolveContext.place()` und
+   `Generator.generateSolution()` (disjunkte row-/col-Shuffles).
+2. **`rule.aloneWithVictim` — Der Opferraum enthält genau EINEN Verdächtigen** (= den Mörder).
+   Belegt in `SearchSolver.murderAlone()` und `Generator.placeOnBoard()`.
+
+**Alle Level sind volle Permutationen:** `width == height` und `#Verdächtige + 1 == width`
+(4×4 … 12×12; geprüft über alle Level in `levels/`). Also hat *jede* Zeile und *jede* Spalte
+**genau eine** Person. `SolveContext.fullPermutation` ist real immer `true`.
+
+### Was daraus folgt — vor jedem neuen Hinweistyp prüfen!
+
+Für je zwei Personen gilt `Δrow ≠ 0` **und** `Δcol ≠ 0`. Deshalb sind folgende Hinweise
+**unmöglich oder vakuum** — sie dürfen nicht gebaut werden:
+
+- „direkt neben Y" (orthogonal benachbart) — solche Zellen teilen immer Zeile oder Spalte
+- „in derselben Zeile/Spalte wie Y"
+- „zwischen Y und Z" (auf einer Linie)
+- „genau N Personen in Zeile 3" — es ist immer genau 1
+- „X ist die nördlichste Person" — ≡ `inRow(0)`, ein verkappter Zeilen-Hinweis
+  (Zeilen-Hinweise sind im Generator bewusst gedeckelt: `MAX_LINE_CLUES = 1`)
+
+Was überlebt: **diagonale Berührung** (`|Δrow|=1 && |Δcol|=1` — die einzige mögliche Nachbarschaft),
+**Distanz** (Chebyshev ≥ 1), **alles über Räume** (Blobs, keine Linien), **Raum-Nachbarschaft**,
+**globale Merkmals-Verteilung**.
+
+### Abgeleitete Feinheiten
+
+- Ein Raum mit dem Opfer hat immer genau 1 Verdächtigen ⇒ **„Raum ohne Verdächtigen" ≡ „Raum ohne
+  Person"**. So rechnet `EmptyRoomsTechnique` bereits.
+- Opferraum = genau **2 Personen** / **1 Verdächtiger** ⇒ Untergrenzen für Belegungs-Hinweise.
+- **Das Opfer zeigt nur sein Geschlecht.** Bart/Brille/Glatze/Haare sind zufällig und verdeckt
+  (`Generator.candidatesFor` → `usableTrait`). Ein Hinweis darf nie an einem verdeckten
+  Opfer-Merkmal hängen — sonst ist er für den Spieler nicht nachvollziehbar.
+- **`outside` ist ein reines Raum-FLAG, das die Grafik nirgends verrät** (die Bodentextur folgt
+  dem Raum*namen*). Jeder Hinweis, der drinnen/draußen nutzt, braucht deshalb die Legende
+  „Draußen: …" — sonst ist er unlösbar. Steuernd: `clues/clueRefs.ts` → `usesInsideOutside`,
+  genutzt von `CluePanel` (Spiel) **und** `SuspectsPanel` (Editor). Beim Hinzufügen eines
+  Hinweistyps, der auf dem Flag beruht, dort ergänzen — er muss alle drei Orte abdecken
+  (Verdächtigen-Hinweise, `globalClues`, `boardClues`). Achtung: `UniqueOutsideClue` erbt
+  **nicht** von `OutsideClue`. Test: `clues/insideOutside.test.ts`.
+
+## Raumstruktur (gemessen an allen 163 Handleveln)
+
+Der Generator (`generateRooms`) bildet diese Struktur nach — beim Ändern nicht verletzen:
+
+- **`Räume ≤ Verdächtige` ausnahmslos** (0 von 163 haben mehr). Räume/Verdächtige liegt bei
+  0.6–1.0, Ø 0.8; **24 % haben exakt `Räume == Verdächtige`**.
+- Nur bei `Räume == Verdächtige` **und** `emptyRooms: 0` greift die Raum-Bijektion
+  (`RoomCoverageTechnique`). Beides muss möglich bleiben.
+- **60–70 % der Räume sind exakte Rechtecke** (füllen ihre Bounding-Box) → Räume entstehen per
+  rekursiver Rechteck-Teilung (BSP), nicht per Flood-Fill; danach werden wenige Zellen an
+  Nachbarräume abgegeben (L-Formen), ohne einen Raum zu zerreißen.
+- Kleinster Raum: Ø 6–7 Felder (absolutes Minimum 2) → Schnitte werden mittig balanciert, der
+  Mindestraum skaliert mit dem Brett (≈45 % der Durchschnittsfläche).
+- Ø 2.4–3.0 Nachbarräume pro Raum. Wichtig: bei zu wenigen Räumen grenzt jeder an jeden und
+  Nachbarschafts-Hinweise sagen nichts mehr.
+- Void-Zellen sind die Ausnahme (2 von 163).
+
+`generateSolution` strebt auf der Hälfte der Level eine Platzierung **ohne leeren Raum** an —
+per Zufall entsteht sie fast nie (gemessen 5 %), und ohne sie kann „Kein Raum war leer" nicht
+existieren.
+
+## Jeder Hinweis muss gebraucht werden (ab Mittel)
+
+Ein Hinweis, den man weglassen kann und der Fall löst sich trotzdem, ist **Rauschen** — der
+Spieler liest ihn, rechnet mit ihm, und er war Deko. Gemessen vor der Sperre: **15–20 % aller
+Hinweise** waren entbehrlich — in generierten *und* handgebauten Leveln gleichermaßen.
+
+- `Generator.hasRedundantClue(level)` lässt jeden Hinweisteil einzeln weg und prüft, ob das
+  Level noch **vorwärts** lösbar ist (nur Vorwärts-Löser, keine Eindeutigkeitssuche — löst es
+  vorwärts, war der Hinweis nicht nötig). Hängt als **harte Akzeptanzbedingung** in
+  `pickBestLevel` → deckt freie Generierung **und** den Editor-Fill ab.
+- **Easy ist ausgenommen.** Dort laufen die „Vorgaben" absichtlich als Mitläufer mit: ein
+  relationaler Hinweis hat kein Zellfeld, kann also nicht fixieren, und ihn tragend zu machen
+  hieße Rang 3 — dann wäre es kein leichtes Level mehr.
+- **Ein entbehrlicher Hinweis lässt sich nicht durch einen besseren ersetzen.** Löst der Fall
+  ohne X' Hinweis, ist *jeder* Hinweis für X entbehrlich — das Level ist durch die ÜBRIGEN
+  überbestimmt. Nur ein anderer Kandidat hilft. Deshalb ein Tor, keine Reparatur.
+  Gemessen: **90 % der abgelehnten Kandidaten** sind genau dieser Fall (Einzelhinweis entbehrlich),
+  nur 1 % ein entbehrlicher UND-*Teil* — den kürzt Phase 2a der Konstruktion längst weg. Ein
+  „Teile kürzen statt verwerfen" bringt also nichts (Tor-Durchsatz 8 % → 10 %).
+- Das Tor ist damit **die Härte-Anforderung selbst**, kein Performance-Hindernis: Bei einer vollen
+  Permutation ist die letzte Person durch Ausschluss erzwungen, ihr Hinweis wäre Deko. Ein Hinweis
+  für X ist nur tragend, wenn er hilft, jemand **anderen** zu platzieren — genau das verzahnte,
+  breite Level, das „hard" ausmacht.
+- `pruneClues` findet dadurch bei Verdächtigen-Hinweisen nichts mehr zu kürzen (es kürzt nur,
+  solange lösbar — genau das schließt das Tor aus). Das ist stimmig; Board-Clues kürzt es weiter.
+- Jeder Verdächtige behält **mindestens einen** Hinweis (0 von 1090 im Handkorpus sind ohne).
+
+## Generator-Fallstrick: Invariante ≠ Wächter (teuer gelernt)
+
+`constructLogicClues` baut **inkrementell**. Jede Prüfung dort muss den **Zuwachs** beurteilen
+(„macht meine Änderung es schlimmer?"), **nie den Zustand** („ist das Level makellos?").
+
+Warum das keine Stilfrage ist: Die Verdächtigen starten auf je einem Hinweis, und breite Hinweise
+sehen über Personen hinweg identisch aus („nicht neben einem Spind") — **96 % der 9×9-hard-Bretter
+tragen schon beim Start ein Duplikat**. Ein Wächter, der `duplicateClueCount(...) === 0` verlangt,
+ist dann `false`, **egal was hinzugefügt wird**: Er lehnt jeden Kandidaten ab, `addPart` gibt auf,
+der Versuch stirbt — gemessen **100 %** aller Abbrüche, mit ~2170 unbenutzten Hinweisen im Vorrat.
+`addPart` ist nie wirklich aus Hinweisen ausgegangen.
+
+Muster (Phase 4 machte es immer richtig, die anderen drei waren daran vorbeigebaut):
+
+```ts
+const dupBefore = dupCount()          // VOR der Änderung merken
+...
+if (dupCount() > dupBefore) reject    // nur der Zuwachs zählt
+```
+
+Gleiches gilt für `capOverflow()` (Familien-Deckel): Die Deckel-Reparatur lief, *weil* ein Deckel
+verletzt war — und verwarf dann jeden Tausch, der nicht in EINEM Schritt vollständig heilte. Sie
+konnte den ersten von zwei nötigen Schritten nie gehen (63 % aller Versuche, nachdem der
+Dedup-Deadlock sie nicht mehr verdeckte). Sie muss **Fortschritt** annehmen, nicht Perfektion.
+
+Die Auslieferungs-Garantie hängt **nicht** an diesen Wächtern: Phase 3/4 räumen auf, und
+`pruneClues` + `pickBestLevel` liefern kein Level mit Duplikat oder über Deckel aus.
+
+**Kosten der Wächter (`rate()` = eine volle Deduktion über das ganze Level):** immer erst die
+billigen, rein bucheinsichtigen Prüfungen, dann `rate()`. Und in 2a-hard deckelt `HARD_SCAN` die
+Probier-Tiefe — **gleichmäßig über die nach Breite sortierte Liste gestreut, nie als Kopf-Deckel**:
+Breite Hinweise machen das Level viel öfter unlösbar, ein Kopf-Deckel probiert also genau die
+Verlierer und kostete gemessen **60 % aller harten Hinweise**. Gestreut kostet er **nichts** — der
+billigere Versuch kauft mehr Versuche, und `pickBestLevel` macht daraus wieder Qualität.
+
+## Was „hart" heißt (Nutzer-Definition, wörtlich)
+
+> „ein hartes Level macht nicht aus, dass wir harte Hinweise nutzen, sondern es ist der Mix aus
+> logischen Ketten, spätem Setzen von Eindeutigkeiten von Verdächtigen, viele wenn dann dann,
+> eine gute Ausdehnung dass der Anfang für den Menschen nicht so einfach ist"
+
+**Referenzlevel: `levels/museum.json`** — das einzige vom Nutzer benannte Beispiel für „logisch, aber
+echt hart". Seine Zahlen sind der Maßstab, **nicht** der Durchschnitt des Handkorpus (der ist
+größtenteils vom Editor-Fill erzeugt — sich daran zu messen ist zirkulär):
+
+| | museum | Bedeutung |
+|---|---|---|
+| Ausdehnung (`constrainedRatio`) | **98 %** | wie viel Brett nach dem Lesen ALLER Hinweise offen bleibt |
+| Breite (`avgBreadth`) | 38 % | und das über VIELE Verdächtige, nicht einen |
+| 1. Setzung (`openingSteps`) | **Schritt 24** | wie lange das Brett standhält, bevor jemand feststeht |
+| harte Hinweisarten | 1 von 8 | ⇒ Breite geht AUCH ohne viele davon |
+
+**Breite ist das ZIEL, die Hinweisart ein MITTEL** — und zwar ein gutes: harte (relationale) Hinweise
+sind von Natur aus breit, „je mehr harte und je mehr Breite super". Nutzer wörtlich: „ein hartes
+Level ist schon sehr breit, ich sagte nur es muss **nicht nur** Level 5 harte Hinweise sein. Wenn es
+breit wird durch andere Hinweistypen, dann gerne, siehe Museum. Aber ich habe nichts gegen viele
+harte Hinweise." Also: `hardClueCount` bleibt im Score, Rang 5 ist **kein Ziel** (nur Boden), und
+Breite/Ausdehnung/Ketten/spätes Setzen entscheiden.
+
+Bars des Nutzers: `HARD_COVERAGE_BAR = 75`, `HARD_BREADTH_BAR = 50` — harte Hürde **mit
+Auffangnetz** (nichts gefunden ⇒ bestes Vorhandenes, nie „kein Level"). Sie galten einmal als
+unerreichbar und wurden gestrichen; der verwaiste Doc-Kommentar über `breadthPenalty` ist ihr
+Grabstein. Unerreichbar waren sie wegen der Bugs unten, nicht wegen der Zahlen.
+
+**Etikett = Definition (16.07.2026, Nutzer-OK):** `tierFor` vergibt „hard" auf drei Wegen — viele
+harte Hinweisarten (alt), Rang 5 (alt), **oder Bars geschafft + Rang ≥ 4** (die Nutzer-Definition).
+Ohne den dritten Weg hießen die besten Pool-Picks (95–100 % Ausdehnung) „medium": gemessen 7 von 8.
+Gespeicherte Level behalten ihr Etikett; nur frisch Bewertetes nutzt die neue Regel.
+
+**Fallen dabei:**
+- **Breite und Ausdehnung sind Gegenspieler**, wenn man stumpf auf Breite optimiert: Der
+  breiteste Hinweis ist ein relationaler (ganzes Brett offen) — und der zählt bei der Ausdehnung
+  **gar nicht mit** (`restricted = domain.size < total`). Auf Breite optimieren schob 6 von 8
+  Verdächtigen auf relationale Hinweise: Breite 75 %, Ausdehnung **4 %**. Regel: so breit wie
+  möglich, **ohne aufzuhören, etwas über Zellen zu sagen** (`broadestIdx` kennt sie).
+- **`openingSteps` hängt daran, dass NUR `NakedSingleTechnique` `placedCell` setzt.** Eine zweite
+  setzende Technik macht die Kennzahl (und `stuck`) still falsch.
+- Absolute Schrittzahl nehmen, nicht den Anteil an der Kette: easy-Level sind nur 13–17 Schritte
+  lang, der Anteil schmeichelt ihnen (easy 31–50 %, generiert „hart" 21–27 %).
+
+## Generator-Fallstricke (teuer gelernt)
+
+**1. Invariante ≠ Wächter.** `constructLogicClues` baut **inkrementell**. Jede Prüfung dort muss den
+**Zuwachs** beurteilen („macht meine Änderung es schlimmer?"), **nie den Zustand** („ist das Level
+makellos?"). Die Verdächtigen starten auf je einem Hinweis, und breite Hinweise wiederholen sich
+über Personen — **96 % der 9×9-hard-Bretter tragen schon beim Start ein Duplikat**. Ein Wächter,
+der `duplicateClueCount(...) === 0` verlangt, ist dann `false`, **egal was hinzugefügt wird**:
+Er lehnt jeden Kandidaten ab, `addPart` gibt auf, der Versuch stirbt — gemessen **100 %** aller
+Abbrüche, mit ~2170 unbenutzten Hinweisen im Vorrat. `addPart` ging nie wirklich aus.
+
+```ts
+const dupBefore = dupCount()          // VOR der Änderung merken
+if (dupCount() > dupBefore) reject    // nur der Zuwachs zählt
+```
+
+Gleiches für `capOverflow()`: Die Deckel-Reparatur lief, *weil* ein Deckel verletzt war — und
+verwarf jeden Tausch, der nicht in EINEM Schritt vollständig heilte (63 % aller Versuche). Sie muss
+**Fortschritt** annehmen, nicht Perfektion. Phase 4 machte es immer richtig; die anderen drei waren
+daran vorbeigebaut. Die Auslieferungs-Garantie hängt **nicht** an diesen Wächtern, sondern an
+Phase 3/4 + `pruneClues` + `pickBestLevel`.
+
+**2. `tightness` ist KEINE Breite.** Es liefert für zellbasierte Hinweise die echte Zellenzahl, für
+alle anderen handverlesene **Vorlieben**-Konstanten (`inRow → 150` = „letzte Wahl", obwohl eine
+Zeile nur 9 von 56 Zellen trifft; `direction → 100`, obwohl das ganze Brett offen bleibt). Wer über
+breit/eng redet, muss `candidateCells(board).size` nehmen — sonst „weitet" man einen 56-Zellen-
+Hinweis auf 9 Zellen auf (gemessen: Ø **−17** Zellen, 42 % aller „Erfolge" verengten).
+
+**3. Kosten der Wächter:** `rate()` = eine volle Deduktion über das ganze Level. Immer erst die
+billigen, rein bucheinsichtigen Prüfungen, dann `rate()`. `HARD_SCAN` deckelt die Probier-Tiefe in
+2a-hard — **gleichmäßig über die breiten-sortierte Liste gestreut, nie als Kopf-Deckel**: Breite
+Hinweise machen das Level viel öfter unlösbar, ein Kopf-Deckel probiert genau die Verlierer und
+kostete **60 % aller harten Hinweise**. Gestreut kostet er nichts — der billigere Versuch kauft mehr
+Versuche, und `pickBestLevel` macht daraus wieder Qualität.
+
+**4. Konstanten brechen, ohne dass jemand sie anfasst.** `FALLBACK_BUDGET` (Hauptthread, 8 s hart)
+war für Versuche à 140 ms bemessen. Nachdem der Dedup-Deadlock weg war, kosteten Versuche 1,1 s —
+dieselben 8 s kauften 7 statt 57 Versuche, und 9×9 hard scheiterte 3 von 8 Mal („kein Level
+gefunden"). **Beide Budgets messen** (`generatorClient.ts`: `WORKER_BUDGET` **und**
+`fallbackBudget()`), nicht nur das Worker-Budget.
+
+**5. Performance-Verträge (16.07.2026, alle per Fest-Seed-Fingerprint verlustfrei bewiesen):**
+- `Clue.candidateCells` ist in der **Basisklasse memoisiert** (pro Board-Identität); Subklassen
+  implementieren `computeCandidateCells`. Die Sets werden zwischen Solves GETEILT — **Aufrufer
+  dürfen sie nie mutieren** (Komposits kopieren vor dem Schneiden; so lassen).
+- `constructLogicClues.rate()` baut das Puzzle **direkt** aus gecachten Teilen (ein Board, gecachte
+  Clue-Instanzen) statt über LevelJson→`loadLevel` — nur so wird der candidateCells-Memo über die
+  ~370 Deduktionen pro Versuch warm. Wer rate() anfasst: Instanz-Caches (`leafInstAt`/`clueInstOf`)
+  nicht umgehen.
+- `NakedGroupTechnique` nutzt Bitmasken + lexikografische DFS mit Schranken-Pruning,
+  `ForcedCellTechnique` einen Ein-Pass-Scan — beide müssen **identische Eliminierungen in
+  identischer Reihenfolge** liefern wie die naive Form (die DFS-Besuchsreihenfolge = alte
+  `combinations()`-Reihenfolge ist der Beweis-Anker).
+- Ein **Rating-Memo** über den `used`-Zustand wurde gebaut, gemessen (Trefferquote 0,5–1 %) und
+  **verworfen** — die Pässe besuchen fast nie denselben Zustand zweimal. Nicht wieder bauen.
+- **Wanduhr-Messungen rauschen ±20 %** auf dieser Maschine (identische Arbeit: 11,8–14,1 s).
+  Vergleiche nur mit festen Seeds, verschränkt im selben Prozess, mehrfach wiederholt — und
+  Verlustfreiheit IMMER mit versuchs-gebundenem Budget fingerprinten (zeit-gebunden schafft
+  schnellerer Code mehr Versuche ⇒ anderes Level ⇒ sieht fälschlich wie ein Bug aus).
+
+## Worker-Pool (`generatorClient.ts`)
+
+Die Generierung läuft in einem **Pool paralleler Worker** (`poolSize() = min(4, Kerne−1)`), jeder
+mit disjunktem Seed-Strom; der Hauptthread wählt den Sieger per `selectBestLevel` — **derselben
+Skala**, mit der jeder Worker seine Kandidaten bewertet hat (Test: `generator/selection.test.ts`,
+museum muss Der_Burgfall schlagen). Level-Qualität skaliert direkt mit der Kandidatenzahl
+(gemessen: 1 Kandidat ⇒ Hürden sind Glückssache, 4+ ⇒ Normalfall). 2-Kern-Gerät ⇒ Pool = 1 =
+altes Verhalten, **mobil nie schlechter**. Fehlerleiter: toter Worker verkleinert den Pool; ALLE
+tot ⇒ ein Inline-Fallback (nie N parallele Hauptthread-Läufe — die frören die UI N-fach ein).
+`quality: 'fast' | 'max'` ist der vorverdrahtete UI-Regler (softMs 2500/8000).
+
+## Clue-API (`engine/clues/Clue.ts`)
+
+| Hook | Wer nutzt es | Regel |
+|---|---|---|
+| `candidateCells(board)` | `DeductionEngine.seedDomains`, `SearchSolver` | **MUSS Obermenge der wahren Zellen sein.** Zu enge Menge ⇒ mehrdeutiges Level gilt als eindeutig. `null` = rein relational |
+| `definiteCells(board)` | **nur** `NotClue.candidateCells` | Zellen, wo der Hinweis *garantiert* gilt (unabhängig von anderen). `null` ⇒ Negation prunt nichts und muss in einer Technique stehen |
+| `forbiddenForOthers(board)` | **nur** `UniqueConstraintTechnique` | feste Zellmenge, die für alle anderen entfällt |
+| `violatedBy(subj, placement, puzzle)` | `SearchSolver` + `narrow()`, `DeductionEngine.removableReason` | Pruning bei Teilbelegung, nie false-positive |
+| `test(subj, solution, puzzle)` | Endvalidierung | Wahrheit auf der Vollbelegung |
+
+Board-Clues (global, `clues/boardClues.ts`) haben nur `test` + eine eigene Technique.
+
+Vollständiges Inventar (nie hier duplizieren, sonst veraltet es): `ClueJson` in
+`clues/ClueFactory.ts`, `BoardClueJson` in `io/LevelSchema.ts`.
+
+## Persistierte Daten überleben Refactorings (teuer gelernt)
+
+localStorage-**Entwurf**, gespeicherte **Custom-Level** und **Exporte** enthalten JSON, das ein
+ÄLTERER Build geschrieben hat. Wer einen `type` umbenennt oder entfernt, **muss** die Migration
+mitliefern — sonst öffnet sich der Editor nie wieder.
+
+- `createBoardClue` / `createClue` **werfen** bei unbekanntem Typ. Das ist Absicht: früher fiel
+  der `switch` durch und lieferte `undefined`, was erst weit entfernt als
+  „Cannot read properties of undefined (reading 'describe')" auftauchte.
+- Migration: `game/editorModel.ts` → `normalizeBoardClue` / `normalizeBoardClues`. Legacy-Formen
+  werden umgeschrieben, wirklich Unbekanntes verworfen (ein verworfener Hinweis ist besser als
+  ein dauerhaft toter Editor).
+- Sie ist an **allen drei** Eintrittspunkten verdrahtet: `storage.loadCustomLevels()`,
+  `EditorScreen.migrateDraft()` (localStorage-Entwurf) und `editorModel.editorStateFromLevel()`.
+- Test: `game/boardClueMigration.test.ts` — bei jedem Umbenennen dort einen Fall ergänzen.
+
+## Deduktion
+
+`DeductionEngine` löst **rein vorwärts** — kein Raten. Techniques in `solver/techniques/`,
+registriert in `solver/forward.ts`, Rang in `solver/DeductionStep.ts` (`TECHNIQUE_RANK`).
+Der Generator akzeptiert nur Level, die die Engine *ohne* Fallunterscheidung löst — das garantiert
+zugleich Eindeutigkeit **und** Menschen-Lösbarkeit.
+
+Nützliche Helfer in `SolveContext`: `roomsCapacity(rooms)` (min. Zeilen/Spalten-Spanne = Obergrenze
+für Personen), `fullLinesIn(room, axis)`, `guaranteedRoomOf(id)`, `roomsOf(id)`, `linesOf(id, axis)`.
+
+## Checkliste: neuer Hinweistyp
+
+1. `engine/model/Board.ts` — Geometrie-Helfer (memoisiert)
+2. `engine/clues/*.ts` — Clue-Klasse
+3. `engine/clues/index.ts` + `ClueFactory.ts` — Export, `ClueJson`, `createClue`
+4. `engine/clues/clueRefs.ts` — falls der Hinweis Personen/Merkmale nennt
+5. `engine/solver/` — Technique + `forward.ts` + `Technique`-Name/`TECHNIQUE_RANK`;
+   relationale Typen zusätzlich in `SearchSolver.relationalLinks`
+6. `engine/generator/Generator.ts` — `candidatesFor` emittiert ihn; ggf. `HARD_CLUE_TYPES`,
+   `UNCAPPED_TYPES`, `cappedFamilies`; `collapsesToLine`-Guard
+7. `game/editorClues.ts` — `CondKind`/`roomMode` + **verlustfreier Round-Trip**
+8. `components/ClueBuilder.tsx` — UI (mobil mitdenken)
+9. **`i18n/Renderer.ts` UND `components/ClueText.tsx`** — Wording/Negation immer in *beiden*;
+   `<key>Neg` für negierte Sonderformen, `BOLD_PARAMS` in ClueText
+10. `i18n/locales/{de,en,es}.json` — **alle drei** Sprachen, `_one`/`_zero` bei `{{count}}`
+11. `game/helpMarks.ts` — Kommissar-Modus: nur gestrichelt umranden, nie Flächen füllen
+12. Beim UMBENENNEN/ENTFERNEN eines Typs: Migration in `editorModel.normalizeBoardClue` (s.o.)
+
+**Pflicht-Prüfungen** (alle grün, bevor etwas als fertig gilt):
+
+```
+npx tsc -b && npx vitest run && npx eslint .
+npx tsx src/dev/check-all.ts ""        # alle 163 Level eineindeutig
+npx tsx src/dev/soundness-check.ts     # keine Technique streicht je eine wahre Zelle
+```
+
+Dazu je neuem Typ: `candidateCells` ⊇ `{Zellen, wo test() wahr ist}` per Brute-Force
+(`clues/roomAdjacency.test.ts` als Muster) und ein End-to-End-Fall in
+`solver/newClueTechniques.test.ts` (wahren Hinweis an echte Bretter hängen → Level bleibt
+eindeutig **und** die Deduktion streicht nie eine wahre Zelle).
+
+**Messen, nicht raten:** Ein Test, der grün ist, weil die Technique nie feuert, beweist nichts —
+`techniqueCounts` gegenprüfen. Und Texte immer einmal wirklich rendern lassen.
+
+Bekannt & nicht deine Schuld: `79_Der_Bauernhof.json` löst als einziges Level nicht rein
+vorwärts (braucht eine Fallunterscheidung) — 162/163 tun es.
+
+## i18n-Konventionen
+
+- **`Renderer.lookup` läuft den Key-Pfad VERSCHACHTELT ab.** Ein flacher Key
+  `"roomOccupancy.atLeast"` innerhalb von `boardClue` wird **nicht** gefunden — es muss ein
+  echtes verschachteltes Objekt sein. Bei einem Miss wirft der Renderer **nicht**, sondern gibt
+  den rohen Key aus („boardClue.roomOccupancy.atLeast" landet im Hinweistext).
+  Absicherung: `i18n/renderAll.test.ts` rendert **jeden** Hinweis **jedes** Levels in **allen**
+  Sprachen und schlägt bei rohem Key oder ungefülltem `{{slot}}` fehl.
+- Die Locale-Dateien sind **CRLF** + 2 Spaces, und de/en enthalten 6 handformatierte
+  **inline-Objekte** — nie per `JSON.stringify` neu schreiben (das formatiert sie um), sondern
+  gezielt an Ankern einfügen.
+- Raumnamen sind **artikellose Nomen** („Küche") → Apposition nutzen: `„im Raum {{room}}"`
+- `poss` ist im Deutschen **Dativ** („seinem"/„ihrem") — passt zu „in {{poss}} Raum"
+- `dir` im Spanischen enthält die Präposition schon („al sur")
+- `[[Wort:tipKey]]` = fettes Wort mit Begriffs-Tooltip (`tip.*`)
+- `{{neg}}` = Einschub-Slot für „nicht"; wo das grammatisch nicht trägt: eigenes `<key>Neg`-Template
+- `pluralKey` wählt `<key>_one` bei 1 und `<key>_zero` bei 0 — „Genau 0 Räume sind leer" wird so
+  zu „Kein Raum war leer."
+- Texte sind **kontextgerecht**, nie wörtlich übersetzt
+
+## Nicht tun
+
+- Keine Server/Headless-Browser/Screenshots/Prozess-Kills starten (EDR-Alarm)
+- Keine git-Befehle ohne ausdrückliches OK; committen/pushen macht ausschließlich der Nutzer
+- Keine Emoji-Icons (Noir/Case-File-Stil: handgezeichnete Linien-Art)

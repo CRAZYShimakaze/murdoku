@@ -9,6 +9,9 @@ import { CrossCenterTechnique } from './techniques/CrossCenterTechnique.ts'
 import { RectangleTechnique } from './techniques/RectangleTechnique.ts'
 import { InsideXorTechnique } from './techniques/InsideXorTechnique.ts'
 import { BoardCountTechnique } from './techniques/BoardCountTechnique.ts'
+import { CountWithAttrTechnique } from './techniques/CountWithAttrTechnique.ts'
+import { RoomOccupancyTechnique } from './techniques/RoomOccupancyTechnique.ts'
+import { NeighborRoomTechnique } from './techniques/NeighborRoomTechnique.ts'
 import { ObjectPigeonholeTechnique } from './techniques/ObjectPigeonholeTechnique.ts'
 import { EmptyRoomsTechnique } from './techniques/EmptyRoomsTechnique.ts'
 import { RoomReasoningTechnique } from './techniques/RoomReasoningTechnique.ts'
@@ -77,7 +80,10 @@ export function createForwardTechniques(puzzle: Puzzle, opts: TechniqueOptions =
     new RectangleTechnique(),
     new InsideXorTechnique(),
     new BoardCountTechnique(),
+    new CountWithAttrTechnique(),
+    new RoomOccupancyTechnique(),
     new EmptyRoomsTechnique(),
+    new NeighborRoomTechnique(),
     new RoomReasoningTechnique(),
     new RoomCoverageTechnique(),
     new RoomCapacityTechnique(),

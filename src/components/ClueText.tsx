@@ -2,10 +2,7 @@ import { Fragment, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Renderer } from '../i18n/Renderer.ts'
 import type { Clue, Explanation, PersonId } from '../engine/index.ts'
-import InfoTip from './InfoTip.tsx'
-
-/** Params rendered bold (objects/rooms etc. — also shown on the board). */
-const BOLD_PARAMS = new Set(['object', 'objectNom', 'objectEvery', 'objects', 'room', 'attribute', 'who', 'whoNeg', 'whoOther', 'whoOtherPl', 'whoBare', 'mate', 'mateLc', 'row', 'col', 'n', 'line', 'roomRel', 'target', 'people', 'atCell'])
+import { makeRichRenderer } from './clueRich.tsx'
 
 interface Props {
   renderer: Renderer
@@ -13,147 +10,12 @@ interface Props {
   subjectId: PersonId
 }
 
-/** Renders a suspect's clues: objects/rooms bold; concept words bold + tooltip. */
+/** Renders a suspect's clues: objects/rooms bold; concept words bold + tooltip.
+ *  (The template machinery lives in clueRich.tsx, shared with the board clues and the
+ *  mobile Akten-Notiz term collector.) */
 export default function ClueText({ renderer, clues, subjectId }: Props) {
   const { t } = useTranslation()
-
-  const term = (key: number | string, word: ReactNode, tipKey: string): ReactNode => (
-    <InfoTip key={key} className="mk-term" anchor=".mk-clue" content={t(`tip.${tipKey}`)}>
-      <strong>{word}</strong>
-    </InfoTip>
-  )
-
-  const parseTemplate = (
-    tmpl: string,
-    params: Record<string, string | number>,
-    childNodes?: ReactNode[],
-  ): ReactNode[] => {
-    const out: ReactNode[] = []
-    const re = /\{\{(\w+)\}\}|\[\[([^\]]+?):([^\]]+?)\]\]/g
-    let last = 0
-    let m: RegExpExecArray | null
-    while ((m = re.exec(tmpl)) !== null) {
-      if (m.index > last) out.push(tmpl.slice(last, m.index))
-      if (m[1]) {
-        const name = m[1]
-        if (name === 'child' && childNodes) {
-          out.push(...childNodes)
-        } else {
-          const val = renderer.resolveParam(name, params[name] ?? '', false, params.subject)
-          // The negation word ("nicht"/"not") is bold + tooltipped like the concept
-          // words; the trailing space stays outside the bold span so spacing is unchanged.
-          if (name === 'neg') {
-            const word = String(val).trim()
-            if (word) {
-              out.push(term(m.index, word, 'negation'))
-              out.push(' ')
-            }
-          } else if (name === 'direction' || name === 'directionComp')
-            out.push(term(m.index, val, 'direction'))
-          // "demselben Tisch" carries the "same instance" concept — bold + its tooltip,
-          // like a concept word (the article is gendered, so it stays a param).
-          else if (name === 'objectSame') out.push(term(m.index, val, 'besideSameObject'))
-          // Hair-colour traits are tinted in the actual colour ("braune Haare" in brown)
-          // so the colour is unmistakable; the token is "hair_<colour>".
-          else if (name === 'attribute' && String(params.attribute ?? '').startsWith('hair_')) {
-            out.push(
-              <strong key={m.index} className={`mk-hair mk-hair--${String(params.attribute).slice(5)}`}>
-                {val}
-              </strong>,
-            )
-          }
-          // The "someone who had <hair>" mate phrase (roomExists / beside-same-object):
-          // rebuild it so only the hair-colour word carries the colour outline.
-          else if ((name === 'mate' || name === 'mateLc') && String(params[name] ?? '').startsWith('attr:hair_')) {
-            const token = String(params[name]).slice(5) // "hair_<colour>"
-            const pre = renderer.lookup('who.withTraitPre') ?? ''
-            const post = renderer.lookup('who.withTraitPost') ?? ''
-            const word = renderer.lookup(`attr.${token}`) ?? token
-            const preText = name === 'mate' && pre ? pre.charAt(0).toUpperCase() + pre.slice(1) : pre
-            // "ein anderer Verdächtiger, der" carries the suspect concept → bold + tooltip.
-            out.push(term(`${m.index}p`, preText, 'suspect'))
-            out.push(' ')
-            out.push(
-              <strong key={`${m.index}h`} className={`mk-hair mk-hair--${token.slice(5)}`}>
-                {word}
-              </strong>,
-            )
-            if (post) out.push(<strong key={`${m.index}s`}> {post}</strong>)
-          } else if (name === 'mate' || name === 'mateLc') {
-            // The mate of a roomExists / beside-same clue is always a suspect (never the
-            // victim). A named person is that specific suspect (just their name); the
-            // generic / gender / trait phrasings get the "suspect" concept tooltip.
-            const tok = String(params[name] ?? '')
-            if (tok.startsWith('person:')) out.push(<strong key={m.index}>{val}</strong>)
-            else out.push(term(m.index, val, 'suspect'))
-          } else if (
-            name === 'who' ||
-            name === 'whoNeg' ||
-            name === 'whoOther' ||
-            name === 'whoOtherPl' ||
-            name === 'whoBare'
-          ) {
-            // "_susp" gender tokens are suspects (victim excluded → "suspect" tooltip);
-            // plain gender tokens count everyone incl. the victim → the "all people" one.
-            const tok = String(params[name] ?? '')
-            out.push(term(m.index, val, tok.includes('_susp') ? 'suspect' : 'person'))
-          } else if (BOLD_PARAMS.has(name)) out.push(<strong key={m.index}>{val}</strong>)
-          else out.push(val)
-        }
-      } else {
-        out.push(term(m.index, m[2], m[3]))
-      }
-      last = re.lastIndex
-    }
-    if (last < tmpl.length) out.push(tmpl.slice(last))
-    return out
-  }
-
-  const renderExp = (exp: Explanation, extra: Record<string, string | number>): ReactNode[] => {
-    if (exp.children && exp.children.length > 0) {
-      if (exp.key === 'clue.and' || exp.key === 'clue.or') {
-        const conn = renderer.lookup(exp.key === 'clue.and' ? 'clue.connAnd' : 'clue.connOr') ?? '&'
-        const out: ReactNode[] = []
-        exp.children.forEach((c, i) => {
-          if (i > 0) out.push(` ${conn} `)
-          out.push(...renderExp(c, extra))
-        })
-        return out
-      }
-      if (exp.key === 'clue.not') {
-        const child = exp.children[0]
-        const negWord = renderer.lookup('clue.negWord') ?? 'nicht '
-        const isComposite = !!(child.children && child.children.length > 0)
-        if (!isComposite) {
-          // A dedicated negated wording ("In seinem Raum war keine Frau"): the child's
-          // `<key>Neg` template, with any `who` token flipped to its "kein/keine" form.
-          const negTmpl = renderer.lookup(`${child.key}Neg`)
-          if (negTmpl !== undefined) {
-            const params: Record<string, string | number> = { ...extra, ...(child.params ?? {}) }
-            if (typeof params.who === 'string') params.whoNeg = renderer.negWhoToken(params.who, params)
-            if (typeof params.mate === 'string') params.mateLc = params.mate
-            return parseTemplate(negTmpl, params)
-          }
-          // Inject "nicht " into the child sentence ("X war nicht …") when it has a
-          // {{neg}} slot.
-          const childTmpl = renderer.lookup(child.key)
-          if (childTmpl && childTmpl.includes('{{neg}}')) {
-            return renderExp(child, { ...extra, neg: negWord })
-          }
-        }
-        // Fallback: wrap it as "nicht (…)".
-        return parseTemplate(
-          renderer.lookup('clue.not') ?? 'not ({{child}})',
-          extra,
-          renderExp(child, extra),
-        )
-      }
-      return exp.children.flatMap((c, i) => (i > 0 ? [' ', ...renderExp(c, extra)] : renderExp(c, extra)))
-    }
-    const params = { ...extra, ...(exp.params ?? {}) }
-    const tmpl = renderer.lookup(renderer.pluralKey(exp.key, params)) ?? exp.key
-    return parseTemplate(tmpl, params)
-  }
+  const renderExp = makeRichRenderer(renderer, t, '.mk-clue')
 
   if (clues.length === 0) return null
 
@@ -178,6 +40,21 @@ export default function ClueText({ renderer, clues, subjectId }: Props) {
   return (
     <>
       {nodes.map((n, i) => (
+        <Fragment key={i}>{n}</Fragment>
+      ))}
+    </>
+  )
+}
+
+/** Renders ONE board (global) clue with the same bold-word + concept-tooltip treatment as
+ *  the suspect clues. Its templates are full sentences (capital + period included), and it
+ *  has no subject — only the shared rich renderer, docked to the board-clue card. */
+export function BoardClueText({ renderer, describe }: { renderer: Renderer; describe: Explanation }) {
+  const { t } = useTranslation()
+  const renderExp = makeRichRenderer(renderer, t, '.mk-boardclue')
+  return (
+    <>
+      {renderExp(describe, {}).map((n, i) => (
         <Fragment key={i}>{n}</Fragment>
       ))}
     </>

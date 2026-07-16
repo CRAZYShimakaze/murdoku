@@ -14,7 +14,7 @@ export class NotClue extends Clue {
     return !this.inner.test(subjectId, solution, puzzle)
   }
 
-  override candidateCells(board: Board): Set<Cell> | null {
+  protected override computeCandidateCells(board: Board): Set<Cell> | null {
     // Exclude only cells where the inner clue is DEFINITELY true (independent of
     // others). For uniqueness / occupancy / relational clues that's null → the
     // negation prunes nothing here and is enforced by `test`.
@@ -54,7 +54,7 @@ export class AndClue extends Clue {
     return this.clues.every((c) => c.test(subjectId, solution, puzzle))
   }
 
-  override candidateCells(board: Board): Set<Cell> | null {
+  protected override computeCandidateCells(board: Board): Set<Cell> | null {
     // Every child is necessary, so intersect the computable ones. Children
     // without a fixed set (e.g. `alone`) simply add no pruning here.
     const sets = this.clues
@@ -93,7 +93,7 @@ export class OrClue extends Clue {
     return this.clues.some((c) => c.test(subjectId, solution, puzzle))
   }
 
-  override candidateCells(board: Board): Set<Cell> | null {
+  protected override computeCandidateCells(board: Board): Set<Cell> | null {
     const sets = this.clues.map((c) => c.candidateCells(board))
     if (sets.some((s) => s === null)) return null
     const out = new Set<Cell>()

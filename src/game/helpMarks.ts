@@ -25,6 +25,7 @@ import {
   CornerClue,
   DirectionFromObjectClue,
   InColClue,
+  InRoomAdjacentToClue,
   InRoomClue,
   InRowClue,
   NearAnyObjectClue,
@@ -130,14 +131,14 @@ function addClue(clue: Clue, board: Board, neg: boolean, out: HelpMarks): void {
     clue instanceof OutsideClue ||
     clue instanceof UniqueOutsideClue
   ) {
-    out.areas.push({ cells: clue.candidateCells(board), neg })
+    out.areas.push({ cells: clue.candidateCells(board)!, neg })
     return
   }
 
   // "Same row/column as an object": outline the line, plus a chalk ring on the
   // anchoring object(s) so the player sees what the line is pinned to.
   if (clue instanceof SameLineAsObjectClue) {
-    out.areas.push({ cells: clue.candidateCells(board), neg })
+    out.areas.push({ cells: clue.candidateCells(board)!, neg })
     addAll(ring, objectRef(board, clue.object))
     return
   }
@@ -172,6 +173,18 @@ function addClue(clue: Clue, board: Board, neg: boolean, out: HelpMarks): void {
 
   if (clue instanceof InRoomClue) {
     rooms.add(clue.room)
+    return
+  }
+
+  // "In a room adjoining the kitchen": outline the band of neighbouring rooms (this clue's
+  // own region, like a row or the outdoor area), AND trace the named room so the player sees
+  // what the band is measured from. The named room is only the REFERENCE — never a claim
+  // about where the person is — so it goes in the plain `rooms` even when the clue is
+  // negated: red there would read "not in the kitchen", yet "not in a room ADJOINING the
+  // kitchen" leaves the kitchen itself perfectly possible.
+  if (clue instanceof InRoomAdjacentToClue) {
+    out.areas.push({ cells: clue.candidateCells(board)!, neg })
+    out.rooms.add(clue.room)
     return
   }
 

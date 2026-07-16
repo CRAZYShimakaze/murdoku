@@ -19,18 +19,29 @@ export class ForcedCellTechnique extends Technique {
 
   apply(ctx: SolveContext): DeductionStep | null {
     if (!ctx.fullPermutation) return null
+    // ONE pass over every (person, cell) pair fills the open-cell info for BOTH axes:
+    // -1 = no open cell yet, -2 = more than one distinct cell, otherwise THE open cell.
+    // The old shape re-walked every domain once per line (lines × persons × domain), and
+    // this technique was 9% of the generator's whole runtime. Results are identical: the
+    // per-line scan below still visits axes and lines in the same order.
+    const openRow = new Int32Array(ctx.board.height).fill(-1)
+    const openCol = new Int32Array(ctx.board.width).fill(-1)
+    for (const id of ctx.state.unplaced()) {
+      for (const c of ctx.state.domain(id)) {
+        const r = ctx.axisOf(c, 'row')
+        const col = ctx.axisOf(c, 'col')
+        if (openRow[r] !== c) openRow[r] = openRow[r] === -1 ? c : -2
+        if (openCol[col] !== c) openCol[col] = openCol[col] === -1 ? c : -2
+      }
+    }
     for (const axis of ['row', 'col'] as Axis[]) {
       const span = axis === 'row' ? ctx.board.height : ctx.board.width
+      const open = axis === 'row' ? openRow : openCol
       const used = ctx.usedLines(axis)
       for (let line = 0; line < span; line++) {
         if (used.has(line)) continue
-        // Open cells in this line: occupiable cells still in some unplaced person's domain.
-        const open = new Set<Cell>()
-        for (const id of ctx.state.unplaced()) {
-          for (const c of ctx.state.domain(id)) if (ctx.axisOf(c, axis) === line) open.add(c)
-        }
-        if (open.size !== 1) continue
-        const cell = [...open][0]
+        if (open[line] < 0) continue // none open, or more than one
+        const cell: Cell = open[line]
         const perp: Axis = axis === 'row' ? 'col' : 'row'
         const perpLine = ctx.axisOf(cell, perp)
 

@@ -29,7 +29,7 @@ import {
   type EditorState,
   type EditorSuspect,
 } from '../game/editorModel.ts'
-import { isWaterRoom, loadLevel, type Puzzle } from '../engine/index.ts'
+import { isWaterRoom, loadLevel, usesInsideOutside, type Puzzle } from '../engine/index.ts'
 
 interface Props {
   state: EditorState
@@ -131,6 +131,13 @@ export default function SuspectsPanel({
     // Same global rule as the game: a water room is drawn as a lake but is walkable.
     if ([...puzzle.board.rooms.values()].some((r) => isWaterRoom(r.nameKey))) {
       notes.unshift(t('game.waterWalkable'))
+    }
+    // …and the same indoor/outdoor legend, so the editor shows exactly what the player will
+    // read. `outside` is a room flag the board art never reveals, so a clue leaning on it is
+    // unusable without this list.
+    const outside = [...puzzle.board.rooms.values()].filter((r) => r.outside).map((r) => t(r.nameKey))
+    if (usesInsideOutside(puzzle) && outside.length > 0) {
+      notes.unshift(`${t('game.outsideLabel')}: ${outside.join(', ')}`)
     }
     return notes
   }, [built, t])

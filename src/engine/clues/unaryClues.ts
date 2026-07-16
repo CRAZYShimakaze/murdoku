@@ -27,7 +27,7 @@ export class OnObjectClue extends UnaryClue {
   constructor(readonly object: string) {
     super()
   }
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cellsWithObject(this.object)
   }
   describe(): Explanation {
@@ -41,7 +41,7 @@ export class NearObjectClue extends UnaryClue {
   constructor(readonly object: string) {
     super()
   }
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cellsNearObject(this.object)
   }
   describe(): Explanation {
@@ -51,7 +51,7 @@ export class NearObjectClue extends UnaryClue {
 
 /** "{name} was beside a window." */
 export class NearWindowClue extends UnaryClue {
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cellsNearWindow()
   }
   describe(): Explanation {
@@ -64,7 +64,7 @@ export class NearAnyObjectClue extends UnaryClue {
   constructor(readonly objects: string[]) {
     super()
   }
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     const out = new Set<Cell>()
     for (const object of this.objects) for (const c of board.cellsNearObject(object)) out.add(c)
     return out
@@ -76,7 +76,7 @@ export class NearAnyObjectClue extends UnaryClue {
 
 /** "{name} was beside a door." (doors are two-sided) */
 export class NearDoorClue extends UnaryClue {
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cellsNearDoor()
   }
   describe(): Explanation {
@@ -89,7 +89,7 @@ export class OutsideClue extends UnaryClue {
   constructor(readonly outside: boolean) {
     super()
   }
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cellsOutside(this.outside)
   }
   describe(): Explanation {
@@ -110,7 +110,7 @@ export class InRoomClue extends UnaryClue {
   ) {
     super()
   }
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cellsInRoom(this.room)
   }
   override forbiddenForOthers(board: Board): Set<Cell> | null {
@@ -156,12 +156,30 @@ export class InRoomClue extends UnaryClue {
   }
 }
 
+/**
+ * "{name} was in a room adjoining {room}." — the subject stands in SOME room that shares a
+ * wall edge with `room` (never in `room` itself: a room is not its own neighbour). Room
+ * layout is fixed, so this is an ordinary deducible UnaryClue: the candidate set is exact,
+ * hence `definiteCells` (inherited) is exact too and the negation prunes correctly.
+ */
+export class InRoomAdjacentToClue extends UnaryClue {
+  constructor(readonly room: string) {
+    super()
+  }
+  protected computeCandidateCells(board: Board): Set<Cell> {
+    return board.cellsInRoomsAdjacentTo(this.room)
+  }
+  describe(): Explanation {
+    return { key: 'clue.inRoomAdjacentTo', params: { room: this.room } }
+  }
+}
+
 /** "{name} was in row {row}." (row is 0-indexed internally) */
 export class InRowClue extends UnaryClue {
   constructor(readonly row: number) {
     super()
   }
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cellsInRow(this.row)
   }
   describe(): Explanation {
@@ -174,7 +192,7 @@ export class InColClue extends UnaryClue {
   constructor(readonly col: number) {
     super()
   }
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cellsInCol(this.col)
   }
   describe(): Explanation {
@@ -184,7 +202,7 @@ export class InColClue extends UnaryClue {
 
 /** "{name} was in a corner." */
 export class CornerClue extends UnaryClue {
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cornerCells()
   }
   describe(): Explanation {
@@ -194,7 +212,7 @@ export class CornerClue extends UnaryClue {
 
 /** "{name} was beside a wall." (at least one side is a wall) */
 export class AtWallClue extends UnaryClue {
-  candidateCells(board: Board): Set<Cell> {
+  protected computeCandidateCells(board: Board): Set<Cell> {
     return board.cellsAtWall()
   }
   describe(): Explanation {

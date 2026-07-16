@@ -1,0 +1,567 @@
+{
+  "schema": 1,
+  "id": "editor-mord-unter-freunden",
+  "title": "Unter alten Freunden",
+  "titles": { "de": "Unter alten Freunden", "en": "Among Old Friends", "es": "Entre viejos amigos" },
+  "size": {
+    "width": 8,
+    "height": 8
+  },
+  "rooms": {
+    "1": {
+      "nameKey": "room.forest",
+      "color": "#e8d8b0",
+      "outside": true
+    },
+    "2": {
+      "nameKey": "room.clearing",
+      "color": "#b9d0e6",
+      "outside": true
+    },
+    "3": {
+      "nameKey": "room.lake",
+      "color": "#cfe0cf",
+      "outside": true
+    },
+    "4": {
+      "nameKey": "room.campsite1",
+      "color": "#d8c0c0",
+      "outside": true
+    },
+    "5": {
+      "nameKey": "room.campsite2",
+      "color": "#e6cda0",
+      "outside": true
+    },
+    "6": {
+      "nameKey": "room.campfire",
+      "color": "#e6c0d2",
+      "outside": true
+    },
+    "7": {
+      "nameKey": "room.picnicarea",
+      "color": "#c6c0e0",
+      "outside": true
+    },
+    "8": {
+      "nameKey": "room.jetty",
+      "color": "#c0e0c8",
+      "outside": true
+    },
+    "9": {
+      "nameKey": "room.playground",
+      "color": "#e0c4a0",
+      "outside": true
+    },
+    "A": {
+      "nameKey": "room.parking",
+      "color": "#a8c8e0",
+      "outside": true
+    },
+    "B": {
+      "nameKey": "room.restroom",
+      "color": "#d8e0a8",
+      "outside": false
+    },
+    "C": {
+      "nameKey": "room.showers",
+      "color": "#e0b0a8",
+      "outside": false
+    },
+    "D": {
+      "nameKey": "room.kiosk",
+      "color": "#c8b0d8",
+      "outside": false
+    },
+    "E": {
+      "nameKey": "room.reception",
+      "color": "#a8e0d0",
+      "outside": false
+    },
+    "F": {
+      "nameKey": "room.cabin",
+      "color": "#ded0e6",
+      "outside": false
+    }
+  },
+  "objects": {
+    "0": {
+      "type": "bench",
+      "occupiable": true
+    },
+    "1": {
+      "type": "lion",
+      "occupiable": false
+    },
+    "2": {
+      "type": "carriage",
+      "occupiable": true
+    },
+    "3": {
+      "type": "monkey",
+      "occupiable": false
+    },
+    "4": {
+      "type": "path",
+      "occupiable": true
+    },
+    "5": {
+      "type": "goat",
+      "occupiable": false
+    },
+    "6": {
+      "type": "parrot",
+      "occupiable": false
+    },
+    "7": {
+      "type": "hammock",
+      "occupiable": true
+    },
+    "8": {
+      "type": "hottub",
+      "occupiable": true
+    },
+    "9": {
+      "type": "penguin",
+      "occupiable": false
+    },
+    "r": {
+      "type": "carpet",
+      "occupiable": true
+    },
+    "R": {
+      "type": "street",
+      "occupiable": true
+    },
+    "s": {
+      "type": "chair",
+      "occupiable": true
+    },
+    "D": {
+      "type": "deckchair",
+      "occupiable": true
+    },
+    "J": {
+      "type": "throne",
+      "occupiable": true
+    },
+    "@": {
+      "type": "wheelchair",
+      "occupiable": true
+    },
+    "b": {
+      "type": "bed",
+      "occupiable": true
+    },
+    "c": {
+      "type": "car",
+      "occupiable": true
+    },
+    "O": {
+      "type": "boat",
+      "occupiable": true
+    },
+    "&": {
+      "type": "sled",
+      "occupiable": true
+    },
+    "=": {
+      "type": "gondola",
+      "occupiable": true
+    },
+    "Z": {
+      "type": "tent",
+      "occupiable": true
+    },
+    "S": {
+      "type": "shower",
+      "occupiable": true
+    },
+    "T": {
+      "type": "toilet",
+      "occupiable": true
+    },
+    "U": {
+      "type": "parasol",
+      "occupiable": true
+    },
+    "^": {
+      "type": "paravent",
+      "occupiable": true
+    },
+    "~": {
+      "type": "gymmat",
+      "occupiable": true
+    },
+    "X": {
+      "type": "divingboard",
+      "occupiable": true
+    },
+    "V": {
+      "type": "slide",
+      "occupiable": true
+    },
+    "h": {
+      "type": "horse",
+      "occupiable": true
+    },
+    "m": {
+      "type": "mud",
+      "occupiable": true
+    },
+    "j": {
+      "type": "oil",
+      "occupiable": true
+    },
+    "Y": {
+      "type": "waterlily",
+      "occupiable": true
+    },
+    "t": {
+      "type": "table",
+      "occupiable": false
+    },
+    "f": {
+      "type": "tv",
+      "occupiable": false
+    },
+    "g": {
+      "type": "shelf",
+      "occupiable": false
+    },
+    "d": {
+      "type": "pc",
+      "occupiable": false
+    },
+    "l": {
+      "type": "locker",
+      "occupiable": false
+    },
+    "W": {
+      "type": "washingmachine",
+      "occupiable": false
+    },
+    "F": {
+      "type": "fridge",
+      "occupiable": false
+    },
+    "L": {
+      "type": "lamp",
+      "occupiable": false
+    },
+    "P": {
+      "type": "piano",
+      "occupiable": false
+    },
+    "x": {
+      "type": "box",
+      "occupiable": false
+    },
+    "n": {
+      "type": "crate",
+      "occupiable": false
+    },
+    "e": {
+      "type": "gift",
+      "occupiable": false
+    },
+    "K": {
+      "type": "cash",
+      "occupiable": false
+    },
+    "q": {
+      "type": "punchbag",
+      "occupiable": false
+    },
+    "v": {
+      "type": "fuelpump",
+      "occupiable": false
+    },
+    "w": {
+      "type": "trash",
+      "occupiable": false
+    },
+    "p": {
+      "type": "plant",
+      "occupiable": false
+    },
+    "u": {
+      "type": "shrub",
+      "occupiable": false
+    },
+    "a": {
+      "type": "tree",
+      "occupiable": false
+    },
+    "k": {
+      "type": "cow",
+      "occupiable": false
+    },
+    "i": {
+      "type": "pig",
+      "occupiable": false
+    },
+    "H": {
+      "type": "chicken",
+      "occupiable": false
+    },
+    "B": {
+      "type": "bear",
+      "occupiable": false
+    },
+    "%": {
+      "type": "elephant",
+      "occupiable": false
+    },
+    "!": {
+      "type": "flamingo",
+      "occupiable": false
+    },
+    "A": {
+      "type": "hay",
+      "occupiable": false
+    },
+    "y": {
+      "type": "statue",
+      "occupiable": false
+    },
+    "o": {
+      "type": "boulder",
+      "occupiable": false
+    },
+    "z": {
+      "type": "rubble",
+      "occupiable": false
+    },
+    "G": {
+      "type": "campfire",
+      "occupiable": false
+    },
+    "M": {
+      "type": "grill",
+      "occupiable": false
+    },
+    "*": {
+      "type": "snowman",
+      "occupiable": false
+    },
+    "+": {
+      "type": "skirack",
+      "occupiable": false
+    },
+    "#": {
+      "type": "blackboard",
+      "occupiable": false
+    },
+    "$": {
+      "type": "skeleton",
+      "occupiable": false
+    },
+    "?": {
+      "type": "ivdrip",
+      "occupiable": false
+    },
+    "C": {
+      "type": "candle",
+      "occupiable": false
+    },
+    "E": {
+      "type": "fireplace",
+      "occupiable": false
+    },
+    "Q": {
+      "type": "barrel",
+      "occupiable": false
+    },
+    "I": {
+      "type": "armor",
+      "occupiable": false
+    },
+    "N": {
+      "type": "weaponrack",
+      "occupiable": false
+    }
+  },
+  "roomMap": [
+    "11111222",
+    "11111222",
+    "11111222",
+    "11666444",
+    "11666444",
+    "55566433",
+    "55553333",
+    "55553333"
+  ],
+  "groundMap": [
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........",
+    "........"
+  ],
+  "topMap": [
+    ".a..a.0.",
+    "a..a.0.0",
+    ".a......",
+    "...0.0MZ",
+    "a.0G0Z0m",
+    "Z0.0....",
+    "MZm0.Y.O",
+    "0..Z...O"
+  ],
+  "windows": [],
+  "doors": [],
+  "suspects": [
+    {
+      "id": "A",
+      "name": "Anna",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "ponytailRight",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "inRow",
+          "row": 0
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Bella",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "braids",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "besideSameObject",
+          "object": "campfire",
+          "mate": {
+            "kind": "any"
+          },
+          "dir": "east"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Cyrus",
+      "attributes": {
+        "gender": "m",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "shaggy",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "and",
+          "clues": [
+            {
+              "type": "directionFromObject",
+              "object": "grill",
+              "dir": "northeast",
+              "room": "other",
+              "all": true
+            },
+            {
+              "type": "nearObject",
+              "object": "bench"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Dalia",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "updo",
+        "hair": "red"
+      },
+      "clues": [
+        {
+          "type": "roomCompanion",
+          "count": 1,
+          "attribute": "gender",
+          "value": "f"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Edison",
+      "attributes": {
+        "gender": "m",
+        "hairstyle": "undercut",
+        "hair": "grey"
+      },
+      "clues": [
+        {
+          "type": "sameRoom",
+          "as": "B"
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "name": "Freya",
+      "attributes": {
+        "gender": "f",
+        "hairstyle": "curly",
+        "hair": "white"
+      },
+      "clues": [
+        {
+          "type": "roomExists",
+          "relation": "near",
+          "object": "boat"
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "name": "Greta",
+      "attributes": {
+        "gender": "f",
+        "glasses": true,
+        "glassesShape": "round",
+        "glassesColor": "black",
+        "hairstyle": "hime",
+        "hair": "brown"
+      },
+      "clues": [
+        {
+          "type": "nearObject",
+          "object": "waterlily"
+        }
+      ]
+    }
+  ],
+  "victim": {
+    "name": "Vidal",
+    "attributes": {
+      "gender": "m"
+    }
+  },
+  "boardClues": [
+    {
+      "type": "roomOccupancy",
+      "op": "notExactly",
+      "count": 1,
+      "scope": "people"
+    }
+  ],
+  "difficulty": "hard"
+}

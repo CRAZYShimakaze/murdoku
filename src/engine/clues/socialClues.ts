@@ -134,6 +134,124 @@ export class AloneWithClue extends Clue {
   }
 }
 
+/**
+ * "At least one EMPTY room adjoined {name}'s room." — some room sharing a wall edge with the
+ * subject's room holds nobody at all. Negated (via the `clue.neighborRoomEmptyNeg` wording)
+ * it reads "no empty room adjoined his room", i.e. EVERY neighbour was occupied — the far
+ * stronger universal form.
+ *
+ * Emptiness is counted over ALL people (victim included). On a valid solution that is the
+ * same as "no suspect": the victim always shares its room with exactly one suspect, so a
+ * room without suspects has no victim either. Counting people keeps `test` independent of
+ * the murder rule.
+ *
+ * Depends on where everyone else stands, so `candidateCells` is only the sound necessary
+ * bound (the subject's room must HAVE a neighbour) and `definiteCells` stays null — the
+ * negation is therefore handled by NeighborRoomTechnique, not by NotClue.
+ */
+export class NeighborRoomEmptyClue extends Clue {
+  /** Sound superset: an empty NEIGHBOUR can only exist if the room has a neighbour at all. */
+  protected override computeCandidateCells(board: Board): Set<Cell> {
+    const out = new Set<Cell>()
+    for (const cell of board.occupiableCells()) {
+      if (board.roomNeighbors(board.roomIdOf(cell)).size > 0) out.add(cell)
+    }
+    return out
+  }
+
+  test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
+    const board = puzzle.board
+    const occupied = new Set<string>()
+    for (const [, cell] of solution.entries()) occupied.add(board.roomIdOf(cell))
+    for (const room of board.roomNeighbors(board.roomIdOf(solution.cellOf(subjectId)))) {
+      if (!occupied.has(room)) return true
+    }
+    return false
+  }
+
+  describe(): Explanation {
+    return { key: 'clue.neighborRoomEmpty' }
+  }
+}
+
+/**
+ * "An adjoining room [{dir} of {name}] held exactly {count} suspects." — some room sharing a
+ * wall edge with the subject's room holds exactly `count` SUSPECTS (never the victim).
+ *
+ * `dir` (optional) is a STRICT half-plane over the room's whole extent: "south of Bella"
+ * means EVERY cell of that room lies strictly below Bella's, so the player reads it straight
+ * off the floor plan instead of estimating a centre.
+ *
+ * CARDINALS ONLY, deliberately. Lifting a diagonal to a room forces the quadrant — "every
+ * cell southeast" is, by definition, "every cell south AND every cell east" — which is both
+ * far rarer (measured: 4.5–7.6% of adjacencies vs 29–32% for a cardinal) and awkward to read.
+ * The only looser reading ("part of it lies southeast") can't be checked at a glance and
+ * would call a room that SURROUNDS Bella "southeast of her".
+ */
+export class NeighborRoomCountClue extends Clue {
+  constructor(
+    readonly count: number,
+    readonly dir: Direction | null = null,
+  ) {
+    super()
+  }
+
+  /** Whether room `room` qualifies for a subject standing on `cell` (adjacency + direction). */
+  qualifies(board: Board, cell: Cell, room: string): boolean {
+    if (!board.roomNeighbors(board.roomIdOf(cell)).has(room)) return false
+    if (!this.dir) return true
+    const b = board.roomBounds(room)
+    if (!b) return false
+    const { row, col } = board.rc(cell)
+    switch (this.dir) {
+      case 'north':
+        return b.maxRow < row
+      case 'south':
+        return b.minRow > row
+      case 'west':
+        return b.maxCol < col
+      case 'east':
+        return b.minCol > col
+    }
+  }
+
+  /** The qualifying neighbour rooms for a subject on `cell`. */
+  targetRooms(board: Board, cell: Cell): string[] {
+    return [...board.roomNeighbors(board.roomIdOf(cell))].filter((r) => this.qualifies(board, cell, r))
+  }
+
+  /**
+   * Sound superset: the subject can only stand where SOME qualifying neighbour room could
+   * hold `count` suspects at all — i.e. its row/column capacity is not already below it.
+   * Both parts are necessary conditions of `test`, never sufficient, so no legal placement
+   * is lost.
+   */
+  protected override computeCandidateCells(board: Board): Set<Cell> {
+    const out = new Set<Cell>()
+    for (const cell of board.occupiableCells()) {
+      if (this.targetRooms(board, cell).some((r) => board.roomCapacity(r) >= this.count)) out.add(cell)
+    }
+    return out
+  }
+
+  test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
+    const board = puzzle.board
+    const cell = solution.cellOf(subjectId)
+    const counts = new Map<string, number>()
+    for (const s of puzzle.suspects) {
+      const room = board.roomIdOf(solution.cellOf(s.id))
+      counts.set(room, (counts.get(room) ?? 0) + 1)
+    }
+    return this.targetRooms(board, cell).some((r) => (counts.get(r) ?? 0) === this.count)
+  }
+
+  describe(): Explanation {
+    return this.dir
+      ? { key: 'clue.neighborRoomCountDir', params: { count: this.count, direction: this.dir } }
+      : { key: 'clue.neighborRoomCount', params: { count: this.count } }
+  }
+}
+
 export type Quantifier = 'none' | 'some' | 'all'
 
 /**
@@ -379,7 +497,7 @@ export class RoomExistsClue extends Clue {
 
   /** The subject's room must at least offer an occupiable spot where the companion
    *  could satisfy the clue — else the subject can't be there. */
-  override candidateCells(board: Board): Set<Cell> {
+  protected override computeCandidateCells(board: Board): Set<Cell> {
     const spots = this.usesObject
       ? this.relation === 'on'
         ? [...board.objectCells(this.object)].filter((c) => board.isOccupiable(c))

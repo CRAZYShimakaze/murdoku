@@ -19,6 +19,9 @@ export type Technique =
   | 'objectPigeonhole'
   | 'emptyRooms'
   | 'emptyRoomForcing'
+  | 'neighborRoom'
+  | 'roomOccupancy'
+  | 'countWithAttr'
   | 'roomAssignment'
   | 'roomReasoning'
   | 'roomCoverage'
@@ -108,6 +111,11 @@ export const TECHNIQUE_RANK: Record<Technique, number> = {
   boardCount: 4,
   objectPigeonhole: 5,
   emptyRooms: 4,
+  // Room-neighbourhood + the two counting board clues are the same kind of counting /
+  // capacity argument as boardCount and emptyRooms — pure forward logic, so still "medium".
+  neighborRoom: 4,
+  roomOccupancy: 4,
+  countWithAttr: 4,
   roomAssignment: 4,
   emptyRoomForcing: 5,
   roomReasoning: 4,

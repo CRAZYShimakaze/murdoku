@@ -16,7 +16,7 @@ abstract class UniqueInCellsClue extends Clue {
   protected abstract cells(board: Board): Set<Cell>
   abstract describe(): Explanation
 
-  override candidateCells(board: Board): Set<Cell> {
+  protected override computeCandidateCells(board: Board): Set<Cell> {
     return this.cells(board)
   }
 

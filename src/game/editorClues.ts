@@ -10,8 +10,8 @@ import { BEARD_STYLES, GLASSES_COLORS, GLASSES_SHAPES, HAIRSTYLE_IDS } from './a
  */
 
 export type CondKind =
-  // Raum — one hub for everything about the subject's room
-  | 'room' // alone / in a specific room / same room as (person|object|trait|anyone) / someone on-beside an object
+  // Raum — one hub for everything about the subject's room (incl. its NEIGHBOURING rooms)
+  | 'room' // alone / in a specific room / same room as (person|object|trait|anyone) / someone on-beside an object / anything about an adjoining room
   | 'aloneWith' // alone with a named person + N others matching a trait
   // Objekte
   | 'onObject' // + optional "einzige" (unique)
@@ -148,7 +148,12 @@ export interface Condition {
   objTarget?: 'any' | 'person' | 'attr' // sameObject — who else is beside the same object
   objDir?: 'none' | Direction8 // sameObject — optional direction of the mate from subject
   objRel?: 'on' | 'near' | 'corner' | 'wall' | 'window' | 'door' // room(onObject) — where the companion stood (on/beside object, or a board position)
-  roomMode?: 'alone' | 'in' | 'with' | 'onObject' // room — which kind of room statement
+  /** room — which kind of room statement. The last three are about the ADJOINING rooms:
+   *  'adjacent' = his room borders a named room / a person's room; 'neighborEmpty' = an
+   *  empty room borders his; 'neighborCount' = a bordering room held exactly N suspects. */
+  roomMode?: 'alone' | 'in' | 'with' | 'onObject' | 'adjacent' | 'neighborEmpty' | 'neighborCount'
+  adjTarget?: 'room' | 'person' // room(adjacent) — borders a named room, or that person's room
+  neighborDir?: 'none' | Direction // room(neighborCount) — the bordering room lies ENTIRELY this way (cardinals only: a diagonal would force the whole quadrant)
   dirTarget?: 'person' | 'object' | 'attr' // direction — relative to a person, an object or a trait-bearer
   pos?: 'corner' | 'wall' // boardPos — in a corner or at a wall
 }
@@ -181,6 +186,23 @@ function baseJson(c: Condition): ClueJson | null {
       // room clue is emitted — membership / alone / same-room-as / someone-on-object.
       const mode = c.roomMode ?? 'in'
       if (mode === 'alone') return { type: 'alone' } // NICHT → "nicht allein"
+      // --- the ADJOINING-room aspects ---
+      if (mode === 'adjacent') {
+        // "in a room bordering X" — X is a named room (deducible on its own) or another
+        // person's room (relational, and symmetric).
+        if ((c.adjTarget ?? 'room') === 'person') {
+          return c.of ? { type: 'adjacentRooms', as: c.of } : null
+        }
+        return c.room ? { type: 'inRoomAdjacentTo', room: c.room } : null
+      }
+      // NICHT → "no bordering room was empty" (the far stronger universal form).
+      if (mode === 'neighborEmpty') return { type: 'neighborRoomEmpty' }
+      if (mode === 'neighborCount') {
+        const dir = c.neighborDir && c.neighborDir !== 'none' ? c.neighborDir : undefined
+        // count 0 would just be "an empty bordering room" — that is `neighborEmpty`, and it
+        // reads far better, so the count starts at 1.
+        return { type: 'neighborRoomCount', count: Math.max(1, c.count ?? 1), ...(dir ? { dir } : {}) }
+      }
       if (mode === 'in') {
         if (!c.room) return null
         // "allein" on → alone/not-alone in that room (NICHT flips which); off → plain
@@ -395,6 +417,8 @@ function jsonToCondition(json: ClueJson): Condition | null {
     objRel: 'on',
     roomMode: 'in',
     roomTarget: 'person',
+    adjTarget: 'room',
+    neighborDir: 'none',
     dirTarget: 'person',
     pos: 'corner',
     ...extra,
@@ -403,6 +427,14 @@ function jsonToCondition(json: ClueJson): Condition | null {
     case 'inRoom':
       if (!c.occupancy) return make('room', { roomMode: 'in', room: c.room })
       return make('room', { roomMode: 'in', room: c.room, alone: true, not: c.occupancy === 'notAlone' })
+    case 'inRoomAdjacentTo':
+      return make('room', { roomMode: 'adjacent', adjTarget: 'room', room: c.room })
+    case 'adjacentRooms':
+      return make('room', { roomMode: 'adjacent', adjTarget: 'person', of: c.as })
+    case 'neighborRoomEmpty':
+      return make('room', { roomMode: 'neighborEmpty' })
+    case 'neighborRoomCount':
+      return make('room', { roomMode: 'neighborCount', count: c.count, neighborDir: c.dir ?? 'none' })
     case 'onObject':
       return make('onObject', { object: c.object, unique: false })
     case 'uniqueOnObject':
@@ -578,6 +610,8 @@ export function defaultCondition(
     axis: 'row',
     roomMode: 'in',
     roomTarget: 'person',
+    adjTarget: 'room',
+    neighborDir: 'none',
     dirTarget: 'person',
     pos: 'corner',
     dist: 1,

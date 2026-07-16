@@ -3,6 +3,7 @@ import {
   AtWallClue,
   CornerClue,
   InColClue,
+  InRoomAdjacentToClue,
   InRoomClue,
   InRowClue,
   NearAnyObjectClue,
@@ -13,6 +14,7 @@ import {
   OutsideClue,
 } from './unaryClues.ts'
 import {
+  AdjacentRoomsClue,
   DirectionClue,
   DirectionFromAttrClue,
   InsideXorClue,
@@ -36,6 +38,8 @@ import {
 import {
   AloneClue,
   AloneWithClue,
+  NeighborRoomCountClue,
+  NeighborRoomEmptyClue,
   NotAloneClue,
   RoomAttributeClue,
   RoomCompanionClue,
@@ -55,6 +59,8 @@ export type ClueJson =
   | { type: 'inside' }
   | { type: 'outside' }
   | { type: 'inRoom'; room: string; occupancy?: 'alone' | 'notAlone' }
+  /** In SOME room sharing a wall edge with `room` — never in `room` itself. */
+  | { type: 'inRoomAdjacentTo'; room: string }
   | { type: 'inRow'; row: number }
   | { type: 'inCol'; col: number }
   | { type: 'corner' }
@@ -67,6 +73,11 @@ export type ClueJson =
   | { type: 'uniqueOutside' }
   | { type: 'alone' }
   | { type: 'notAlone' }
+  /** At least one room bordering the subject's room holds nobody (negate → every one was occupied). */
+  | { type: 'neighborRoomEmpty' }
+  /** A room bordering the subject's — optionally lying ENTIRELY `dir` of them — holds exactly
+   *  `count` suspects. */
+  | { type: 'neighborRoomCount'; count: number; dir?: Direction }
   | {
       type: 'aloneWith'
       people: PersonId[]
@@ -91,6 +102,8 @@ export type ClueJson =
   | { type: 'insideXor'; with: PersonId }
   | { type: 'offset'; of: PersonId; dir: Direction; distance: number }
   | { type: 'sameRoom'; as: PersonId; alone?: boolean }
+  /** The two stand in DIFFERENT rooms that share a wall edge. Symmetric. */
+  | { type: 'adjacentRooms'; as: PersonId }
   | { type: 'sameLineAsObject'; object: string; line: LineKind; room: RoomRel }
   /** `at` (cell index) anchors to ONE tile; `all` = every tile (∀); else any (∃). */
   | { type: 'directionFromObject'; object: string; dir: Direction8; room: RoomRel; at?: number; all?: boolean }
@@ -132,6 +145,8 @@ export function createClue(json: ClueJson): Clue {
       return new OutsideClue(true)
     case 'inRoom':
       return new InRoomClue(json.room, json.occupancy ?? null)
+    case 'inRoomAdjacentTo':
+      return new InRoomAdjacentToClue(json.room)
     case 'inRow':
       return new InRowClue(json.row)
     case 'inCol':
@@ -156,6 +171,10 @@ export function createClue(json: ClueJson): Clue {
       return new AloneClue()
     case 'notAlone':
       return new NotAloneClue()
+    case 'neighborRoomEmpty':
+      return new NeighborRoomEmptyClue()
+    case 'neighborRoomCount':
+      return new NeighborRoomCountClue(json.count, json.dir ?? null)
     case 'aloneWith':
       return new AloneWithClue(
         json.people,
@@ -183,6 +202,8 @@ export function createClue(json: ClueJson): Clue {
       return new OffsetClue(json.of, json.dir, json.distance)
     case 'sameRoom':
       return new SameRoomClue(json.as, json.alone ?? false)
+    case 'adjacentRooms':
+      return new AdjacentRoomsClue(json.as)
     case 'sameLineAsObject':
       return new SameLineAsObjectClue(json.object, json.line, json.room)
     case 'directionFromObject':

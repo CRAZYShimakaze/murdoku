@@ -20,6 +20,10 @@
     "credit": "Murdoku · un misterio de lógica"
   },
   "editor": {
+    "occupancyOp": {"atLeast":"al menos","atMost":"como máximo","exactly":"exactamente","notExactly":"no exactamente"},
+    "boardClueScopePeople": "Personas (con víctima)",
+    "boardClueScopeSuspects": "Solo sospechosos",
+    "boardClueArea": "Zona",
     "title": "Editor",
     "subtitle": "Crea tus propios casos",
     "name": "Nombre del caso",
@@ -50,7 +54,7 @@
       "countOnObject": "Cantidad sobre objeto",
       "emptyRooms": "Habitaciones vacías",
       "everyRoomCount": "Por habitación exactamente"
-    },
+    , "roomOccupancy": "Personas por habitación", "countWithAttr": "Rasgo dentro/fuera" },
     "windowHint": "Haz clic cerca del borde de una casilla para colocar una ventana ahí. Haz clic de nuevo para quitarla.",
     "doorHint": "Haz clic cerca del borde de una casilla para colocar una puerta ahí (cuenta por ambos lados). Haz clic de nuevo para quitarla.",
     "room": "Habitación",
@@ -75,6 +79,8 @@
     "resultOkNoMurderer": "Resoluble y único, pero sin un asesino único.",
     "logic_pure": "Resoluble con lógica pura",
     "logic_contradiction": "Solo resoluble con contradicciones",
+    "redundantBoardClue_one": "Una pista global no hace falta",
+    "redundantBoardClue": "{{count}} pistas globales no hacen falta",
     "coverage": "Cobertura de casillas: {{percent}} % · amplitud media: {{avg}} %",
     "result_multi": "Ambiguo — hay más de una solución. Así no se puede guardar.",
     "result_none": "No resoluble — no hay una disposición válida. Así no se puede guardar.",
@@ -430,6 +436,7 @@
     "original": "Original"
   },
   "game": {
+    "eraseIntro": "Toca o arrastra sobre las casillas para borrar notas, tachados y figuras. Mantén pulsado el botón para borrarlo todo.",
     "suspects": "Sospechosos",
     "selectPrompt": "Toca para seleccionar · mantén pulsado para colocar",
     "outsideLabel": "Fuera",
@@ -441,10 +448,11 @@
     "author": "Un caso de {{name}}"
   },
   "tool": {
+    "erase": "Borrar",
+    "eraseHold": "mantén: todo",
+    "eraseActive": "toca casillas",
     "x": "X",
     "xSub": "bloquear casilla",
-    "reset": "Reiniciar",
-    "eraseSub": "mantén",
     "undo": "Deshacer",
     "hint": "Pista",
     "submit": "Resolver",
@@ -854,6 +862,14 @@
     "glassesColor_silver": "gafas plateadas"
   },
   "who": {
+    "m_countPl": "hombres",
+    "f_countPl": "mujeres",
+    "m_countSg": "hombre",
+    "f_countSg": "mujer",
+    "m_countPl_susp": "sospechosos",
+    "f_countPl_susp": "sospechosas",
+    "m_countSg_susp": "sospechoso",
+    "f_countSg_susp": "sospechosa",
     "m_dat": "un hombre",
     "f_dat": "una mujer",
     "m_all": "todos los hombres",
@@ -1131,7 +1147,23 @@
     "m": "su",
     "f": "su"
   },
+  "area": {
+    "inside": "dentro",
+    "outside": "fuera"
+  },
   "clue": {
+    "inRoomAdjacentTo": "{{subject}} {{neg}}estaba en una habitación [[contigua:adjacentRoom]] a la habitación {{room}}",
+    "adjacentRooms": "{{subject}} y {{target}} {{neg}}estaban en [[habitaciones contiguas:adjacentRoom]]",
+    "neighborRoomEmpty": "Al menos una [[habitación vacía:emptyRoom]] era contigua a {{poss}} habitación",
+    "neighborRoomEmptyNeg": "Ninguna [[habitación vacía:emptyRoom]] era contigua a {{poss}} habitación",
+    "neighborRoomCount": "Una habitación [[contigua:adjacentRoom]] a {{poss}} habitación tenía [[exactamente:roomAttrExact]] {{count}} [[sospechosos:suspect]]",
+    "neighborRoomCount_one": "Una habitación [[contigua:adjacentRoom]] a {{poss}} habitación tenía [[exactamente:roomAttrExact]] {{count}} [[sospechoso:suspect]]",
+    "neighborRoomCountNeg": "Ninguna habitación [[contigua:adjacentRoom]] a {{poss}} habitación tenía [[exactamente:roomAttrExact]] {{count}} [[sospechosos:suspect]]",
+    "neighborRoomCountNeg_one": "Ninguna habitación [[contigua:adjacentRoom]] a {{poss}} habitación tenía [[exactamente:roomAttrExact]] {{count}} [[sospechoso:suspect]]",
+    "neighborRoomCountDir": "Una [[habitación contigua:adjacentRoom]] situada {{direction}} de {{subjectName}} tenía [[exactamente:roomAttrExact]] {{count}} [[sospechosos:suspect]]",
+    "neighborRoomCountDir_one": "Una [[habitación contigua:adjacentRoom]] situada {{direction}} de {{subjectName}} tenía [[exactamente:roomAttrExact]] {{count}} [[sospechoso:suspect]]",
+    "neighborRoomCountDirNeg": "Ninguna [[habitación contigua:adjacentRoom]] situada {{direction}} de {{subjectName}} tenía [[exactamente:roomAttrExact]] {{count}} [[sospechosos:suspect]]",
+    "neighborRoomCountDirNeg_one": "Ninguna [[habitación contigua:adjacentRoom]] situada {{direction}} de {{subjectName}} tenía [[exactamente:roomAttrExact]] {{count}} [[sospechoso:suspect]]",
     "negWord": "no ",
     "onObject": "{{subject}} {{neg}}estaba [[sobre:onObject]] {{object}}",
     "onObjectIn": "{{subject}} {{neg}}estaba [[en:onObject]] {{object}}",
@@ -1232,18 +1264,54 @@
     "not": "[[no:negation]] ({{child}})"
   },
   "boardClue": {
-    "countOnObject": "Exactamente {{count}} personas estaban sobre {{object}}.",
-    "countOnObject_one": "Exactamente {{count}} persona estaba sobre {{object}}.",
+    "roomOccupancy": {
+      "atLeast": "Cada habitación tenía al menos {{count}} [[personas:person]].",
+      "atLeast_one": "Cada habitación tenía al menos {{count}} [[persona:person]].",
+      "atLeastSusp": "Cada habitación tenía al menos {{count}} sospechosos.",
+      "atLeastSusp_one": "Cada habitación tenía al menos {{count}} sospechoso.",
+      "atMost": "Ninguna habitación tenía más de {{count}} [[personas:person]].",
+      "atMost_one": "Ninguna habitación tenía más de {{count}} [[persona:person]].",
+      "atMostSusp": "Ninguna habitación tenía más de {{count}} sospechosos.",
+      "atMostSusp_one": "Ninguna habitación tenía más de {{count}} sospechoso.",
+      "exactly": "Cada habitación tenía exactamente {{count}} [[personas:person]].",
+      "exactly_one": "Cada habitación tenía exactamente {{count}} [[persona:person]].",
+      "exactlySusp": "Cada habitación tenía exactamente {{count}} sospechosos.",
+      "exactlySusp_one": "Cada habitación tenía exactamente {{count}} sospechoso.",
+      "notExactly": "Ninguna habitación tenía exactamente {{count}} [[personas:person]].",
+      "notExactly_one": "Ninguna habitación tenía exactamente {{count}} [[persona:person]].",
+      "notExactly_zero": "Ninguna habitación estaba vacía.",
+      "notExactlySusp": "Ninguna habitación tenía exactamente {{count}} sospechosos.",
+      "notExactlySusp_one": "Ninguna habitación tenía exactamente {{count}} sospechoso.",
+      "notExactlySusp_zero": "Cada habitación tenía al menos un sospechoso."
+    },
+    "emptyRooms_zero": "Ninguna habitación estaba vacía.",
+    "countWithAttrGender_zero": "Nadie estaba {{area}}.",
+    "countWithAttrTrait_zero": "Nadie con {{attribute}} estaba {{area}}.",
+    "countWithAttrTraitSusp_zero": "Ningún sospechoso con {{attribute}} estaba {{area}}.",
+    "countWithAttrGender": "Exactamente {{count}} {{who}} estaban {{area}}.",
+    "countWithAttrGender_one": "Exactamente {{count}} {{whoSg}} estaba {{area}}.",
+    "countWithAttrTrait": "Exactamente {{count}} [[personas:person]] con {{attribute}} estaban {{area}}.",
+    "countWithAttrTrait_one": "Exactamente {{count}} [[persona:person]] con {{attribute}} estaba {{area}}.",
+    "countWithAttrTraitSusp": "Exactamente {{count}} sospechosos con {{attribute}} estaban {{area}}.",
+    "countWithAttrTraitSusp_one": "Exactamente {{count}} sospechoso con {{attribute}} estaba {{area}}.",
+    "countOnObject": "Exactamente {{count}} [[personas:person]] estaban sobre {{object}}.",
+    "countOnObject_one": "Exactamente {{count}} [[persona:person]] estaba sobre {{object}}.",
     "emptyRooms": "Exactamente {{count}} habitaciones están vacías.",
     "emptyRooms_one": "Exactamente {{count}} habitación está vacía.",
-    "everyRoomCount": "En cada habitación hay exactamente {{count}} personas.",
-    "everyRoomCount_one": "En cada habitación hay exactamente {{count}} persona."
+    "everyRoomCount": "En cada habitación hay exactamente {{count}} [[personas:person]].",
+    "everyRoomCount_one": "En cada habitación hay exactamente {{count}} [[persona:person]]."
   },
   "rule": {
     "aloneWithVictim": "La víctima debe estar a solas en una habitación con exactamente un sospechoso.",
     "oneEachLine": "Cada persona debe estar en su propia fila y columna."
   },
+  "clueNote": {
+    "terms": "Términos",
+    "persons": "Personas en la pista"
+  },
   "tip": {
+    "adjacentRoom": "Dos habitaciones son contiguas si comparten una pared en algún punto. Las que solo se tocan en una esquina no son contiguas.",
+    "emptyRoom": "Una habitación en la que no hay nadie: ningún sospechoso, y tampoco la víctima.",
     "negation": "Negación — invierte la condición a su contrario: lo que sigue es justo lo que NO ocurre.",
     "onObject": "Está sobre la casilla de este objeto (es transitable).",
     "nearObject": "Justo al lado — en la misma habitación, una casilla a la izquierda, derecha, arriba o abajo del objeto.",
@@ -1277,7 +1345,7 @@
     "outside": "En una zona exterior (pastizal, patio o jardín).",
     "notAlone": "Al menos otra persona está en la misma habitación.",
     "suspect": "Solo los sospechosos — la víctima no cuenta aquí.",
-    "person": "Todas las personas: los sospechosos y la víctima juntos."
+    "person": "Una persona puede ser tanto un sospechoso como la víctima."
   },
   "info": {
     "male": "hombre",
@@ -1287,6 +1355,10 @@
     "bald": "calvo"
   },
   "cond": {
+    "suspectsUnit": "sospechosos",
+    "adjTargetRoom": "una habitación",
+    "adjTargetPerson": "la habitación de una persona",
+    "neighborDirAny": "en cualquier lugar",
     "inRoom": "En habitación",
     "onObject": "Sobre objeto",
     "uniqueOnObject": "Único sobre objeto",
@@ -1334,7 +1406,7 @@
       "alone": "estaba a solas",
       "in": "Habitación concreta",
       "with": "en la misma habitación que …",
-      "onObject": "alguien en objeto/posición"
+      "onObject": "alguien en objeto/posición", "adjacent": "contigua a …", "neighborEmpty": "habitación contigua vacía", "neighborCount": "sospechosos en habitación contigua"
     },
     "posCorner": "en una esquina",
     "posWall": "junto a una pared",
@@ -1446,6 +1518,18 @@
     "or": "O"
   },
   "step": {
+    "notAdjacentRooms": "{{name}} no está en ninguna habitación contigua a la de {{target}} – las contiguas quedan tachadas.",
+    "roomOccupancyFull": "La habitación {{room}} ya alcanzó su número permitido – excluida para todos los demás. ({{child}})",
+    "roomOccupancyConfine": "A la habitación {{room}} le faltan justo tantos como pueden entrar – {{name}} debe ir ahí. ({{child}})",
+    "roomOccupancyMustJoin": "La habitación {{room}} tendría si no exactamente {{count}} – solo {{name}} puede unirse, así que debe hacerlo. ({{child}})",
+    "roomOccupancyMustStayOut": "{{name}} en la habitación {{room}} daría exactamente {{count}} – así que ahí no. ({{child}})",
+    "relationalAdjacentRooms": "{{name}} está en una habitación contigua a la de {{target}} – las habitaciones que no lindan con ninguna posible del otro quedan tachadas.",
+    "neighborRoomEmpty": "Una habitación vacía debe lindar con la de {{name}} – aquí todas las contiguas ya están ocupadas.",
+    "neighborRoomAllOccupied": "Ninguna habitación vacía puede lindar con la de {{name}} – aquí una contigua quedaría vacía por fuerza.",
+    "neighborRoomCount": "Una habitación con exactamente {{count}} sospechosos debe lindar con la de {{name}} – aquí ya ninguna contigua puede lograrlo.",
+    "countWithAttrFull": "La cantidad exigida ya está completa – excluido para todos los demás. ({{child}})",
+    "countWithAttrConfine": "Ya solo quedan tantos candidatos como se exigen – {{name}} es uno de ellos y debe ir ahí. ({{child}})",
+    "countWithAttrLine": "Las personas exigidas ocupan exactamente estas filas o columnas – el resto de ellas queda vacío. ({{child}})",
     "clueCandidates": "{{name}}: las pistas dejan {{count}} casillas posibles.",
     "clueCandidates_one": "{{name}}: las pistas dejan {{count}} casilla posible.",
     "nakedSingle": "{{name}} debe estar en {{cell}} – la única casilla posible.",

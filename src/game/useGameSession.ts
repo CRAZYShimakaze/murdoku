@@ -70,7 +70,10 @@ export interface GameSession {
   setMark: (cell: Cell, personId: PersonId, on: boolean) => void
   /** Remove a committed person from the board (long-press on their cell). */
   remove: (personId: PersonId) => void
-  /** Full restart: clear all placements, marks and crosses (eraser "hold"). */
+  /** Eraser "tap": wipe ONE cell — its notes, its cross and any figure on it — in a single
+   *  undo step. */
+  eraseCell: (cell: Cell) => void
+  /** Eraser "hold": clear all placements, marks and crosses at once. */
   resetAll: () => void
   undo: () => void
   /** Forget the saved progress for this level (call on a win). */
@@ -208,34 +211,66 @@ export function useGameSession(
     [apply, board],
   )
 
-  const remove = useCallback(
-    (personId: PersonId) =>
+  /** Take `personId` off the board and clear the auto-X's they had stamped. Shared by
+   *  `remove` and the eraser, so both leave the crosses in exactly the same state. */
+  const liftFigure = useCallback(
+    (next: PlayState, personId: PersonId): boolean => {
+      const cell = next.placements.get(personId)
+      if (cell === undefined) return false
+      next.placements.delete(personId)
+      const { row, col } = board.rc(cell)
+      // Any remaining occupant (suspect OR victim) still blocks its own row &
+      // column, so a cross sharing a line with one stays justified.
+      const coveredByOther = (x: Cell): boolean => {
+        const xr = board.rc(x)
+        for (const c of next.placements.values()) {
+          const rc = board.rc(c)
+          if (rc.row === xr.row || rc.col === xr.col) return true
+        }
+        return false
+      }
+      // Clear the auto-X's this figure had stamped across its row/column — but
+      // keep any the player set by hand, and any another figure still blocks.
+      for (const x of [...next.crosses]) {
+        const xr = board.rc(x)
+        if (xr.row !== row && xr.col !== col) continue // not on this figure's lines
+        if (next.manualCrosses.has(x)) continue // user-set → keep
+        if (coveredByOther(x)) continue // another figure still excludes it → keep
+        next.crosses.delete(x)
+      }
+      return true
+    },
+    [board],
+  )
+
+  /**
+   * The eraser: wipe everything the player put on ONE cell — pencil notes, a cross, and any
+   * figure standing there — as a single undo step. A figure is lifted through the shared
+   * `liftFigure`, so its auto-X's go with it instead of being left behind as orphans.
+   * Returns false (no history entry) when the cell was already blank.
+   */
+  const eraseCell = useCallback(
+    (cell: Cell) =>
       apply((next) => {
-        const cell = next.placements.get(personId)
-        if (cell === undefined) return false
-        next.placements.delete(personId)
-        const { row, col } = board.rc(cell)
-        // Any remaining occupant (suspect OR victim) still blocks its own row &
-        // column, so a cross sharing a line with one stays justified.
-        const coveredByOther = (x: Cell): boolean => {
-          const xr = board.rc(x)
-          for (const c of next.placements.values()) {
-            const rc = board.rc(c)
-            if (rc.row === xr.row || rc.col === xr.col) return true
-          }
-          return false
-        }
-        // Clear the auto-X's this figure had stamped across its row/column — but
-        // keep any the player set by hand, and any another figure still blocks.
-        for (const x of [...next.crosses]) {
-          const xr = board.rc(x)
-          if (xr.row !== row && xr.col !== col) continue // not on this figure's lines
-          if (next.manualCrosses.has(x)) continue // user-set → keep
-          if (coveredByOther(x)) continue // another figure still excludes it → keep
-          next.crosses.delete(x)
-        }
+        let changed = false
+        // Collect first — liftFigure deletes from `placements`, and mutating a Map while
+        // iterating it is a trap waiting for the day two people can share a cell.
+        const here = [...next.placements].filter(([, c]) => c === cell).map(([id]) => id)
+        for (const id of here) if (liftFigure(next, id)) changed = true
+        if (next.marks.delete(cell)) changed = true
+        // Drops an auto-X too — the X-tool already allows that (setCross(cell,false)), so the
+        // eraser must not be pickier than the tool it replaces for the player.
+        if (next.crosses.delete(cell)) changed = true
+        next.manualCrosses.delete(cell)
+        if (!changed) return false
+        if (autoVictim) autoPlaceVictim(next, board)
       }),
-    [apply, board],
+    [apply, board, autoVictim, liftFigure],
+  )
+
+  const remove = useCallback(
+    (personId: PersonId) => apply((next) => liftFigure(next, personId)),
+    [apply, liftFigure],
   )
 
   const resetAll = useCallback(
@@ -276,6 +311,7 @@ export function useGameSession(
     setCross,
     setMark,
     remove,
+    eraseCell,
     resetAll,
     undo,
     clearSaved,

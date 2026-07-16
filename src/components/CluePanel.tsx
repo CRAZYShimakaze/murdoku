@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
@@ -6,31 +6,117 @@ import { useSettings } from '../game/settings.ts'
 import AttrIcons from './AttrIcons.tsx'
 import Avatar from './Avatar.tsx'
 import AppearanceInfo from './AppearanceInfo.tsx'
-import ClueText from './ClueText.tsx'
+import ClueText, { BoardClueText } from './ClueText.tsx'
+import { collectClueTerms, type ClueTerm } from './clueRich.tsx'
 import InfoTip from './InfoTip.tsx'
 import { familyOf, FAMILY_META, FAMILY_ORDER, type HintFamily } from './hintFamily.tsx'
 import {
-  AndClue,
-  InsideXorClue,
-  NotClue,
-  OrClue,
-  OutsideClue,
   VICTIM_ID,
   isWaterRoom,
-  type Clue,
+  relatedSuspects,
+  usesInsideOutside,
   type Cell,
+  type Explanation,
   type HintResult,
   type PersonId,
   type Puzzle,
 } from '../engine/index.ts'
 
-/** True if a clue (or any nested sub-clue) depends on the indoor/outdoor split. */
-function refersToInsideOutside(clue: Clue): boolean {
-  if (clue instanceof OutsideClue || clue instanceof InsideXorClue) return true
-  if (clue instanceof NotClue) return refersToInsideOutside(clue.inner)
-  if (clue instanceof AndClue || clue instanceof OrClue) return clue.clues.some(refersToInsideOutside)
-  return false
+/** Touch device (no hover): the Akten-Notiz replaces the hover tooltips there. Evaluated
+ *  once — a device doesn't change its primary pointer mid-game. */
+const IS_COARSE = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
+
+/** The dossier note a face-tap folds out under a clue (mobile only): every concept term the
+ *  clue's sentence carries, then the persons it names — the same texts the desktop shows on
+ *  hover, gathered in one readable place. Sits INSIDE the card's outer <button>, so it stops
+ *  its clicks — a tap into the note must not select the suspect for placement. */
+function AktenNotiz({
+  terms,
+  persons,
+}: {
+  terms: ClueTerm[]
+  persons: { id: PersonId; name: string; attrs: Puzzle['suspects'][number]['attributes']; color: string }[]
+}) {
+  const { t } = useTranslation()
+  return (
+    <div
+      className="mk-note"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <div className="mk-note__card">
+        {terms.length > 0 && (
+          <>
+            <p className="mk-note__label">{t('clueNote.terms')}</p>
+            {terms.map((term) => (
+              <p key={term.tipKey} className="mk-note__row">
+                <strong>{term.word}</strong>
+                <span>{t(`tip.${term.tipKey}`)}</span>
+              </p>
+            ))}
+          </>
+        )}
+        {persons.length > 0 && (
+          <>
+            <p className="mk-note__label">{t('clueNote.persons')}</p>
+            {persons.map((p) => (
+              <div key={p.id} className="mk-note__person">
+                <Avatar className="mk-note__avatar" attrs={p.attrs} color={p.color} letter={p.id} />
+                <span className="mk-note__who">
+                  <strong>{p.name}</strong>
+                  <AppearanceInfo attrs={p.attrs} letter={p.id} />
+                </span>
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  )
 }
+
+/** Face/lens handle for the Akten-Notiz — on touch AND desktop (the click complements the
+ *  desktop hover tooltips; user's call). Dashed chalk ring = the Kommissar outline language
+ *  ("dashed = look here"); desktop shows it on hover only. Rendered as a span with button
+ *  semantics because it lives INSIDE the clue card's <button> (nested real buttons are
+ *  invalid HTML), and it must swallow the tap so the card does not select the suspect. */
+function FaceHandle({
+  open,
+  onToggle,
+  children,
+}: {
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      className="mk-avatarwrap mk-facebtn"
+      aria-expanded={open}
+      onClick={(e) => {
+        e.stopPropagation()
+        onToggle()
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          e.stopPropagation()
+          onToggle()
+        }
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+/** True if a clue (or any nested sub-clue) depends on the indoor/outdoor split. */
+// (The indoor/outdoor check moved to the engine's `usesInsideOutside` — the editor panel
+// needs the exact same rule, and the local copy silently missed UniqueOutsideClue as well as
+// every board clue.)
 
 /** Hand-drawn line-art badge for each correction-hint variant (no emoji, on-theme). */
 const HINT_GLYPHS: Record<string, ReactNode> = {
@@ -176,24 +262,47 @@ export default function CluePanel({
   // levels without it default to male, matching the editor's default).
   const victimGender: 'm' | 'f' = puzzle.victim.attributes.gender === 'f' ? 'f' : 'm'
 
+  // The mobile "Akten-Notiz": on touch there is no hover, so tapping the FACE of a clue card
+  // (or the lens of a global clue) folds the card's dossier note out underneath — every
+  // concept explanation plus the persons the clue names. Exactly ONE note at a time; a second
+  // tap on the same face or a tap anywhere else closes it. Scrolling deliberately does NOT
+  // close (a long note must stay readable while you scroll it into view) — user's call.
+  const [noteFor, setNoteFor] = useState<string | null>(null)
+  useEffect(() => {
+    if (noteFor === null) return
+    const onDown = (e: PointerEvent) => {
+      const el = e.target as Element | null
+      // Taps on any face handle or inside a note are handled by their own logic.
+      if (el?.closest('.mk-facebtn, .mk-note')) return
+      setNoteFor(null)
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [noteFor])
+  const toggleNote = (id: string) => setNoteFor((prev) => (prev === id ? null : id))
+
   // Board-wide notes shown above the suspects: which rooms are outdoors + any
-  // board clues ("exactly one person on a mud puddle", …).
+  // board clues ("exactly one person on a mud puddle", …). Board clues carry their
+  // Explanation along so the Akten-Notiz can collect their concept terms.
   const boardNotes = useMemo(() => {
-    const notes: string[] = []
-    // Only show the indoor/outdoor legend when a clue actually relies on it.
-    const usesInsideOutside =
-      puzzle.suspects.some((s) => s.clues.some(refersToInsideOutside)) ||
-      puzzle.globalClues.some(refersToInsideOutside)
+    const notes: { node: ReactNode; describe?: Explanation }[] = []
+    // Only show the indoor/outdoor legend when a clue actually relies on it — the shared
+    // check covers suspect clues, global clues AND board clues ("2 women were outside").
     const outside = [...puzzle.board.rooms.values()].filter((r) => r.outside).map((r) => t(r.nameKey))
-    if (usesInsideOutside && outside.length > 0) {
-      notes.push(`${t('game.outsideLabel')}: ${outside.join(', ')}`)
+    if (usesInsideOutside(puzzle) && outside.length > 0) {
+      notes.push({ node: `${t('game.outsideLabel')}: ${outside.join(', ')}` })
     }
     // A water room is drawn as a lake but is a NORMAL, walkable room — say so as a
     // global rule so players know someone can stand in the water too.
     if ([...puzzle.board.rooms.values()].some((r) => isWaterRoom(r.nameKey))) {
-      notes.push(t('game.waterWalkable'))
+      notes.push({ node: t('game.waterWalkable') })
     }
-    for (const clue of puzzle.boardClues) notes.push(renderer.render(clue.describe()))
+    // Board clues render RICH (bold words + concept tooltips), not through renderer.render —
+    // that strips the [[word:tipKey]] markers, which silently ate e.g. the "Personen" tooltip.
+    for (const clue of puzzle.boardClues) {
+      const describe = clue.describe()
+      notes.push({ node: <BoardClueText renderer={renderer} describe={describe} />, describe })
+    }
     return notes
   }, [puzzle, renderer, t])
 
@@ -286,12 +395,31 @@ export default function CluePanel({
 
       {boardNotes.length > 0 && (
         <div className="mk-boardclues">
-          {boardNotes.map((note, i) => (
-            <p key={i} className="mk-boardclue">
-              <span className="mk-boardclue__icon">🔍</span>
-              {note}
-            </p>
-          ))}
+          {boardNotes.map((note, i) => {
+            const noteId = `bc-${i}`
+            const lens = <span className="mk-boardclue__icon">🔍</span>
+            return (
+              <div key={i} className="mk-boardclue">
+                {note.describe ? (
+                  <FaceHandle open={noteFor === noteId} onToggle={() => toggleNote(noteId)}>
+                    {lens}
+                  </FaceHandle>
+                ) : (
+                  lens
+                )}
+                {/* ONE child for the flex row: the rich clue text is many inline nodes, and
+                    the container's gap would otherwise wedge 0.5rem between every piece —
+                    including one right before the final period (user-reported). */}
+                <span>{note.node}</span>
+                {noteFor === noteId && note.describe && (
+                  <AktenNotiz
+                    terms={collectClueTerms(renderer, t, [note.describe])}
+                    persons={[]}
+                  />
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -420,18 +548,32 @@ export default function CluePanel({
             onPointerEnter={() => onHoverSuspect?.(s.id)}
             onPointerLeave={() => onHoverSuspect?.(null)}
           >
-            <InfoTip
-              className="mk-avatarwrap"
-              anchor=".mk-clue"
-              content={<AppearanceInfo attrs={s.attributes} letter={s.id} />}
-            >
-              <Avatar
-                className="mk-avatar"
-                attrs={s.attributes}
-                color={suspectColor(idx)}
-                letter={s.id}
-              />
-            </InfoTip>
+            {/* The face is the handle EVERYWHERE (user's call — "das finde ich schick"):
+                a click/tap folds the Akten-Notiz out under the clue. Desktop keeps its
+                appearance tooltip on hover INSIDE the handle; touch skips the InfoTip
+                (its pointerdown would flash a tooltip over the very tap that opens). */}
+            <FaceHandle open={noteFor === s.id} onToggle={() => toggleNote(s.id)}>
+              {IS_COARSE ? (
+                <Avatar
+                  className="mk-avatar"
+                  attrs={s.attributes}
+                  color={suspectColor(idx)}
+                  letter={s.id}
+                />
+              ) : (
+                <InfoTip
+                  anchor=".mk-clue"
+                  content={<AppearanceInfo attrs={s.attributes} letter={s.id} />}
+                >
+                  <Avatar
+                    className="mk-avatar"
+                    attrs={s.attributes}
+                    color={suspectColor(idx)}
+                    letter={s.id}
+                  />
+                </InfoTip>
+              )}
+            </FaceHandle>
             <span className="mk-clue__main">
               <span className="mk-clue__name">
                 {s.name}
@@ -442,6 +584,23 @@ export default function CluePanel({
                 <ClueText renderer={renderer} clues={s.clues} subjectId={s.id} />
               </span>
             </span>
+            {noteFor === s.id && (
+              <AktenNotiz
+                terms={collectClueTerms(renderer, t, s.clues.map((c) => c.describe()), s.id)}
+                persons={[
+                  { id: s.id, name: s.name, attrs: s.attributes, color: suspectColor(idx) },
+                  ...[...relatedSuspects(s.clues, s.id, puzzle)].map((id) => {
+                    const other = puzzle.suspects.find((o) => o.id === id)!
+                    return {
+                      id,
+                      name: other.name,
+                      attrs: other.attributes,
+                      color: suspectColor(suspectIndex.get(id) ?? 0),
+                    }
+                  }),
+                ]}
+              />
+            )}
           </button>
         )
       })}

@@ -329,6 +329,36 @@ function roomCharMap(roomMap: readonly string[]): Map<string, string> {
  * chars like "W" open too — their references in clues are remapped along); the people
  * and room names are reverse-mapped. Assumes a square board; non-square falls back to width.
  */
+/** The board-clue types this build's editor can actually show and save. */
+const KNOWN_BOARD_CLUES = new Set(['countOnObject', 'emptyRooms', 'roomOccupancy', 'countWithAttr'])
+
+/**
+ * Migrate one board clue from any shape older data may carry onto the current one.
+ *
+ * Editor drafts, saved custom levels and exported files live in localStorage / on disk and
+ * OUTLIVE a refactor — so this build will be handed types it no longer defines. Both known
+ * predecessors fold onto the general per-room clue they always were; anything genuinely
+ * unknown returns null and is dropped, because the alternative is an editor that can never
+ * be opened again (createBoardClue now throws on unknown types, by design).
+ */
+export function normalizeBoardClue(bc: BoardClueJson): BoardClueJson | null {
+  const old = bc as unknown as { type: string; count?: number; scope?: 'people' | 'suspects' }
+  // "every room holds exactly N people"
+  if (old.type === 'everyRoomCount') {
+    return { type: 'roomOccupancy', op: 'exactly', count: old.count ?? 2, scope: 'people' }
+  }
+  // "no room holds more than N" — the intermediate shape before the operator was added.
+  if (old.type === 'maxRoomOccupancy') {
+    return { type: 'roomOccupancy', op: 'atMost', count: old.count ?? 2, scope: old.scope ?? 'people' }
+  }
+  return KNOWN_BOARD_CLUES.has(old.type) ? bc : null
+}
+
+/** Migrate a whole list, dropping what can't be represented any more. */
+export function normalizeBoardClues(bcs: readonly BoardClueJson[] | undefined): BoardClueJson[] {
+  return (bcs ?? []).map(normalizeBoardClue).filter((b): b is BoardClueJson => b !== null)
+}
+
 export function editorStateFromLevel(level: LevelJson): EditorState {
   const map = roomCharMap(level.roomMap)
   const rm = (ch: string): string => map.get(ch) ?? ch
@@ -363,7 +393,7 @@ export function editorStateFromLevel(level: LevelJson): EditorState {
     topMap: remapLayer(level.topMap) ?? blank,
     windows: [...(level.windows ?? [])],
     doors: [...(level.doors ?? [])],
-    boardClues: [...(level.boardClues ?? [])],
+    boardClues: normalizeBoardClues(level.boardClues),
     suspects: level.suspects.map((s) => suspectFromJson({ ...s, clues: s.clues?.map(remapClue) })),
     victim: { name: level.victim.name, gender: va.gender === 'f' ? 'f' : 'm' },
     roomNames: ROOM_IDS.map((id, i) => {

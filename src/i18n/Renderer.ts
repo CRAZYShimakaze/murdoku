@@ -27,17 +27,21 @@ export class Renderer {
   }
 
   /**
-   * Count-aware key variant for templates that read differently in singular and
-   * plural ("1 column" vs "2 columns", "1 Raum ist" vs "2 Räume sind"). The base
-   * key holds the plural ("other") form; the locale may add a `<key>_one` sibling
-   * for the singular. Picks `_one` only when a count param (`count`/`n`/`size`)
-   * equals exactly 1 and that variant exists — otherwise the base key is used, so
-   * keys without a `_one` sibling are unaffected.
+   * Count-aware key variant for templates that read differently per count ("1 column" vs
+   * "2 columns", "1 Raum ist" vs "2 Räume sind"). The base key holds the plural ("other")
+   * form; the locale may add a `<key>_one` sibling for the singular and a `<key>_zero` one
+   * for none ("Kein Raum war leer" beats "Genau 0 Räume sind leer"). Picks a variant only
+   * when a count param (`count`/`n`/`size`) matches exactly AND that variant exists — so
+   * keys without the sibling are unaffected.
    */
   pluralKey(key: string, params: Record<string, string | number>): string {
     const n = params.count ?? params.n ?? params.size
-    if (n !== undefined && n !== '' && Number(n) === 1 && this.lookup(`${key}_one`) !== undefined) {
-      return `${key}_one`
+    if (n === undefined || n === '') return key
+    for (const [value, suffix] of [
+      [0, '_zero'],
+      [1, '_one'],
+    ] as const) {
+      if (Number(n) === value && this.lookup(`${key}${suffix}`) !== undefined) return `${key}${suffix}`
     }
     return key
   }
@@ -132,10 +136,15 @@ export class Renderer {
       }
       // `who` resolves "a man/woman" (m_nom/f_nom) and its negated "kein/keine"
       // form (…_neg); `whoNeg` is the same lookup under a second name so a template
-      // can show both ("darf keine Frau sein; … ist eine Frau").
+      // can show both ("darf keine Frau sein; … ist eine Frau"). `whoSg` is the same
+      // lookup again, for the singular (`_one`) variant of a counted template.
       case 'who':
       case 'whoNeg':
+      case 'whoSg':
         return this.lookup(`who.${value}`) ?? String(value)
+      // "inside" / "outside" as an adverb ("waren draußen") — the counting board clue.
+      case 'area':
+        return this.lookup(`area.${value}`) ?? String(value)
       // Gender phrase that becomes "another/other" only when the SUBJECT shares that
       // gender (so "other" is genuine) — "ein anderer Mann" / "eine Frau" (whoOther,
       // singular nominative) and "anderen Männern" / "Frauen" (whoOtherPl, plural

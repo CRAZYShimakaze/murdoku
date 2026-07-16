@@ -1,6 +1,7 @@
 /** localStorage persistence: solved levels, in-progress board, saved levels. */
 import { Capacitor } from '@capacitor/core'
 import type { LevelJson } from '../engine/index.ts'
+import { normalizeBoardClues } from './editorModel.ts'
 import type { LevelFilter } from './levels.ts'
 
 const SOLVED_KEY = 'murdoku.solved.v1'
@@ -12,6 +13,7 @@ const CUSTOM_KEY = 'murdoku.custom.v1'
 const EDITOR_DRAFT_KEY = 'murdoku.editordraft.v1'
 const FILTER_KEY = 'murdoku.filter.v1'
 const SHOW_HIDDEN_AUTHOR_KEY = 'murdoku.showhiddenauthor.v1'
+const ERASE_HINT_KEY = 'murdoku.erasehint.v1'
 const GEN_SETTINGS_KEY = 'murdoku.gensettings.v1'
 const APP_SETTINGS_KEY = 'murdoku.settings.v1'
 
@@ -194,8 +196,17 @@ export function clearHintsUsed(id: string): void {
 }
 
 /** Player-kept generated levels, newest first. */
+/**
+ * Saved levels are persisted JSON and outlive refactors, so this is the boundary where a
+ * shape from an older build has to be brought up to date — before anything hands it to
+ * `loadLevel`, which (rightly) throws on a board-clue type it doesn't know. Covers the level
+ * list, playing a custom level, and opening one in the editor alike.
+ */
 export function loadCustomLevels(): LevelJson[] {
-  return read<LevelJson[]>(CUSTOM_KEY, [])
+  return read<LevelJson[]>(CUSTOM_KEY, []).map((level) => ({
+    ...level,
+    boardClues: normalizeBoardClues(level.boardClues),
+  }))
 }
 
 export function saveCustomLevel(level: LevelJson): void {
@@ -209,6 +220,19 @@ export function isCustomSaved(id: string): boolean {
 }
 
 /** The in-progress editor draft (so leaving the editor to test-play never loses work). */
+/**
+ * Whether the eraser's "tap cells / hold for everything" note has been shown. The button
+ * carries two reaches of one action, which is worth saying ONCE — at the moment the player
+ * first arms it — and never again.
+ */
+export function eraseHintSeen(): boolean {
+  return read<boolean>(ERASE_HINT_KEY, false)
+}
+
+export function markEraseHintSeen(): void {
+  write(ERASE_HINT_KEY, true)
+}
+
 export function loadEditorDraft<T>(): T | null {
   return read<T | null>(EDITOR_DRAFT_KEY, null)
 }

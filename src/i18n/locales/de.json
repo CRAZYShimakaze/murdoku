@@ -20,6 +20,10 @@
     "credit": "Murdoku · ein Logik-Krimi"
   },
   "editor": {
+    "occupancyOp": {"atLeast":"mindestens","atMost":"höchstens","exactly":"genau","notExactly":"nicht genau"},
+    "boardClueScopePeople": "Personen (mit Opfer)",
+    "boardClueScopeSuspects": "nur Verdächtige",
+    "boardClueArea": "Bereich",
     "title": "Editor",
     "subtitle": "Eigene Fälle bauen",
     "name": "Name des Falls",
@@ -46,7 +50,7 @@
     "groupBlocking": "Blockierend",
     "addClue": "+ Hinweis",
     "count": "Anzahl",
-    "boardClueKind": { "countOnObject": "Anzahl auf Objekt", "emptyRooms": "Leere Räume", "everyRoomCount": "Pro Raum genau" },
+    "boardClueKind": { "countOnObject": "Anzahl auf Objekt", "emptyRooms": "Leere Räume", "everyRoomCount": "Pro Raum genau" , "roomOccupancy": "Personen pro Raum", "countWithAttr": "Merkmal drinnen/draußen" },
     "windowHint": "Klicke nahe dem Rand eines Feldes, um dort ein Fenster zu setzen. Nochmal klicken entfernt es.",
     "doorHint": "Klicke nahe dem Rand eines Feldes, um dort eine Tür zu setzen (gilt von beiden Seiten). Nochmal klicken entfernt sie.",
     "room": "Raum",
@@ -71,6 +75,8 @@
     "resultOkNoMurderer": "Lösbar & eindeutig, aber kein eindeutiger Mörder.",
     "logic_pure": "Rein logisch lösbar",
     "logic_contradiction": "Nur mit Widersprüchen lösbar",
+    "redundantBoardClue_one": "Ein globaler Hinweis wird nicht gebraucht",
+    "redundantBoardClue": "{{count}} globale Hinweise werden nicht gebraucht",
     "coverage": "Feld-Abdeckung: {{percent}} % · Ø-Breite: {{avg}} %",
     "result_multi": "Mehrdeutig — es gibt mehrere Lösungen. So kann es nicht gespeichert werden.",
     "result_none": "Nicht lösbar — kein gültiges Arrangement. So kann es nicht gespeichert werden.",
@@ -426,6 +432,7 @@
     "original": "Original"
   },
   "game": {
+    "eraseIntro": "Tippe oder ziehe über Felder, um Notizen, Kreuze und Figuren zu löschen. Halte den Knopf gedrückt, um alles zu löschen.",
     "suspects": "Verdächtige",
     "selectPrompt": "Antippen zum Auswählen · lang drücken zum Setzen",
     "outsideLabel": "Draußen",
@@ -437,10 +444,11 @@
     "author": "Ein Fall von {{name}}"
   },
   "tool": {
+    "erase": "Löschen",
+    "eraseHold": "halten: alles",
+    "eraseActive": "Felder antippen",
     "x": "X",
     "xSub": "Feld sperren",
-    "reset": "Reset",
-    "eraseSub": "halten",
     "undo": "Zurück",
     "hint": "Tipp",
     "submit": "Lösen",
@@ -927,6 +935,14 @@
     "glassesColor_silver": "eine silberne Brille"
   },
   "who": {
+    "m_countPl": "Männer",
+    "f_countPl": "Frauen",
+    "m_countSg": "Mann",
+    "f_countSg": "Frau",
+    "m_countPl_susp": "männliche Verdächtige",
+    "f_countPl_susp": "weibliche Verdächtige",
+    "m_countSg_susp": "männlicher Verdächtiger",
+    "f_countSg_susp": "weibliche Verdächtige",
     "m_dat": "einem Mann",
     "f_dat": "einer Frau",
     "m_all": "allen Männern",
@@ -1195,7 +1211,23 @@
   "pron": { "m": "er", "f": "sie" },
   "pronObj": { "m": "ihm", "f": "ihr" },
   "poss": { "m": "seinem", "f": "ihrem" },
+  "area": {
+    "inside": "drinnen",
+    "outside": "draußen"
+  },
   "clue": {
+    "inRoomAdjacentTo": "{{subject}} war {{neg}}in einem Raum, der an den Raum {{room}} [[grenzt:adjacentRoom]]",
+    "adjacentRooms": "{{subject}} und {{target}} waren {{neg}}in [[benachbarten Räumen:adjacentRoom]]",
+    "neighborRoomEmpty": "An {{poss}} Raum grenzte mindestens ein [[leerer Raum:emptyRoom]]",
+    "neighborRoomEmptyNeg": "An {{poss}} Raum grenzte [[kein leerer Raum:emptyRoom]]",
+    "neighborRoomCount": "An {{poss}} Raum grenzte ein Raum, in dem [[genau:roomAttrExact]] {{count}} [[Verdächtige:suspect]] waren",
+    "neighborRoomCount_one": "An {{poss}} Raum grenzte ein Raum, in dem [[genau:roomAttrExact]] {{count}} [[Verdächtiger:suspect]] war",
+    "neighborRoomCountNeg": "An {{poss}} Raum grenzte kein Raum, in dem [[genau:roomAttrExact]] {{count}} [[Verdächtige:suspect]] waren",
+    "neighborRoomCountNeg_one": "An {{poss}} Raum grenzte kein Raum, in dem [[genau:roomAttrExact]] {{count}} [[Verdächtiger:suspect]] war",
+    "neighborRoomCountDir": "In einem [[angrenzenden Raum:adjacentRoom]] {{direction}} von {{subjectName}} waren [[genau:roomAttrExact]] {{count}} [[Verdächtige:suspect]]",
+    "neighborRoomCountDir_one": "In einem [[angrenzenden Raum:adjacentRoom]] {{direction}} von {{subjectName}} war [[genau:roomAttrExact]] {{count}} [[Verdächtiger:suspect]]",
+    "neighborRoomCountDirNeg": "In keinem [[angrenzenden Raum:adjacentRoom]] {{direction}} von {{subjectName}} waren [[genau:roomAttrExact]] {{count}} [[Verdächtige:suspect]]",
+    "neighborRoomCountDirNeg_one": "In keinem [[angrenzenden Raum:adjacentRoom]] {{direction}} von {{subjectName}} war [[genau:roomAttrExact]] {{count}} [[Verdächtiger:suspect]]",
     "negWord": "nicht ",
     "onObject": "{{subject}} war {{neg}}[[auf:onObject]] {{object}}",
     "onObjectIn": "{{subject}} war {{neg}}[[in:onObject]] {{object}}",
@@ -1296,18 +1328,54 @@
     "not": "[[nicht:negation]] ({{child}})"
   },
   "boardClue": {
-    "countOnObject": "Genau {{count}} Personen waren auf {{object}}.",
-    "countOnObject_one": "Genau {{count}} Person war auf {{object}}.",
+    "roomOccupancy": {
+      "atLeast": "In jedem Raum waren mindestens {{count}} [[Personen:person]].",
+      "atLeast_one": "In jedem Raum war mindestens {{count}} [[Person:person]].",
+      "atLeastSusp": "In jedem Raum waren mindestens {{count}} Verdächtige.",
+      "atLeastSusp_one": "In jedem Raum war mindestens {{count}} Verdächtiger.",
+      "atMost": "In keinem Raum waren mehr als {{count}} [[Personen:person]].",
+      "atMost_one": "In keinem Raum war mehr als {{count}} [[Person:person]].",
+      "atMostSusp": "In keinem Raum waren mehr als {{count}} Verdächtige.",
+      "atMostSusp_one": "In keinem Raum war mehr als {{count}} Verdächtiger.",
+      "exactly": "In jedem Raum waren genau {{count}} [[Personen:person]].",
+      "exactly_one": "In jedem Raum war genau {{count}} [[Person:person]].",
+      "exactlySusp": "In jedem Raum waren genau {{count}} Verdächtige.",
+      "exactlySusp_one": "In jedem Raum war genau {{count}} Verdächtiger.",
+      "notExactly": "In keinem Raum waren genau {{count}} [[Personen:person]].",
+      "notExactly_one": "In keinem Raum war genau {{count}} [[Person:person]].",
+      "notExactly_zero": "Kein Raum war leer.",
+      "notExactlySusp": "In keinem Raum waren genau {{count}} Verdächtige.",
+      "notExactlySusp_one": "In keinem Raum war genau {{count}} Verdächtiger.",
+      "notExactlySusp_zero": "In jedem Raum war mindestens ein Verdächtiger."
+    },
+    "emptyRooms_zero": "Kein Raum war leer.",
+    "countWithAttrGender_zero": "Niemand war {{area}}.",
+    "countWithAttrTrait_zero": "Niemand mit {{attribute}} war {{area}}.",
+    "countWithAttrTraitSusp_zero": "Kein Verdächtiger mit {{attribute}} war {{area}}.",
+    "countWithAttrGender": "Genau {{count}} {{who}} waren {{area}}.",
+    "countWithAttrGender_one": "Genau {{count}} {{whoSg}} war {{area}}.",
+    "countWithAttrTrait": "Genau {{count}} [[Personen:person]], die {{attribute}} hatten, waren {{area}}.",
+    "countWithAttrTrait_one": "Genau {{count}} [[Person:person]], die {{attribute}} hatte, war {{area}}.",
+    "countWithAttrTraitSusp": "Genau {{count}} Verdächtige, die {{attribute}} hatten, waren {{area}}.",
+    "countWithAttrTraitSusp_one": "Genau {{count}} Verdächtiger, der {{attribute}} hatte, war {{area}}.",
+    "countOnObject": "Genau {{count}} [[Personen:person]] waren auf {{object}}.",
+    "countOnObject_one": "Genau {{count}} [[Person:person]] war auf {{object}}.",
     "emptyRooms": "Genau {{count}} Räume sind leer.",
     "emptyRooms_one": "Genau {{count}} Raum ist leer.",
-    "everyRoomCount": "In jedem Raum sind genau {{count}} Personen.",
-    "everyRoomCount_one": "In jedem Raum ist genau {{count}} Person."
+    "everyRoomCount": "In jedem Raum sind genau {{count}} [[Personen:person]].",
+    "everyRoomCount_one": "In jedem Raum ist genau {{count}} [[Person:person]]."
   },
   "rule": {
     "aloneWithVictim": "Das Opfer muss mit genau einer verdächtigen Person allein in einem Raum sein.",
     "oneEachLine": "Jede Person muss in einer eigenen Zeile und Spalte stehen."
   },
+  "clueNote": {
+    "terms": "Begriffe",
+    "persons": "Personen im Hinweis"
+  },
   "tip": {
+    "adjacentRoom": "Zwei Räume grenzen aneinander, wenn sie sich irgendwo eine Wand teilen. Räume, die sich nur an einer Ecke berühren, grenzen nicht aneinander.",
+    "emptyRoom": "Ein Raum, in dem niemand steht — weder ein Verdächtiger noch das Opfer.",
     "negation": "Verneinung – kehrt die Bedingung ins Gegenteil: Das danach Genannte trifft genau NICHT zu.",
     "onObject": "Steht auf dem Feld dieses Objekts (es ist betretbar).",
     "nearObject": "Direkt daneben — im selben Raum, ein Feld links, rechts, über oder unter dem Objekt.",
@@ -1341,7 +1409,7 @@
     "outside": "In einem Außenbereich (Weide, Hof oder Garten).",
     "notAlone": "Mindestens eine weitere Person ist im selben Raum.",
     "suspect": "Nur die Verdächtigen – das Opfer zählt hier nicht mit.",
-    "person": "Alle Personen: die Verdächtigen und das Opfer zusammen."
+    "person": "Eine Person kann sowohl ein Verdächtiger als auch das Opfer sein."
   },
   "info": {
     "male": "männlich",
@@ -1351,6 +1419,10 @@
     "bald": "Glatze"
   },
   "cond": {
+    "suspectsUnit": "Verdächtige",
+    "adjTargetRoom": "einen Raum",
+    "adjTargetPerson": "den Raum einer Person",
+    "neighborDirAny": "egal wo",
     "inRoom": "Im Raum",
     "onObject": "Auf Objekt",
     "uniqueOnObject": "Einzige(r) auf Objekt",
@@ -1398,7 +1470,7 @@
       "alone": "war allein",
       "in": "Expliziter Raum",
       "with": "im selben Raum wie …",
-      "onObject": "jemand bei Objekt/Position"
+      "onObject": "jemand bei Objekt/Position", "adjacent": "grenzt an …", "neighborEmpty": "leerer Nachbarraum", "neighborCount": "Verdächtige im Nachbarraum"
     },
     "posCorner": "in einer Ecke",
     "posWall": "an einer Wand",
@@ -1503,6 +1575,18 @@
   },
   "conn": { "and": "UND", "or": "ODER" },
   "step": {
+    "notAdjacentRooms": "{{name}} ist in keinem Raum neben {{target}} – die Nachbarräume sind gestrichen.",
+    "roomOccupancyFull": "{{room}} hat die erlaubte Zahl erreicht – für alle anderen gestrichen. ({{child}})",
+    "roomOccupancyConfine": "{{room}} braucht noch genau so viele, wie überhaupt infrage kommen – {{name}} muss dorthin. ({{child}})",
+    "roomOccupancyMustJoin": "{{room}} hätte sonst genau {{count}} – nur {{name}} kann noch dazukommen, muss also dorthin. ({{child}})",
+    "roomOccupancyMustStayOut": "{{name}} in {{room}} ergäbe dort genau {{count}} – also nicht dort. ({{child}})",
+    "relationalAdjacentRooms": "{{name}} ist in einem Raum neben {{target}} – Räume, die an keinen möglichen Raum des anderen grenzen, sind gestrichen.",
+    "neighborRoomEmpty": "An {{name}}s Raum muss ein leerer Raum grenzen – hier sind schon alle Nachbarräume belegt.",
+    "neighborRoomAllOccupied": "An {{name}}s Raum darf kein leerer Raum grenzen – hier bliebe ein Nachbarraum zwangsläufig leer.",
+    "neighborRoomCount": "An {{name}}s Raum muss ein Raum mit genau {{count}} Verdächtigen grenzen – hier schafft das kein Nachbarraum mehr.",
+    "countWithAttrFull": "Die geforderte Anzahl ist schon erreicht – für alle weiteren ausgeschlossen. ({{child}})",
+    "countWithAttrConfine": "Es kommen nur noch genau so viele infrage, wie gefordert sind – {{name}} ist dabei und muss dorthin. ({{child}})",
+    "countWithAttrLine": "Die geforderten Personen belegen genau diese Zeilen bzw. Spalten – der Rest davon bleibt leer. ({{child}})",
     "clueCandidates": "{{name}}: durch die Hinweise bleiben {{count}} mögliche Felder.",
     "clueCandidates_one": "{{name}}: durch die Hinweise bleibt {{count}} mögliches Feld.",
     "nakedSingle": "{{name}} muss auf {{cell}} stehen – einziges mögliches Feld.",

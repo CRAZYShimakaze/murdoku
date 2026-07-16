@@ -258,9 +258,17 @@ export default function ClueBuilder({ group, ctx, onChange, templateMode = false
             className="mk-select-input mk-cond__val"
             value={mode}
             onChange={(e) => {
-              const m = e.target.value as 'alone' | 'in' | 'with' | 'onObject'
+              const m = e.target.value as NonNullable<Condition['roomMode']>
               const patch: Partial<Condition> = { roomMode: m }
               if (m === 'in') patch.room = c.room ?? ctx.rooms[0]
+              if (m === 'adjacent') {
+                // Same rule as 'with': only offer "a person's room" when a real other
+                // suspect exists, else fall back to naming a room (which always works).
+                const personOk = c.adjTarget === 'person' && !!c.of && ctx.others.some((o) => o.id === c.of)
+                patch.adjTarget = personOk ? 'person' : 'room'
+                if (!personOk) patch.room = c.room ?? ctx.rooms[0]
+              }
+              if (m === 'neighborCount') patch.count = Math.max(1, c.count ?? 1)
               if (m === 'with') {
                 // Pick a target that actually maps to a clue. "person" needs a valid
                 // other suspect; with none, fall back to "anyone" (= not alone) so the
@@ -286,9 +294,90 @@ export default function ClueBuilder({ group, ctx, onChange, templateMode = false
             <option value="in">{t('cond.roomMode.in')}</option>
             <option value="with">{t('cond.roomMode.with')}</option>
             <option value="onObject">{t('cond.roomMode.onObject')}</option>
+            <option value="adjacent">{t('cond.roomMode.adjacent')}</option>
+            <option value="neighborEmpty">{t('cond.roomMode.neighborEmpty')}</option>
+            <option value="neighborCount">{t('cond.roomMode.neighborCount')}</option>
           </select>
         )
         if (mode === 'alone') return <>{modeSelect}</>
+        // "an empty room adjoined his" — nothing to configure; NICHT flips it to the
+        // stronger "no adjoining room was empty".
+        if (mode === 'neighborEmpty') return <>{modeSelect}</>
+        // "his room borders <a named room | that person's room>".
+        if (mode === 'adjacent') {
+          const target = c.adjTarget ?? 'room'
+          return (
+            <>
+              {modeSelect}
+              <select
+                className="mk-select-input mk-cond__val"
+                value={target}
+                onChange={(e) => {
+                  const v = e.target.value as 'room' | 'person'
+                  update(i, v === 'person' ? { adjTarget: v, of: c.of ?? ctx.others[0]?.id } : { adjTarget: v, room: c.room ?? ctx.rooms[0] })
+                }}
+              >
+                <option value="room">{t('cond.adjTargetRoom')}</option>
+                {ctx.others.length > 0 && <option value="person">{t('cond.adjTargetPerson')}</option>}
+              </select>
+              {target === 'person' ? (
+                <select
+                  className="mk-select-input mk-cond__val"
+                  value={c.of ?? ''}
+                  onChange={(e) => update(i, { of: e.target.value })}
+                >
+                  {ctx.others.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  className="mk-select-input mk-cond__val"
+                  value={c.room ?? ''}
+                  onChange={(e) => update(i, { room: e.target.value })}
+                >
+                  {ctx.rooms.map((r) => (
+                    <option key={r} value={r}>
+                      {ctx.roomLabel(r)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </>
+          )
+        }
+        // "a room bordering his — optionally lying ENTIRELY one way from him — held exactly
+        // N suspects". Count starts at 1: 0 is the `neighborEmpty` aspect, which reads better.
+        if (mode === 'neighborCount') {
+          return (
+            <>
+              {modeSelect}
+              <input
+                className="mk-input mk-cond__val mk-cond__num"
+                type="number"
+                min={1}
+                max={Math.max(1, ctx.others.length + 1)}
+                value={c.count ?? 1}
+                onChange={(e) => update(i, { count: Math.max(1, Number(e.target.value) || 1) })}
+              />
+              <span className="mk-cond__unit">{t('cond.suspectsUnit')}</span>
+              <select
+                className="mk-select-input mk-cond__val"
+                value={c.neighborDir ?? 'none'}
+                onChange={(e) => update(i, { neighborDir: e.target.value as Condition['neighborDir'] })}
+              >
+                <option value="none">{t('cond.neighborDirAny')}</option>
+                {DIRECTIONS_8.map((d) => (
+                  <option key={d} value={d}>
+                    {t(`dir.${d}`)}
+                  </option>
+                ))}
+              </select>
+            </>
+          )
+        }
         if (mode === 'in')
           return (
             <>

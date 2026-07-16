@@ -40,6 +40,8 @@ interface Props {
   /** Suspect whose notes pulse bigger (when hovering their clue card). */
   emphasize?: PersonId | null
   xTool: boolean
+  /** Eraser armed: a tap or drag wipes each cell it touches. */
+  eraseTool: boolean
   reveal: RevealInfo | null
   roomName: (nameKey: string) => string
   occupantAt: (cell: Cell) => PersonId | undefined
@@ -47,6 +49,7 @@ interface Props {
   onCommit: (cell: Cell, suspectId: PersonId) => void
   onRemove: (personId: PersonId) => void
   onSetCross: (cell: Cell, value: boolean) => void
+  onEraseCell: (cell: Cell) => void
   onSetMark: (cell: Cell, suspectId: PersonId, on: boolean) => void
   onSelectSuspect: (id: PersonId | null) => void
 }
@@ -109,6 +112,9 @@ export default function BoardCanvas(props: Props) {
   // Both drag-paints remember the previous pointer position (`last`, canvas-relative) so
   // each move can walk the line since then — a fast swipe must not skip cells.
   const paintRef = useRef<{ value: boolean; visited: Set<Cell>; last: { x: number; y: number } } | null>(null)
+  /** Eraser drag-paint — same line-walk as the X tool, so a fast swipe wipes every cell it
+   *  crosses instead of only the ones a throttled move event happened to sample. */
+  const erasePaintRef = useRef<{ visited: Set<Cell>; last: { x: number; y: number } } | null>(null)
   const markPaintRef = useRef<{ personId: PersonId; on: boolean; visited: Set<Cell>; last: { x: number; y: number } } | null>(null)
   const hoverRef = useRef<Cell | null>(null)
   // Mobile "what is this?" tap: set on a pointer-down that triggers NO game action
@@ -407,6 +413,14 @@ export default function BoardCanvas(props: Props) {
     inertTapRef.current = null
     setObjTip(null) // hide while interacting
 
+    // The eraser wins over every other press: while it is armed, a touch on the board can
+    // only ever mean "wipe this", never place or select.
+    if (props.eraseTool) {
+      setHover(e.pointerType === 'mouse' ? cell : null)
+      erasePaintRef.current = { visited: new Set([cell]), last: ptOf(e) }
+      props.onEraseCell(cell)
+      return
+    }
     if (props.xTool) {
       // No hover ring for a finger — it would stick to the stroke's start cell.
       setHover(e.pointerType === 'mouse' ? cell : null)
@@ -437,6 +451,17 @@ export default function BoardCanvas(props: Props) {
   }
 
   function onPointerMove(e: ReactPointerEvent<HTMLCanvasElement>) {
+    if (erasePaintRef.current) {
+      const ep = erasePaintRef.current
+      strokeTo(e, ep.last, (c) => {
+        if (!ep.visited.has(c)) {
+          ep.visited.add(c)
+          props.onEraseCell(c)
+        }
+      })
+      syncPaintHover(e)
+      return
+    }
     if (paintRef.current) {
       const paint = paintRef.current
       strokeTo(e, paint.last, (c) => {
@@ -504,7 +529,9 @@ export default function BoardCanvas(props: Props) {
   }
 
   function endPointer(e: ReactPointerEvent<HTMLCanvasElement>) {
-    if (paintRef.current) {
+    if (erasePaintRef.current) {
+      erasePaintRef.current = null
+    } else if (paintRef.current) {
       paintRef.current = null
     } else if (markPaintRef.current) {
       markPaintRef.current = null

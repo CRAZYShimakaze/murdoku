@@ -3,6 +3,9 @@ import { MERGE_INSTANCE_TYPES } from './objects.ts'
 import type { Tile } from './Tile.ts'
 import type { Room } from './Room.ts'
 
+/** Shared empty result for rooms without neighbours (avoids allocating per lookup). */
+const EMPTY_ROOM_SET: ReadonlySet<string> = new Set<string>()
+
 /** Canonical key for the edge on a given side of tile (row,col). */
 export function edgeKey(row: number, col: number, side: Side): string {
   switch (side) {
@@ -325,6 +328,116 @@ export class Board {
       g.add(cell)
     }
     return [...groups.values()]
+  }
+
+  /** Lazily-built room adjacency (see roomNeighbors). */
+  private roomNeighborCache?: ReadonlyMap<string, Set<string>>
+
+  /**
+   * The rooms sharing a wall EDGE with `roomId` — two rooms are neighbours as soon as any
+   * two of their cells touch orthogonally. Diagonal contact does NOT count (rooms that only
+   * meet at a corner share no wall). `VOID_ROOM` is exterior and is never a neighbour, and a
+   * room is never its own neighbour. Symmetric by construction, memoized (the board is
+   * immutable) — clue candidate sets are rebuilt often, so this must be cheap.
+   */
+  roomNeighbors(roomId: string): ReadonlySet<string> {
+    if (!this.roomNeighborCache) {
+      const map = new Map<string, Set<string>>()
+      const link = (a: string, b: string): void => {
+        let set = map.get(a)
+        if (!set) {
+          set = new Set<string>()
+          map.set(a, set)
+        }
+        set.add(b)
+      }
+      for (let cell = 0; cell < this.tiles.length; cell++) {
+        const a = this.tiles[cell].roomId
+        if (a === VOID_ROOM) continue
+        const { row, col } = this.rc(cell)
+        // Only right/down: every shared edge is visited exactly once, then linked both ways.
+        for (const [r, c] of [
+          [row, col + 1],
+          [row + 1, col],
+        ]) {
+          if (!this.inBounds(r, c)) continue
+          const b = this.tiles[this.idx(r, c)].roomId
+          if (b === VOID_ROOM || b === a) continue
+          link(a, b)
+          link(b, a)
+        }
+      }
+      this.roomNeighborCache = map
+    }
+    return this.roomNeighborCache.get(roomId) ?? EMPTY_ROOM_SET
+  }
+
+  /** Lazily-built per-room extent / capacity (see roomBounds / roomCapacity). */
+  private roomBoundsCache?: ReadonlyMap<string, { minRow: number; maxRow: number; minCol: number; maxCol: number }>
+  private roomCapacityCache?: ReadonlyMap<string, number>
+
+  /**
+   * The bounding box of a room over ALL its cells (occupiable or not) — the extent a player
+   * actually SEES. Lets "that room lies entirely south of this cell" be decided in O(1):
+   * every cell of the room is south of `row` exactly when `minRow > row`. Memoized.
+   * Returns null for a room with no cells.
+   */
+  roomBounds(roomId: string): { minRow: number; maxRow: number; minCol: number; maxCol: number } | null {
+    if (!this.roomBoundsCache) {
+      const map = new Map<string, { minRow: number; maxRow: number; minCol: number; maxCol: number }>()
+      for (let cell = 0; cell < this.tiles.length; cell++) {
+        const id = this.tiles[cell].roomId
+        if (id === VOID_ROOM) continue
+        const { row, col } = this.rc(cell)
+        const b = map.get(id)
+        if (!b) map.set(id, { minRow: row, maxRow: row, minCol: col, maxCol: col })
+        else {
+          if (row < b.minRow) b.minRow = row
+          if (row > b.maxRow) b.maxRow = row
+          if (col < b.minCol) b.minCol = col
+          if (col > b.maxCol) b.maxCol = col
+        }
+      }
+      this.roomBoundsCache = map
+    }
+    return this.roomBoundsCache.get(roomId) ?? null
+  }
+
+  /**
+   * Upper bound on how many people a room can hold: everyone sits in a distinct row AND a
+   * distinct column (the game's core rule), so a room can never hold more people than the
+   * distinct rows — or columns — its OCCUPIABLE cells span. Same reasoning as
+   * `SolveContext.roomsCapacity`, but board-only so clues can use it. Memoized.
+   */
+  roomCapacity(roomId: string): number {
+    if (!this.roomCapacityCache) {
+      const rows = new Map<string, Set<number>>()
+      const cols = new Map<string, Set<number>>()
+      for (const cell of this.occupiable) {
+        const id = this.tiles[cell].roomId
+        const { row, col } = this.rc(cell)
+        let r = rows.get(id)
+        if (!r) rows.set(id, (r = new Set<number>()))
+        r.add(row)
+        let c = cols.get(id)
+        if (!c) cols.set(id, (c = new Set<number>()))
+        c.add(col)
+      }
+      const map = new Map<string, number>()
+      for (const [id, r] of rows) map.set(id, Math.min(r.size, cols.get(id)?.size ?? 0))
+      this.roomCapacityCache = map
+    }
+    return this.roomCapacityCache.get(roomId) ?? 0
+  }
+
+  /** Occupiable cells of every room bordering `roomId` (never the room's own cells). */
+  cellsInRoomsAdjacentTo(roomId: string): Set<Cell> {
+    const rooms = this.roomNeighbors(roomId)
+    const out = new Set<Cell>()
+    for (const cell of this.occupiable) {
+      if (rooms.has(this.tiles[cell].roomId)) out.add(cell)
+    }
+    return out
   }
 
   /** Occupiable cells adjacent to a window. */

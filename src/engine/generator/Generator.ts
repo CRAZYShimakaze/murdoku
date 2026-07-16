@@ -9,12 +9,16 @@ import { checkLevel } from '../solver/validate.ts'
 import { startCoverage } from '../solver/coverage.ts'
 import { createClue } from '../clues/ClueFactory.ts'
 import { createBoardClue } from '../clues/boardClues.ts'
+import { NeighborRoomCountClue } from '../clues/socialClues.ts'
+import { AndClue } from '../clues/compositeClues.ts'
+import type { Clue } from '../clues/Clue.ts'
+import { Puzzle } from '../model/Puzzle.ts'
+import { Suspect } from '../model/Suspect.ts'
 import { VICTIM_ID, inDirection8, HAIR_COLORS } from '../model/types.ts'
 import type { AttributeValue, Cell, PersonId, Side } from '../model/types.ts'
 import { OBJECT_CATALOG, EDITOR_ONLY_TYPES, type ObjectDef } from '../model/objects.ts'
 import { furnishRooms, kitFor } from './furnishing.ts'
 import type { Board } from '../model/Board.ts'
-import type { Puzzle } from '../model/Puzzle.ts'
 import type { BoardClueJson, LevelJson, SuspectJson } from '../io/LevelSchema.ts'
 import type { ClueJson } from '../clues/ClueFactory.ts'
 import type { ObjectMate } from '../clues/objectClues.ts'
@@ -259,6 +263,28 @@ function seedRequiredAttributes(
   }
 }
 
+/**
+ * Trait seeds the BOARD's own global clues demand — "exactly N with hair=brown were inside"
+ * is only a board-WIDE statement if at least two suspects wear the trait (see the same bar in
+ * `trueBoardClues`). The editor keeps a global clue the user placed, whatever the fill rolls,
+ * so a single carrier leaves them with a clue that is really about one person and says nothing
+ * once that person's own clue already confines them.
+ *
+ * It has to be derived HERE and not in the game layer: that builds `requiredAttributes` from
+ * the suspect-clue palette alone (`requiredAttrSeeds`) and never looks at `board.boardClues` —
+ * which is exactly how a user-placed trait clue ended up with one lone carrier.
+ */
+function boardClueAttrSeeds(board: LevelJson): { attribute: string; value: AttributeValue; count: number }[] {
+  const seeds: { attribute: string; value: AttributeValue; count: number }[] = []
+  for (const bc of board.boardClues ?? []) {
+    if (bc.type !== 'countWithAttr') continue
+    // seedRequiredAttributes guarantees count+1 carriers, and the clue itself needs `bc.count`
+    // of them in its area — so ask for one more than both bars.
+    seeds.push({ attribute: bc.attribute, value: bc.value, count: Math.max(1, bc.count) })
+  }
+  return seeds
+}
+
 /** Human-logic rating — the construction oracle. The DEFAULT engine is PURE forward +
  *  convergent deduction (no "assume X → contradiction"), so a level it fully solves is
  *  BOTH human-solvable AND unique (the engine never guesses). `maxRank` is the hardest
@@ -276,19 +302,120 @@ const CHAIN_TECHNIQUES = [
   'roomCapacity', 'roomCoverage', 'companionPairing', 'companionFit',
 ] as const
 
-function logicRating(level: LevelJson): { solved: boolean; unique: boolean; maxRank: number; chainSteps: number } {
+function logicRating(level: LevelJson): LogicRating {
+  return logicRatingOn(loadLevel(level))
+}
+
+type LogicRating = {
+  solved: boolean
+  unique: boolean
+  maxRank: number
+  chainSteps: number
+  /**
+   * How many deduction steps pass before the FIRST suspect can be placed — the user's "spät
+   * setzen von Eindeutigkeiten", i.e. how long the board resists before it gives anyone away.
+   * Higher = harder: the player must cross out and cross-reference before anything is certain.
+   *
+   * Measured against the hand-made `museum` (the user's reference for "logical but hard"): it
+   * holds out for 24 steps, generated hard levels for 8 — and, relative to their chain length,
+   * generated "hard" levels (21–27%) gave a suspect away EARLIER than hand-made EASY ones
+   * (31–50%). Use the ABSOLUTE count, not the fraction: easy chains are only 13–17 steps long,
+   * so the fraction flatters them, and the mean placement position separates nothing.
+   */
+  openingSteps: number
+  /** Suspects the forward deduction never managed to place — where a clue would actually help. */
+  stuck: PersonId[]
+}
+
+/** `logicRating` on an ALREADY-LOADED puzzle — the construction hot path builds its Puzzle
+ *  directly from cached pieces (board parsed once, clue instances reused so their
+ *  candidateCells memo stays warm across hundreds of solves) instead of round-tripping
+ *  through LevelJson + loadLevel on every single rating. */
+function logicRatingOn(puzzle: Puzzle): LogicRating {
   // Accept ONLY levels solvable by straight forward deduction — NO case split. The user
   // found auto-generated case-splits ("Fallunterscheidung") too frequent and too deep to
   // solve by hand. Players/hints still get the full pipeline for hand-made levels.
-  const puzzle = loadLevel(level)
   const result = new DeductionEngine(puzzle, { noCaseSplit: true }).solve()
   const chainSteps = CHAIN_TECHNIQUES.reduce((n, t) => n + (result.techniqueCounts[t] ?? 0), 0)
-  // Same uniqueness primitive `checkLevel` uses — but only when the level is forward-solvable
-  // (counting solutions on a dead candidate would needlessly exhaust the board, and the
-  // search tries hundreds of candidates under a <1-min budget). This folds the scattered
-  // inline `countSolutions(2) === 1` checks into ONE place the whole generator search reuses.
-  const unique = result.solved && new SearchSolver(puzzle).isUnique()
-  return { solved: result.solved, unique, maxRank: result.maxRank, chainSteps }
+  // WHO the forward deduction could not place, and WHEN the first one fell. Every placement is
+  // a NakedSingle-style step — the ONLY ones carrying `placedCell`; every other technique
+  // merely eliminates until one cell is left. Both numbers below rest on that: the stragglers
+  // are the suspects that never got such a step, and `openingSteps` is where the first one is.
+  // A second placing technique would silently break both — see TECHNIQUE_RANK / forward.ts.
+  const placedByEngine = new Set<PersonId>()
+  let openingSteps = result.steps.length
+  result.steps.forEach((step, i) => {
+    if (step.placedCell === undefined || !step.personId) return
+    if (placedByEngine.size === 0) openingSteps = i
+    placedByEngine.add(step.personId)
+  })
+  const stuck = puzzle.suspects.map((s) => s.id).filter((id) => !placedByEngine.has(id))
+  // `unique` is LAZY, and that matters: the clue construction calls this hundreds of times per
+  // attempt but only ever reads `solved` / `maxRank`. Computing the uniqueness search eagerly
+  // meant every one of those solves also paid for a full backtracking search nobody looked at
+  // (measured: 8–13% of all solver time). Only pickBestLevel and pruneClues touch it — once
+  // each, on a candidate that already passed. Memoised, so reading it twice is free.
+  //
+  // Same primitive `checkLevel` uses, and only meaningful when forward-solvable: counting
+  // solutions on a dead candidate would needlessly exhaust the board.
+  let uniqueCache: boolean | undefined
+  return {
+    solved: result.solved,
+    maxRank: result.maxRank,
+    chainSteps,
+    openingSteps,
+    stuck,
+    get unique(): boolean {
+      if (uniqueCache === undefined) {
+        uniqueCache = result.solved && new SearchSolver(puzzle).isUnique()
+      }
+      return uniqueCache
+    },
+  }
+}
+
+/**
+ * Does ANY clue carry nothing — i.e. can it be dropped and the case still cracks?
+ *
+ * Such a clue is pure noise: the player reads it, reasons with it, and it turns out to have
+ * been decorative. Measured before this gate existed, ~15–20% of all clues were droppable —
+ * in generated AND hand-made levels alike, because the old `pruneClues` only ever shed ANDed
+ * PARTS and never questioned a suspect's single clue.
+ *
+ * The probe is the FORWARD engine alone (no uniqueness search): a level it solves forward is
+ * cracked without guessing, which is exactly what "this clue wasn't needed" means. That is
+ * one forward solve per clue part — affordable only because callers run it on candidates
+ * that already passed the full rating.
+ *
+ * Note a redundant clue can never be REPAIRED by swapping it: if the case cracks without any
+ * clue for that suspect, every clue for them is equally pointless — the level is
+ * over-determined by the OTHERS. Only a different candidate helps, so this is a gate, not a
+ * fix-up.
+ */
+function hasRedundantClue(level: LevelJson): boolean {
+  for (const suspect of level.suspects) {
+    const clue = (suspect.clues ?? [])[0]
+    if (!clue) continue
+    const parts = clue.type === 'and' ? clue.clues : [clue]
+    for (let i = 0; i < parts.length; i++) {
+      const rest = parts.filter((_, j) => j !== i)
+      const trial: LevelJson = {
+        ...level,
+        suspects: level.suspects.map((s) =>
+          s.id === suspect.id
+            ? {
+                ...s,
+                // Dropping the LAST part leaves the suspect clueless — still a fair probe:
+                // if the case cracks even then, that clue was carrying nothing.
+                clues: rest.length === 0 ? [] : [rest.length === 1 ? rest[0] : { type: 'and', clues: rest }],
+              }
+            : s,
+        ),
+      }
+      if (new DeductionEngine(loadLevel(trial), { noCaseSplit: true }).solve().solved) return true
+    }
+  }
+  return false
 }
 
 /** The hardest forward-deduction rank that DEFINES each tier (see TECHNIQUE_RANK):
@@ -341,6 +468,9 @@ const HARD_CLUE_TYPES = new Set<string>([
   'roomCompanion', // alone with someone who has a trait
   'roomAttribute', // none / someone / everyone else in the room had a trait
   'sameRoom', // same room as a person
+  'adjacentRooms', // one room over from a person
+  'neighborRoomEmpty', // a neighbouring room was (not) empty — needs everyone else's rooms
+  'neighborRoomCount', // a neighbouring room held exactly N suspects
   'insideXor', // exactly one of the two was outside
 ])
 
@@ -358,20 +488,25 @@ function leafTypes(clue: ClueJson): string[] {
 const UNCAPPED_TYPES = new Set<string>([
   'onObject', 'uniqueOnObject',
   'nearObject', 'uniqueNearObject', 'nearObjectAny',
-  'inRoom',
+  // Both name a specific ROOM, so each instance reads as a different clue ("next to the
+  // kitchen" vs "next to the garage") — the same reason plain `inRoom` is exempt.
+  'inRoom', 'inRoomAdjacentTo',
   'nearWindow', 'uniqueNearWindow',
   'nearDoor', 'uniqueNearDoor',
 ])
 /** The capped families of a clue (the ones the variety limit counts). Row and column
  *  clues collapse to one "line" family; the two person/attribute direction clues collapse
  *  to one "direction" family (so "west of Alex" and "south-west of Alex" — or two
- *  directions off ANY anchor — count together and can't both appear). */
+ *  directions off ANY anchor — count together and can't both appear); the two
+ *  "what was in a room NEXT to his" clues collapse to one, so a level can't stack four
+ *  near-identical neighbour statements. */
 const cappedFamilies = (clue: ClueJson): string[] =>
   leafTypes(clue)
     .filter((t) => !UNCAPPED_TYPES.has(t))
     .map((t) => {
       if (t === 'inRow' || t === 'inCol') return 'line'
       if (t === 'direction' || t === 'directionFromAttr') return 'direction'
+      if (t === 'neighborRoomEmpty' || t === 'neighborRoomCount') return 'neighborRoom'
       return t
     })
 
@@ -433,39 +568,89 @@ function wantHardClues(level: LevelJson): number {
   return Math.max(1, Math.round(level.suspects.length * 0.6))
 }
 
-/** Honest tier for a solvable candidate. HARD is COMPOSITION-driven: hard once it
- *  carries enough hard relational clues OR still needs the rank-5 murder rule;
- *  otherwise rated by the rank it truly needs. Medium/easy stay purely rank-based. */
+/** Honest tier for a solvable candidate. A level ordered as HARD earns the label three ways:
+ *  enough hard relational clues, the rank-5 murder rule — or the USER's definition (16.07.,
+ *  their sign-off): it clears both bars (Ausdehnung ≥75 %, Breite ≥50 %) and still needs at
+ *  least medium-grade deduction. Without the third way the pool's best picks (95–100 %
+ *  Ausdehnung, spätes Setzen — hard by the user's own words) shipped labelled "medium":
+ *  measured 7 of 8. Saved levels keep their stored label; only fresh ratings use this. */
 function tierFor(level: LevelJson, target: GenDifficulty | undefined, maxRank: number): GenDifficulty {
-  if (target === 'hard' && (hardClueCount(level) >= wantHardClues(level) || maxRank >= TARGET_RANK.hard)) {
-    return 'hard'
+  if (target === 'hard') {
+    if (hardClueCount(level) >= wantHardClues(level) || maxRank >= TARGET_RANK.hard) return 'hard'
+    if (maxRank >= TARGET_RANK.medium) {
+      const cov = startCoverage(loadLevel(level))
+      if (
+        Math.round(cov.constrainedRatio * 100) >= HARD_COVERAGE_BAR &&
+        Math.round(cov.avgBreadth * 100) >= HARD_BREADTH_BAR
+      ) {
+        return 'hard'
+      }
+    }
   }
   return rankToTier(maxRank)
 }
 
-/** Score a solvable candidate (lower = better). HARD is driven by COMPOSITION — many
- *  broad relational/social clues, with the technique rank demoted to a soft floor (must
- *  stay at least medium-hard) — so the generator stops returning the same few rank-5
- *  levels and instead piles on hard, board-opening clues. Easy/medium keep the
- *  rank-nearness score (then few pins, breadth, few line clues). */
+/**
+ * What HARD means, in the user's words: "ein hartes Level macht nicht aus, dass wir harte
+ * Hinweise nutzen, sondern es ist der Mix aus logischen Ketten, spätem Setzen von
+ * Eindeutigkeiten, viele wenn dann dann, eine gute Ausdehnung dass der Anfang für den
+ * Menschen nicht so einfach ist" — and the Ausdehnung must hold for MANY suspects, not one.
+ *
+ * The two bars are the user's own, from before they were quietly dropped as unreachable (the
+ * orphaned doc above `breadthPenalty` is their gravestone). They were unreachable because the
+ * construction was broken, not because the numbers were wrong: with the dedup deadlock, the
+ * cap repair and the inverted "widening" fixed, candidates now reach 96–100% Ausdehnung.
+ * Reference: the hand-made `museum` sits at 98% / 38% and holds out 24 steps.
+ */
+const HARD_COVERAGE_BAR = 75 // constrainedRatio %: how much board is still in play at the start
+const HARD_BREADTH_BAR = 50 // avgBreadth %: and it must be spread over MANY suspects
+
+/** Score a solvable candidate (lower = better).
+ *
+ *  HARD is a BAR plus a preference. A candidate clearing both bars always beats one that does
+ *  not (the user's call: "harte Hürde + Auffangnetz"); below the bar the miss is GRADED, so a
+ *  near-miss still wins over a hopeless one and `pickBestLevel` degrades gracefully into the
+ *  best available rather than returning nothing. Above the bar the ranking is the user's
+ *  definition of hard: hold out before placing anyone, force long chains, keep the board open.
+ *
+ *  Hard clue TYPES still count and more of them is still better — they are inherently broad, so
+ *  they serve the same end ("je mehr harte und je mehr Breite super"). They are just not the
+ *  only route to it: `museum`, the user's reference for "logisch aber echt hart", reaches 98%
+ *  Ausdehnung with ONE. Breadth is the goal, the clue type a means. The technique rank is only
+ *  a floor (stay ≥ medium) — "ich brauche nicht super harte Hinweise (also Level 5)".
+ *
+ *  Easy/medium keep the rank-nearness score (then few pins, breadth, few line clues). */
 function scoreLevel(
   level: LevelJson,
   target: GenDifficulty | undefined,
   maxRank: number,
   pins: number,
   chainSteps = 0,
+  openingSteps = 0,
 ): number {
   const lines = countLineClues(level)
   if (target === 'hard') {
-    const breadth = Math.round(startCoverage(loadLevel(level)).avgBreadth * 100)
-    const floorMiss = Math.max(0, TARGET_RANK.medium - maxRank) // below medium ⇒ heavy penalty
-    // Breadth stays; chains are a BONUS on top — prefer levels whose solution needs
-    // combinatorial cross-referencing over a flat clue→place→place cascade.
+    const cov = startCoverage(loadLevel(level))
+    const coverage = Math.round(cov.constrainedRatio * 100)
+    const breadth = Math.round(cov.avgBreadth * 100)
+    const floorMiss = Math.max(0, TARGET_RANK.medium - maxRank)
+    const barMiss =
+      Math.max(0, HARD_COVERAGE_BAR - coverage) + Math.max(0, HARD_BREADTH_BAR - breadth)
     return (
-      floorMiss * 2000 -
-      hardClueCount(level) * 200 -
-      breadth -
-      chainSteps * 150 +
+      // The RANK FLOOR outranks everything: a level asked for as hard must at least need
+      // medium-grade deduction. As a mere 2000-point penalty it was BUYABLE — coverage*10 and
+      // openingSteps*100 together offer far more, so wide rank-3 candidates won and shipped
+      // labelled "easy" after the user asked for hard (measured: 2 of 8). "Nicht super harte
+      // Hinweise (also Level 5)" means rank 5 is no goal — not that rank 3 will do.
+      (floorMiss > 0 ? 10_000_000 : 0) +
+      floorMiss * 2000 + // graded, so a board that can't do better still yields its best
+      (barMiss > 0 ? 1_000_000 : 0) + // the bar: any level clearing it beats any that doesn't
+      barMiss * 100 - // graded below it, so the fallback still picks the closest
+      openingSteps * 100 - // resist before giving a suspect away (museum 24, generated 8)
+      chainSteps * 150 - // "viele wenn dann dann"
+      hardClueCount(level) * 200 - // broad by nature, so more of them serves breadth too
+      coverage * 10 -
+      breadth * 10 +
       pins * 100 +
       lines * 50
     )
@@ -477,12 +662,24 @@ function scoreLevel(
   return rankMiss * 1000 + pins * 100 + lines * 20 + breadthPenalty(level)
 }
 
-/** A candidate good enough to stop the search early. For hard that means it already
- *  reaches the size-scaled hard-clue goal (and stays ≥ medium-hard); otherwise it is
- *  the exact target rank. Pins / line clues must be absent either way. */
+/** A candidate good enough to stop the search early. For hard that means it clears BOTH of the
+ *  user's bars and reaches the size-scaled hard-clue goal (staying ≥ medium-hard); otherwise it
+ *  is the exact target rank. Pins / line clues must be absent either way.
+ *
+ *  The bars belong here, not just in the score: this stops the hunt, and asking only for hard
+ *  clue types let a CRAMPED level end the search the moment it had enough of them — exactly
+ *  the levels the user calls "nur bedingt hart". */
 function isIdeal(level: LevelJson, target: GenDifficulty | undefined, maxRank: number, pins: number): boolean {
   if (pins !== 0 || countLineClues(level) !== 0) return false
-  if (target === 'hard') return maxRank >= TARGET_RANK.medium && hardClueCount(level) >= wantHardClues(level)
+  if (target === 'hard') {
+    const cov = startCoverage(loadLevel(level))
+    return (
+      maxRank >= TARGET_RANK.medium &&
+      Math.round(cov.constrainedRatio * 100) >= HARD_COVERAGE_BAR &&
+      Math.round(cov.avgBreadth * 100) >= HARD_BREADTH_BAR &&
+      hardClueCount(level) >= wantHardClues(level)
+    )
+  }
   return maxRank === targetRankOf(target)
 }
 
@@ -492,6 +689,27 @@ const MAX_LINE_CLUES = 1
 
 /** One generation attempt → a candidate level (with its pin count), or null. */
 type Attempt = (rng: Rng, seedIndex: number) => { level: LevelJson; pins: number } | null
+
+/**
+ * Does any BOARD (global) clue carry nothing — the case cracks without it?
+ *
+ * The suspect-clue counterpart is `hasRedundantClue`, a hard gate in `pickBestLevel`. Global
+ * clues can't work that way in the editor: they are the USER's, so the fill must keep them and
+ * cannot prune them (free generation's `pruneClues` does drop the unneeded ones). Gating the
+ * fill on them was measured and rejected — 7 of 12 useless clues became 0, but 3 of 12 fills
+ * then produced nothing and the wait tripled. So the editor REPORTS it instead of refusing.
+ *
+ * Same probe and bar as `hasRedundantClue`: the forward engine alone.
+ */
+export function redundantBoardClues(level: LevelJson): number[] {
+  const bcs = level.boardClues ?? []
+  const out: number[] = []
+  for (let i = 0; i < bcs.length; i++) {
+    const without: LevelJson = { ...level, boardClues: bcs.filter((_, j) => j !== i) }
+    if (new DeductionEngine(loadLevel(without), { noCaseSplit: true }).solve().solved) out.push(i)
+  }
+  return out
+}
 
 interface PickOptions {
   /** Cap on attempts (default 80). */
@@ -533,9 +751,16 @@ function pickBestLevel(
       // easy/medium it prefers the exact target rank. `rating.unique` is the SearchSolver
       // uniqueness check (guarantees uniqueness independent of engine soundness — a dense
       // object layout can shift the solution space, and a non-unique level must never slip).
-      if (rating.solved && rating.unique) {
+      // EVERY clue must earn its place from MEDIUM up: a level where some clue could be
+      // dropped and the case still cracks is rejected outright, however good it scores.
+      // The user's call — they would rather get nothing than a level with a decorative clue.
+      // Easy is exempt: its "Vorgaben" ride along on an already-pinned suspect and are
+      // redundant BY DESIGN (a relational clue can't pin, and making it load-bearing would
+      // push the level past rank 2, i.e. out of "easy").
+      const tightnessRequired = target !== 'easy'
+      if (rating.solved && rating.unique && !(tightnessRequired && hasRedundantClue(result.level))) {
         result.level.difficulty = tierFor(result.level, target, rating.maxRank)
-        const score = scoreLevel(result.level, target, rating.maxRank, result.pins, rating.chainSteps)
+        const score = scoreLevel(result.level, target, rating.maxRank, result.pins, rating.chainSteps, rating.openingSteps)
         if (score < bestScore) {
           best = result.level
           bestScore = score
@@ -611,6 +836,47 @@ function pruneClues(level: LevelJson, target: GenDifficulty | undefined): LevelJ
   }
 
   return work
+}
+
+/** Exact-cell pins read from a FINISHED level — the same predicate `countPins` applies to the
+ *  construction's clue map (and(inRow+inCol) reveals the spot), just sourced from the JSON. */
+function countPinsInLevel(level: LevelJson): number {
+  let pins = 0
+  for (const s of level.suspects) {
+    const clue = (s.clues ?? [])[0]
+    if (
+      clue?.type === 'and' &&
+      clue.clues.some((c) => c.type === 'inRow') &&
+      clue.clues.some((c) => c.type === 'inCol')
+    ) {
+      pins++
+    }
+  }
+  return pins
+}
+
+/**
+ * Pick the best of several FINISHED levels on the SAME scale `pickBestLevel` used to choose
+ * each of them: the worker pool generates one local best per worker (disjoint seed streams),
+ * and the main thread must not judge the winners by a different measure than the workers
+ * judged their candidates. One full rating per entry — a handful of solves, negligible next
+ * to the seconds each worker spent producing its level.
+ */
+export function selectBestLevel(
+  levels: readonly LevelJson[],
+  target: GenDifficulty | undefined,
+): LevelJson | null {
+  let best: LevelJson | null = null
+  let bestScore = Infinity
+  for (const level of levels) {
+    const rating = logicRating(level)
+    const score = scoreLevel(level, target, rating.maxRank, countPinsInLevel(level), rating.chainSteps, rating.openingSteps)
+    if (score < bestScore) {
+      best = level
+      bestScore = score
+    }
+  }
+  return best
 }
 
 /** Is this the EXACT level safe to hand to a player: uniquely solvable AND crackable by
@@ -761,9 +1027,10 @@ function fillAttempt(
     const person = suspectPerson(i, gender, usedName)
     return { id, name: person.name, attributes: makeAttributes(gender, rng), clues: [] }
   })
-  if (requiredAttributes && requiredAttributes.length > 0) {
-    seedRequiredAttributes(suspectMeta, requiredAttributes, rng)
-  }
+  // The palette's seeds AND the board's own global clues — the latter are the user's and are
+  // never pruned, so the fill must make them meaningful rather than hope the dice do.
+  const seeds = [...(requiredAttributes ?? []), ...boardClueAttrSeeds(board)]
+  if (seeds.length > 0) seedRequiredAttributes(suspectMeta, seeds, rng)
   const victim = victimPerson(rng)
   const victimMeta = { name: victim.name, attributes: makeAttributes(victim.gender, rng) }
   const base: LevelJson = { ...board, suspects: suspectMeta, victim: victimMeta }
@@ -779,25 +1046,32 @@ function fillAttempt(
     candidates.set(id, candidatesFor(id, solution, basePuzzle, others, true))
   }
 
-  // "Vorgaben": every required clue type must be USED by at least one suspect. Assign each
-  // required type to a DISTINCT suspect whose placement supports it (restricting that
-  // suspect to the matching shape); all other suspects keep the full vocabulary, so the
-  // generator fills the rest and a unique solution stays reachable. If a type fits nobody
-  // in this layout, abandon the attempt — a fresh placement may work.
+  // "Vorgaben": every required clue type must be USED by at least one suspect.
+  //
+  // MEDIUM/HARD: restrict one distinct suspect per required type to the matching shapes;
+  // everyone else keeps the full vocabulary, so a unique solution stays reachable.
+  //
+  // EASY is different and must NOT be narrowed: its construction pins suspects by
+  // INTERSECTING CELL SETS, and a relational clue ("north of Bella") has no cell set at all.
+  // Narrowing a host down to such a clue leaves them unpinnable, so every attempt dies and
+  // the editor searches forever. constructEasyClues instead pins freely and then ANDs the
+  // demanded clue onto an already-pinned suspect — see its `required` pass.
   if (requiredClues && requiredClues.length > 0) {
     if (requiredClues.length > suspectIds.length) return null
-    const taken = new Set<PersonId>()
-    // Most-constrained type first (fewest possible hosts) → better greedy matching.
-    const byScarcity = requiredClues
-      .map((pred) => ({ pred, hosts: suspectIds.filter((id) => candidates.get(id)!.some(pred)) }))
-      .sort((a, b) => a.hosts.length - b.hosts.length)
-    for (const { pred, hosts } of byScarcity) {
-      // Pick a RANDOM qualifying suspect (not always the first), so the constraint isn't
-      // always pinned to suspect A — any eligible suspect may carry it.
-      const host = rng.shuffle(hosts.filter((id) => !taken.has(id)))[0]
-      if (host === undefined) return null
-      taken.add(host)
-      candidates.set(host, candidates.get(host)!.filter(pred))
+    if (difficulty !== 'easy') {
+      const taken = new Set<PersonId>()
+      // Most-constrained type first (fewest possible hosts) → better greedy matching.
+      const byScarcity = requiredClues
+        .map((pred) => ({ pred, hosts: suspectIds.filter((id) => candidates.get(id)!.some(pred)) }))
+        .sort((a, b) => a.hosts.length - b.hosts.length)
+      for (const { pred, hosts } of byScarcity) {
+        // Pick a RANDOM qualifying suspect (not always the first), so the constraint isn't
+        // always pinned to suspect A — any eligible suspect may carry it.
+        const host = rng.shuffle(hosts.filter((id) => !taken.has(id)))[0]
+        if (host === undefined) return null
+        taken.add(host)
+        candidates.set(host, candidates.get(host)!.filter(pred))
+      }
     }
   }
 
@@ -806,7 +1080,7 @@ function fillAttempt(
   // stays rare: at most TWO such clues across the whole level (rows and columns combined).
   const chosen =
     difficulty === 'easy'
-      ? constructEasyClues(base, suspectIds, solution, candidates, rng)
+      ? constructEasyClues(base, suspectIds, solution, candidates, rng, requiredClues)
       : constructLogicClues(base, suspectIds, candidates, rng, targetRankOf(difficulty), MAX_LINE_CLUES, difficulty === 'hard')
   if (!chosen) return null
 
@@ -820,9 +1094,19 @@ function fillAttempt(
     ...base,
     suspects: base.suspects.map((s) => ({ ...s, clues: [chosen.get(s.id)!] })),
   }
+
+  // NOTE: a global clue the user placed may end up carrying nothing (measured: 7 of 12 fills),
+  // and unlike free generation there is no `pruneClues` here to drop it — it is theirs, so it
+  // stays. Refusing such a fill outright was tried and REVERTED: it fixed the clue (7 → 0) but
+  // cost 3 of 12 fills and tripled the wait (18.5s → 49.7s), and "no level" is the user's red
+  // line. The editor's Check reports it instead, so they can re-roll if they care.
   const finalPuzzle = loadLevel(level)
-  const finalSolution = new SearchSolver(finalPuzzle).firstSolution()
-  if (!finalSolution || findMurderer(finalPuzzle, finalSolution).suspectId === null) return null
+  // Murder-rule guard on the INTENDED placement — every chosen clue was filtered by
+  // test(…, solution, …), so `solution` satisfies the finished level by construction and a
+  // SearchSolver.firstSolution() backtracking search here only rediscovered what we already
+  // hold. (If the level is ambiguous, uniqueness dies later in pickBestLevel/isShippable —
+  // this guard is solely about a well-defined murderer.)
+  if (findMurderer(finalPuzzle, solution).suspectId === null) return null
   if (difficulty === 'easy') {
     // Confirm the construction is genuinely unique and solvable by SHORT, simple steps —
     // hidden singles / "only one on X" / row-column cross-out (rank ≤ 2), no harder
@@ -911,8 +1195,7 @@ function tryGenerate(
     outdoor: baseTheme.outdoor,
   }
 
-  const roomCount = Math.max(3, Math.min(theme.rooms.length, Math.round(suspects * 0.7)))
-  const rooms = generateRooms(width, height, roomCount, rng)
+  const rooms = generateRooms(width, height, roomCountFor(suspects, theme.rooms.length, rng), rng)
   const roomOf = (cell: Cell): string => rooms.roomMap[Math.floor(cell / width)][cell % width]
   // Room id → i18n nameKey, computed ONCE and shared by furnishing, outdoor detection,
   // and buildLevel (so the three can never disagree about which room is which).
@@ -926,7 +1209,11 @@ function tryGenerate(
   const suspectIds: PersonId[] = Array.from({ length: suspects }, (_, i) => String.fromCharCode(65 + i))
   const peopleIds = [...suspectIds, VICTIM_ID]
 
-  const placed = generateSolution(width, height, roomOf, peopleIds, rng)
+  // On half the levels, aim for a placement with no empty room — that is what makes the
+  // "no room was empty" clue (and its room bijection) reachable at all. The other half keeps
+  // empty rooms, which the emptyRooms clue and EmptyRoomsTechnique feed on. See
+  // generateSolution: it is only a preference, never a hard requirement.
+  const placed = generateSolution(width, height, roomOf, peopleIds, rng, rng.chance(0.5))
   if (!placed) return null
 
   const peopleCells = new Set<Cell>(placed.placement.values())
@@ -976,17 +1263,20 @@ function tryGenerate(
     : constructLogicClues(base, suspectIds, candidates, rng, targetRankOf(options.difficulty), MAX_LINE_CLUES, options.difficulty === 'hard')
   if (!chosen) return null
 
-  // Easy: at most ONE suspect may be directly placeable from the start (the rest
-  // need a cross-out first), like the hand-made easy levels.
-  if (easyConstruct && countAnchors(chosen, suspectIds, basePuzzle.board) > 1) return null
+  // At most ONE suspect may be directly placeable from the start at easy — and NONE from medium
+  // up, where you must cross something out before anyone can be placed. This ran for easy only,
+  // so free generation shipped hard levels with a suspect nailed to a single cell by their own
+  // clue (measured), which is the exact opposite of the "spät setzen von Eindeutigkeiten" that
+  // makes a level hard. Same rule and same call as the editor fill (`fillAttempt`).
+  if (countAnchors(chosen, suspectIds, basePuzzle.board) > (easyConstruct ? 1 : 0)) return null
 
   for (const meta of base.suspects) meta.clues = [chosen.get(meta.id)!]
-  // Guard: the unique solution must leave the victim alone with exactly ONE
-  // suspect (a well-defined murderer). Consistent semantics already guarantee
-  // this; verifying ensures a murderer-less level can never slip through.
+  // Guard: the solution must leave the victim alone with exactly ONE suspect (a well-defined
+  // murderer). Checked on the INTENDED placement — every chosen clue passed test(…, solution, …),
+  // so `solution` satisfies the finished level by construction; the old firstSolution()
+  // backtracking search only rediscovered it. Uniqueness is judged later (pickBestLevel).
   const finalPuzzle = loadLevel(base)
-  const finalSolution = new SearchSolver(finalPuzzle).firstSolution()
-  if (!finalSolution || findMurderer(finalPuzzle, finalSolution).suspectId === null) return null
+  if (findMurderer(finalPuzzle, solution).suspectId === null) return null
 
   // Easy: confirm it is genuinely unique AND solvable by short, simple steps
   // (hidden singles / "only one on X" / row-column cross-out — rank ≤ 2, never a
@@ -1027,7 +1317,83 @@ function trueBoardClues(puzzle: Puzzle, solution: Solution): BoardClueJson[] {
   for (const [, cell] of solution.entries()) occupied.add(board.roomIdOf(cell))
   let empty = 0
   for (const id of board.rooms.keys()) if (!occupied.has(id)) empty++
-  if (empty > 0) candidates.push({ type: 'emptyRooms', count: empty })
+  // count 0 ("no room was empty") is offered too — it used to be skipped, which quietly made
+  // the STRONGEST version of this clue ungeneratable: it is the one that turns the rooms into
+  // a Sudoku unit over the suspects (RoomCoverageTechnique's bijection, which additionally
+  // needs #rooms == #suspects — see roomCountFor).
+  candidates.push({ type: 'emptyRooms', count: empty })
+
+  // Per-room headcount statements, per scope: the true ceiling ("no room held more than N"),
+  // the true floor ("every room held at least N"), the uniform case ("every room held exactly
+  // N"), and every count NO room happens to have ("no room held exactly N" — e.g. the "no
+  // room with just one person" clue). All are offered at their real values; the filter at the
+  // end keeps only what actually holds, and pruneClues drops whatever isn't load-bearing.
+  for (const scope of ['people', 'suspects'] as const) {
+    const ids = scope === 'people' ? puzzle.allIds() : puzzle.suspects.map((s) => s.id)
+    const per = new Map<string, number>()
+    for (const id of board.rooms.keys()) per.set(id, 0)
+    for (const id of ids) {
+      const r = board.roomIdOf(solution.cellOf(id))
+      per.set(r, (per.get(r) ?? 0) + 1)
+    }
+    const counts = [...per.values()]
+    const max = Math.max(...counts)
+    const min = Math.min(...counts)
+    // "at most max" / "at least min" only say something below/above the trivial bounds.
+    if (max < ids.length) candidates.push({ type: 'roomOccupancy', op: 'atMost', count: max, scope })
+    if (min > 0) candidates.push({ type: 'roomOccupancy', op: 'atLeast', count: min, scope })
+    if (min === max) candidates.push({ type: 'roomOccupancy', op: 'exactly', count: min, scope })
+    // "no room held exactly N", for every N no room actually has. N=0 would just be the
+    // emptyRooms clue, which states it more directly.
+    const present = new Set(counts)
+    for (let n = 1; n <= max; n++) {
+      if (!present.has(n)) candidates.push({ type: 'roomOccupancy', op: 'notExactly', count: n, scope })
+    }
+  }
+
+  // "Exactly N <trait> were inside/outside" — only on a board that HAS both, else vacuous.
+  if (board.cellsOutside(true).size > 0 && board.cellsOutside(false).size > 0) {
+    const traits: { attribute: string; value: AttributeValue }[] = [
+      { attribute: 'gender', value: 'm' },
+      { attribute: 'gender', value: 'f' },
+      { attribute: 'beard', value: true },
+      { attribute: 'glasses', value: true },
+      { attribute: 'bald', value: true },
+    ]
+    for (const s of puzzle.suspects) {
+      const h = puzzle.attributesOf(s.id).hair
+      if (typeof h === 'string' && !traits.some((t) => t.attribute === 'hair' && t.value === h)) {
+        traits.push({ attribute: 'hair', value: h })
+      }
+    }
+    for (const { attribute, value } of traits) {
+      if (!puzzle.suspects.some((s) => puzzle.attributesOf(s.id)[attribute] === value)) continue
+      for (const scope of ['people', 'suspects'] as const) {
+        // FAIRNESS: scope 'people' counts the victim, whose beard/glasses/bald/hair are
+        // hidden from the player — only gender is shown. So a people-scoped clue about any
+        // other trait could never be checked and must not exist. (Same rule as usableTrait.)
+        if (scope === 'people' && attribute !== 'gender') continue
+        const ids = scope === 'people' ? puzzle.allIds() : puzzle.suspects.map((s) => s.id)
+        const carriers = ids.filter((id) => puzzle.attributesOf(id)[attribute] === value)
+        // A trait count clue needs at least TWO carriers to be a BOARD-WIDE statement. With a
+        // single one it silently degenerates into a unary clue about that one person ("the
+        // brown-haired one was inside") — the player reads the trait straight off the card —
+        // and it carries nothing at all as soon as that suspect's own clue already confines
+        // them to the area. Same bar as `usesInsideOutside`: a clue the player cannot get
+        // anything out of must not exist.
+        if (carriers.length < 2) continue
+        for (const area of ['inside', 'outside'] as const) {
+          const count = carriers.filter(
+            (id) => board.isOutside(solution.cellOf(id)) === (area === 'outside'),
+          ).length
+          // "0 of them were outside" is really "all were inside" — the other area says it
+          // positively, and one of the two is always non-zero.
+          if (count === 0) continue
+          candidates.push({ type: 'countWithAttr', attribute, value, area, count, scope })
+        }
+      }
+    }
+  }
 
   return candidates.filter((c) => createBoardClue(c).test(solution, puzzle))
 }
@@ -1052,75 +1418,112 @@ function offerHardBoardClues(puzzle: Puzzle, solution: Solution, rng: Rng, suspe
 
 // --- board ----------------------------------------------------------------
 
+/** A room can never hold fewer cells than this (a 2-cell closet is the hand-made floor). */
+const MIN_ROOM_CELLS = 3
+
+/**
+ * How many rooms a level gets, drawn from the shape the 163 hand-made levels actually have:
+ * rooms-per-suspect sits between 0.6 and 1.0, and NEVER above 1.0 (not one bundled level has
+ * more rooms than suspects). The 1:1 end matters — it is the only case where "no room was
+ * empty" / the room bijection can hold at all, and roughly a quarter of the hand-made corpus
+ * sits exactly there, which a uniform draw over the range reproduces on its own.
+ */
+function roomCountFor(suspects: number, themeRoomCount: number, rng: Rng): number {
+  const max = Math.min(suspects, themeRoomCount)
+  const min = Math.max(2, Math.min(max, Math.round(suspects * 0.6)))
+  return min + rng.int(max - min + 1)
+}
+
+interface Rect {
+  r0: number
+  c0: number
+  r1: number
+  c1: number
+}
+
+const rectArea = (x: Rect): number => (x.r1 - x.r0 + 1) * (x.c1 - x.c0 + 1)
+
+/**
+ * Cut a rectangle in two, across its LONGER side so rooms stay roughly square instead of
+ * degenerating into corridors, and near the MIDDLE so the two halves come out similar in
+ * size. Balance matters: the hand-made levels have no 3-cell slivers next to a hall — their
+ * smallest room averages ~6–7 cells. Both halves must still be a legal room; returns null
+ * when no legal cut exists. `min` is the smallest room this board allows.
+ */
+function splitRect(x: Rect, min: number, rng: Rng): [Rect, Rect] | null {
+  const horiz: [Rect, Rect][] = []
+  const vert: [Rect, Rect][] = []
+  for (let cut = x.r0; cut < x.r1; cut++) {
+    const a: Rect = { ...x, r1: cut }
+    const b: Rect = { ...x, r0: cut + 1 }
+    if (rectArea(a) >= min && rectArea(b) >= min) horiz.push([a, b])
+  }
+  for (let cut = x.c0; cut < x.c1; cut++) {
+    const a: Rect = { ...x, c1: cut }
+    const b: Rect = { ...x, c0: cut + 1 }
+    if (rectArea(a) >= min && rectArea(b) >= min) vert.push([a, b])
+  }
+  const h = x.r1 - x.r0 + 1
+  const w = x.c1 - x.c0 + 1
+  const prefer = h > w ? horiz : w > h ? vert : rng.chance(0.5) ? horiz : vert
+  const pool = prefer.length > 0 ? prefer : horiz.length > 0 ? horiz : vert
+  if (pool.length === 0) return null
+  // Keep the more balanced half of the cuts, then choose freely among them — even sizes
+  // without every plan looking identically halved.
+  const ranked = [...pool].sort((p, q) => balance(p) - balance(q))
+  return rng.pick(ranked.slice(0, Math.max(1, Math.ceil(ranked.length / 2))))
+}
+
+/** How lopsided a cut is (0 = perfectly even). */
+const balance = ([a, b]: [Rect, Rect]): number => Math.abs(rectArea(a) - rectArea(b))
+
+/**
+ * Lay out the rooms by recursively splitting the board into rectangles (a floor plan), then
+ * knocking a few cells through a wall so not every room is a plain box.
+ *
+ * This mirrors what the hand-made levels look like — measured over all 163: 60–90% of their
+ * rooms exactly fill their bounding box (i.e. they ARE rectangles), sizes are balanced, and
+ * every room borders only a few others. The previous random flood-fill grew amorphous blobs
+ * instead, which both looked unlike a building AND made room adjacency near-useless: with
+ * everything touching everything, "in a room adjoining the kitchen" says almost nothing.
+ *
+ * Always splits the LARGEST rectangle, so rooms come out similar in size rather than one
+ * hall plus slivers. Returns fewer rooms than asked only if the board cannot be cut further.
+ */
 function generateRooms(
   width: number,
   height: number,
   roomCount: number,
   rng: Rng,
 ): { roomMap: string[]; ids: string[] } {
+  // Floor for a room on THIS board: no sliver next to a hall. Scaled to the average room
+  // (≈45% of it) so a 9×9 with 6 rooms won't produce a 3-cell closet, matching the
+  // hand-made corpus, whose smallest room averages ~6–7 cells.
+  const min = Math.max(MIN_ROOM_CELLS, Math.floor(((width * height) / Math.max(1, roomCount)) * 0.45))
+  let rects: Rect[] = [{ r0: 0, c0: 0, r1: height - 1, c1: width - 1 }]
+  while (rects.length < roomCount) {
+    // Largest first → balanced rooms. Fall through to smaller ones if it can't be cut.
+    const order = [...rects].sort((a, b) => rectArea(b) - rectArea(a))
+    let split = false
+    for (const x of order) {
+      const halves = splitRect(x, min, rng)
+      if (!halves) continue
+      rects = rects.filter((y) => y !== x).concat(halves)
+      split = true
+      break
+    }
+    if (!split) break // the board admits no more legal rooms
+  }
+
   const n = width * height
-  const assign = new Array<number>(n).fill(-1)
-  const neighbors = (cell: Cell): Cell[] => {
-    const r = Math.floor(cell / width)
-    const c = cell % width
-    const out: Cell[] = []
-    if (r > 0) out.push(cell - width)
-    if (r < height - 1) out.push(cell + width)
-    if (c > 0) out.push(cell - 1)
-    if (c < width - 1) out.push(cell + 1)
-    return out
-  }
+  const assign = new Array<number>(n).fill(0)
+  rects.forEach((x, room) => {
+    for (let r = x.r0; r <= x.r1; r++) for (let c = x.c0; c <= x.c1; c++) assign[r * width + c] = room
+  })
 
-  const seeds = rng.shuffle([...Array(n).keys()]).slice(0, roomCount)
-  const frontier: Array<[Cell, number]> = []
-  const grow = (cell: Cell, room: number): void => {
-    assign[cell] = room
-    for (const nb of neighbors(cell)) if (assign[nb] < 0) frontier.push([nb, room])
-  }
-  seeds.forEach((cell, room) => grow(cell, room))
-  while (frontier.length > 0) {
-    const i = rng.int(frontier.length)
-    const [cell, room] = frontier[i]
-    frontier[i] = frontier[frontier.length - 1]
-    frontier.pop()
-    if (assign[cell] < 0) grow(cell, room)
-  }
+  carveIrregularities(assign, width, height, rects.length, rng)
 
-  // Merge any room with fewer than 3 cells into a neighbouring room (tiny rooms
-  // that can't hold anyone make no sense).
-  const sizes = (): Map<number, number> => {
-    const m = new Map<number, number>()
-    for (const v of assign) m.set(v, (m.get(v) ?? 0) + 1)
-    return m
-  }
-  for (let guard = 0; guard < n; guard++) {
-    const sz = sizes()
-    if (sz.size <= 1) break
-    let small = -1
-    for (const [room, count] of sz) {
-      if (count < 3 && (small < 0 || count < sz.get(small)!)) small = room
-    }
-    if (small < 0) break
-    let target = -1
-    for (let cell = 0; cell < n && target < 0; cell++) {
-      if (assign[cell] !== small) continue
-      for (const nb of neighbors(cell)) {
-        if (assign[nb] !== small) {
-          target = assign[nb]
-          break
-        }
-      }
-    }
-    if (target < 0) break
-    for (let cell = 0; cell < n; cell++) if (assign[cell] === small) assign[cell] = target
-  }
-
-  // Remap remaining rooms to contiguous ids 1..k (some were merged away).
-  const remap = new Map<number, number>()
-  for (const v of assign) if (!remap.has(v)) remap.set(v, remap.size)
-  for (let cell = 0; cell < n; cell++) assign[cell] = remap.get(assign[cell])!
-
-  const ids = Array.from({ length: remap.size }, (_, room) => String(room + 1))
+  const ids = Array.from({ length: rects.length }, (_, room) => String(room + 1))
   const roomMap: string[] = []
   for (let r = 0; r < height; r++) {
     let line = ''
@@ -1130,14 +1533,107 @@ function generateRooms(
   return { roomMap, ids }
 }
 
+/**
+ * Hand off a few border cells to the room across the wall, turning some boxes into L-shapes
+ * — the hand-made levels are 60–90% rectangles, not 100%, and pure BSP looks too gridded.
+ * A cell only moves when the room losing it stays CONNECTED and legally sized, so no room
+ * can be split in two or shrunk away.
+ */
+function carveIrregularities(
+  assign: number[],
+  width: number,
+  height: number,
+  roomCount: number,
+  rng: Rng,
+): void {
+  if (roomCount < 2) return
+  const idx = (r: number, c: number): number => r * width + c
+  const cellsOf = (room: number): number[] => {
+    const out: number[] = []
+    for (let i = 0; i < assign.length; i++) if (assign[i] === room) out.push(i)
+    return out
+  }
+  const connected = (cells: number[]): boolean => {
+    if (cells.length === 0) return false
+    const set = new Set(cells)
+    const stack = [cells[0]]
+    const seen = new Set([cells[0]])
+    while (stack.length > 0) {
+      const cur = stack.pop()!
+      const r = Math.floor(cur / width)
+      const c = cur % width
+      for (const [nr, nc] of [
+        [r - 1, c],
+        [r + 1, c],
+        [r, c - 1],
+        [r, c + 1],
+      ]) {
+        if (nr < 0 || nr >= height || nc < 0 || nc >= width) continue
+        const nb = idx(nr, nc)
+        if (set.has(nb) && !seen.has(nb)) {
+          seen.add(nb)
+          stack.push(nb)
+        }
+      }
+    }
+    return seen.size === cells.length
+  }
+
+  // One nibble per FOUR rooms. Each one dents two rooms at once (the donor loses a corner,
+  // the receiver gains a bump), so this lands the rectangle share in the hand-made 55–70%
+  // band — one per two rooms measured out at 32–47%, far too ragged.
+  const attempts = Math.max(1, Math.floor(roomCount / 4))
+  for (let a = 0; a < attempts; a++) {
+    const order = rng.shuffle([...Array(assign.length).keys()])
+    for (const cell of order) {
+      const room = assign[cell]
+      const r = Math.floor(cell / width)
+      const c = cell % width
+      const others: number[] = []
+      for (const [nr, nc] of [
+        [r - 1, c],
+        [r + 1, c],
+        [r, c - 1],
+        [r, c + 1],
+      ]) {
+        if (nr < 0 || nr >= height || nc < 0 || nc >= width) continue
+        const other = assign[idx(nr, nc)]
+        if (other !== room && !others.includes(other)) others.push(other)
+      }
+      if (others.length === 0) continue
+      const donor = cellsOf(room)
+      if (donor.length - 1 < MIN_ROOM_CELLS) continue
+      const target = rng.pick(others)
+      assign[cell] = target
+      if (connected(donor.filter((x) => x !== cell))) break // kept
+      assign[cell] = room // would have torn the room apart — undo and try elsewhere
+    }
+  }
+}
+
+/**
+ * A random hidden placement: everyone on a distinct row AND column, with the victim sharing
+ * a room with exactly one suspect.
+ *
+ * `fillEveryRoom` additionally hunts for a placement that leaves NO room empty. Left to pure
+ * chance that combination is vanishingly rare (measured: 5% of levels, versus 43% with as
+ * many rooms as suspects) — so without aiming for it the "no room was empty" clue, and the
+ * room bijection it powers, could effectively never arise. It stays a PREFERENCE: once the
+ * hunt budget is spent, any legal placement is accepted, so generation can't fail over it.
+ */
 function generateSolution(
   width: number,
   height: number,
   roomOf: (cell: Cell) => string,
   peopleIds: PersonId[],
   rng: Rng,
+  fillEveryRoom = false,
 ): { placement: Map<PersonId, Cell>; murderer: PersonId } | null {
   const p = peopleIds.length
+  const allRooms = new Set<string>()
+  for (let cell = 0; cell < width * height; cell++) allRooms.add(roomOf(cell))
+  const HUNT = 3000
+
   for (let attempt = 0; attempt < 4000; attempt++) {
     const rows = rng.shuffle([...Array(height).keys()]).slice(0, p)
     const cols = rng.shuffle([...Array(width).keys()]).slice(0, p)
@@ -1149,7 +1645,17 @@ function generateSolution(
     const inRoom = peopleIds.filter(
       (id) => id !== VICTIM_ID && roomOf(placement.get(id)!) === victimRoom,
     )
-    if (inRoom.length === 1) return { placement, murderer: inRoom[0] }
+    if (inRoom.length !== 1) continue
+    if (fillEveryRoom && attempt < HUNT) {
+      // The victim never opens a room of its own (it sits with the murderer), so "every room
+      // occupied" is decided by the suspects alone.
+      const occupied = new Set<string>()
+      for (const id of peopleIds) {
+        if (id !== VICTIM_ID) occupied.add(roomOf(placement.get(id)!))
+      }
+      if (occupied.size < allRooms.size) continue
+    }
+    return { placement, murderer: inRoom[0] }
   }
   return null
 }
@@ -1396,6 +1902,22 @@ function candidatesFor(
   out.push({ type: 'inRoom', room })
   out.push({ type: 'inRow', row })
   out.push({ type: 'inCol', col })
+  // "in a room adjoining X" — for every room the subject's room borders. Broad and fully
+  // deducible (fixed layout). The disguised-line guard applies: on a small board the band of
+  // neighbours can collapse into one row/column, and then the honest inRow/inCol says it.
+  for (const other of board.roomNeighbors(room)) {
+    const json: ClueJson = { type: 'inRoomAdjacentTo', room: other }
+    if (!collapsesToLine(json)) out.push(json)
+  }
+  // …and the NEGATION for every room it does NOT border — "she was in a room that does NOT
+  // adjoin the kitchen". Broad, fully deducible (the not-clue's definite cells), and exactly
+  // what `not(inRoom)` does a few lines down. A room the subject IS in counts as non-adjacent
+  // to itself, so its own room is offered too — "not adjoining X" is true when standing in X.
+  for (const other of board.rooms.keys()) {
+    if (board.roomNeighbors(room).has(other)) continue // borders it → the positive form says so
+    const json: ClueJson = { type: 'not', clue: { type: 'inRoomAdjacentTo', room: other } }
+    if (!collapsesToLine(json)) out.push(json)
+  }
   if (board.isCorner(cell)) out.push({ type: 'corner' })
   if (board.isAtWall(cell)) out.push({ type: 'atWall' })
   if (board.hasWindow(cell)) {
@@ -1424,6 +1946,49 @@ function candidatesFor(
   // included, shares the room (inRoomAll counts everyone present, the subject + 1).
   if (sameRoom.length === 1 && inRoomAll.length === 2) {
     out.push({ type: 'sameRoom', as: sameRoom[0], alone: true })
+  }
+
+  // --- room neighbourhood (A2/A3/A4) ---
+  const neighborRooms = [...board.roomNeighbors(room)]
+  // "X and Y were in adjoining rooms" — and its negation for everyone they were NOT one room
+  // over from. The negated form propagates forward exactly like `not(sameRoom)`: once either
+  // side is pinned to a room, the other loses that room's neighbours.
+  for (const id of otherSuspects) {
+    if (neighborRooms.includes(board.roomIdOf(solution.cellOf(id)))) {
+      out.push({ type: 'adjacentRooms', as: id })
+    } else {
+      out.push({ type: 'not', clue: { type: 'adjacentRooms', as: id } })
+    }
+  }
+  // "an empty room adjoined his room" — kept by the test-filter only when one truly is.
+  // Its NEGATION ("no neighbour was empty") is the stronger universal form, so offer both.
+  if (neighborRooms.length > 0) {
+    out.push({ type: 'neighborRoomEmpty' })
+    out.push({ type: 'not', clue: { type: 'neighborRoomEmpty' } })
+  }
+  // "an adjoining room [entirely {dir} of him] held exactly N suspects" — emit the TRUE
+  // count for each neighbour, plain and per qualifying direction. count 0 is deliberately
+  // skipped: "an empty adjoining room" is exactly the clue above, and reads far better.
+  const suspectsPerRoom = new Map<string, number>()
+  for (const id of otherSuspects.concat(suspectId)) {
+    const r = board.roomIdOf(solution.cellOf(id))
+    suspectsPerRoom.set(r, (suspectsPerRoom.get(r) ?? 0) + 1)
+  }
+  for (const n of neighborRooms) {
+    const count = suspectsPerRoom.get(n) ?? 0
+    if (count === 0) continue
+    const plain: ClueJson = { type: 'neighborRoomCount', count }
+    if (!collapsesToLine(plain)) out.push(plain)
+    // Cardinals only: lifting a DIAGONAL onto a room means the whole quadrant ("every cell
+    // southeast" = every cell south AND every cell east), which is both rare and hard to read
+    // off the plan. See NeighborRoomCountClue.
+    for (const dir of ['north', 'south', 'east', 'west'] as const) {
+      const json: ClueJson = { type: 'neighborRoomCount', count, dir }
+      // Only when THIS room really lies entirely that way from the subject's cell.
+      if (new NeighborRoomCountClue(count, dir).qualifies(board, cell, n) && !collapsesToLine(json)) {
+        out.push(json)
+      }
+    }
   }
 
   // --- "(alone) in the same room as an object" (objects are fixed → deducible) ---
@@ -1730,6 +2295,9 @@ function tightness(json: ClueJson, puzzle: Puzzle): number {
       return 35
     case 'sameRoom':
       return 40
+    // One room over is looser than the same room (several neighbours to choose from).
+    case 'adjacentRooms':
+      return 50
     case 'notAlone':
       return 70
     case 'insideXor':
@@ -1745,6 +2313,15 @@ function tightness(json: ClueJson, puzzle: Puzzle): number {
 
 /** Easy-clue palette: simple, self-contained clue types (or their negation) — the same
  *  ones the hand-made easy levels use. No abstract "same line / direction of" or attribute. */
+/**
+ * Easy-clue palette: simple, self-contained clue types (or their negation) — the same ones the
+ * hand-made easy levels use. No abstract "same line / direction of" or attribute.
+ *
+ * This is a TASTE for FREE generation, not a veto: a type the user explicitly demands via the
+ * editor's "Vorgaben" is used at easy too (see `required` in constructEasyClues). Otherwise an
+ * explicit "easy + this clue type" could never be built — the demand narrows a suspect to that
+ * type, the palette filtered it away, and every attempt died with no clue left to pin them.
+ */
 const EASY_ALLOWED_TYPES = new Set<string>([
   'onObject', 'uniqueOnObject', 'nearObject', 'inRoom', 'nearWindow', 'uniqueNearWindow',
   'nearDoor', 'corner', 'atWall', 'inside', 'outside', 'inCol', 'inRow',
@@ -1769,6 +2346,10 @@ function constructEasyClues(
   solution: Solution,
   candidates: Map<PersonId, ClueJson[]>,
   rng: Rng,
+  /** The user's "Vorgaben" from the editor. A clue shape demanded here is allowed at easy
+   *  EVEN IF it isn't in the easy palette — an explicit instruction outranks the default
+   *  taste. Whatever the user asks for must be usable, whichever difficulty they picked. */
+  required?: ((json: ClueJson) => boolean)[],
 ): Map<PersonId, ClueJson> | null {
   const puzzle = loadLevel(base)
   const board = puzzle.board
@@ -1776,16 +2357,23 @@ function constructEasyClues(
   // resort; a negation slightly less preferred than its positive).
   const CLARITY: Record<string, number> = {
     onObject: 0, uniqueOnObject: 0, nearObject: 0, inRoom: 0,
+    // Names a room like `inRoom`, but you must read the neighbours off the plan first.
+    inRoomAdjacentTo: 1,
     corner: 1, atWall: 1, nearWindow: 1, uniqueNearWindow: 1, nearDoor: 1, inside: 1, outside: 1,
     inCol: 2, inRow: 2,
   }
   const clarityOf = (c: ClueJson): number => (CLARITY[easyInnerType(c)] ?? 3) + (c.type === 'not' ? 0.3 : 0)
   // Per-suspect easy candidates: clearest type first, then sharpest (fewest cells).
+  // A clue is usable at easy when the palette allows its type OR the user explicitly
+  // demanded that shape — an instruction always outranks the default taste.
+  const allowed = (json: ClueJson): boolean =>
+    EASY_ALLOWED_TYPES.has(easyInnerType(json)) || (required?.some((pred) => pred(json)) ?? false)
+
   const cand = new Map<PersonId, { json: ClueJson; cells: Set<Cell> }[]>()
   for (const id of suspectIds) {
     const list: { json: ClueJson; cells: Set<Cell> }[] = []
     for (const json of candidates.get(id)!) {
-      if (!EASY_ALLOWED_TYPES.has(easyInnerType(json))) continue
+      if (!allowed(json)) continue
       const cells = createClue(json).candidateCells(board)
       if (cells) list.push({ json, cells })
     }
@@ -1973,6 +2561,35 @@ function constructEasyClues(
     if (!fixed) return null
   }
 
+  // The user's "Vorgaben" must LAND, whatever they asked for. The easy palette decides which
+  // clue can be the PIN; it must never decide what may appear at all. A relational clue
+  // ("north of Bella") has no cell set, so it can't pin anyone — but it rides along on a
+  // suspect who is already pinned:
+  //  - AndClue.candidateCells ignores a null child and intersects the rest, so the pin holds;
+  //  - `propagate` retries the simple techniques FIRST every round and finishes the level
+  //    before the relational one is ever reached, so the rank stays ≤2 and it is truly easy;
+  //  - a true clue can never cost the solution, so uniqueness is untouched.
+  // Each demand is verified with `solvableChain()`; if none of the hosts work, the attempt is
+  // abandoned and a fresh placement is tried.
+  const clueParts = (c: ClueJson): ClueJson[] => (c.type === 'and' ? c.clues : [c])
+  for (const pred of required ?? []) {
+    if (suspectIds.some((id) => clueParts(chosen.get(id)!).some(pred))) continue // already there
+    let placed = false
+    for (const id of rng.shuffle([...suspectIds])) {
+      const current = chosen.get(id)!
+      for (const json of rng.shuffle(candidates.get(id)!.filter(pred))) {
+        chosen.set(id, { type: 'and', clues: [...clueParts(current), json] })
+        if (solvableChain()) {
+          placed = true
+          break
+        }
+        chosen.set(id, current)
+      }
+      if (placed) break
+    }
+    if (!placed) return null
+  }
+
   // EASY: the victim must be placed LAST — ALL suspects pin from their own clues first,
   // then the victim is simply the last free cell. The user dislikes the mid-solve "this
   // lone cell can only be the victim ⇒ now the rest follows" (fine at medium/hard, not
@@ -2029,6 +2646,22 @@ function countAnchors(
 /** How many of a suspect's loosest candidate clues the widen pass (2b) tries — bounds
  *  the per-attempt cost on big, clue-rich boards. */
 const WIDEN_SCAN = 8
+
+/**
+ * How many hard candidates the broadening pass (2a-hard) probes per suspect. A 9x9 suspect
+ * offers ~94 of them and a hard clue only sticks at the ~21st on average, so probing all of
+ * them cost a FULL DEDUCTION EACH — measured at 79% of the generator's entire runtime, two
+ * thirds of it burnt on suspects for whom no hard clue works at all.
+ *
+ * The budget is spent EVENLY ACROSS the breadth-sorted list (stride = len/budget) rather
+ * than on its first N: broad clues break solvability far more often than tight ones, so a
+ * head-cap probes exactly the losers and forfeited 60% of all hard clues (measured). Spread
+ * out, the cost is nil — a skipped candidate has near-identical neighbours, and the cheaper
+ * attempt buys ~1.7x MORE attempts inside the same budget, which `pickBestLevel` turns back
+ * into quality: measured 2.9 → 3.1 hard clues per level while Ø 11.5s → 8.3s (worst 18.2s →
+ * 8.6s). Raising it does not buy hard clues; it only starves the selection of attempts.
+ */
+const HARD_SCAN = 24
 function constructLogicClues(
   base: LevelJson,
   suspectIds: PersonId[],
@@ -2043,10 +2676,39 @@ function constructLogicClues(
 ): Map<PersonId, ClueJson> | null {
   for (const id of suspectIds) if (candidates.get(id)!.length === 0) return null
 
-  const board = loadLevel(base).board
+  // Parsed ONCE: board, victim, global/board clues never change while clues are being chosen —
+  // rate() below rebuilds only the suspects. This keeps ONE Board instance alive for the whole
+  // construction, which is what lets the per-board candidateCells memo (see Clue) actually pay:
+  // the same leaf Clue instances are rated hundreds of times against the same board.
+  const basePuzzle = loadLevel(base)
+  const board = basePuzzle.board
   const totalCells = board.occupiableCells().length
   // Each suspect's clue = the AND of their natural candidates at these indices.
   const list = (id: PersonId): ClueJson[] => candidates.get(id)!
+  // Leaf Clue instances per candidate (stable JSONs ⇒ stable instances), and composite AND
+  // instances per used-combination. Same construction as loadLevel→createClue, just cached.
+  const leafInst = new Map<string, Clue>()
+  const leafInstAt = (id: PersonId, i: number): Clue => {
+    const key = `${id}:${i}`
+    let inst = leafInst.get(key)
+    if (!inst) {
+      inst = createClue(list(id)[i])
+      leafInst.set(key, inst)
+    }
+    return inst
+  }
+  const comboInst = new Map<string, Clue>()
+  const clueInstOf = (id: PersonId): Clue => {
+    const u = used.get(id)!
+    if (u.length === 1) return leafInstAt(id, u[0])
+    const key = `${id}:${u.join(',')}`
+    let inst = comboInst.get(key)
+    if (!inst) {
+      inst = new AndClue(u.map((i) => leafInstAt(id, i)))
+      comboInst.set(key, inst)
+    }
+    return inst
+  }
 
   // Memoised candidate breadth (cells the clue leaves open).
   const breadthCache = new Map<string, number>()
@@ -2059,10 +2721,31 @@ function constructLogicClues(
     }
     return size
   }
+  /**
+   * Candidate indices ordered by REAL breadth, widest first (memoised per suspect).
+   *
+   * `candidatesFor` hands the pool over sorted by `tightness`, and that is NOT a breadth
+   * order: it returns the true cell count for cell-based clues but hand-picked PRIORITY
+   * constants for everything else — a row clue scores 150 ("last resort") while really
+   * spanning 9 of 56 cells, and a relational clue scores 6–110 while leaving the WHOLE board
+   * open. Treating the list position as breadth therefore "widened" suspects from a 56-cell
+   * relational clue onto a 9-cell row clue: measured -17 cells on average, worst -64, with
+   * 42% of all "successful" widenings ending up TIGHTER. Anything reasoning about broad vs
+   * narrow must go through here, never through the list index.
+   */
+  const wideFirstCache = new Map<PersonId, number[]>()
+  const wideFirst = (id: PersonId): number[] => {
+    let idx = wideFirstCache.get(id)
+    if (!idx) {
+      idx = list(id).map((_, i) => i).sort((a, b) => breadthAt(id, b) - breadthAt(id, a))
+      wideFirstCache.set(id, idx)
+    }
+    return idx
+  }
   // The loosest candidate that still says SOMETHING (an uninformative clue covering
   // every cell would make the suspect count as unrestricted) and isn't a dull line.
   const broadestIdx = (id: PersonId): number => {
-    for (let i = list(id).length - 1; i >= 0; i--) {
+    for (const i of wideFirst(id)) {
       if (isLine(list(id)[i])) continue
       const size = breadthAt(id, i)
       if (size < totalCells && size > 1) return i
@@ -2086,8 +2769,26 @@ function constructLogicClues(
     const parts = used.get(id)!.map((i) => list(id)[i])
     return parts.length === 1 ? parts[0] : { type: 'and', clues: parts }
   }
+  // NOTE a rating memo (keyed by a signature of `used`) was tried and REMOVED: hit rate was
+  // 0.5–1% over ~4100 rate() calls per run — the passes almost never revisit a clue state, so
+  // the cache was proven harmless (identical fixed-seed levels) but useless. Don't rebuild it.
+  //
+  // The Puzzle is assembled DIRECTLY from the cached pieces (no LevelJson → loadLevel round
+  // trip): same board instance, same victim/global/board clues, fresh Suspect wrappers around
+  // the CACHED clue instances — identical semantics (verified via fixed-seed fingerprints),
+  // but the board is parsed once instead of ~370× per attempt and the clue instances keep
+  // their per-board candidateCells memo warm across every solve.
   const rate = () =>
-    logicRating({ ...base, suspects: base.suspects.map((s) => ({ ...s, clues: [clueOf(s.id)] })) })
+    logicRatingOn(
+      new Puzzle(
+        basePuzzle.id,
+        board,
+        basePuzzle.suspects.map((s) => new Suspect(s.id, s.name, s.attributes, [clueInstOf(s.id)])),
+        basePuzzle.victim,
+        basePuzzle.globalClues,
+        basePuzzle.boardClues,
+      ),
+    )
 
   // A suspect must carry at most ONE exact-coordinate clue (fixed row/column OR an exact
   // offset from someone): two of them pin the exact cell, which the user forbids
@@ -2095,8 +2796,15 @@ function constructLogicClues(
   const tooManyExactPins = (id: PersonId): boolean =>
     used.get(id)!.filter((i) => isExactAxisClue(list(id)[i])).length >= 2
   // No two suspects may show the IDENTICAL clue (same predicate, regardless of who it is
-  // about) — the user dislikes e.g. two "was not beside a locker".
-  const noDuplicateClues = (): boolean => duplicateClueCount(suspectIds.map(clueOf)) === 0
+  // about) — the user dislikes e.g. two "was not beside a locker". Passes below judge this
+  // as a DELTA ("does my change make it worse?"), never as a level-wide invariant ("is the
+  // level clean?"): suspects START on a clue each, and the broad openers repeat across
+  // people, so 96% of hard boards already carry a duplicate at birth. A guard demanding a
+  // clean level then refuses EVERY candidate and deadlocks a board that was never at fault —
+  // measured as 100% of construction give-ups, with ~2170 clues still free and none of them
+  // actually tried. Pass 4 clears what remains; `pruneClues` and `pickBestLevel` still refuse
+  // to ship a level with a duplicate, so the user's rule holds.
+  const dupCount = (): number => duplicateClueCount(suspectIds.map(clueOf))
   const lineSuspects = (): number =>
     suspectIds.filter((id) => used.get(id)!.some((i) => isLine(list(id)[i]))).length
   const hasHardClue = (id: PersonId): boolean =>
@@ -2112,20 +2820,37 @@ function constructLogicClues(
     for (const id of suspectIds) for (const t of cappedTypes(clueOf(id))) m.set(t, (m.get(t) ?? 0) + 1)
     return m
   }
-  const capOk = (): boolean => [...typeCounts().entries()].every(([fam, n]) => n <= familyCap(fam))
+  // Total overshoot across all capped families (0 ⇒ every cap met). Judged as a DELTA for the
+  // same reason as `dupCount` — the suspects' broad openers routinely start a family over its
+  // cap, and a guard asking "is every cap met?" of each candidate then refuses them all: the
+  // broadening pass silently does nothing, and the repair below cannot take the FIRST of two
+  // steps it needs (one swap rarely heals an overshoot of 2). Pass 3 drives this to 0.
+  const capOverflow = (): number =>
+    [...typeCounts().entries()].reduce((n, [fam, c]) => n + Math.max(0, c - familyCap(fam)), 0)
+  const capOk = (): boolean => capOverflow() === 0
 
-  // Fallback tightener: AND another part onto the suspect with the fewest (the old
-  // construction) — used once single-clue tightening alone doesn't get there.
-  const addPart = (): boolean => {
+  // Tightener: AND another part onto a suspect until the case cracks.
+  //
+  // `stuck` are the suspects the last deduction could NOT place — aim there FIRST. A clue on
+  // someone the solver already places adds nothing to the blockage, so the old "whoever has
+  // the fewest parts" order spent most of its (expensive, one-full-solve-each) rounds on
+  // suspects that were never the problem. Fewest-parts stays as the tie-break within each group.
+  const addPart = (stuck: readonly PersonId[]): boolean => {
+    const dupBefore = dupCount()
+    const blocked = new Set(stuck)
     const order = rng
       .shuffle([...suspectIds])
-      .sort((a, b) => used.get(a)!.length - used.get(b)!.length)
+      .sort(
+        (a, b) =>
+          Number(!blocked.has(a)) - Number(!blocked.has(b)) ||
+          used.get(a)!.length - used.get(b)!.length,
+      )
     for (const id of order) {
       const u = used.get(id)!
       for (let i = 0; i < list(id).length; i++) {
         if (u.includes(i)) continue
         u.push(i)
-        if (tooManyExactPins(id) || lineSuspects() > maxLineClues || !noDuplicateClues()) {
+        if (tooManyExactPins(id) || lineSuspects() > maxLineClues || dupCount() > dupBefore) {
           u.pop()
           continue
         }
@@ -2141,7 +2866,7 @@ function constructLogicClues(
   for (let guard = 0; guard < 400; guard++) {
     const st = rate()
     if (st.solved) break
-    if (!addPart()) return null
+    if (!addPart(st.stuck)) return null
   }
   if (!rate().solved) return null // no human-solvable forward chain on this board
 
@@ -2168,18 +2893,27 @@ function constructLogicClues(
       const u = used.get(id)!
       if (u.length !== 1) continue
       const current = u[0]
+      const dupBefore = dupCount()
+      const capBefore = capOverflow()
       const hardIdx = list(id)
         .map((clue, i) => ({ clue, i }))
         .filter(({ clue, i }) => isHardClue(clue) && i !== current)
         .sort((a, b) => breadthAt(id, b.i) - breadthAt(id, a.i))
-      for (const { i } of hardIdx) {
+      // Probe HARD_SCAN candidates spread across the whole breadth range, not the first N.
+      const stride = Math.max(1, Math.ceil(hardIdx.length / HARD_SCAN))
+      for (let k = 0; k < hardIdx.length; k += stride) {
+        const { i } = hardIdx[k]
         u[0] = i
+        // CHEAP GUARDS FIRST. These only read `used`/`list`; `rate()` runs a full deduction
+        // over the whole level. Asking it before them meant every candidate that a cap was
+        // going to reject anyway still cost a solve — measured as the single most expensive
+        // loop in the generator (43% of 9x9 hard's runtime).
         if (
-          rate().solved &&
           !tooManyExactPins(id) &&
           lineSuspects() <= maxLineClues &&
-          capOk() &&
-          noDuplicateClues()
+          capOverflow() <= capBefore &&
+          dupCount() <= dupBefore &&
+          rate().solved
         ) {
           break
         }
@@ -2188,31 +2922,51 @@ function constructLogicClues(
     }
   }
 
-  // 2b) LOOSEN: widen each single clue toward looser candidates (more open cells) to push
-  //     the needed rank up to the target — loosest-that-still-works wins, capped so it
-  //     never tips into a harder tier. Stop early once target is hit. Only the WIDEN_SCAN
-  //     loosest candidates are tried (they are the rank-raising ones), so a big, clue-rich
-  //     board can't blow up the attempt's cost.
-  if (rate().maxRank < target) {
+  // 2b) LOOSEN: widen EVERY single clue as far as it will go — the loosest candidate that
+  //     still leaves the case human-solvable wins, capped so it never tips into a harder tier.
+  //
+  //     This pass decides how much board is still in play once the player has read every clue
+  //     — the user's "Ausdehnung", and what actually makes a level hard for a human ("der
+  //     Anfang darf nicht einfach sein", and it must hold for MANY suspects, not one).
+  //
+  //     It used to be a RANK pass: wrapped in `if (rate().maxRank < target)` and breaking the
+  //     moment the rank was reached. On hard the tightener usually hands over a rank-5 level
+  //     already, so it never ran ONCE, and every suspect kept the TIGHTEST clue phase 1 gave
+  //     them. Measured against the hand-made `museum` (the user's reference for "logical but
+  //     hard"): its cell clues span 7–28 cells each and cover 98% of the board between them;
+  //     generated ones sat at 1–9 cells and 24%. Widening is the goal now; the rank cap only
+  //     stops it overshooting the tier.
+  {
     for (const id of rng.shuffle([...suspectIds])) {
-      if (rate().maxRank >= target) break
       const u = used.get(id)!
       if (u.length !== 1) continue
       const current = u[0]
-      const lo = Math.max(current + 1, list(id).length - WIDEN_SCAN)
-      for (let j = list(id).length - 1; j >= lo; j--) {
+      const dupBefore = dupCount()
+      const capBefore = capOverflow()
+      const startBreadth = breadthAt(id, current)
+      // Widest first, and only genuinely wider ones — `wideFirst` is sorted, so the first
+      // candidate that isn't an improvement ends the scan. WIDEN_SCAN bounds the cost.
+      //
+      // A candidate that leaves EVERY cell open is skipped, wide as it looks: it stops saying
+      // anything about cells, which drops its suspect out of the Ausdehnung entirely (the same
+      // rule `broadestIdx` already applies). Chasing raw breadth without it pushed 6 of 8
+      // suspects onto relational clues and collapsed Ausdehnung from 39% to 4% while breadth
+      // "improved" to 75% — the exact opposite of the hand-made `museum` (7 cell clues of 7–28
+      // cells, ONE relational, 98% Ausdehnung). Handing suspects a relational clue is 2a-hard's
+      // job; this pass widens what is left.
+      let tries = 0
+      for (const j of wideFirst(id)) {
+        if (breadthAt(id, j) <= startBreadth || tries >= WIDEN_SCAN) break
+        if (breadthAt(id, j) >= totalCells) continue // says nothing about cells — 2a-hard's call
+        tries++
         u[0] = j
-        const st = rate()
-        if (
-          st.solved &&
-          st.maxRank <= target &&
-          !tooManyExactPins(id) &&
-          lineSuspects() <= maxLineClues &&
-          capOk() &&
-          noDuplicateClues()
-        ) {
-          break
+        // Cheap guards before the solve (see the 2a-hard pass).
+        if (tooManyExactPins(id) || lineSuspects() > maxLineClues || capOverflow() > capBefore || dupCount() > dupBefore) {
+          u[0] = current
+          continue
         }
+        const st = rate()
+        if (st.solved && st.maxRank <= target) break
         u[0] = current
       }
     }
@@ -2222,6 +2976,7 @@ function constructLogicClues(
   //    switch an offending single-clue suspect to a different family that keeps the level
   //    solvable and within the cap; give up on the board if it can't be met.
   for (let guard = 0; guard < 200 && !capOk(); guard++) {
+    const overflowBefore = capOverflow()
     const overType = [...typeCounts().entries()].find(([fam, n]) => n > familyCap(fam))?.[0]
     if (overType === undefined) break
     let fixed = false
@@ -2232,14 +2987,17 @@ function constructLogicClues(
       for (let i = 0; i < list(id).length; i++) {
         if (i === current || cappedTypes(list(id)[i]).includes(overType)) continue
         u[0] = i
+        // Cheap guards before the solve (see the 2a-hard pass). The cap bar is PROGRESS, not
+        // perfection: demanding a fully compliant level from a single swap made this repair
+        // refuse every partial step and give up — measured as 63% of all attempts once the
+        // dedup deadlock stopped masking it. Each round strictly lowers the overshoot, so the
+        // loop still terminates, and its `capOk()` condition still only exits at zero.
+        if (tooManyExactPins(id) || lineSuspects() > maxLineClues || capOverflow() >= overflowBefore) {
+          u[0] = current
+          continue
+        }
         const st = rate()
-        if (
-          st.solved &&
-          st.maxRank <= target &&
-          !tooManyExactPins(id) &&
-          lineSuspects() <= maxLineClues &&
-          capOk()
-        ) {
+        if (st.solved && st.maxRank <= target) {
           fixed = true
           break
         }
@@ -2265,15 +3023,19 @@ function constructLogicClues(
       for (let i = 0; i < list(id).length; i++) {
         if (i === current) continue
         u[0] = i
-        const st = rate()
+        // Cheap guards before the solve (see the 2a-hard pass) — including "did this switch
+        // actually reduce the duplicates", which is pure bookkeeping and needs no solver.
         if (
-          st.solved &&
-          st.maxRank <= target &&
-          !tooManyExactPins(id) &&
-          lineSuspects() <= maxLineClues &&
-          capOk() &&
-          duplicateClueCount(suspectIds.map(clueOf)) < before
+          tooManyExactPins(id) ||
+          lineSuspects() > maxLineClues ||
+          !capOk() ||
+          duplicateClueCount(suspectIds.map(clueOf)) >= before
         ) {
+          u[0] = current
+          continue
+        }
+        const st = rate()
+        if (st.solved && st.maxRank <= target) {
           fixed = true
           break
         }

@@ -1,5 +1,5 @@
 import { Solution } from '../model/Solution.ts'
-import { DirectionClue, OffsetClue, SameRoomClue } from '../clues/relationalClues.ts'
+import { AdjacentRoomsClue, DirectionClue, OffsetClue, SameRoomClue } from '../clues/relationalClues.ts'
 import {
   AloneClue,
   RoomAttributeClue,
@@ -87,7 +87,9 @@ function relationalLinks(clue: Clue): RelationalLink[] {
   if (clue instanceof DirectionClue || clue instanceof OffsetClue) {
     return [{ clue, target: clue.target }]
   }
-  if (clue instanceof SameRoomClue) return [{ clue, target: clue.target }]
+  if (clue instanceof SameRoomClue || clue instanceof AdjacentRoomsClue) {
+    return [{ clue, target: clue.target }]
+  }
   if (clue instanceof AndClue) return clue.clues.flatMap(relationalLinks)
   return []
 }

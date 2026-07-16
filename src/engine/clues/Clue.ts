@@ -18,7 +18,28 @@ import type { Cell, Explanation, PersonId } from '../model/types.ts'
 export abstract class Clue {
   abstract test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean
 
-  candidateCells(_board: Board): Set<Cell> | null {
+  private ccBoard: Board | null = null
+  private ccCells: Set<Cell> | null = null
+
+  /**
+   * Memoised per board (single entry, keyed by Board identity): the set is a pure function
+   * of (clue, board), and the generator rates hundreds of full deductions per attempt against
+   * the SAME board — recomputing the board scans every time was 11% of its whole runtime.
+   * Subclasses implement `computeCandidateCells`; nobody overrides THIS. Because the set is
+   * shared between solves, callers must never mutate it (all engine consumers only read;
+   * the composites copy before intersecting — audited, keep it that way).
+   */
+  candidateCells(board: Board): Set<Cell> | null {
+    if (this.ccBoard !== board) {
+      this.ccBoard = board
+      this.ccCells = this.computeCandidateCells(board)
+    }
+    return this.ccCells
+  }
+
+  /** The actual candidate-set logic — override this, never `candidateCells` (see there).
+   *  Default: relational/social clues have no fixed set. */
+  protected computeCandidateCells(_board: Board): Set<Cell> | null {
     return null
   }
 
@@ -55,10 +76,11 @@ export abstract class Clue {
 
 /** Base for clues whose candidate set is fixed and independent of other people. */
 export abstract class UnaryClue extends Clue {
-  abstract override candidateCells(board: Board): Set<Cell>
+  protected abstract override computeCandidateCells(board: Board): Set<Cell>
 
   override test(subjectId: PersonId, solution: Solution, puzzle: Puzzle): boolean {
-    return this.candidateCells(puzzle.board).has(solution.cellOf(subjectId))
+    // Non-null by contract: computeCandidateCells returns a concrete Set for unary clues.
+    return this.candidateCells(puzzle.board)!.has(solution.cellOf(subjectId))
   }
 
   // A unary clue is true exactly on its candidate cells (independent of others), so
