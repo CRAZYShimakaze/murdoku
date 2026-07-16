@@ -47,9 +47,9 @@
   --diff-original: #b294d6;
 
   /* Type */
-  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
-  --font-type: 'Special Elite', 'Courier New', monospace;
-  --font-ui: 'Spline Sans Variable', system-ui, -apple-system, sans-serif;
+  --font-display: 'Fraunces Variable', 'Noto Serif SC', 'Songti SC', Georgia, 'Times New Roman', serif;
+  --font-type: 'Special Elite', 'Noto Serif SC', 'Songti SC', 'Courier New', monospace;
+  --font-ui: 'Spline Sans Variable', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
 
   /* Geometry */
   --r-sm: 6px;

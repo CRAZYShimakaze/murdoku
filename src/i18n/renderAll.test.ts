@@ -18,10 +18,26 @@ const dir = resolve(process.cwd(), 'levels')
 const files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort()
 const readLevel = (f: string): LevelJson => JSON.parse(readFileSync(resolve(dir, f), 'utf8'))
 
-const LANGS = ['de', 'en', 'es'] as const
+const LANGS = ['de', 'en', 'es', 'zh-CN'] as const
 const dicts = Object.fromEntries(
   LANGS.map((lg) => [lg, JSON.parse(readFileSync(resolve(process.cwd(), `src/i18n/locales/${lg}.json`), 'utf8'))]),
 )
+
+function flattenStrings(value: unknown, prefix = '', result = new Map<string, string>()): Map<string, string> {
+  if (typeof value === 'string') {
+    result.set(prefix, value)
+  } else if (Array.isArray(value)) {
+    value.forEach((item, index) => flattenStrings(item, `${prefix}.${index}`, result))
+  } else if (value && typeof value === 'object') {
+    for (const [key, item] of Object.entries(value)) {
+      flattenStrings(item, prefix ? `${prefix}.${key}` : key, result)
+    }
+  }
+  return result
+}
+
+const variables = (text: string): string[] => [...text.matchAll(/\{\{[^}]+\}\}/g)].map(([match]) => match).sort()
+const markerIds = (text: string): string[] => [...text.matchAll(/:[a-zA-Z]+\]\]/g)].map(([match]) => match).sort()
 
 /** A rendered string that still looks like a key ("clue.foo" / "boardClue.a.b") is a miss. */
 const looksLikeKey = (s: string): boolean => /^[a-z][a-zA-Z]*(\.[a-zA-Z_]+)+$/.test(s.trim())
@@ -29,6 +45,18 @@ const looksLikeKey = (s: string): boolean => /^[a-z][a-zA-Z]*(\.[a-zA-Z_]+)+$/.t
 const hasUnfilledSlot = (s: string): boolean => s.includes('{{')
 
 describe('every bundled level renders in every language', () => {
+  it('all locales preserve the English keys, variables and interactive marker ids', () => {
+    const source = flattenStrings(dicts.en)
+    for (const lg of LANGS) {
+      const translated = flattenStrings(dicts[lg])
+      expect([...translated.keys()].sort(), `${lg}: translation keys`).toEqual([...source.keys()].sort())
+      for (const [key, text] of source) {
+        expect(variables(translated.get(key) ?? ''), `${lg}: variables in ${key}`).toEqual(variables(text))
+        expect(markerIds(translated.get(key) ?? ''), `${lg}: marker ids in ${key}`).toEqual(markerIds(text))
+      }
+    }
+  })
+
   for (const lg of LANGS) {
     it(`${lg}: all suspect clues`, () => {
       const bad: string[] = []

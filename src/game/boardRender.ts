@@ -889,11 +889,11 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     // Fit the font to the gap (text width scales ~linearly, so one rescale lands it).
     let font = S * 0.155
     const required = (f: number): number => {
-      ctx.font = `700 ${f}px 'Spline Sans Variable', system-ui, sans-serif`
+      ctx.font = `700 ${f}px 'Spline Sans Variable', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif`
       return ctx.measureText(label).width + 2 * f * 0.5
     }
     if (required(font) > maxW) font = Math.max(6, (font * maxW) / required(font))
-    ctx.font = `700 ${font}px 'Spline Sans Variable', system-ui, sans-serif`
+    ctx.font = `700 ${font}px 'Spline Sans Variable', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif`
     const pillW = Math.min(maxW, ctx.measureText(label).width + 2 * font * 0.5)
     const pillH = font * 1.55
     const cx = ox + ((bc0 + bc1 + 1) / 2) * S
@@ -967,7 +967,7 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
         c2.lineJoin = 'round'
         c2.textAlign = 'left'
         c2.textBaseline = 'top'
-        c2.font = `700 ${S * 0.27}px 'Spline Sans Variable', sans-serif`
+        c2.font = `700 ${S * 0.27}px 'Spline Sans Variable', 'Noto Sans SC', 'PingFang SC', sans-serif`
         const ow = Math.max(1.2, S * 0.04)
         c2.strokeStyle = BOARD.markHalo
         c2.lineWidth = ow + Math.max(1.2, S * 0.028)
@@ -1101,7 +1101,7 @@ export function drawBoardOverlay(ctx: CanvasRenderingContext2D, o: OverlayView):
     ctx.lineJoin = 'round'
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
-    ctx.font = `800 ${S * 0.27 * scale}px 'Spline Sans Variable', sans-serif`
+    ctx.font = `800 ${S * 0.27 * scale}px 'Spline Sans Variable', 'Noto Sans SC', 'PingFang SC', sans-serif`
     const outlineW = Math.max(1.2, S * 0.04 * scale)
     for (const [c, set] of o.marks) {
       if (occupied.has(c) || !set.has(o.emphasize)) continue

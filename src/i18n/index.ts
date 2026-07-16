@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
+import zh from './locales/zh-CN.json'
 
 // All UI/clue strings live in the locale JSON files — never hard-coded in TS.
 
@@ -13,7 +14,7 @@ const LANG_KEY = 'murdoku.lang.v1'
  * browser detection all derive from this list — adding a locale is just an entry
  * here plus its JSON in `resources` and a `language.<code>` label in each file.
  */
-export const SUPPORTED_LANGS = ['de', 'en', 'es'] as const
+export const SUPPORTED_LANGS = ['de', 'en', 'es', 'zh'] as const
 export type Lang = (typeof SUPPORTED_LANGS)[number]
 
 /**
@@ -26,12 +27,14 @@ export const LANGUAGE_NAMES: Record<Lang, string> = {
   de: 'Deutsch',
   en: 'English',
   es: 'Español',
+  zh: '简体中文',
 }
 
 const resources = {
   de: { translation: de },
   en: { translation: en },
   es: { translation: es },
+  zh: { translation: zh },
 }
 
 function isLang(value: string): value is Lang {
@@ -56,9 +59,8 @@ function persist(lng: string): void {
 
 /**
  * Which language to start in: the user's previously saved choice if there is one,
- * otherwise the browser's PRIMARY language decides — Spanish → es, German → de,
- * anything else → English (the default). Only the first/primary language counts,
- * so a user whose main language is unsupported always lands on English.
+ * otherwise the browser's PRIMARY language decides. Only the first/primary
+ * language counts, so a user whose main language is unsupported lands on English.
  */
 function initialLanguage(): Lang {
   try {
@@ -72,8 +74,18 @@ function initialLanguage(): Lang {
 }
 
 const startLang = initialLanguage()
+
+function applyDocumentLanguage(lng: string): void {
+  const lang = toSupported(lng) ?? 'en'
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang
+  document.title = `${i18n.t('app.title')} — ${i18n.t('app.subtitle')}`
+}
+
 persist(startLang) // remember the first-visit detection too, not just later changes
-i18n.on('languageChanged', persist) // and whenever the user switches via the picker
+i18n.on('languageChanged', (lng) => {
+  persist(lng)
+  applyDocumentLanguage(lng)
+})
 
 void i18n.use(initReactI18next).init({
   resources,
@@ -81,6 +93,6 @@ void i18n.use(initReactI18next).init({
   fallbackLng: 'en',
   supportedLngs: [...SUPPORTED_LANGS],
   interpolation: { escapeValue: false },
-})
+}).then(() => applyDocumentLanguage(i18n.language))
 
 export default i18n
