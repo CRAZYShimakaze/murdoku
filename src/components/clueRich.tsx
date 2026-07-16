@@ -91,7 +91,11 @@ export function makeRichRenderer(
             const tok = String(params[name] ?? '')
             if (tok.startsWith('person:')) out.push(<strong key={m.index}>{val}</strong>)
             else out.push(term(m.index, val, 'suspect'))
-          } else if (
+          }
+          // Inside/outside is a concept of its own — the outdoor flag is invisible on the
+          // board, so the area word ("drinnen"/"draußen") carries its inside/outside tooltip.
+          else if (name === 'area') out.push(term(m.index, val, String(params.area)))
+          else if (
             name === 'who' ||
             name === 'whoNeg' ||
             name === 'whoSg' ||
