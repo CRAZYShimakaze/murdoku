@@ -6,7 +6,9 @@
   "language": {
     "de": "German",
     "en": "English",
-    "es": "Spanish"
+    "es": "Spanish",
+    "pt": "Portuguese",
+    "fr": "French"
   },
   "start": {
     "kicker": "A logic mystery",

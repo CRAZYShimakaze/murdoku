@@ -18,7 +18,7 @@ const dir = resolve(process.cwd(), 'levels')
 const files = readdirSync(dir).filter((f) => f.endsWith('.json')).sort()
 const readLevel = (f: string): LevelJson => JSON.parse(readFileSync(resolve(dir, f), 'utf8'))
 
-const LANGS = ['de', 'en', 'es'] as const
+const LANGS = ['de', 'en', 'es', 'pt', 'fr'] as const
 const dicts = Object.fromEntries(
   LANGS.map((lg) => [lg, JSON.parse(readFileSync(resolve(process.cwd(), `src/i18n/locales/${lg}.json`), 'utf8'))]),
 )

@@ -6,7 +6,9 @@
   "language": {
     "de": "Alemán",
     "en": "Inglés",
-    "es": "Español"
+    "es": "Español",
+    "pt": "Portugués",
+    "fr": "Francés"
   },
   "start": {
     "kicker": "Un misterio de lógica",

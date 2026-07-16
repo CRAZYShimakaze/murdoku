@@ -124,6 +124,11 @@ export class Renderer {
       // Pflanze"; en "a tree"→"every tree". Used by the universal direction-from-object clue.
       case 'objectEvery': {
         const base = this.lookup(`object.${value}`) ?? String(value)
+        // Locales with ONE gender-neutral "every" word (pt "cada", fr "chaque") declare it
+        // as `everyWord` — it replaces the indefinite article. This must NOT ride the chain
+        // below: French "un" would be caught by the Spanish rule and become "cada".
+        const every = this.lookup('everyWord')
+        if (every) return base.replace(/^(?:une?|una?|uma?) /, `${every} `)
         return base
           .replace(/^einem /, 'jedem ')
           .replace(/^einer /, 'jeder ')

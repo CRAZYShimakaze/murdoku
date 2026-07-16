@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-campingausflug",
   "title": "Das letzte Lagerfeuer",
-  "titles": { "de": "Das letzte Lagerfeuer", "en": "The Last Campfire", "es": "La última hoguera" },
+  "titles": { "de": "Das letzte Lagerfeuer", "en": "The Last Campfire", "es": "La última hoguera", "pt": "A Última Fogueira", "fr": "Le Dernier Feu de camp" },
   "size": {
     "width": 8,
     "height": 8

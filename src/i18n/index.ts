@@ -3,6 +3,8 @@ import { initReactI18next } from 'react-i18next'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
+import pt from './locales/pt.json'
+import fr from './locales/fr.json'
 
 // All UI/clue strings live in the locale JSON files — never hard-coded in TS.
 
@@ -13,7 +15,7 @@ const LANG_KEY = 'murdoku.lang.v1'
  * browser detection all derive from this list — adding a locale is just an entry
  * here plus its JSON in `resources` and a `language.<code>` label in each file.
  */
-export const SUPPORTED_LANGS = ['de', 'en', 'es'] as const
+export const SUPPORTED_LANGS = ['de', 'en', 'es', 'pt', 'fr'] as const
 export type Lang = (typeof SUPPORTED_LANGS)[number]
 
 /**
@@ -26,12 +28,16 @@ export const LANGUAGE_NAMES: Record<Lang, string> = {
   de: 'Deutsch',
   en: 'English',
   es: 'Español',
+  pt: 'Português',
+  fr: 'Français',
 }
 
 const resources = {
   de: { translation: de },
   en: { translation: en },
   es: { translation: es },
+  pt: { translation: pt },
+  fr: { translation: fr },
 }
 
 function isLang(value: string): value is Lang {

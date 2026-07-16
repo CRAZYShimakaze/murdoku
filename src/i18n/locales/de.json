@@ -6,7 +6,9 @@
   "language": {
     "de": "Deutsch",
     "en": "Englisch",
-    "es": "Spanisch"
+    "es": "Spanisch",
+    "pt": "Portugiesisch",
+    "fr": "Französisch"
   },
   "start": {
     "kicker": "Ein Logik-Krimi",
