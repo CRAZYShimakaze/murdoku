@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-bademord",
   "title": "Bademord",
-  "titles": { "de": "Bademord", "en": "Murder in the Bath", "es": "Asesinato en el baño" },
+  "titles": { "de": "Bademord", "en": "Murder in the Bath", "es": "Asesinato en el baño", "pt": "Morte na Banheira", "fr": "Meurtre au bain" },
   "size": {
     "width": 12,
     "height": 12

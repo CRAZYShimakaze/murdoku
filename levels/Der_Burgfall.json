@@ -5,7 +5,9 @@
   "titles": {
     "de": "Verrat im Thronsaal",
     "en": "Murder Holds Court",
-    "es": "Traición en la sala del trono"
+    "es": "Traición en la sala del trono",
+    "pt": "Traição na Sala do Trono",
+    "fr": "Trahison dans la salle du trône"
   },
   "size": {
     "width": 6,

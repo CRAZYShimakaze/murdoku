@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-der-einfache-wohnungsmord",
   "title": "Fast der perfekte Mord",
-  "titles": { "de": "Fast der perfekte Mord", "en": "Almost the Perfect Murder", "es": "Casi el crimen perfecto" },
+  "titles": { "de": "Fast der perfekte Mord", "en": "Almost the Perfect Murder", "es": "Casi el crimen perfecto", "pt": "Quase o Crime Perfeito", "fr": "Presque le crime parfait" },
   "size": {
     "width": 8,
     "height": 8

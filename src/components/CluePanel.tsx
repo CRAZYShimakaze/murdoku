@@ -16,7 +16,6 @@ import {
   relatedSuspects,
   usesInsideOutside,
   type Cell,
-  type Explanation,
   type HintResult,
   type PersonId,
   type Puzzle,
@@ -283,9 +282,9 @@ export default function CluePanel({
 
   // Board-wide notes shown above the suspects: which rooms are outdoors + any
   // board clues ("exactly one person on a mud puddle", …). Board clues carry their
-  // Explanation along so the Akten-Notiz can collect their concept terms.
+  // collected concept terms along for the Akten-Notiz.
   const boardNotes = useMemo(() => {
-    const notes: { node: ReactNode; describe?: Explanation }[] = []
+    const notes: { node: ReactNode; terms?: ClueTerm[] }[] = []
     // Only show the indoor/outdoor legend when a clue actually relies on it — the shared
     // check covers suspect clues, global clues AND board clues ("2 women were outside").
     const outside = [...puzzle.board.rooms.values()].filter((r) => r.outside).map((r) => t(r.nameKey))
@@ -299,9 +298,12 @@ export default function CluePanel({
     }
     // Board clues render RICH (bold words + concept tooltips), not through renderer.render —
     // that strips the [[word:tipKey]] markers, which silently ate e.g. the "Personen" tooltip.
+    // The terms are collected UP FRONT: a clue whose sentence carries no explainable term
+    // must not offer a tappable lens that opens an empty dossier note (user-reported).
     for (const clue of puzzle.boardClues) {
       const describe = clue.describe()
-      notes.push({ node: <BoardClueText renderer={renderer} describe={describe} />, describe })
+      const terms = collectClueTerms(renderer, t, [describe])
+      notes.push({ node: <BoardClueText renderer={renderer} describe={describe} />, terms })
     }
     return notes
   }, [puzzle, renderer, t])
@@ -400,7 +402,7 @@ export default function CluePanel({
             const lens = <span className="mk-boardclue__icon">🔍</span>
             return (
               <div key={i} className="mk-boardclue">
-                {note.describe ? (
+                {note.terms && note.terms.length > 0 ? (
                   <FaceHandle open={noteFor === noteId} onToggle={() => toggleNote(noteId)}>
                     {lens}
                   </FaceHandle>
@@ -411,11 +413,8 @@ export default function CluePanel({
                     the container's gap would otherwise wedge 0.5rem between every piece —
                     including one right before the final period (user-reported). */}
                 <span>{note.node}</span>
-                {noteFor === noteId && note.describe && (
-                  <AktenNotiz
-                    terms={collectClueTerms(renderer, t, [note.describe])}
-                    persons={[]}
-                  />
+                {noteFor === noteId && note.terms && note.terms.length > 0 && (
+                  <AktenNotiz terms={note.terms} persons={[]} />
                 )}
               </div>
             )

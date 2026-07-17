@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-mord-im-herrenhaus",
   "title": "Mord im Herrenhaus",
-  "titles": { "de": "Mord im Herrenhaus", "en": "Murder at the Manor", "es": "Asesinato en la mansión" },
+  "titles": { "de": "Mord im Herrenhaus", "en": "Murder at the Manor", "es": "Asesinato en la mansión", "pt": "Homicídio no Solar", "fr": "Meurtre au manoir" },
   "size": {
     "width": 9,
     "height": 9

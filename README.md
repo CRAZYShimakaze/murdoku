@@ -21,11 +21,12 @@
 ## Why you'll get hooked
 
 - **Pure deduction, zero luck.** Every case has exactly **one** solution, provable by logic alone — no guessing, ever.
-- **An endless supply of mysteries.** A built-in generator rolls fresh, guaranteed-unique cases across **15 themed settings** in three difficulties — you'll never run out.
+- **143 case files out of the box.** Hand-built mysteries from a cosy **4×4** to a sprawling **12×12**, across three difficulties and a tutorial.
+- **An endless supply of mysteries.** A built-in generator rolls fresh, guaranteed-unique cases across **14 themed settings** in three difficulties — you'll never run out.
 - **Build your own.** A full editor lets you paint a crime scene, write the clues and verify it's solvable — then play it or save it.
 - **Learn by doing.** An interactive, guided tutorial cracks a real mini-case *with* you, one step at a time.
-- **A crime scene with character.** Hand-drawn suspects and **40+ themed props**, dressed in a moody "case-file" look down to the film grain.
-- **Anywhere, in your language.** Plays beautifully on desktop and phone, in English or German, with your progress saved automatically.
+- **A crime scene with character.** Hand-drawn suspects and **70+ themed props**, dressed in a moody "case-file" look down to the film grain.
+- **Anywhere, in your language.** Plays beautifully on desktop and phone, in English, German, Spanish, Portuguese or French, with your progress saved automatically. On touch, tap a suspect's face and their dossier note unfolds — every term explained, every named person with their traits.
 
 ---
 
@@ -51,12 +52,14 @@ Stuck? The **hint giver** explains the next logical step in plain words — it n
 
 ## The clues
 
-A whole vocabulary of evidence, every piece rendered as a clean, grammatical sentence:
+A whole vocabulary of evidence — **40 clue forms plus 5 case-wide clue types** — every piece rendered as a clean, grammatical sentence:
 
 - **on** or **beside** an object, **beside a window**, **in a corner**, **against a wall**
 - **in a row / column**, **alone in the room**, *"the only person on a chair"*
 - **in the same room as** another suspect, and **compass directions** — *"north of Dana"*
 - **room traits** — *"nobody in the room had a beard"*, *"a woman was in the room"*
+- **room adjacency** — *"…in a room adjoining the kitchen"*, *"a neighbouring room stood empty"*
+- **case-wide clues** — *"no room was empty"*, *"exactly 2 people were on a chair"*
 
 …all combinable with **AND / OR** and individually negatable with **NOT**.
 
@@ -78,9 +81,9 @@ Every case is dressed by hand to feel *built*, not random:
 
 Out of files to crack? Roll a new one. The generator builds **uniquely-solvable** mysteries on demand:
 
-- **15 themed settings** — apartment, mansion, hotel, hospital, museum, auto shop, supermarket, farm, school, restaurant, police station, campsite and more — each with fitting rooms and props.
-- **Three difficulties**, on boards from a tight **4×4** up to a sprawling **16×16**.
-- Runs in a **Web Worker**, so the interface never stutters. Keep a case you like, export it as JSON, or simply play and move on.
+- **14 themed settings** — apartment, mansion, grand hotel, police precinct, auto shop, school, hospital, farm, supermarket, campsite, castle, lido, zoo and ski resort — each with fitting rooms and props.
+- **Three difficulties**, on boards from a tight **4×4** up to a sprawling **12×12**.
+- Runs in a **pool of Web Workers** — several investigators hunt candidates in parallel and the best case wins — so the interface never stutters. Keep a case you like, export it as JSON, or simply play and move on.
 
 ---
 
@@ -88,8 +91,8 @@ Out of files to crack? Roll a new one. The generator builds **uniquely-solvable*
 
 Got your own Murdoku puzzles on paper? Recreate them 1:1:
 
-- Paint **rooms, floor, objects and windows** straight onto the board (4×4 up to 16×16).
-- Create **suspects** (name, traits) and assemble their clues in the flat **clue builder**.
+- Paint **rooms, floor, objects and windows** straight onto the board (4×4 up to 11×11).
+- Create **suspects** (name, traits) and assemble their clues in the flat **clue builder** — including case-wide global clues.
 - **"Check"** tells you whether the case is solvable **and unique** — and who the murderer would be.
 - **"Play"** tests it instantly; **"Save"** files it (with name & difficulty) into your archive or exports it as JSON.
 
@@ -101,7 +104,7 @@ Room names follow the chosen theme — and can be swapped anytime.
 
 A gear in the corner of every screen opens the **settings case file**:
 
-- **Language** — switch between English and German at any time.
+- **Language** — switch between English, German, Spanish, Portuguese and French at any time.
 - **Investigation aid** — pick your rank: **Assistant** highlights every tile the statements still allow, **Inspector** marks only the clues' references (the objects, rooms and traces named), **Master Detective** shows nothing at all — you combine entirely on your own.
 - **Stopwatch** — show or hide the elapsed-time counter in the game header.
 - **Files by gender** — tint the suspect cards (and the victim's name) softly in rose and blue, or turn it off.
@@ -124,8 +127,8 @@ Murdoku is built **engine-first**: the entire game logic is a pure, framework-fr
 |-------------|------|
 | **Engine**  | Pure TypeScript (strict): model, composable `Clue` classes, a backtracking **solver** (uniqueness oracle + answer key) and a **DeductionEngine** for explainable hints |
 | **Frontend**| React 19 + Vite, board rendered on **Canvas 2D** |
-| **Generator** | Builds guaranteed-unique cases across 15 themes, in a **Web Worker** |
-| **i18n**    | i18next / react-i18next — all text from locale files (EN & DE) |
+| **Generator** | Builds guaranteed-unique cases across 14 themes, in a **Web-Worker pool** |
+| **i18n**    | i18next / react-i18next — all text from locale files (EN, DE, ES, PT & FR) |
 | **Quality** | Vitest, ESLint and strict `tsc` throughout |
 
 ---
@@ -167,7 +170,7 @@ src/
   game/          Engine <-> UI bridge: board rendering, furniture art, sessions, settings, storage
   components/    React building blocks (board, file, toolbar, settings, editor …)
   screens/       Start · Case select · Game · Generator · Tutorial · Editor
-  i18n/          English & German + the clue renderer
+  i18n/          English, German, Spanish, Portuguese & French + the clue renderer
 levels/          Case files (JSON)
 screenshots/     The images above
 ```

@@ -2,6 +2,21 @@
 
 Ein Deduktions-Krimi: Verdächtige + Opfer werden per Hinweisen auf einem Raster platziert.
 
+## Stand (gezählt 16.07.2026 — bei Abweichung neu zählen, nicht raten)
+
+- **143 öffentliche Level** (55 hard, 44 medium, 42 easy, 2 Tutorial) + 32 versteckte
+  Garand-Level = 175 Dateien in `levels/`. **Öffentliche Zählung IMMER ohne Garand** —
+  die sind versteckt und werden in der README nie erwähnt (Nutzer-Regel).
+- **14 Themes** (home, manor, grandhotel, precinct, auto-shop, school, hospital, farm,
+  supermarkt, camping, castle, pool, zoo, ski) · **74 Objekt-Typen** (28 betretbar).
+- **40 Hinweistypen** (inkl. and/or/not) **+ 5 globale** (`BoardClueJson`) ·
+  **34 registrierte Techniken** (28 Klassen) in `forward.ts`.
+- **5 Sprachen** (de/en/es/pt/fr; pt = **pt-PT** mit „tu", fr mit **„vous"**) ·
+  Brettgrößen **4×4–12×12** (Korpus & Generator; Editor bis 11×11).
+- **Level-Titel:** `title` (de) + `titles {de,en,es,pt,fr}`, Krimi-/Christie-Ton, je Sprache
+  eigenständig (nie wörtlich), **eindeutig über den GESAMTEN Korpus je Sprache** (vor dem
+  Schreiben maschinell prüfen — Kollisionen kamen vor), kein Opfername, Garand-Level tabu.
+
 ## Die zwei Kernregeln (NIEMALS vergessen)
 
 Beide werden dem Spieler angezeigt (`i18n/locales/de.json` → `rule.*`):
@@ -49,7 +64,7 @@ Was überlebt: **diagonale Berührung** (`|Δrow|=1 && |Δcol|=1` — die einzig
   (Verdächtigen-Hinweise, `globalClues`, `boardClues`). Achtung: `UniqueOutsideClue` erbt
   **nicht** von `OutsideClue`. Test: `clues/insideOutside.test.ts`.
 
-## Raumstruktur (gemessen an allen 163 Handleveln)
+## Raumstruktur (Messbasis: der Handkorpus von 163 Leveln, Stand der Messung)
 
 Der Generator (`generateRooms`) bildet diese Struktur nach — beim Ändern nicht verletzen:
 
@@ -300,9 +315,16 @@ für Personen), `fullLinesIn(room, axis)`, `guaranteedRoomOf(id)`, `roomsOf(id)`
    `UNCAPPED_TYPES`, `cappedFamilies`; `collapsesToLine`-Guard
 7. `game/editorClues.ts` — `CondKind`/`roomMode` + **verlustfreier Round-Trip**
 8. `components/ClueBuilder.tsx` — UI (mobil mitdenken)
-9. **`i18n/Renderer.ts` UND `components/ClueText.tsx`** — Wording/Negation immer in *beiden*;
-   `<key>Neg` für negierte Sonderformen, `BOLD_PARAMS` in ClueText
-10. `i18n/locales/{de,en,es}.json` — **alle drei** Sprachen, `_one`/`_zero` bei `{{count}}`
+9. **`i18n/Renderer.ts` UND `components/clueRich.tsx`** — Wording/Negation immer in *beiden*;
+   `<key>Neg` für negierte Sonderformen, `BOLD_PARAMS` in clueRich. Die Rich-Maschinerie
+   (`makeRichRenderer`) ist EINE Quelle für Verdächtigen-Hinweise (`ClueText`), globale
+   Hinweise (`BoardClueText` — laufen NICHT über `renderer.render`, das würde `[[…]]`
+   verschlucken!) und die Akten-Notiz (`collectClueTerms`)
+10. `i18n/locales/{de,en,es,pt,fr}.json` — **alle fünf** Sprachen, `_one`/`_zero` bei `{{count}}`.
+    ACHTUNG fr: Templates haben KEINEN `{{neg}}`-Slot — jede negierbare Aussage braucht ein
+    eigenes `<key>Neg`-Template („ne … pas"), sonst fällt die Negation auf den hässlichen
+    „pas (…)"-Wrapper zurück. Objekt-Slots in fr: „d'{{object}}" (alle Tokens beginnen mit
+    un/une), „qu'{{objectNom}}"; pt nutzt `{{neg}}` = „não " wie es.
 11. `game/helpMarks.ts` — Kommissar-Modus: nur gestrichelt umranden, nie Flächen füllen
 12. Beim UMBENENNEN/ENTFERNEN eines Typs: Migration in `editorModel.normalizeBoardClue` (s.o.)
 
@@ -310,7 +332,7 @@ für Personen), `fullLinesIn(room, axis)`, `guaranteedRoomOf(id)`, `roomsOf(id)`
 
 ```
 npx tsc -b && npx vitest run && npx eslint .
-npx tsx src/dev/check-all.ts ""        # alle 163 Level eineindeutig
+npx tsx src/dev/check-all.ts ""        # ALLE Level eineindeutig (aktuell 175 Dateien)
 npx tsx src/dev/soundness-check.ts     # keine Technique streicht je eine wahre Zelle
 ```
 
@@ -323,7 +345,7 @@ eindeutig **und** die Deduktion streicht nie eine wahre Zelle).
 `techniqueCounts` gegenprüfen. Und Texte immer einmal wirklich rendern lassen.
 
 Bekannt & nicht deine Schuld: `79_Der_Bauernhof.json` löst als einziges Level nicht rein
-vorwärts (braucht eine Fallunterscheidung) — 162/163 tun es.
+vorwärts (braucht eine Fallunterscheidung) — alle anderen Level tun es.
 
 ## i18n-Konventionen
 
@@ -338,7 +360,12 @@ vorwärts (braucht eine Fallunterscheidung) — 162/163 tun es.
   gezielt an Ankern einfügen.
 - Raumnamen sind **artikellose Nomen** („Küche") → Apposition nutzen: `„im Raum {{room}}"`
 - `poss` ist im Deutschen **Dativ** („seinem"/„ihrem") — passt zu „in {{poss}} Raum"
-- `dir` im Spanischen enthält die Präposition schon („al sur")
+- `dir` in es/pt/fr enthält die Präposition schon („al sur"/„a sul"/„au sud")
+- `everyWord` (pt „cada", fr „chaque") steuert die `objectEvery`-Ableitung in `Renderer.ts` —
+  ersetzt den unbestimmten Artikel des `object.*`-Tokens; de/en/es laufen ohne den Key über
+  die alte Replace-Kette (fr darf NIE über die Kette laufen: „un" würde zur es-Regel „cada")
+- fr: „allein" IMMER invariabel formulieren („la seule personne …", „avait pour seule
+  compagnie …") — „seul/seule" müsste sich nach dem Subjekt richten; pt nutzt dafür „a sós"
 - `[[Wort:tipKey]]` = fettes Wort mit Begriffs-Tooltip (`tip.*`)
 - `{{neg}}` = Einschub-Slot für „nicht"; wo das grammatisch nicht trägt: eigenes `<key>Neg`-Template
 - `pluralKey` wählt `<key>_one` bei 1 und `<key>_zero` bei 0 — „Genau 0 Räume sind leer" wird so

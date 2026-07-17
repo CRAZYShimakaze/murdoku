@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "editor-m-rderisches-obst",
   "title": "Mörderisches Obst",
-  "titles": { "es": "Fruta asesina" },
+  "titles": { "es": "Fruta asesina", "pt": "Fruta da Época: Morte", "fr": "Des fruits à se damner" },
   "size": {
     "width": 8,
     "height": 8
