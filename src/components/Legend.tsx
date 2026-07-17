@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import ObjectIcon from './ObjectIcon.tsx'
 import { OBJECT_CATALOG, type Puzzle } from '../engine/index.ts'
@@ -14,7 +14,7 @@ interface Item {
 }
 
 /** Explains which icon means what and whether a tile can be occupied. */
-export default function Legend({ puzzle }: { puzzle: Puzzle }) {
+function Legend({ puzzle }: { puzzle: Puzzle }) {
   const { t } = useTranslation()
 
   const items = useMemo<Item[]>(() => {
@@ -63,3 +63,7 @@ export default function Legend({ puzzle }: { puzzle: Puzzle }) {
     </div>
   )
 }
+
+// Memoized: `puzzle` is stable for the whole play-through, so the legend never needs to
+// follow the game screen's frequent local-state renders.
+export default memo(Legend)

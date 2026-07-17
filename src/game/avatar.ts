@@ -674,6 +674,29 @@ export function avatarSvg(attrs: AvatarAttrs, color: string, letter: string): st
   </svg>`
 }
 
+/** Built URIs, keyed by every attr that shapes the SVG. The clue cards ask for the same
+ *  ~12 heads on every render — rebuilding + URI-encoding a ~2 KB SVG each time was pure
+ *  waste on the tap path. Bounded: cleared wholesale if it ever grows past a few levels. */
+const uriCache = new Map<string, string>()
+
 export function avatarDataUri(attrs: AvatarAttrs, color: string, letter: string): string {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(avatarSvg(attrs, color, letter))}`
+  const key = [
+    letter,
+    color,
+    attrs.gender,
+    attrs.beard,
+    attrs.glasses,
+    attrs.bald,
+    attrs.hair,
+    attrs.hairstyle,
+    attrs.beardStyle,
+    attrs.glassesShape,
+    attrs.glassesColor,
+  ].join('|')
+  const hit = uriCache.get(key)
+  if (hit !== undefined) return hit
+  const uri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(avatarSvg(attrs, color, letter))}`
+  if (uriCache.size > 256) uriCache.clear()
+  uriCache.set(key, uri)
+  return uri
 }

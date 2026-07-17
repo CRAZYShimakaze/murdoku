@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
@@ -120,7 +120,7 @@ const ERASER_ICON = (
   </svg>
 )
 
-export default function Toolbar({
+function Toolbar({
   xTool,
   onToggleX,
   eraseTool,
@@ -190,3 +190,7 @@ export default function Toolbar({
     </aside>
   )
 }
+
+// Memoized: the game screen re-renders on selection/hint state the toolbar doesn't care
+// about — its own inputs (tool flags + stable handlers) rarely move.
+export default memo(Toolbar)

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { PointerEvent as ReactPointerEvent } from 'react'
@@ -17,9 +17,18 @@ import type { PlayState } from '../game/useGameSession.ts'
 const LONGPRESS_MS = 1000
 /** The progress ring only appears after this hold, so a quick tap shows no ring. */
 const RING_DELAY_MS = 200
-/** Pointer travel (px) that turns a note press into a drag-paint — small, so it feels
- *  immediate, but enough to ignore tremor while holding still for a long-press. */
+/** Pointer travel (px) that turns a note press into a drag-paint. Small for a mouse, so
+ *  painting feels immediate — but a FINGER trembles by far more than 6px while "holding
+ *  still" for the long-press place, and the shared threshold kept flipping the note
+ *  instead of placing (user-reported on phones). Touch gets real tremor room; an
+ *  intentional drag clears 18px within its first move events anyway. */
 const DRAG_THRESHOLD = 6
+const TOUCH_DRAG_THRESHOLD = 18
+
+/** The drag threshold for this pointer: fingers tremble, mice don't. */
+function dragThreshold(pointerType: string): number {
+  return pointerType === 'touch' ? TOUCH_DRAG_THRESHOLD : DRAG_THRESHOLD
+}
 
 interface Props {
   puzzle: Puzzle
@@ -60,7 +69,7 @@ interface Layout {
   h: number
 }
 
-export default function BoardCanvas(props: Props) {
+function BoardCanvas(props: Props) {
   const { puzzle } = props
   const { t } = useTranslation()
   const { objectBadges, floorTextures } = useSettings()
@@ -219,22 +228,37 @@ export default function BoardCanvas(props: Props) {
     return () => ro.disconnect()
   }, [W, H])
 
-  // Size the backing stores (board + overlay) and redraw on any input change.
-  useEffect(() => {
+  /** Match both backing stores (board + overlay) to the layout and devicePixelRatio.
+   *  Assigning canvas width/height CLEARS the canvas and reallocates its backing store —
+   *  even when the value is unchanged — so it only happens on a REAL size change, never
+   *  per interaction (that reallocation was a big part of the tap latency on phones). */
+  function ensureBackingSize() {
     const cv = canvasRef.current
     const ov = overlayRef.current
-    if (!cv || !ov || !layout) return
+    const L = layoutRef.current
+    if (!cv || !ov || !L) return
     const dpr = window.devicePixelRatio || 1
+    const w = Math.round(L.w * dpr)
+    const h = Math.round(L.h * dpr)
     for (const el of [cv, ov]) {
-      el.width = Math.round(layout.w * dpr)
-      el.height = Math.round(layout.h * dpr)
-      el.style.width = `${layout.w}px`
-      el.style.height = `${layout.h}px`
+      if (el.width !== w) el.width = w
+      if (el.height !== h) el.height = h
+      const cssW = `${L.w}px`
+      const cssH = `${L.h}px`
+      if (el.style.width !== cssW) el.style.width = cssW
+      if (el.style.height !== cssH) el.style.height = cssH
     }
+  }
+
+  // Redraw on any input change. useLayoutEffect, so the board repaints in the SAME frame
+  // as the DOM commit (e.g. the tapped suspect card turning selected) — with useEffect the
+  // highlight landed a paint later than the card, which read as lag on phones.
+  useLayoutEffect(() => {
+    ensureBackingSize()
     redraw()
     redrawOverlay()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout, props.state, props.selectedSuspect, props.highlight, props.highlightAlpha, props.helpMarks, props.reveal, objectBadges, floorTextures])
+  }, [layout, props.state, props.selectedSuspect, props.highlight, props.highlight2, props.highlightAlpha, props.highlightAlpha2, props.helpMarks, props.reveal, objectBadges, floorTextures])
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => cancelPress(), [])
@@ -492,8 +516,11 @@ export default function BoardCanvas(props: Props) {
         // while still over the START cell — so its note flips immediately. The start cell
         // decides the mode (had no note → ADD, had one → REMOVE). Moving means it's not a
         // long-press, so the figure is NOT placed.
+        // Touch: ONLY the (generous) travel distance counts. Crossing a cell border is no
+        // signal there — a finger resting near an edge crosses it by pure tremor, which
+        // turned an intended long-press place into a note flip on the neighbour cell.
         const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y)
-        if (moved > DRAG_THRESHOLD || (cell !== null && cell !== press.cell)) {
+        if (moved > dragThreshold(e.pointerType) || (e.pointerType !== 'touch' && cell !== null && cell !== press.cell)) {
           const suspect = props.selectedSuspect
           const on = !(props.state.marks.get(press.cell)?.has(suspect) ?? false)
           cancelPress()
@@ -509,8 +536,12 @@ export default function BoardCanvas(props: Props) {
         }
         return // small movement within the start cell → keep the long-press alive
       }
-      // Occupied-cell press: moving off the cell cancels the select/remove gesture.
+      // Occupied-cell press: moving off the cell cancels the select/remove gesture — with
+      // the same tremor room for a finger, so holding to REMOVE near a cell border doesn't
+      // silently abort on micro-movement.
       if (cell !== press.cell) {
+        const moved = Math.hypot(e.clientX - press.x, e.clientY - press.y)
+        if (e.pointerType === 'touch' && moved <= TOUCH_DRAG_THRESHOLD) return
         cancelPress()
         redraw()
       }
@@ -626,3 +657,5 @@ export default function BoardCanvas(props: Props) {
     </div>
   )
 }
+
+export default memo(BoardCanvas)
