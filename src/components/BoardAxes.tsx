@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 /** Space the coordinate margins take away from the board (px): left strip + gap.
@@ -21,7 +22,7 @@ interface Props {
  * hints use. Only the first label carries the letter ("Z1, 2, 3 …") so narrow
  * cells never crowd. Mount inside a `.mk-axes` grid next to the canvas.
  */
-export default function BoardAxes({ cols, rows, cell, active = null }: Props) {
+function BoardAxes({ cols, rows, cell, active = null }: Props) {
   const { t } = useTranslation()
   const label = (prefix: string, i: number) => (i === 0 ? `${prefix}1` : String(i + 1))
   return (
@@ -43,3 +44,6 @@ export default function BoardAxes({ cols, rows, cell, active = null }: Props) {
     </>
   )
 }
+
+// Memoized: labels only change with the layout or the hovered cell.
+export default memo(BoardAxes)

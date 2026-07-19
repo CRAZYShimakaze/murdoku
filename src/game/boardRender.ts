@@ -357,7 +357,13 @@ onArtReady(() => {
   spriteCache.clear()
 })
 if (typeof document !== 'undefined' && 'fonts' in document) {
-  document.fonts.ready.then(() => spriteCache.clear()).catch(() => {})
+  // The plates layer bakes the webfont into its pixels too — drop it alongside.
+  document.fonts.ready
+    .then(() => {
+      spriteCache.clear()
+      platesCache.clear()
+    })
+    .catch(() => {})
 }
 
 // ─── Static furniture layer (cached) ─────────────────────────────────────────
@@ -649,6 +655,119 @@ function cachedFurnitureLayer(view: BoardView, dpr: number): HTMLCanvasElement {
   return lruGet(furnitureCache, furnitureSig(view, dpr), 4, () => renderFurnitureLayer(view, dpr))
 }
 
+// ─── Room name plates layer (cached) ─────────────────────────────────────────
+// The pills are a pure function of the board geometry, the localized room names,
+// the cell size and the dpr — but they cost a measureText + pill fill/stroke per
+// room on EVERY redraw. Cached like the floor/furniture layers: one blit per frame.
+
+const platesCache = new Map<string, HTMLCanvasElement>()
+
+/** Overhang the pill stroke needs beyond the grid (bottom-row rooms). */
+function platesPad(S: number): number {
+  return Math.ceil(Math.max(1.4, S * 0.022)) + 1
+}
+
+/** Everything the plates layer's pixels depend on — the cache key. */
+function platesSig(view: BoardView, dpr: number): string {
+  const board = view.puzzle.board
+  const parts: string[] = [`${board.width}x${board.height}`, String(view.cell), String(dpr)]
+  // The localized labels are part of the pixels — a language switch must re-render.
+  for (const [id, room] of board.rooms) parts.push(`${id}:${view.roomName(room.nameKey)}`)
+  let cells = ''
+  for (let c = 0; c < board.width * board.height; c++) {
+    // Room shapes place the pills; windows veto pill columns.
+    cells += `${board.roomIdOf(c)},${board.windowSides(c).join('')};`
+  }
+  parts.push(cells)
+  return parts.join('|')
+}
+
+/** Paint every room's name pill at (ox, oy) — extracted 1:1 from drawBoard. */
+function paintNamePlates(
+  ctx: CanvasRenderingContext2D,
+  view: BoardView,
+  ox: number,
+  oy: number,
+): void {
+  const { puzzle, cell: S } = view
+  const board = puzzle.board
+  const H = board.height
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  for (const [id, run] of roomBottomRuns(puzzle)) {
+    const room = board.rooms.get(id)
+    if (!room || run.c1 < run.c0) continue
+    // A column is blocked if its bottom wall carries a window (either side).
+    const windowed = (col: number): boolean =>
+      board.windowSides(board.idx(run.row, col)).includes('S') ||
+      (run.row + 1 < H && board.windowSides(board.idx(run.row + 1, col)).includes('N'))
+    // widest window-free sub-run within [c0, c1]
+    let bc0 = run.c0
+    let bc1 = run.c0 - 1
+    let start = -1
+    const close = (end: number): void => {
+      if (start >= 0 && end - start > bc1 - bc0) {
+        bc0 = start
+        bc1 = end
+      }
+    }
+    for (let col = run.c0; col <= run.c1; col++) {
+      if (!windowed(col)) {
+        if (start < 0) start = col
+      } else {
+        close(col - 1)
+        start = -1
+      }
+    }
+    close(run.c1)
+    if (bc1 < bc0) continue // no window-free spot → skip rather than cover a window
+
+    const label = view.roomName(room.nameKey).toUpperCase()
+    const maxW = (bc1 - bc0 + 1) * S - S * 0.12
+    // Fit the font to the gap (text width scales ~linearly, so one rescale lands it).
+    let font = S * 0.155
+    const required = (f: number): number => {
+      ctx.font = `700 ${f}px 'Spline Sans Variable', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif`
+      return ctx.measureText(label).width + 2 * f * 0.5
+    }
+    if (required(font) > maxW) font = Math.max(6, (font * maxW) / required(font))
+    ctx.font = `700 ${font}px 'Spline Sans Variable', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif`
+    const pillW = Math.min(maxW, ctx.measureText(label).width + 2 * font * 0.5)
+    const pillH = font * 1.55
+    const cx = ox + ((bc0 + bc1 + 1) / 2) * S
+    const pillY = oy + (run.row + 1) * S - pillH // bottom edge sits on the wall
+    ctx.fillStyle = '#fff'
+    ctx.strokeStyle = '#1c1822'
+    ctx.lineWidth = Math.max(1.4, S * 0.022)
+    ctx.beginPath()
+    ctx.roundRect(cx - pillW / 2, pillY, pillW, pillH, pillH / 2)
+    ctx.fill()
+    ctx.stroke()
+    ctx.fillStyle = '#1c1822'
+    ctx.fillText(label, cx, pillY + pillH / 2)
+  }
+}
+
+/** Render the plates layer at device resolution, `platesPad` around the grid. */
+function renderPlatesLayer(view: BoardView, dpr: number): HTMLCanvasElement {
+  const board = view.puzzle.board
+  const S = view.cell
+  const pad = platesPad(S)
+  const w = board.width * S + 2 * pad
+  const h = board.height * S + 2 * pad
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(w * dpr))
+  canvas.height = Math.max(1, Math.round(h * dpr))
+  const ctx = canvas.getContext('2d')!
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  paintNamePlates(ctx, view, pad, pad)
+  return canvas
+}
+
+function cachedPlatesLayer(view: BoardView, dpr: number): HTMLCanvasElement {
+  return lruGet(platesCache, platesSig(view, dpr), 4, () => renderPlatesLayer(view, dpr))
+}
+
 export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void {
   const { puzzle, cell: S, origin, preview } = view
   const board = puzzle.board
@@ -850,64 +969,12 @@ export function drawBoard(ctx: CanvasRenderingContext2D, view: BoardView): void 
     traceRoom(board.roomIdOf(view.hover), ROOM_HL, S * 0.11, Math.max(1.5, S * 0.04))
   }
 
-  // --- room name plates: a small white rounded pill sitting ON the room's bottom wall,
-  //     placed in the widest window-free gap so it covers nothing. Drawn AFTER the hover
-  //     outline so the blue room enclosure never runs across a name pill (still before the
-  //     crosses/figures, which may sit on top of a pill as before). ----------------------
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  for (const [id, run] of roomBottomRuns(puzzle)) {
-    const room = board.rooms.get(id)
-    if (!room || run.c1 < run.c0) continue
-    // A column is blocked if its bottom wall carries a window (either side).
-    const windowed = (col: number): boolean =>
-      board.windowSides(board.idx(run.row, col)).includes('S') ||
-      (run.row + 1 < H && board.windowSides(board.idx(run.row + 1, col)).includes('N'))
-    // widest window-free sub-run within [c0, c1]
-    let bc0 = run.c0
-    let bc1 = run.c0 - 1
-    let start = -1
-    const close = (end: number): void => {
-      if (start >= 0 && end - start > bc1 - bc0) {
-        bc0 = start
-        bc1 = end
-      }
-    }
-    for (let col = run.c0; col <= run.c1; col++) {
-      if (!windowed(col)) {
-        if (start < 0) start = col
-      } else {
-        close(col - 1)
-        start = -1
-      }
-    }
-    close(run.c1)
-    if (bc1 < bc0) continue // no window-free spot → skip rather than cover a window
-
-    const label = view.roomName(room.nameKey).toUpperCase()
-    const maxW = (bc1 - bc0 + 1) * S - S * 0.12
-    // Fit the font to the gap (text width scales ~linearly, so one rescale lands it).
-    let font = S * 0.155
-    const required = (f: number): number => {
-      ctx.font = `700 ${f}px 'Spline Sans Variable', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif`
-      return ctx.measureText(label).width + 2 * f * 0.5
-    }
-    if (required(font) > maxW) font = Math.max(6, (font * maxW) / required(font))
-    ctx.font = `700 ${font}px 'Spline Sans Variable', 'Noto Sans SC', 'PingFang SC', system-ui, sans-serif`
-    const pillW = Math.min(maxW, ctx.measureText(label).width + 2 * font * 0.5)
-    const pillH = font * 1.55
-    const cx = ox + ((bc0 + bc1 + 1) / 2) * S
-    const pillY = oy + (run.row + 1) * S - pillH // bottom edge sits on the wall
-    ctx.fillStyle = '#fff'
-    ctx.strokeStyle = '#1c1822'
-    ctx.lineWidth = Math.max(1.4, S * 0.022)
-    ctx.beginPath()
-    ctx.roundRect(cx - pillW / 2, pillY, pillW, pillH, pillH / 2)
-    ctx.fill()
-    ctx.stroke()
-    ctx.fillStyle = '#1c1822'
-    ctx.fillText(label, cx, pillY + pillH / 2)
-  }
+  // --- room name plates (cached layer): the pills are static per level, cell size and
+  //     language, but cost a measureText + fill/stroke per room — so they blit like the
+  //     floor/furniture layers. Same z-order as the old inline pass: after the hover
+  //     outline, before the crosses/figures (which may sit on top of a pill). ----------
+  const pPad = platesPad(S)
+  ctx.drawImage(cachedPlatesLayer(view, dpr), ox - pPad, oy - pPad, W * S + 2 * pPad, H * S + 2 * pPad)
 
   // --- crosses (dark X drawn over a wider white halo so it stays legible on
   //     dark rooms — stroke the white rim first, then the dark X on top) -----

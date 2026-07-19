@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Renderer } from '../i18n/Renderer.ts'
 import { suspectColor } from '../game/palette.ts'
@@ -112,6 +112,116 @@ function FaceHandle({
   )
 }
 
+/** One suspect's clue card. Memoized with FLAT props (booleans instead of the sets/maps
+ *  they derive from), so a selection tap re-renders only the cards whose state actually
+ *  changed — the old inline card re-ran the rich clue text, the avatar URI and every
+ *  tooltip of ALL cards on every tap, a visible part of the tap latency on phones. */
+const SuspectCard = memo(function SuspectCard({
+  suspect: s,
+  idx,
+  selected,
+  related,
+  placed,
+  noteOpen,
+  renderer,
+  gender,
+  puzzle,
+  suspectIndex,
+  onSelect,
+  onHoverSuspect,
+  onToggleNote,
+}: {
+  suspect: Puzzle['suspects'][number]
+  idx: number
+  selected: boolean
+  related: boolean
+  placed: boolean
+  noteOpen: boolean
+  renderer: Renderer
+  /** 'f' | 'm' when gender colours are on, undefined when off. */
+  gender?: 'f' | 'm'
+  puzzle: Puzzle
+  suspectIndex: Map<PersonId, number>
+  onSelect: (id: PersonId) => void
+  onHoverSuspect?: (id: PersonId | null) => void
+  onToggleNote: (id: string) => void
+}) {
+  const { t } = useTranslation()
+  // The dossier note's content (concept terms + the persons the clues name) is collected
+  // ONCE per opening and held stable — it used to be re-gathered by every render of an
+  // open card, and the rich-renderer walk behind it isn't free on weak phones.
+  const noteData = useMemo(() => {
+    if (!noteOpen) return null
+    return {
+      terms: collectClueTerms(renderer, t, s.clues.map((c) => c.describe()), s.id),
+      persons: [
+        { id: s.id, name: s.name, attrs: s.attributes, color: suspectColor(idx) },
+        ...[...relatedSuspects(s.clues, s.id, puzzle)].map((id) => {
+          const other = puzzle.suspects.find((o) => o.id === id)!
+          return {
+            id,
+            name: other.name,
+            attrs: other.attributes,
+            color: suspectColor(suspectIndex.get(id) ?? 0),
+          }
+        }),
+      ],
+    }
+  }, [noteOpen, renderer, t, s, idx, puzzle, suspectIndex])
+  return (
+    <button
+      type="button"
+      className="mk-clue"
+      data-suspect={s.id}
+      data-gender={gender}
+      data-selected={selected}
+      data-related={related || undefined}
+      data-placed={placed}
+      onClick={() => onSelect(s.id)}
+      onPointerEnter={() => onHoverSuspect?.(s.id)}
+      onPointerLeave={() => onHoverSuspect?.(null)}
+    >
+      {/* The face is the handle EVERYWHERE (user's call — "das finde ich schick"):
+          a click/tap folds the Akten-Notiz out under the clue. Desktop keeps its
+          appearance tooltip on hover INSIDE the handle; touch skips the InfoTip
+          (its pointerdown would flash a tooltip over the very tap that opens). */}
+      <FaceHandle open={noteOpen} onToggle={() => onToggleNote(s.id)}>
+        {IS_COARSE ? (
+          <Avatar
+            className="mk-avatar"
+            attrs={s.attributes}
+            color={suspectColor(idx)}
+            letter={s.id}
+          />
+        ) : (
+          <InfoTip
+            anchor=".mk-clue"
+            content={<AppearanceInfo attrs={s.attributes} letter={s.id} />}
+          >
+            <Avatar
+              className="mk-avatar"
+              attrs={s.attributes}
+              color={suspectColor(idx)}
+              letter={s.id}
+            />
+          </InfoTip>
+        )}
+      </FaceHandle>
+      <span className="mk-clue__main">
+        <span className="mk-clue__name">
+          {s.name}
+          {placed && <span className="mk-clue__check">✓</span>}
+          <AttrIcons attrs={s.attributes} />
+        </span>
+        <span className="mk-clue__text">
+          <ClueText renderer={renderer} clues={s.clues} subjectId={s.id} />
+        </span>
+      </span>
+      {noteData && <AktenNotiz terms={noteData.terms} persons={noteData.persons} />}
+    </button>
+  )
+})
+
 /** True if a clue (or any nested sub-clue) depends on the indoor/outdoor split. */
 // (The indoor/outdoor check moved to the engine's `usesInsideOutside` — the editor panel
 // needs the exact same rule, and the local copy silently missed UniqueOutsideClue as well as
@@ -224,7 +334,7 @@ interface Props {
   hintRequestId?: number
 }
 
-export default function CluePanel({
+function CluePanel({
   puzzle,
   suspectIndex,
   placements,
@@ -278,7 +388,8 @@ export default function CluePanel({
     document.addEventListener('pointerdown', onDown)
     return () => document.removeEventListener('pointerdown', onDown)
   }, [noteFor])
-  const toggleNote = (id: string) => setNoteFor((prev) => (prev === id ? null : id))
+  // Stable identity — it feeds the memoized SuspectCards.
+  const toggleNote = useCallback((id: string) => setNoteFor((prev) => (prev === id ? null : id)), [])
 
   // Board-wide notes shown above the suspects: which rooms are outdoors + any
   // board clues ("exactly one person on a mud puddle", …). Board clues carry their
@@ -530,79 +641,24 @@ export default function CluePanel({
         </div>
       ) : null}
 
-      {puzzle.suspects.map((s) => {
-        const idx = suspectIndex.get(s.id) ?? 0
-        const placed = placements.has(s.id)
-        return (
-          <button
-            key={s.id}
-            type="button"
-            className="mk-clue"
-            data-suspect={s.id}
-            data-gender={genderColors ? (s.attributes.gender === 'f' ? 'f' : 'm') : undefined}
-            data-selected={selectedSuspect === s.id}
-            data-related={related?.has(s.id) ? true : undefined}
-            data-placed={placed}
-            onClick={() => onSelect(s.id)}
-            onPointerEnter={() => onHoverSuspect?.(s.id)}
-            onPointerLeave={() => onHoverSuspect?.(null)}
-          >
-            {/* The face is the handle EVERYWHERE (user's call — "das finde ich schick"):
-                a click/tap folds the Akten-Notiz out under the clue. Desktop keeps its
-                appearance tooltip on hover INSIDE the handle; touch skips the InfoTip
-                (its pointerdown would flash a tooltip over the very tap that opens). */}
-            <FaceHandle open={noteFor === s.id} onToggle={() => toggleNote(s.id)}>
-              {IS_COARSE ? (
-                <Avatar
-                  className="mk-avatar"
-                  attrs={s.attributes}
-                  color={suspectColor(idx)}
-                  letter={s.id}
-                />
-              ) : (
-                <InfoTip
-                  anchor=".mk-clue"
-                  content={<AppearanceInfo attrs={s.attributes} letter={s.id} />}
-                >
-                  <Avatar
-                    className="mk-avatar"
-                    attrs={s.attributes}
-                    color={suspectColor(idx)}
-                    letter={s.id}
-                  />
-                </InfoTip>
-              )}
-            </FaceHandle>
-            <span className="mk-clue__main">
-              <span className="mk-clue__name">
-                {s.name}
-                {placed && <span className="mk-clue__check">✓</span>}
-                <AttrIcons attrs={s.attributes} />
-              </span>
-              <span className="mk-clue__text">
-                <ClueText renderer={renderer} clues={s.clues} subjectId={s.id} />
-              </span>
-            </span>
-            {noteFor === s.id && (
-              <AktenNotiz
-                terms={collectClueTerms(renderer, t, s.clues.map((c) => c.describe()), s.id)}
-                persons={[
-                  { id: s.id, name: s.name, attrs: s.attributes, color: suspectColor(idx) },
-                  ...[...relatedSuspects(s.clues, s.id, puzzle)].map((id) => {
-                    const other = puzzle.suspects.find((o) => o.id === id)!
-                    return {
-                      id,
-                      name: other.name,
-                      attrs: other.attributes,
-                      color: suspectColor(suspectIndex.get(id) ?? 0),
-                    }
-                  }),
-                ]}
-              />
-            )}
-          </button>
-        )
-      })}
+      {puzzle.suspects.map((s) => (
+        <SuspectCard
+          key={s.id}
+          suspect={s}
+          idx={suspectIndex.get(s.id) ?? 0}
+          selected={selectedSuspect === s.id}
+          related={related?.has(s.id) ?? false}
+          placed={placements.has(s.id)}
+          noteOpen={noteFor === s.id}
+          renderer={renderer}
+          gender={genderColors ? (s.attributes.gender === 'f' ? 'f' : 'm') : undefined}
+          puzzle={puzzle}
+          suspectIndex={suspectIndex}
+          onSelect={onSelect}
+          onHoverSuspect={onHoverSuspect}
+          onToggleNote={toggleNote}
+        />
+      ))}
 
       <button
         type="button"
@@ -642,3 +698,7 @@ export default function CluePanel({
     </div>
   )
 }
+
+// Memoized: the game screen re-renders on plenty of local state (selection, hints,
+// tools) — the panel itself only needs to when one of its actual inputs moved.
+export default memo(CluePanel)

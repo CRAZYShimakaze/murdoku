@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DeductionEngine,
@@ -16,6 +16,7 @@ import {
 import { Renderer } from '../i18n/Renderer.ts'
 import { useDebugSolveKey } from '../game/debugSolve.ts'
 import { useGameSession } from '../game/useGameSession.ts'
+import { useNarrowLayout } from '../game/useNarrowLayout.ts'
 import { useTutorialFlow } from '../game/useTutorialFlow.ts'
 import { CANDIDATE_BLUE, HIGHLIGHT_DIM, HINT_BLACK, suspectColor } from '../game/palette.ts'
 import {
@@ -98,6 +99,60 @@ function formatTime(total: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
 }
 
+/** The play clock, isolated so its per-second tick re-renders ONLY this tiny span —
+ *  never the whole game screen (that full-tree render every second was real jank on
+ *  phones). With the timer display switched off it keeps counting and persisting (a
+ *  resumed level must not lose time) but triggers no render at all; switching the
+ *  display on catches it up to the real count. */
+const GameClock = memo(function GameClock({
+  storageId,
+  tutorial,
+  running,
+  resetToken,
+}: {
+  storageId: string
+  tutorial: boolean
+  /** Ticks while true; a win freezes the clock (the win handler clears the slot). */
+  running: boolean
+  /** Bumped by restart — resets the clock to zero. */
+  resetToken: number
+}) {
+  const show = useSettings().timer
+  const [elapsed, setElapsed] = useState(() => (tutorial ? 0 : loadElapsed(storageId)))
+  const elapsedRef = useRef(elapsed)
+  const showRef = useRef(show)
+
+  useEffect(() => {
+    if (resetToken === 0) return
+    elapsedRef.current = 0
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- genuine external reset signal
+    setElapsed(0)
+  }, [resetToken])
+
+  useEffect(() => {
+    if (!running) return
+    const id = setInterval(() => {
+      elapsedRef.current += 1
+      // Persist every tick (a tiny write) so the clock survives leaving the level,
+      // a reload, or the app being killed.
+      if (!tutorial) saveElapsed(storageId, elapsedRef.current)
+      // Repaint only when the timer is actually shown — hidden, the tick costs nothing.
+      if (showRef.current) setElapsed(elapsedRef.current)
+    }, 1000)
+    return () => clearInterval(id)
+  }, [running, storageId, tutorial])
+
+  // Track the setting for the interval, and switched on mid-game → catch the
+  // display up to the real (silently kept) count.
+  useEffect(() => {
+    showRef.current = show
+    if (show) setElapsed(elapsedRef.current)
+  }, [show])
+
+  if (!show) return null
+  return <span className="mk-timer">{formatTime(elapsed)}</span>
+})
+
 export default function GameScreen({
   meta,
   onBack,
@@ -137,6 +192,9 @@ export default function GameScreen({
 
   const settings = useSettings()
   const session = useGameSession(puzzle, storageId, tutorial, !tutorial)
+  // Destructured once: the session OBJECT is fresh each render, but its methods are
+  // useCallback-stable — the memoized children hang their deps on these.
+  const { commit, undo, resetAll, clearSaved } = session
   const [selected, setSelected] = useState<PersonId | null>(null)
   const [hoveredSuspect, setHoveredSuspect] = useState<PersonId | null>(null)
   const [xTool, setXTool] = useState(false)
@@ -167,10 +225,9 @@ export default function GameScreen({
   // leaving a half-solved level and resuming keeps the tally — else a resumed solve would
   // wrongly count as hint-free. Reset only on a win/restart/reset. Tutorial: always 0.
   const [hintsUsed, setHintsUsed] = useState(() => (tutorial ? 0 : loadHintsUsed(storageId)))
-  // Elapsed play time — restored from storage so leaving and returning resumes the
-  // clock (it also ticks with the timer display switched off). Reset only on a win
-  // (or an explicit restart), never by just leaving the level. Tutorial: always 0.
-  const [elapsed, setElapsed] = useState(() => (tutorial ? 0 : loadElapsed(storageId)))
+  // The play clock lives in its own component (GameClock above) so its per-second tick
+  // never re-renders this whole screen; this token just tells it to restart at zero.
+  const [clockReset, setClockReset] = useState(0)
   const [saved, setSaved] = useState(() => isCustomSaved(meta.id))
   // The settings dialog is controlled so the tutorial can open it (and explain it).
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -207,21 +264,7 @@ export default function GameScreen({
   const badgeWidthRef = useRef(0)
   const [hideBadge, setHideBadge] = useState(false)
 
-  useEffect(() => {
-    if (result?.win) return
-    const id = setInterval(() => setElapsed((e) => e + 1), 1000)
-    return () => clearInterval(id)
-  }, [result?.win])
-
-  // Persist the clock on every tick (a tiny write), so it survives leaving the level,
-  // a reload, or the app being killed. On a win the interval above stops and the win
-  // handler clears the slot — nothing rewrites it afterwards.
-  useEffect(() => {
-    if (tutorial || result?.win) return
-    if (elapsed > 0) saveElapsed(storageId, elapsed)
-  }, [elapsed, storageId, tutorial, result?.win])
-
-  // Persist the hint tally the same way, so leaving and resuming a level keeps it honest.
+  // Persist the hint tally so leaving and resuming a level keeps it honest.
   useEffect(() => {
     if (tutorial || result?.win) return
     if (hintsUsed > 0) saveHintsUsed(storageId, hintsUsed)
@@ -316,39 +359,47 @@ export default function GameScreen({
     return set.size > 0 ? set : null
   }, [selected, puzzle])
 
-  const reveal =
-    result?.win && result.victimCell !== null
-      ? { victimCell: result.victimCell, murdererId: result.murderer?.id ?? null }
-      : null
+  const reveal = useMemo(
+    () =>
+      result?.win && result.victimCell !== null
+        ? { victimCell: result.victimCell, murdererId: result.murderer?.id ?? null }
+        : null,
+    [result],
+  )
 
-  const clearHint = () => {
+  // Handlers are useCallback-stable: they feed the memoized panel/board/toolbar, and an
+  // unstable identity would void exactly the memo that keeps a tap cheap on phones.
+  const clearHint = useCallback(() => {
     setHint(null)
     setHintShown(false)
-  }
+  }, [])
   // Selecting a suspect or arming the X-tool must NOT drop the hint (the player is
   // about to act ON it) — so these no longer clear it.
   // Picking a suspect means "I'm about to place THEM", so it disarms both cell tools — a
   // tap on the board must then place, never cross or erase. The eraser follows the X tool
   // here exactly; anything else and the next tap would silently do the wrong thing.
-  const selectFromCard = (id: PersonId) => {
+  const selectFromCard = useCallback((id: PersonId) => {
     setSelected((prev) => (prev === id ? null : id))
     setXTool(false)
     setEraseTool(false)
-  }
-  const selectFromBoard = (id: PersonId | null) => {
+  }, [])
+  const selectFromBoard = useCallback((id: PersonId | null) => {
     setSelected(id)
     setXTool(false)
     setEraseTool(false)
-  }
+  }, [])
   // After placing a figure, drop the selection so their candidate highlight clears — the
   // player is done with that suspect.
-  const commitAndClear = (cell: Cell, id: PersonId) => {
-    session.commit(cell, id)
-    setSelected(null)
-  }
+  const commitAndClear = useCallback(
+    (cell: Cell, id: PersonId) => {
+      commit(cell, id)
+      setSelected(null)
+    },
+    [commit],
+  )
   // The X tool and the eraser are one toolbox: only ONE can be armed, so a tap on the board
   // always has a single, readable meaning.
-  const toggleX = () => {
+  const toggleX = useCallback(() => {
     setXTool((v) => {
       if (!v) {
         setSelected(null)
@@ -356,8 +407,8 @@ export default function GameScreen({
       }
       return !v
     })
-  }
-  const toggleErase = () => {
+  }, [])
+  const toggleErase = useCallback(() => {
     setEraseTool((v) => {
       if (!v) {
         setSelected(null)
@@ -371,18 +422,18 @@ export default function GameScreen({
       }
       return !v
     })
-  }
+  }, [t])
   // Undo and reset are structural — they discard the active hint.
-  const onUndoClick = () => {
-    session.undo()
+  const onUndoClick = useCallback(() => {
+    undo()
     clearHint()
-  }
-  const onResetClick = () => {
-    session.resetAll()
+  }, [undo, clearHint])
+  const onResetClick = useCallback(() => {
+    resetAll()
     clearHint()
     setHintsUsed(0) // fresh attempt — the hint tally starts over
     if (!tutorial) clearHintsUsed(storageId) // …and drop the persisted tally too
-  }
+  }, [resetAll, clearHint, tutorial, storageId])
 
   // Replay the solved level from scratch: clear the board, drop the verdict, restart the
   // clock. (Offered on the win dialog.)
@@ -395,7 +446,7 @@ export default function GameScreen({
     setEraseTool(false)
     setResult(null)
     setDialogHidden(false)
-    setElapsed(0)
+    setClockReset((n) => n + 1)
     if (!tutorial) {
       clearElapsed(storageId)
       clearHintsUsed(storageId)
@@ -425,7 +476,7 @@ export default function GameScreen({
   // The next un-done action from the full solution: cross a now-empty cell, or place
   // a person. It stays on screen until done (see the effects above); pressing again
   // before acting just recomputes the same next action.
-  const showHint = () => {
+  const showHint = useCallback(() => {
     setSelected(null) // the black hint highlight replaces the blue selection
     setXTool(false)
     setEraseTool(false) // the hint wants you to ACT on a cell — not to wipe it
@@ -434,24 +485,26 @@ export default function GameScreen({
     setHintShown(true)
     if (h) setHintsUsed((n) => n + 1) // every request that actually shows a hint counts
     setHintRequestId((n) => n + 1) // re-scroll even when the same hint is requested again
-  }
+  }, [engine, session.state])
 
   // Two highlight layers so a selected suspect's possible cells (blue) stay visible
   // UNDER an active hint (black) — both at once when both apply. A cross hint only
   // highlights the cells STILL to cross, so it shrinks as the player works through it
   // (and vanishes — via the effect above — once they're all done).
-  const hintHL =
-    !tut.active && activeHint
-      ? new Set(
-          activeHint.kind === 'exclude'
-            ? activeHint.focus.filter((c) => !session.state.crosses.has(c))
-            : activeHint.kind === 'unmark'
-              ? activeHint.focus.filter((c) => session.state.marks.get(c)?.has(activeHint.step.personId!) ?? false)
-              : activeHint.kind === 'uncross'
-                ? activeHint.focus.filter((c) => session.state.crosses.has(c))
-                : activeHint.focus,
-        )
-      : null
+  // Memoized: an unstable Set identity here re-triggered the board redraw on EVERY
+  // screen render while a hint was up (it feeds BoardCanvas's redraw effect).
+  const hintHL = useMemo(() => {
+    if (tut.active || !activeHint) return null
+    return new Set(
+      activeHint.kind === 'exclude'
+        ? activeHint.focus.filter((c) => !session.state.crosses.has(c))
+        : activeHint.kind === 'unmark'
+          ? activeHint.focus.filter((c) => session.state.marks.get(c)?.has(activeHint.step.personId!) ?? false)
+          : activeHint.kind === 'uncross'
+            ? activeHint.focus.filter((c) => session.state.crosses.has(c))
+            : activeHint.focus,
+    )
+  }, [tut.active, activeHint, session.state])
   const selectHL = tut.active ? tut.highlight : highlight
   const boardHighlight = hintHL ?? selectHL
   // In the tutorial the flow owns both layers (black "to cross" over blue candidates);
@@ -469,7 +522,11 @@ export default function GameScreen({
       ? t('tool.hintNone')
       : null
   // Readable contradiction chain ("if X here → … → impossible"), when the hint has one.
-  const hintChain = activeHint?.step.chain?.map((e) => renderer.render(e)) ?? null
+  // Memoized so the array identity holds across renders (it feeds the memoized panel).
+  const hintChain = useMemo(
+    () => activeHint?.step.chain?.map((e) => renderer.render(e)) ?? null,
+    [activeHint, renderer],
+  )
 
   // The neighbouring level (next/prev) honouring the saved filter, the hidden-author
   // toggle and the current solved set — exactly what the picker would offer. Shared by
@@ -509,7 +566,7 @@ export default function GameScreen({
     return () => window.removeEventListener('keydown', onKey)
   }, [onNext, neighborLevel])
 
-  const submit = () => {
+  const submit = useCallback(() => {
     if (!session.allPlaced) return
     const placements = session.state.placements
     // A win is a GENUINELY valid solution, checked directly on the placement (not against
@@ -540,7 +597,7 @@ export default function GameScreen({
       return
     }
     markSolved(storageId, hintsUsed)
-    session.clearSaved()
+    clearSaved()
     clearElapsed(storageId) // solved — the next visit starts the clock at zero
     clearHintsUsed(storageId) // …and the hint tally is banked into the result now
     setDialogHidden(false) // a fresh verdict always shows the dialog first
@@ -559,7 +616,16 @@ export default function GameScreen({
       next,
       hintsUsed,
     })
-  }
+  }, [session.allPlaced, session.state.placements, clearSaved, puzzle, renderer, storageId, hintsUsed, onNext, neighborLevel, t])
+
+  // Stable identities for the memoized board + toolbar (a fresh arrow/element per render
+  // would re-render them on every screen render for nothing).
+  const roomName = useCallback((key: string) => t(key), [t])
+  const legendNode = useMemo(() => <Legend puzzle={puzzle} />, [puzzle])
+  // Phones hide the toolbar's legend column via CSS — but it still MOUNTED, drawing its
+  // ~dozen little object-icon canvases for nothing. Skip it there entirely; the narrow
+  // layout reaches the legend through the ?-button bottom sheet (legendNode) instead.
+  const narrow = useNarrowLayout()
 
   return (
     <div className="mk-game">
@@ -602,7 +668,12 @@ export default function GameScreen({
           )}
         </div>
         <div className="mk-game__corner">
-          {settings.timer && <span className="mk-timer">{formatTime(elapsed)}</span>}
+          <GameClock
+            storageId={storageId}
+            tutorial={!!tutorial}
+            running={!result?.win}
+            resetToken={clockReset}
+          />
           <SettingsButton
             open={settingsOpen}
             onOpenChange={(o) => {
@@ -654,7 +725,7 @@ export default function GameScreen({
           // The tutorial drives its own board; the eraser stays out of its way.
           eraseTool={tut.active ? false : eraseTool}
           reveal={reveal}
-          roomName={(key) => t(key)}
+          roomName={roomName}
           occupantAt={session.occupantAt}
           onPlaceMark={tut.active ? tut.onPlaceMark : session.placeMark}
           onCommit={tut.active ? tut.onCommit : commitAndClear}
@@ -703,7 +774,7 @@ export default function GameScreen({
         // Level already solved this session and now being reviewed → lock the editing tools
         // (X / reset / undo / hint); replaying happens via the verdict's Restart button.
         locked={!tut.active && !!result?.win}
-        legend={<Legend puzzle={puzzle} />}
+        legend={narrow ? undefined : legendNode}
       />
 
       {legendOpen && (
@@ -720,7 +791,7 @@ export default function GameScreen({
             >
               ×
             </button>
-            <Legend puzzle={puzzle} />
+            {legendNode}
           </div>
         </div>
       )}

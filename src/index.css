@@ -1851,9 +1851,12 @@ button {
 }
 /* Selecting a suspect makes the AVATAR of every OTHER card their clues point at (shared
    trait, e.g. brown hair, or a named person) pulse — a gentle scale + glowing brass ring.
-   The animation runs continuously on EVERY avatar (one shared timeline), but is invisible
-   until `--pulse` is 1; `data-related` flips it on. That way all marked portraits pulse in
-   perfect sync, with no drift when the selection changes. Reduced-motion → a steady ring. */
+   The animation runs ONLY on marked cards: box-shadow animates on the main thread, and
+   the old always-on-every-avatar timeline (invisible until `--pulse` flipped it on) cost
+   per-frame style work for the whole panel, the entire game long. One selection marks all
+   its cards in the same commit, so they still pulse in sync; only a card that stays
+   related across a DIRECT re-selection keeps its old phase (a barely visible offset —
+   the price of dropping the permanent animation). Reduced-motion → a steady ring. */
 @keyframes mk-avatarPulse {
   0%,
   100% {
@@ -1861,23 +1864,18 @@ button {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 0 rgba(226, 183, 94, 0);
   }
   50% {
-    transform: scale(calc(1 + 0.12 * var(--pulse, 0)));
+    transform: scale(1.12);
     box-shadow:
       0 2px 6px rgba(0, 0, 0, 0.45),
-      0 0 0 calc(4px * var(--pulse, 0)) rgba(226, 183, 94, calc(0.7 * var(--pulse, 0)));
+      0 0 0 4px rgba(226, 183, 94, 0.7);
   }
-}
-.mk-clue .mk-avatar {
-  animation: mk-avatarPulse 2s ease-in-out infinite;
 }
 .mk-clue[data-related] .mk-avatar {
-  --pulse: 1;
+  animation: mk-avatarPulse 2s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .mk-clue .mk-avatar {
-    animation: none;
-  }
   .mk-clue[data-related] .mk-avatar {
+    animation: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 3px rgba(226, 183, 94, 0.75);
   }
 }
